@@ -7,7 +7,13 @@ import (
 )
 
 func TestCreateVirtualService(t *testing.T) {
-	err := CreateObject(template.VirtualService, struct {
+	c, err := NewDynamicClient("/Users/rush/.kube/config")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	err = c.CreateObject(template.VirtualService, struct {
 		SystemIstioGateway string
 		InstanceName       string
 	}{

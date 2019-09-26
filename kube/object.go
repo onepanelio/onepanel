@@ -7,18 +7,17 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func CreateObject(objectTemplate string, data interface{}) (err error) {
-	client, err := newDynamicClient("/Users/rush/.kube/config")
+func (c *Client) CreateObject(objectTemplate string, data interface{}) (err error) {
 	if err != nil {
 		return
 	}
 
-	obj, err := parseObjectTemplate(objectTemplate, data)
+	obj, err := ParseObjectTemplate(objectTemplate, data)
 	if err != nil {
 		return
 	}
 
-	res := client.Resource(schema.GroupVersionResource{
+	res := c.Resource(schema.GroupVersionResource{
 		Group:    "networking.istio.io",
 		Version:  "v1alpha3",
 		Resource: "virtualservices",

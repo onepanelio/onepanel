@@ -10,7 +10,11 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func newDynamicClient(configPath ...string) (client dynamic.Interface, err error) {
+type Client struct {
+	dynamic.Interface
+}
+
+func NewDynamicClient(configPath ...string) (client *Client, err error) {
 	var config *rest.Config
 
 	if len(configPath) == 0 {
@@ -18,17 +22,20 @@ func newDynamicClient(configPath ...string) (client dynamic.Interface, err error
 	} else {
 		config, err = clientcmd.BuildConfigFromFlags("", configPath[0])
 	}
-
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	client, err = dynamic.NewForConfig(config)
+	dynamicClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return
+	}
+	client = &Client{Interface: dynamicClient}
 
 	return
 }
 
-func parseObjectTemplate(objectTemplate string, data interface{}) (obj map[string]interface{}, err error) {
+func ParseObjectTemplate(objectTemplate string, data interface{}) (obj map[string]interface{}, err error) {
 	var parsedObjectTemplate bytes.Buffer
 
 	t, err := template.New("yaml").Parse(objectTemplate)
