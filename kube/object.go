@@ -8,10 +8,6 @@ import (
 )
 
 func (c *Client) CreateObject(objectTemplate string, data interface{}) (err error) {
-	if err != nil {
-		return
-	}
-
 	obj, err := ParseObjectTemplate(objectTemplate, data)
 	if err != nil {
 		return

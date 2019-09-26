@@ -14,9 +14,8 @@ type Client struct {
 	dynamic.Interface
 }
 
-func NewDynamicClient(configPath ...string) (client *Client, err error) {
+func NewClient(configPath ...string) (client *Client, err error) {
 	var config *rest.Config
-
 	if len(configPath) == 0 {
 		config, err = rest.InClusterConfig()
 	} else {

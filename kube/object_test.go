@@ -1,13 +1,14 @@
 package kube
 
 import (
+	"os"
 	"testing"
 
 	"github.com/onepanelio/core/template"
 )
 
 func TestCreateVirtualService(t *testing.T) {
-	c, err := NewDynamicClient("/Users/rush/.kube/config")
+	c, err := NewClient(os.Getenv("KUBECONFIG"))
 	if err != nil {
 		t.Error(err)
 		return
