@@ -129,14 +129,14 @@ func TestUnmarshalWorkflows(t *testing.T) {
 	t.Log(wfs[0])
 }
 
-func TestSubmit(t *testing.T) {
+func TestCreate(t *testing.T) {
 	c, err := NewClient("default", os.Getenv("KUBECONFIG"))
 	if err != nil {
 		t.Log(err)
 		return
 	}
 
-	err = c.Submit([]byte(workflow), true)
+	err = c.Create([]byte(workflow), true)
 	if err != nil {
 		t.Log(err)
 		return
