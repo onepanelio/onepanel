@@ -1,13 +1,12 @@
 package workflow
 
 import (
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	wfclientset "github.com/argoproj/argo/pkg/client/clientset/versioned"
 	"github.com/argoproj/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
 	"github.com/argoproj/argo/workflow/common"
 	"github.com/argoproj/pkg/json"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -51,18 +50,19 @@ func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []wfv1.Workflow, err e
 	return
 }
 
-func (c *Client) Create(wfBytes []byte, strict bool) (err error) {
+func (c *Client) Create(wfBytes []byte, strict bool) (workflowNames []string, err error) {
 	workflows, err := unmarshalWorkflows(wfBytes, strict)
 	if err == nil {
-		return err
+		return nil, err
 	}
 
 	for _, wf := range workflows {
-		_, err = c.WorkflowInterface.Create(&wf)
+		workflow, err := c.WorkflowInterface.Create(&wf)
 		if err != nil {
-			return err
+			return nil, err
 		}
+		workflowNames = append(workflowNames, workflow.Name)
 	}
 
-	return nil
+	return
 }

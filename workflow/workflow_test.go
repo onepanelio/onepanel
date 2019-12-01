@@ -122,7 +122,7 @@ spec:
 func TestUnmarshalWorkflows(t *testing.T) {
 	wfs, err := unmarshalWorkflows([]byte(workflow), true)
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 		return
 	}
 
@@ -132,15 +132,15 @@ func TestUnmarshalWorkflows(t *testing.T) {
 func TestCreate(t *testing.T) {
 	c, err := NewClient("default", os.Getenv("KUBECONFIG"))
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 		return
 	}
 
-	err = c.Create([]byte(workflow), true)
+	wf, err := c.Create([]byte(workflow), true)
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 		return
 	}
 
-	t.Log("success")
+	t.Log(wf)
 }
