@@ -52,7 +52,7 @@ func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []wfv1.Workflow, err e
 
 func (c *Client) Create(wfBytes []byte, strict bool) (workflowNames []string, err error) {
 	workflows, err := unmarshalWorkflows(wfBytes, strict)
-	if err == nil {
+	if err != nil {
 		return nil, err
 	}
 
