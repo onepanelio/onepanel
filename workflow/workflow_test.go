@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-var workflow = `
+var workflowTemplate = `
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
@@ -120,7 +120,7 @@ spec:
 `
 
 func TestUnmarshalWorkflows(t *testing.T) {
-	wfs, err := unmarshalWorkflows([]byte(workflow), true)
+	wfs, err := unmarshalWorkflows([]byte(workflowTemplate), true)
 	if err != nil {
 		t.Error(err)
 		return
@@ -129,14 +129,30 @@ func TestUnmarshalWorkflows(t *testing.T) {
 	t.Log(wfs[0])
 }
 
-func TestCreate(t *testing.T) {
+func TestCreateInstance(t *testing.T) {
 	c, err := NewClient("default", os.Getenv("KUBECONFIG"))
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	wf, err := c.Create([]byte(workflow), true)
+	wf, err := c.Create(workflowTemplate, []string{"instance-name=http-test-1", "instance-namespace=default", "action=create", "instance-replicas=1", "machine-type=cpu-1-4", "host=test-cluster-11.onepanel.io"}, true)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	t.Log(wf)
+}
+
+func TestDeleteInstance(t *testing.T) {
+	c, err := NewClient("default", os.Getenv("KUBECONFIG"))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	wf, err := c.Create(workflowTemplate, []string{"instance-name=http-test-1", "instance-namespace=default", "action=delete", "instance-replicas=1", "machine-type=cpu-1-4", "host=test-cluster-11.onepanel.io"}, true)
 	if err != nil {
 		t.Error(err)
 		return
