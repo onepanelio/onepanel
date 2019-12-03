@@ -88,8 +88,8 @@ func (c *Client) create(wf *wfv1.Workflow, parameters []string) (createdWf *wfv1
 	return
 }
 
-func (c *Client) Create(workflowTemplate string, parameters []string, strict bool) (workflowNames []string, err error) {
-	workflows, err := unmarshalWorkflows([]byte(workflowTemplate), strict)
+func (c *Client) Create(workflowTemplate string, parameters []string) (workflowNames []string, err error) {
+	workflows, err := unmarshalWorkflows([]byte(workflowTemplate), true)
 	if err != nil {
 		return nil, err
 	}

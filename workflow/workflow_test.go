@@ -136,7 +136,7 @@ func TestCreateInstance(t *testing.T) {
 		return
 	}
 
-	wf, err := c.Create(workflowTemplate, []string{"instance-name=http-test-1", "instance-namespace=default", "action=create", "instance-replicas=1", "machine-type=cpu-1-4", "host=test-cluster-11.onepanel.io"}, true)
+	wf, err := c.Create(workflowTemplate, []string{"instance-name=http-test-1", "instance-namespace=default", "action=create", "instance-replicas=1", "machine-type=cpu-1-4", "host=test-cluster-11.onepanel.io"})
 	if err != nil {
 		t.Error(err)
 		return
@@ -152,7 +152,7 @@ func TestDeleteInstance(t *testing.T) {
 		return
 	}
 
-	wf, err := c.Create(workflowTemplate, []string{"instance-name=http-test-1", "instance-namespace=default", "action=delete", "instance-replicas=1", "machine-type=cpu-1-4", "host=test-cluster-11.onepanel.io"}, true)
+	wf, err := c.Create(workflowTemplate, []string{"instance-name=http-test-1", "instance-namespace=default", "action=delete", "instance-replicas=1", "machine-type=cpu-1-4", "host=test-cluster-11.onepanel.io"})
 	if err != nil {
 		t.Error(err)
 		return
