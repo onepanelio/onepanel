@@ -1,11 +1,12 @@
 package workflow
 
 import (
+	"flag"
 	"os"
 	"testing"
 )
 
-var workflowTemplate = `
+var instanceWorkflowTemplate = `
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
@@ -33,8 +34,7 @@ spec:
         apiVersion: v1
         kind: Service
         metadata:
-          name: {{workflow.parameters.instance-name}}
-          namespace: {{workflow.parameters.instance-namespace}}
+          name: {{workflow.parameters.name}}
         spec:
           ports:
           - name: http
@@ -42,7 +42,7 @@ spec:
             protocol: TCP
             targetPort: 80
           selector:
-            instanceUID: {{workflow.parameters.instance-name}}
+            instanceUID: {{workflow.parameters.name}}
           type: ClusterIP
   - name: instance-virtual-service-tmpl
     metadata:
@@ -56,11 +56,10 @@ spec:
         apiVersion: networking.istio.io/v1alpha3
         kind: VirtualService
         metadata:
-          name: {{workflow.parameters.instance-name}}
-          namespace: {{workflow.parameters.instance-namespace}}
+          name: {{workflow.parameters.name}}
         spec:
           hosts:
-          - {{workflow.parameters.instance-name}}.{{workflow.parameters.host}}
+          - {{workflow.parameters.name}}.{{workflow.parameters.host}}
           gateways:
           - istio-system/ingressgateway
           http:
@@ -71,7 +70,7 @@ spec:
             - destination:
                 port:
                   number: 80
-                host: {{workflow.parameters.instance-name}}
+                host: {{workflow.parameters.name}}
   - name: instance-statefulset-tmpl
     metadata:
       annotations:
@@ -84,18 +83,17 @@ spec:
         apiVersion: apps/v1
         kind: StatefulSet
         metadata:
-          name: {{workflow.parameters.instance-name}}
-          namespace: {{workflow.parameters.instance-namespace}}
+          name: {{workflow.parameters.name}}
         spec:
-          replicas: {{workflow.parameters.instance-replicas}}
-          serviceName: {{workflow.parameters.instance-name}}
+          replicas: {{workflow.parameters.replicas}}
+          serviceName: {{workflow.parameters.name}}
           selector:
             matchLabels:
-              instanceUID: {{workflow.parameters.instance-name}}
+              instanceUID: {{workflow.parameters.name}}
           template:
             metadata:
               labels:
-                instanceUID: {{workflow.parameters.instance-name}}
+                instanceUID: {{workflow.parameters.name}}
             spec:
               nodeSelector:
                 cloud.google.com/gke-nodepool: {{workflow.parameters.machine-type}}
@@ -119,8 +117,10 @@ spec:
                   storage: 1Gi
 `
 
+var namespace = flag.String("namespace", "default", "namespace of workflows")
+
 func TestUnmarshalWorkflows(t *testing.T) {
-	wfs, err := unmarshalWorkflows([]byte(workflowTemplate), true)
+	wfs, err := unmarshalWorkflows([]byte(instanceWorkflowTemplate), true)
 	if err != nil {
 		t.Error(err)
 		return
@@ -130,13 +130,61 @@ func TestUnmarshalWorkflows(t *testing.T) {
 }
 
 func TestCreateInstance(t *testing.T) {
-	c, err := NewClient("default", os.Getenv("KUBECONFIG"))
+	c, err := NewClient(*namespace, os.Getenv("KUBECONFIG"))
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	wf, err := c.Create(workflowTemplate, []string{"instance-name=http-test-1", "instance-namespace=default", "action=create", "instance-replicas=1", "machine-type=cpu-1-4", "host=test-cluster-11.onepanel.io"})
+	wf, err := c.Create(instanceWorkflowTemplate, []string{"name=http-test-1", "action=create", "replicas=1", "machine-type=default-pool", "host=test-cluster-11.onepanel.io"})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	t.Log(wf)
+}
+
+func TestPauseInstance(t *testing.T) {
+	c, err := NewClient(*namespace, os.Getenv("KUBECONFIG"))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	wf, err := c.Create(instanceWorkflowTemplate, []string{"name=http-test-1", "action=apply", "replicas=0", "machine-type=default-pool", "host=test-cluster-11.onepanel.io"})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	t.Log(wf)
+}
+
+func TestResumeInstance(t *testing.T) {
+	c, err := NewClient(*namespace, os.Getenv("KUBECONFIG"))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	wf, err := c.Create(instanceWorkflowTemplate, []string{"name=http-test-1", "action=apply", "replicas=1", "machine-type=default-pool", "host=test-cluster-11.onepanel.io"})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	t.Log(wf)
+}
+
+func TestChangeInstanceMachineType(t *testing.T) {
+	c, err := NewClient(*namespace, os.Getenv("KUBECONFIG"))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	wf, err := c.Create(instanceWorkflowTemplate, []string{"name=http-test-1", "action=apply", "replicas=1", "machine-type=cpu-1-4", "host=test-cluster-11.onepanel.io"})
 	if err != nil {
 		t.Error(err)
 		return
@@ -146,13 +194,13 @@ func TestCreateInstance(t *testing.T) {
 }
 
 func TestDeleteInstance(t *testing.T) {
-	c, err := NewClient("default", os.Getenv("KUBECONFIG"))
+	c, err := NewClient(*namespace, os.Getenv("KUBECONFIG"))
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	wf, err := c.Create(workflowTemplate, []string{"instance-name=http-test-1", "instance-namespace=default", "action=delete", "instance-replicas=1", "machine-type=cpu-1-4", "host=test-cluster-11.onepanel.io"})
+	wf, err := c.Create(instanceWorkflowTemplate, []string{"name=http-test-1", "action=delete", "replicas=1", "machine-type=default-pool", "host=test-cluster-11.onepanel.io"})
 	if err != nil {
 		t.Error(err)
 		return
