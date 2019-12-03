@@ -1,5 +1,6 @@
 {
     "go.testEnvVars": {
         "KUBECONFIG": "${env:HOME}/.kube/config"
-    }
+    },
+    "go.lintTool": "golangci-lint",
 }
