@@ -13,6 +13,12 @@ metadata:
   generateName: instance-
 spec:
   entrypoint: instance-tmpl
+  arguments:
+    parameters:
+    - name: name
+    - name: action
+    - name: replicas
+    - name: machine-type
   templates:
   - name: instance-tmpl
     steps:
@@ -208,3 +214,11 @@ func TestDeleteInstance(t *testing.T) {
 
 	t.Log(wf)
 }
+
+/**** Some other test scenarios
+- System-wide environment variables
+- System-wide parameters like `host`
+- Startup script that can be executed in:
+  - Init Container: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
+  - LifeCycle Hooks: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks
+****/
