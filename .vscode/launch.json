@@ -10,9 +10,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "${fileDirname}",
-            "env": {
-                "KUBECONFIG": "~/.kube/config"
-            },
+            "env": {},
             "args": []
         }
     ]
