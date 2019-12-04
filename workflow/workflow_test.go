@@ -12,6 +12,8 @@ kind: Workflow
 metadata:
   generateName: instance-
 spec:
+  podGC:
+    strategy: OnWorkflowCompletion
   entrypoint: instance-tmpl
   arguments:
     parameters:
