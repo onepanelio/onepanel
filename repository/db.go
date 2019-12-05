@@ -1,0 +1,29 @@
+package repository
+
+import (
+	"github.com/jmoiron/sqlx"
+)
+
+type DB struct {
+	*sqlx.DB
+}
+
+func (db *DB) NamedQueryWithStructScan(query string, dest interface{}) error {
+	rows, err := db.NamedQuery(query, dest)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		err = rows.StructScan(dest)
+		if err != nil {
+			return err
+		}
+	}
+	if err = rows.Err(); err != nil {
+		return err
+	}
+
+	return nil
+}

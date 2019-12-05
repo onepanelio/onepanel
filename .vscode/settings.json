@@ -3,4 +3,5 @@
         "KUBECONFIG": "${env:HOME}/.kube/config"
     },
     "go.lintTool": "golangci-lint",
+    "go.useLanguageServer": true,
 }

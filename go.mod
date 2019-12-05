@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/Azure/go-autorest/autorest v0.9.2 // indirect
 	github.com/Azure/go-autorest/autorest/adal v0.8.0 // indirect
+	github.com/Masterminds/squirrel v1.1.0
 	github.com/argoproj/argo v2.4.2+incompatible
 	github.com/argoproj/pkg v0.0.0-20191031223000-02a6aac40ac4
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
@@ -16,6 +17,7 @@ require (
 	github.com/gophercloud/gophercloud v0.6.0 // indirect
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/imdario/mergo v0.3.8 // indirect
+	github.com/jmoiron/sqlx v1.2.0
 	github.com/json-iterator/go v1.1.8 // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
