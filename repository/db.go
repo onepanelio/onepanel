@@ -8,7 +8,7 @@ type DB struct {
 	*sqlx.DB
 }
 
-func (db *DB) NamedQueryWithStructScan(query string, dest interface{}) error {
+func (db *DB) NamedQueryWithStructScan(query string, dest interface{}) (err error) {
 	rows, err := db.NamedQuery(query, dest)
 	if err != nil {
 		return err
@@ -21,9 +21,7 @@ func (db *DB) NamedQueryWithStructScan(query string, dest interface{}) error {
 			return err
 		}
 	}
-	if err = rows.Err(); err != nil {
-		return err
-	}
+	err = rows.Err()
 
-	return nil
+	return
 }
