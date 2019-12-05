@@ -11,14 +11,14 @@ type DB struct {
 func (db *DB) NamedQueryWithStructScan(query string, dest interface{}) (err error) {
 	rows, err := db.NamedQuery(query, dest)
 	if err != nil {
-		return err
+		return
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		err = rows.StructScan(dest)
 		if err != nil {
-			return err
+			return
 		}
 	}
 	err = rows.Err()
