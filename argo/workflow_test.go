@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-var instanceWorkflowTemplate = `
+var TestInstanceWorkflowTemplate = `
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
@@ -121,7 +121,7 @@ spec:
 var namespace = flag.String("namespace", "default", "namespace of workflows")
 
 func TestUnmarshalWorkflows(t *testing.T) {
-	wfs, err := unmarshalWorkflows([]byte(instanceWorkflowTemplate), true)
+	wfs, err := unmarshalWorkflows([]byte(TestInstanceWorkflowTemplate), true)
 	if err != nil {
 		t.Error(err)
 		return
@@ -137,7 +137,7 @@ func TestCreateInstance(t *testing.T) {
 		return
 	}
 
-	wf, err := c.Create(instanceWorkflowTemplate, []string{"name=vscode", "action=create", "replicas=1", "machine-type=default-pool", "host=test-cluster-11.onepanel.io"})
+	wf, err := c.Create(TestInstanceWorkflowTemplate, []string{"name=vscode", "action=create", "replicas=1", "machine-type=default-pool", "host=test-cluster-11.onepanel.io"})
 	if err != nil {
 		t.Error(err)
 		return
@@ -153,7 +153,7 @@ func TestPauseInstance(t *testing.T) {
 		return
 	}
 
-	wf, err := c.Create(instanceWorkflowTemplate, []string{"name=vscode", "action=apply", "replicas=0", "machine-type=default-pool", "host=test-cluster-11.onepanel.io"})
+	wf, err := c.Create(TestInstanceWorkflowTemplate, []string{"name=vscode", "action=apply", "replicas=0", "machine-type=default-pool", "host=test-cluster-11.onepanel.io"})
 	if err != nil {
 		t.Error(err)
 		return
@@ -169,7 +169,7 @@ func TestResumeInstance(t *testing.T) {
 		return
 	}
 
-	wf, err := c.Create(instanceWorkflowTemplate, []string{"name=vscode", "action=apply", "replicas=1", "machine-type=default-pool", "host=test-cluster-11.onepanel.io"})
+	wf, err := c.Create(TestInstanceWorkflowTemplate, []string{"name=vscode", "action=apply", "replicas=1", "machine-type=default-pool", "host=test-cluster-11.onepanel.io"})
 	if err != nil {
 		t.Error(err)
 		return
@@ -185,7 +185,7 @@ func TestChangeInstanceMachineType(t *testing.T) {
 		return
 	}
 
-	wf, err := c.Create(instanceWorkflowTemplate, []string{"name=vscode", "action=apply", "replicas=1", "machine-type=cpu-1-4", "host=test-cluster-11.onepanel.io"})
+	wf, err := c.Create(TestInstanceWorkflowTemplate, []string{"name=vscode", "action=apply", "replicas=1", "machine-type=cpu-1-4", "host=test-cluster-11.onepanel.io"})
 	if err != nil {
 		t.Error(err)
 		return
@@ -201,7 +201,7 @@ func TestDeleteInstance(t *testing.T) {
 		return
 	}
 
-	wf, err := c.Create(instanceWorkflowTemplate, []string{"name=vscode", "action=delete", "replicas=1", "machine-type=default-pool", "host=test-cluster-11.onepanel.io"})
+	wf, err := c.Create(TestInstanceWorkflowTemplate, []string{"name=vscode", "action=delete", "replicas=1", "machine-type=default-pool", "host=test-cluster-11.onepanel.io"})
 	if err != nil {
 		t.Error(err)
 		return
