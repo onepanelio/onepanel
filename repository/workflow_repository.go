@@ -14,6 +14,10 @@ type WorkflowRepository struct {
 	db *DB
 }
 
+func NewWorkflowRepository(db *DB) *WorkflowRepository {
+	return &WorkflowRepository{db: db}
+}
+
 func (w *WorkflowRepository) Create(workflow *model.Workflow) (err error) {
 	sql, _, err := sq.Insert("workflows").
 		SetMap(sq.Eq{

@@ -1,9 +1,11 @@
 package model
 
+import "github.com/google/uuid"
+
 type WorkflowTemplate string
 
 type Workflow struct {
-	UUID     string
+	UUID     uuid.UUID
 	Name     string
 	Template WorkflowTemplate
 }

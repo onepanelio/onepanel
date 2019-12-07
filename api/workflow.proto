@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package api;
+
+service WorkflowService {
+    // Creates a Workflow
+    rpc Create (CreateWorkflowRequest) returns (Workflow) {}
+}
+
+message CreateWorkflowRequest {
+    Workflow Workflow = 1;
+}
+
+message Workflow {
+    string uuid = 1;
+    string name = 2;
+}
