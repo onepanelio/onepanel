@@ -15,6 +15,6 @@ func NewWorkflowServer(workflowRepository *repository.WorkflowRepository) *Workf
 	return &WorkflowServer{workflowRepository: workflowRepository}
 }
 
-func (w *WorkflowServer) Create(c context.Context, request *api.CreateWorkflowRequest) (*api.Workflow, error) {
-	return &api.Workflow{Uuid: "uuid", Name: "name"}, nil
+func (w *WorkflowServer) Create(ctx context.Context, req *api.CreateWorkflowRequest) (*api.Workflow, error) {
+	return req.Workflow, nil
 }

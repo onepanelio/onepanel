@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"net"
@@ -60,11 +61,22 @@ func startRPCServer(db *repository.DB) {
 		log.Fatalf("Failed to start RPC server: %v", err)
 	}
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(grpc.UnaryInterceptor(loggingInterceptor))
 	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer(workflowRepository))
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve RPC listener: %v", err)
 	}
 	log.Print("RPC server started")
+}
+
+func loggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	log.Printf("%v handler started", info.FullMethod)
+	resp, err = handler(ctx, req)
+	if err != nil {
+		log.Printf("%s call failed", info.FullMethod)
+		return
+	}
+	log.Printf("%v handler finished", info.FullMethod)
+	return
 }
