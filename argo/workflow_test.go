@@ -4,6 +4,8 @@ import (
 	"flag"
 	"os"
 	"testing"
+
+	"github.com/onepanelio/core/util/ptr"
 )
 
 var TestInstanceWorkflowTemplate = `
@@ -118,7 +120,29 @@ spec:
                   storage: 1Gi
 `
 
-var namespace = flag.String("namespace", "default", "namespace of workflows")
+var (
+	namespace = flag.String("namespace", "default", "namespace of workflows")
+	options   = &Options{
+		Parameters: []Parameter{
+			{
+				Name:  "name",
+				Value: ptr.String("vscode"),
+			},
+			{
+				Name:  "machine-type",
+				Value: ptr.String("default-pool"),
+			},
+			{
+				Name:  "replicas",
+				Value: ptr.String("1"),
+			},
+			{
+				Name:  "host",
+				Value: ptr.String("test-cluster-11.onepanel.io"),
+			},
+		},
+	}
+)
 
 func TestUnmarshalWorkflows(t *testing.T) {
 	wfs, err := unmarshalWorkflows([]byte(TestInstanceWorkflowTemplate), true)
@@ -137,7 +161,12 @@ func TestCreateInstance(t *testing.T) {
 		return
 	}
 
-	wf, err := c.Create(TestInstanceWorkflowTemplate, []string{"name=vscode", "action=create", "replicas=1", "machine-type=default-pool", "host=test-cluster-11.onepanel.io"})
+	options.Parameters = append(options.Parameters, Parameter{
+		Name:  "action",
+		Value: ptr.String("create"),
+	})
+
+	wf, err := c.Create(TestInstanceWorkflowTemplate, options)
 	if err != nil {
 		t.Error(err)
 		return
@@ -153,7 +182,15 @@ func TestPauseInstance(t *testing.T) {
 		return
 	}
 
-	wf, err := c.Create(TestInstanceWorkflowTemplate, []string{"name=vscode", "action=apply", "replicas=0", "machine-type=default-pool", "host=test-cluster-11.onepanel.io"})
+	options.Parameters = append(options.Parameters, Parameter{
+		Name:  "action",
+		Value: ptr.String("apply"),
+	}, Parameter{
+		Name:  "replicas",
+		Value: ptr.String("0"),
+	})
+
+	wf, err := c.Create(TestInstanceWorkflowTemplate, options)
 	if err != nil {
 		t.Error(err)
 		return
@@ -169,7 +206,15 @@ func TestResumeInstance(t *testing.T) {
 		return
 	}
 
-	wf, err := c.Create(TestInstanceWorkflowTemplate, []string{"name=vscode", "action=apply", "replicas=1", "machine-type=default-pool", "host=test-cluster-11.onepanel.io"})
+	options.Parameters = append(options.Parameters, Parameter{
+		Name:  "action",
+		Value: ptr.String("apply"),
+	}, Parameter{
+		Name:  "replicas",
+		Value: ptr.String("1"),
+	})
+
+	wf, err := c.Create(TestInstanceWorkflowTemplate, options)
 	if err != nil {
 		t.Error(err)
 		return
@@ -185,7 +230,15 @@ func TestChangeInstanceMachineType(t *testing.T) {
 		return
 	}
 
-	wf, err := c.Create(TestInstanceWorkflowTemplate, []string{"name=vscode", "action=apply", "replicas=1", "machine-type=cpu-1-4", "host=test-cluster-11.onepanel.io"})
+	options.Parameters = append(options.Parameters, Parameter{
+		Name:  "action",
+		Value: ptr.String("apply"),
+	}, Parameter{
+		Name:  "machine-type",
+		Value: ptr.String("cpu-1-4"),
+	})
+
+	wf, err := c.Create(TestInstanceWorkflowTemplate, options)
 	if err != nil {
 		t.Error(err)
 		return
@@ -201,7 +254,12 @@ func TestDeleteInstance(t *testing.T) {
 		return
 	}
 
-	wf, err := c.Create(TestInstanceWorkflowTemplate, []string{"name=vscode", "action=delete", "replicas=1", "machine-type=default-pool", "host=test-cluster-11.onepanel.io"})
+	options.Parameters = append(options.Parameters, Parameter{
+		Name:  "action",
+		Value: ptr.String("delete"),
+	})
+
+	wf, err := c.Create(TestInstanceWorkflowTemplate, options)
 	if err != nil {
 		t.Error(err)
 		return

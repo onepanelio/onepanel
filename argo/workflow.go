@@ -1,9 +1,6 @@
 package argo
 
 import (
-	"fmt"
-	"strings"
-
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/argoproj/argo/workflow/common"
 	"github.com/argoproj/pkg/json"
@@ -11,6 +8,17 @@ import (
 )
 
 type Workflow = wfv1.Workflow
+
+type Parameter = wfv1.Parameter
+
+type Options struct {
+	Name           string
+	GenerateName   string
+	Entrypoint     string
+	Parameters     []Parameter
+	ServiceAccount string
+	Labels         string
+}
 
 func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []Workflow, err error) {
 	var wf Workflow
@@ -30,19 +38,26 @@ func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []Workflow, err error)
 	return
 }
 
-func (c *Client) create(wf *Workflow, parameters []string) (createdWf *Workflow, err error) {
-	if len(parameters) > 0 {
+func (c *Client) create(wf *Workflow, opts *Options) (createdWf *Workflow, err error) {
+	if opts == nil {
+		opts = &Options{}
+	}
+	if opts.Name != "" {
+		wf.ObjectMeta.Name = opts.Name
+	}
+	if opts.GenerateName != "" {
+		wf.ObjectMeta.GenerateName = opts.GenerateName
+	}
+	if opts.Entrypoint != "" {
+		wf.Spec.Entrypoint = opts.Entrypoint
+	}
+	if opts.ServiceAccount != "" {
+		wf.Spec.ServiceAccountName = opts.ServiceAccount
+	}
+	if len(opts.Parameters) > 0 {
 		newParams := make([]wfv1.Parameter, 0)
 		passedParams := make(map[string]bool)
-		for _, paramStr := range parameters {
-			parts := strings.SplitN(paramStr, "=", 2)
-			if len(parts) == 1 {
-				return nil, fmt.Errorf("Expected parameter of the form: NAME=VALUE. Received: %s", paramStr)
-			}
-			param := wfv1.Parameter{
-				Name:  parts[0],
-				Value: &parts[1],
-			}
+		for _, param := range opts.Parameters {
 			newParams = append(newParams, param)
 			passedParams[param.Name] = true
 		}
@@ -65,14 +80,14 @@ func (c *Client) create(wf *Workflow, parameters []string) (createdWf *Workflow,
 	return
 }
 
-func (c *Client) Create(workflowTemplate string, parameters []string) (workflowNames []string, err error) {
+func (c *Client) Create(workflowTemplate string, opts *Options) (workflowNames []string, err error) {
 	workflows, err := unmarshalWorkflows([]byte(workflowTemplate), true)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, wf := range workflows {
-		createdWf, err := c.create(&wf, parameters)
+		createdWf, err := c.create(&wf, opts)
 		if err != nil {
 			return nil, err
 		}
