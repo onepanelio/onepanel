@@ -19,6 +19,7 @@ require (
 	github.com/googleapis/gnostic v0.3.1 // indirect
 	github.com/gophercloud/gophercloud v0.6.0 // indirect
 	github.com/gorilla/websocket v1.4.1 // indirect
+	github.com/grpc-ecosystem/grpc-gateway v1.12.1
 	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/json-iterator/go v1.1.8 // indirect
@@ -32,9 +33,10 @@ require (
 	golang.org/x/net v0.0.0-20191126235420-ef20fe5d7933 // indirect
 	golang.org/x/oauth2 v0.0.0-20191122200657-5d9234df094c // indirect
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
-	google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55
+	google.golang.org/genproto v0.0.0-20191206224255-0243a4be9c8f
 	google.golang.org/grpc v1.25.1
 	gopkg.in/inf.v0 v0.9.1 // indirect
+	gopkg.in/yaml.v2 v2.2.7 // indirect
 	k8s.io/api v0.0.0-20190313235455-40a48860b5ab // indirect
 	k8s.io/apimachinery v0.0.0-20190313205120-d7deff9243b1 // indirect
 	k8s.io/client-go v11.0.0+incompatible

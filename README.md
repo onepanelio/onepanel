@@ -24,3 +24,23 @@ protoc -I/usr/local/include \
   api/*.proto \
   --go_out=plugins=grpc:api
 ```
+
+Generate HTTP reverse-proxy:
+
+```bash
+protoc -I/usr/local/include \
+  -Iapi/third_party/googleapis \
+  -Iapi/ \
+  api/*.proto \
+  --grpc-gateway_out=logtostderr=true:api
+```
+
+Generate Swagger definitions:
+
+```bash
+protoc -I/usr/local/include \
+  -Iapi/third_party/googleapis \
+  -Iapi/ \
+  api/*.proto \
+  --swagger_out=logtostderr=true:api
+```

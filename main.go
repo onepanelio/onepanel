@@ -5,8 +5,10 @@ import (
 	"flag"
 	"log"
 	"net"
+	"net/http"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/manager"
 	"github.com/onepanelio/core/repository"
@@ -18,6 +20,7 @@ import (
 var (
 	configPath = flag.String("config", "config", "Path to YAML file containing config")
 	rpcPort    = flag.String("rpc-port", ":8887", "RPC Port")
+	httpPort   = flag.String("http-port", ":8888", "RPC Port")
 )
 
 func main() {
@@ -32,7 +35,8 @@ func main() {
 		" sslmode=disable")
 	log.Print("Connected to database")
 
-	startRPCServer(db)
+	go startRPCServer(db)
+	startHTTPServer()
 }
 
 func initConfig() {
@@ -69,6 +73,29 @@ func startRPCServer(db *repository.DB) {
 		log.Fatalf("Failed to serve RPC listener: %v", err)
 	}
 	log.Print("RPC server started")
+}
+
+func startHTTPServer() {
+	endpoint := "localhost" + *rpcPort
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Register gRPC server endpoint
+	// Note: Make sure the gRPC server is running properly and accessible
+	mux := runtime.NewServeMux()
+	opts := []grpc.DialOption{grpc.WithInsecure()}
+
+	err := api.RegisterWorkflowServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+	if err != nil {
+		log.Fatalf("Failed to connect to service: %v", err)
+	}
+
+	log.Print("Starting HTTP server")
+	if err = http.ListenAndServe(*httpPort, mux); err != nil {
+		log.Fatalf("Failed to serve HTTP listener: %v", err)
+	}
+	log.Print("HTTP server started")
 }
 
 func loggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {

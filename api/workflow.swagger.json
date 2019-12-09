@@ -1,0 +1,81 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "workflow.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/apis/v1beta1/{namespace}/workflows": {
+      "post": {
+        "summary": "Creates a Workflow",
+        "operationId": "Create",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiWorkflow"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiWorkflow"
+            }
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "apiParameter": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "apiWorkflow": {
+      "type": "object",
+      "properties": {
+        "uuid": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apiParameter"
+          }
+        },
+        "workflowTemplate": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
