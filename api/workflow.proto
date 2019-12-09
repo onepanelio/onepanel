@@ -2,13 +2,21 @@ syntax = "proto3";
 
 package api;
 
+import "google/api/annotations.proto";
+
 service WorkflowService {
     // Creates a Workflow
-    rpc Create (CreateWorkflowRequest) returns (Workflow) {}
+    rpc Create (CreateWorkflowRequest) returns (Workflow) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/{namespace}/workflows"
+            body: "workflow"
+        };
+    }
 }
 
 message CreateWorkflowRequest {
-    Workflow Workflow = 1;
+    string namespace = 1;
+    Workflow workflow = 2;
 }
 
 message Workflow {
@@ -16,9 +24,11 @@ message Workflow {
     string name = 2;
 
     repeated Parameter parameters = 3;
+
+    string workflowTemplate = 4;
 }
 
 message Parameter {
-    string key = 1;
+    string name = 1;
     string value = 2;
 }
