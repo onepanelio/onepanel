@@ -4,15 +4,15 @@ import (
 	"context"
 
 	"github.com/onepanelio/core/api"
-	"github.com/onepanelio/core/repository"
+	"github.com/onepanelio/core/manager"
 )
 
 type WorkflowServer struct {
-	workflowRepository *repository.WorkflowRepository
+	resourceManager *manager.ResourceManager
 }
 
-func NewWorkflowServer(workflowRepository *repository.WorkflowRepository) *WorkflowServer {
-	return &WorkflowServer{workflowRepository: workflowRepository}
+func NewWorkflowServer(resourceManager *manager.ResourceManager) *WorkflowServer {
+	return &WorkflowServer{resourceManager: resourceManager}
 }
 
 func (w *WorkflowServer) Create(ctx context.Context, req *api.CreateWorkflowRequest) (*api.Workflow, error) {

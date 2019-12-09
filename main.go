@@ -8,6 +8,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/onepanelio/core/api"
+	"github.com/onepanelio/core/manager"
 	"github.com/onepanelio/core/repository"
 	"github.com/onepanelio/core/server"
 	"github.com/spf13/viper"
@@ -53,7 +54,7 @@ func initConfig() {
 }
 
 func startRPCServer(db *repository.DB) {
-	workflowRepository := repository.NewWorkflowRepository(db)
+	resourceManager := manager.NewResourceManager(db)
 
 	log.Print("Starting RPC server")
 	lis, err := net.Listen("tcp", *rpcPort)
@@ -62,7 +63,7 @@ func startRPCServer(db *repository.DB) {
 	}
 
 	s := grpc.NewServer(grpc.UnaryInterceptor(loggingInterceptor))
-	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer(workflowRepository))
+	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer(resourceManager))
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve RPC listener: %v", err)
