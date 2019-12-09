@@ -73,6 +73,20 @@
           }
         },
         "workflowTemplate": {
+          "$ref": "#/definitions/apiWorkflowTemplate"
+        }
+      }
+    },
+    "apiWorkflowTemplate": {
+      "type": "object",
+      "properties": {
+        "uuid": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "manifest": {
           "type": "string"
         }
       }

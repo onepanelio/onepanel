@@ -38,7 +38,7 @@ func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []Workflow, err error)
 	return
 }
 
-func (c *Client) create(wf *Workflow, opts *Options) (createdWf *Workflow, err error) {
+func (c *Client) create(wf *Workflow, opts *Options) (createdWorkflow *Workflow, err error) {
 	if opts == nil {
 		opts = &Options{}
 	}
@@ -72,7 +72,7 @@ func (c *Client) create(wf *Workflow, opts *Options) (createdWf *Workflow, err e
 		wf.Spec.Arguments.Parameters = newParams
 	}
 
-	createdWf, err = c.WorkflowInterface.Create(wf)
+	createdWorkflow, err = c.WorkflowInterface.Create(wf)
 	if err != nil {
 		return nil, err
 	}
@@ -80,18 +80,18 @@ func (c *Client) create(wf *Workflow, opts *Options) (createdWf *Workflow, err e
 	return
 }
 
-func (c *Client) Create(workflowTemplate string, opts *Options) (workflowNames []string, err error) {
-	workflows, err := unmarshalWorkflows([]byte(workflowTemplate), true)
+func (c *Client) Create(manifest []byte, opts *Options) (createdWorkflows []*Workflow, err error) {
+	workflows, err := unmarshalWorkflows(manifest, true)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, wf := range workflows {
-		createdWf, err := c.create(&wf, opts)
+		createdWorkflow, err := c.create(&wf, opts)
 		if err != nil {
 			return nil, err
 		}
-		workflowNames = append(workflowNames, createdWf.Name)
+		createdWorkflows = append(createdWorkflows, createdWorkflow)
 	}
 
 	return

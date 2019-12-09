@@ -3,6 +3,8 @@ package model
 import "testing"
 
 func TestWorkflowTemplateToBytes(t *testing.T) {
-	var w WorkflowTemplate = "test"
+	w := &WorkflowTemplate{
+		Manifest: "test",
+	}
 	t.Log(w.ToBytes())
 }

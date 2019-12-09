@@ -8,12 +8,14 @@ import (
 	"github.com/onepanelio/core/util/ptr"
 )
 
-var TestInstanceWorkflowTemplate = `
+var TestInstanceWorkflowManifest = []byte(`
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
   generateName: vscode-
 spec:
+  podGC:
+    strategy: OnWorkflowCompletion
   entrypoint: instance-tmpl
   templates:
   - name: instance-tmpl
@@ -118,7 +120,7 @@ spec:
               resources:
                 requests:
                   storage: 1Gi
-`
+`)
 
 var (
 	namespace = flag.String("namespace", "default", "namespace of workflows")
@@ -145,7 +147,7 @@ var (
 )
 
 func TestUnmarshalWorkflows(t *testing.T) {
-	wfs, err := unmarshalWorkflows([]byte(TestInstanceWorkflowTemplate), true)
+	wfs, err := unmarshalWorkflows([]byte(TestInstanceWorkflowManifest), true)
 	if err != nil {
 		t.Error(err)
 		return
@@ -166,7 +168,7 @@ func TestCreateInstance(t *testing.T) {
 		Value: ptr.String("create"),
 	})
 
-	wf, err := c.Create(TestInstanceWorkflowTemplate, options)
+	wf, err := c.Create(TestInstanceWorkflowManifest, options)
 	if err != nil {
 		t.Error(err)
 		return
@@ -190,7 +192,7 @@ func TestPauseInstance(t *testing.T) {
 		Value: ptr.String("0"),
 	})
 
-	wf, err := c.Create(TestInstanceWorkflowTemplate, options)
+	wf, err := c.Create(TestInstanceWorkflowManifest, options)
 	if err != nil {
 		t.Error(err)
 		return
@@ -214,7 +216,7 @@ func TestResumeInstance(t *testing.T) {
 		Value: ptr.String("1"),
 	})
 
-	wf, err := c.Create(TestInstanceWorkflowTemplate, options)
+	wf, err := c.Create(TestInstanceWorkflowManifest, options)
 	if err != nil {
 		t.Error(err)
 		return
@@ -238,7 +240,7 @@ func TestChangeInstanceMachineType(t *testing.T) {
 		Value: ptr.String("cpu-1-4"),
 	})
 
-	wf, err := c.Create(TestInstanceWorkflowTemplate, options)
+	wf, err := c.Create(TestInstanceWorkflowManifest, options)
 	if err != nil {
 		t.Error(err)
 		return
@@ -259,13 +261,13 @@ func TestDeleteInstance(t *testing.T) {
 		Value: ptr.String("delete"),
 	})
 
-	wf, err := c.Create(TestInstanceWorkflowTemplate, options)
+	wf, err := c.Create(TestInstanceWorkflowManifest, options)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	t.Log(wf)
+	t.Log(wf[0].Name)
 }
 
 /**** Some other test scenarios
