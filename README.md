@@ -15,32 +15,14 @@ On macOS or Linux:
 
 ## gRPC Code generation
 
-Generate Go server and client code:
+Generate Go, HTTP reverse-proxy and Swagger files:
 
 ```bash
 protoc -I/usr/local/include \
   -Iapi/third_party/googleapis \
   -Iapi/ \
   api/*.proto \
-  --go_out=plugins=grpc:api
-```
-
-Generate HTTP reverse-proxy:
-
-```bash
-protoc -I/usr/local/include \
-  -Iapi/third_party/googleapis \
-  -Iapi/ \
-  api/*.proto \
-  --grpc-gateway_out=logtostderr=true:api
-```
-
-Generate Swagger definitions:
-
-```bash
-protoc -I/usr/local/include \
-  -Iapi/third_party/googleapis \
-  -Iapi/ \
-  api/*.proto \
+  --go_out=plugins=grpc:api \
+  --grpc-gateway_out=logtostderr=true:api \
   --swagger_out=logtostderr=true:api
 ```
