@@ -3,6 +3,7 @@ syntax = "proto3";
 package api;
 
 import "google/api/annotations.proto";
+import "workflow_template.proto";
 
 service WorkflowService {
     // Creates a Workflow
@@ -31,11 +32,4 @@ message Workflow {
 message Parameter {
     string name = 1;
     string value = 2;
-}
-
-message WorkflowTemplate {
-    string uuid = 1;
-    string name = 2;
-
-    string manifest = 4;
 }
