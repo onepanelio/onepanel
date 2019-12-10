@@ -6,6 +6,7 @@ import (
 	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/manager"
 	"github.com/onepanelio/core/model"
+	"github.com/onepanelio/core/util/ptr"
 )
 
 type WorkflowServer struct {
@@ -21,6 +22,12 @@ func (w *WorkflowServer) Create(ctx context.Context, req *api.CreateWorkflowRequ
 		WorkflowTemplate: model.WorkflowTemplate{
 			Manifest: req.Workflow.WorkflowTemplate.Manifest,
 		},
+	}
+	for _, param := range req.Workflow.Parameters {
+		workflow.Parameters = append(workflow.Parameters, model.Parameter{
+			Name:  param.Name,
+			Value: ptr.String(param.Value),
+		})
 	}
 
 	createdWorkflow, err := w.resourceManager.CreateWorkflow(req.Namespace, workflow)
