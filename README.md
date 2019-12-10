@@ -1,3 +1,18 @@
+## Database migrations
+
+Install `goose`:
+```bash
+go get -u github.com/pressly/goose/cmd/goose
+```
+
+Note: Up migration are automatically executed when the application is run.
+
+```bash
+goose -dir db postgres "${DB_DATASOURCE}" up    # Migrate the DB to the most recent version available
+goose -dir db postgres "${DB_DATASOURCE}" down  # Roll back the version by 1
+goose help                                      # See all available commands
+```
+
 ## gRPC installation
 
 Install gRPC:

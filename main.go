@@ -13,6 +13,7 @@ import (
 	"github.com/onepanelio/core/manager"
 	"github.com/onepanelio/core/repository"
 	"github.com/onepanelio/core/server"
+	"github.com/pressly/goose"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 )
@@ -28,12 +29,12 @@ func main() {
 
 	initConfig()
 
-	db := repository.NewDB(viper.GetString("db.driverName"), "host="+viper.GetString("DB_HOST")+
-		" user="+viper.GetString("DB_USER")+
-		" password="+viper.GetString("DB_PASSWORD")+
-		" dbname="+viper.GetString("DB_NAME")+
-		" sslmode=disable")
+	db := repository.NewDB(viper.GetString("db.driverName"), viper.GetString("DB_DATASOURCE"))
 	log.Print("Connected to database")
+
+	if err := goose.Run("up", db.BaseConnection(), "db"); err != nil {
+		log.Fatalf("goose up: %v", err)
+	}
 
 	go startRPCServer(db)
 	startHTTPServer()

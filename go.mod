@@ -26,6 +26,7 @@ require (
 	github.com/lib/pq v1.0.0
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
+	github.com/pressly/goose v2.6.0+incompatible
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/spf13/viper v1.6.1
 	github.com/valyala/fasttemplate v1.1.0 // indirect
