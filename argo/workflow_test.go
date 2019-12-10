@@ -17,6 +17,11 @@ spec:
   podGC:
     strategy: OnWorkflowCompletion
   entrypoint: instance-tmpl
+  arguments:
+    parameters:
+    - name: name
+    - name: action
+    - name: machine-type
   templates:
   - name: instance-tmpl
     steps:
@@ -89,7 +94,7 @@ spec:
         metadata:
           name: {{workflow.parameters.name}}
         spec:
-          replicas: {{workflow.parameters.replicas}}
+          replicas: 1
           serviceName: {{workflow.parameters.name}}
           selector:
             matchLabels:
@@ -135,10 +140,6 @@ var (
 				Value: ptr.String("default-pool"),
 			},
 			{
-				Name:  "replicas",
-				Value: ptr.String("1"),
-			},
-			{
 				Name:  "host",
 				Value: ptr.String("test-cluster-11.onepanel.io"),
 			},
@@ -156,7 +157,7 @@ func TestUnmarshalWorkflows(t *testing.T) {
 	t.Log(wfs[0])
 }
 
-func TestCreateInstance(t *testing.T) {
+func TestCreateOrResumeInstance(t *testing.T) {
 	c, err := NewClient(*namespace, os.Getenv("KUBECONFIG"))
 	if err != nil {
 		t.Error(err)
@@ -186,34 +187,7 @@ func TestPauseInstance(t *testing.T) {
 
 	options.Parameters = append(options.Parameters, Parameter{
 		Name:  "action",
-		Value: ptr.String("apply"),
-	}, Parameter{
-		Name:  "replicas",
-		Value: ptr.String("0"),
-	})
-
-	wf, err := c.Create(TestInstanceWorkflowManifest, options)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	t.Log(wf)
-}
-
-func TestResumeInstance(t *testing.T) {
-	c, err := NewClient(*namespace, os.Getenv("KUBECONFIG"))
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	options.Parameters = append(options.Parameters, Parameter{
-		Name:  "action",
-		Value: ptr.String("apply"),
-	}, Parameter{
-		Name:  "replicas",
-		Value: ptr.String("1"),
+		Value: ptr.String("delete"),
 	})
 
 	wf, err := c.Create(TestInstanceWorkflowManifest, options)
@@ -247,27 +221,6 @@ func TestChangeInstanceMachineType(t *testing.T) {
 	}
 
 	t.Log(wf)
-}
-
-func TestDeleteInstance(t *testing.T) {
-	c, err := NewClient(*namespace, os.Getenv("KUBECONFIG"))
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	options.Parameters = append(options.Parameters, Parameter{
-		Name:  "action",
-		Value: ptr.String("delete"),
-	})
-
-	wf, err := c.Create(TestInstanceWorkflowManifest, options)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	t.Log(wf[0].Name)
 }
 
 /**** Some other test scenarios
