@@ -60,7 +60,7 @@
     "apiWorkflow": {
       "type": "object",
       "properties": {
-        "uuid": {
+        "uid": {
           "type": "string"
         },
         "name": {
@@ -80,7 +80,7 @@
     "apiWorkflowTemplate": {
       "type": "object",
       "properties": {
-        "uuid": {
+        "uid": {
           "type": "string"
         },
         "name": {

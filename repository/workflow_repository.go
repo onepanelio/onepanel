@@ -21,7 +21,7 @@ func NewWorkflowRepository(db *DB) *WorkflowRepository {
 func (w *WorkflowRepository) Create(workflow *model.Workflow) (err error) {
 	sql, _, err := sq.Insert("workflows").
 		SetMap(sq.Eq{
-			"UUID": workflow.UUID,
+			"UID": workflow.UID,
 		}).ToSql()
 	if err != nil {
 		return

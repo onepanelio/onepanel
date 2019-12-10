@@ -3,7 +3,7 @@ syntax = "proto3";
 package api;
 
 message WorkflowTemplate {
-    string uuid = 1;
+    string uid = 1;
     string name = 2;
 
     string manifest = 4;

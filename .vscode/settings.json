@@ -4,4 +4,10 @@
     },
     "go.lintTool": "golangci-lint",
     "go.useLanguageServer": true,
+    "protoc": {
+        "path": "/usr/local/bin/protoc",
+        "options": [
+            "--proto_path=${workspaceRoot}/api"
+        ]
+    }
 }

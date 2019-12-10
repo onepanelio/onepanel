@@ -20,12 +20,13 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 		})
 	}
 
-	createdWorkflows, err := r.workflowClient.Create(workflow.WorkflowTemplate.ToBytes(), opts)
+	createdWorkflows, err := r.workflowClient.Create(workflow.WorkflowTemplate.GetManifest(), opts)
 	if err != nil {
 		return
 	}
 	createdWorkflow = workflow
 	createdWorkflow.Name = createdWorkflows[0].Name
+	createdWorkflow.UID = string(createdWorkflows[0].ObjectMeta.UID)
 
 	return
 }

@@ -6,5 +6,5 @@ func TestWorkflowTemplateToBytes(t *testing.T) {
 	w := &WorkflowTemplate{
 		Manifest: "test",
 	}
-	t.Log(w.ToBytes())
+	t.Log(w.GetManifest())
 }

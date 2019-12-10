@@ -21,7 +21,7 @@ message CreateWorkflowRequest {
 }
 
 message Workflow {
-    string uuid = 1;
+    string uid = 1;
     string name = 2;
 
     repeated Parameter parameters = 3;

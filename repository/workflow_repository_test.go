@@ -9,18 +9,18 @@ import (
 )
 
 func TestWorkflowRepositoryCreate(t *testing.T) {
-	uuid, err := uuid.NewRandom()
+	uid, err := uuid.NewRandom()
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	workflow := &model.Workflow{
-		UUID: uuid,
+		UID: uid.String(),
 	}
 
 	sql, args, err := sq.Insert("workflows").
 		SetMap(sq.Eq{
-			"UUID": workflow.UUID,
+			"UID": workflow.UID,
 		}).ToSql()
 	if err != nil {
 		t.Error(err)

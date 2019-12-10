@@ -13,7 +13,7 @@ type Parameter = wfv1.Parameter
 
 type Options struct {
 	Name           string
-	GenerateName   string
+	GeneratedName  string
 	Entrypoint     string
 	Parameters     []Parameter
 	ServiceAccount string
@@ -45,8 +45,8 @@ func (c *Client) create(wf *Workflow, opts *Options) (createdWorkflow *Workflow,
 	if opts.Name != "" {
 		wf.ObjectMeta.Name = opts.Name
 	}
-	if opts.GenerateName != "" {
-		wf.ObjectMeta.GenerateName = opts.GenerateName
+	if opts.GeneratedName != "" {
+		wf.ObjectMeta.GenerateName = opts.GeneratedName
 	}
 	if opts.Entrypoint != "" {
 		wf.Spec.Entrypoint = opts.Entrypoint

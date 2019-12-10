@@ -34,7 +34,10 @@ func (w *WorkflowServer) Create(ctx context.Context, req *api.CreateWorkflowRequ
 	if err != nil {
 		return nil, err
 	}
-	req.Workflow.Name = createdWorkflow.Name
+	req.Workflow = &api.Workflow{
+		Name: createdWorkflow.Name,
+		Uid:  createdWorkflow.UID,
+	}
 
 	return req.Workflow, nil
 }
