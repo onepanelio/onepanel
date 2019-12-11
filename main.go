@@ -74,7 +74,6 @@ func startRPCServer(db *repository.DB, argoClient *argo.Client) {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve RPC listener: %v", err)
 	}
-	log.Print("RPC server started")
 }
 
 func startHTTPProxy() {
@@ -97,7 +96,6 @@ func startHTTPProxy() {
 	if err = http.ListenAndServe(*httpPort, mux); err != nil {
 		log.Fatalf("Failed to serve HTTP listener: %v", err)
 	}
-	log.Print("HTTP proxy started")
 }
 
 func loggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
