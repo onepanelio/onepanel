@@ -31,7 +31,7 @@ func main() {
 	initConfig()
 
 	db := repository.NewDB(viper.GetString("db.driverName"), viper.GetString("DB_DATASOURCE"))
-	if err := goose.Run("status", db.BaseConnection(), "db"); err != nil {
+	if err := goose.Run("up", db.BaseConnection(), "db"); err != nil {
 		log.Fatalf("goose up: %v", err)
 	}
 

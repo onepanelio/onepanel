@@ -6,10 +6,6 @@ import (
 	"github.com/onepanelio/core/model"
 )
 
-type WorkflowRepositoryInterface interface {
-	Create(*model.Workflow) error
-}
-
 type WorkflowRepository struct {
 	db *DB
 }
