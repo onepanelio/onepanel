@@ -83,6 +83,7 @@ func startHTTPProxy() {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	log.Print("Starting HTTP proxy")
 	// Register gRPC server endpoint
 	// Note: Make sure the gRPC server is running properly and accessible
 	mux := runtime.NewServeMux()
@@ -93,11 +94,10 @@ func startHTTPProxy() {
 		log.Fatalf("Failed to connect to service: %v", err)
 	}
 
-	log.Print("Starting HTTP server")
 	if err = http.ListenAndServe(*httpPort, mux); err != nil {
 		log.Fatalf("Failed to serve HTTP listener: %v", err)
 	}
-	log.Print("HTTP server started")
+	log.Print("HTTP proxy started")
 }
 
 func loggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
