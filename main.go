@@ -62,17 +62,17 @@ func initConfig() {
 func startRPCServer(db *repository.DB, argoClient *argo.Client) {
 	resourceManager := manager.NewResourceManager(db, argoClient)
 
-	log.Print("Starting RPC server")
+	log.Printf("Starting RPC server on port %v", *rpcPort)
 	lis, err := net.Listen("tcp", *rpcPort)
 	if err != nil {
-		log.Fatalf("Failed to start RPC server: %v", err)
+		log.Fatalf("Failed to start RPC listener: %v", err)
 	}
 
 	s := grpc.NewServer(grpc.UnaryInterceptor(loggingInterceptor))
 	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer(resourceManager))
 
 	if err := s.Serve(lis); err != nil {
-		log.Fatalf("Failed to serve RPC listener: %v", err)
+		log.Fatalf("Failed to serve RPC server: %v", err)
 	}
 }
 
@@ -82,7 +82,6 @@ func startHTTPProxy() {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	log.Print("Starting HTTP proxy")
 	// Register gRPC server endpoint
 	// Note: Make sure the gRPC server is running properly and accessible
 	mux := runtime.NewServeMux()
@@ -93,6 +92,7 @@ func startHTTPProxy() {
 		log.Fatalf("Failed to connect to service: %v", err)
 	}
 
+	log.Printf("Starting HTTP proxy on port %v", *httpPort)
 	if err = http.ListenAndServe(*httpPort, mux); err != nil {
 		log.Fatalf("Failed to serve HTTP listener: %v", err)
 	}
