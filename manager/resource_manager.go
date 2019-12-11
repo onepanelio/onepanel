@@ -6,12 +6,13 @@ import (
 )
 
 type ResourceManager struct {
-	workflowClient     *argo.Client
+	argClient          *argo.Client
 	workflowRepository *repository.WorkflowRepository
 }
 
-func NewResourceManager(db *repository.DB) *ResourceManager {
+func NewResourceManager(db *repository.DB, argoClient *argo.Client) *ResourceManager {
 	return &ResourceManager{
+		argClient:          argoClient,
 		workflowRepository: repository.NewWorkflowRepository(db),
 	}
 }

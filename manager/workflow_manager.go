@@ -3,16 +3,16 @@ package manager
 import (
 	"github.com/onepanelio/core/argo"
 	"github.com/onepanelio/core/model"
-	"github.com/spf13/viper"
 )
 
 func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workflow) (createdWorkflow *model.Workflow, err error) {
-	r.workflowClient, err = argo.NewClient(namespace, viper.GetString("KUBECONFIG"))
 	if err != nil {
 		return
 	}
 
-	opts := &argo.Options{}
+	opts := &argo.Options{
+		Namespace: namespace,
+	}
 	for _, param := range workflow.Parameters {
 		opts.Parameters = append(opts.Parameters, argo.Parameter{
 			Name:  param.Name,
@@ -20,7 +20,7 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 		})
 	}
 
-	createdWorkflows, err := r.workflowClient.Create(workflow.WorkflowTemplate.GetManifest(), opts)
+	createdWorkflows, err := r.argClient.Create(workflow.WorkflowTemplate.GetManifest(), opts)
 	if err != nil {
 		return
 	}

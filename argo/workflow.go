@@ -13,6 +13,7 @@ type Parameter = wfv1.Parameter
 
 type Options struct {
 	Name           string
+	Namespace      string
 	GeneratedName  string
 	Entrypoint     string
 	Parameters     []Parameter
@@ -72,7 +73,7 @@ func (c *Client) create(wf *Workflow, opts *Options) (createdWorkflow *Workflow,
 		wf.Spec.Arguments.Parameters = newParams
 	}
 
-	createdWorkflow, err = c.WorkflowInterface.Create(wf)
+	createdWorkflow, err = c.Clientset.ArgoprojV1alpha1().Workflows(opts.Namespace).Create(wf)
 	if err != nil {
 		return nil, err
 	}

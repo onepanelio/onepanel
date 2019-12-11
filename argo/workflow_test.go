@@ -130,6 +130,7 @@ spec:
 var (
 	namespace = flag.String("namespace", "default", "namespace of workflows")
 	options   = &Options{
+		Namespace: *namespace,
 		Parameters: []Parameter{
 			{
 				Name:  "name",
@@ -158,11 +159,7 @@ func TestUnmarshalWorkflows(t *testing.T) {
 }
 
 func TestCreateOrResumeInstance(t *testing.T) {
-	c, err := NewClient(*namespace, os.Getenv("KUBECONFIG"))
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	c := NewClient(os.Getenv("KUBECONFIG"))
 
 	options.Parameters = append(options.Parameters, Parameter{
 		Name:  "action",
@@ -179,11 +176,7 @@ func TestCreateOrResumeInstance(t *testing.T) {
 }
 
 func TestPauseInstance(t *testing.T) {
-	c, err := NewClient(*namespace, os.Getenv("KUBECONFIG"))
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	c := NewClient(os.Getenv("KUBECONFIG"))
 
 	options.Parameters = append(options.Parameters, Parameter{
 		Name:  "action",
@@ -200,11 +193,7 @@ func TestPauseInstance(t *testing.T) {
 }
 
 func TestChangeInstanceMachineType(t *testing.T) {
-	c, err := NewClient(*namespace, os.Getenv("KUBECONFIG"))
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	c := NewClient(os.Getenv("KUBECONFIG"))
 
 	options.Parameters = append(options.Parameters, Parameter{
 		Name:  "action",

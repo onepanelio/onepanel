@@ -10,6 +10,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/onepanelio/core/api"
+	"github.com/onepanelio/core/argo"
 	"github.com/onepanelio/core/manager"
 	"github.com/onepanelio/core/repository"
 	"github.com/onepanelio/core/server"
@@ -30,14 +31,14 @@ func main() {
 	initConfig()
 
 	db := repository.NewDB(viper.GetString("db.driverName"), viper.GetString("DB_DATASOURCE"))
-	log.Print("Connected to database")
-
-	if err := goose.Run("up", db.BaseConnection(), "db"); err != nil {
+	if err := goose.Run("status", db.BaseConnection(), "db"); err != nil {
 		log.Fatalf("goose up: %v", err)
 	}
 
-	go startRPCServer(db)
-	startHTTPServer()
+	argoClient := argo.NewClient(viper.GetString("KUBECONFIG"))
+
+	go startRPCServer(db, argoClient)
+	startHTTPProxy()
 }
 
 func initConfig() {
@@ -58,8 +59,8 @@ func initConfig() {
 	})
 }
 
-func startRPCServer(db *repository.DB) {
-	resourceManager := manager.NewResourceManager(db)
+func startRPCServer(db *repository.DB, argoClient *argo.Client) {
+	resourceManager := manager.NewResourceManager(db, argoClient)
 
 	log.Print("Starting RPC server")
 	lis, err := net.Listen("tcp", *rpcPort)
@@ -76,7 +77,7 @@ func startRPCServer(db *repository.DB) {
 	log.Print("RPC server started")
 }
 
-func startHTTPServer() {
+func startHTTPProxy() {
 	endpoint := "localhost" + *rpcPort
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)

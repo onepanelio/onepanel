@@ -2,28 +2,31 @@ package argo
 
 import (
 	wfclientset "github.com/argoproj/argo/pkg/client/clientset/versioned"
-	"github.com/argoproj/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
 type Client struct {
-	v1alpha1.WorkflowInterface
+	wfclientset.Clientset
 }
 
-func NewClient(namespace string, configPath ...string) (client *Client, err error) {
-	var config *rest.Config
+func NewClient(configPath ...string) (client *Client) {
+	var (
+		err    error
+		config *rest.Config
+	)
+
 	if len(configPath) == 0 {
 		config, err = rest.InClusterConfig()
 	} else {
 		config, err = clientcmd.BuildConfigFromFlags("", configPath[0])
 	}
 	if err != nil {
-		return
+		panic(err)
 	}
 
-	wfclient := wfclientset.NewForConfigOrDie(config).ArgoprojV1alpha1().Workflows(namespace)
-	client = &Client{WorkflowInterface: wfclient}
+	wfclient := wfclientset.NewForConfigOrDie(config)
+	client = &Client{Clientset: *wfclient}
 
 	return
 }
