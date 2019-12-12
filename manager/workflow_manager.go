@@ -3,6 +3,7 @@ package manager
 import (
 	"github.com/onepanelio/core/argo"
 	"github.com/onepanelio/core/model"
+	"github.com/onepanelio/core/util"
 )
 
 func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workflow) (createdWorkflow *model.Workflow, err error) {
@@ -28,5 +29,10 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 }
 
 func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTemplate *model.WorkflowTemplate) (createdWorkflowTemplate *model.WorkflowTemplate, err error) {
-	return r.workflowRepository.CreateWorkflowTemplate(workflowTemplate)
+	createdWorkflowTemplate, err = r.workflowRepository.CreateWorkflowTemplate(workflowTemplate)
+	if err != nil {
+		return nil, util.UserErrorWrap(err, "Workflow template")
+	}
+
+	return
 }

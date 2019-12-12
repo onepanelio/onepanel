@@ -2,12 +2,18 @@ package server
 
 import (
 	"context"
+	"errors"
 
 	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/manager"
 	"github.com/onepanelio/core/model"
+	"github.com/onepanelio/core/util"
 	"github.com/onepanelio/core/util/ptr"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
+
+var userError *util.UserError
 
 type WorkflowServer struct {
 	resourceManager *manager.ResourceManager
@@ -48,10 +54,14 @@ func (s *WorkflowServer) CreateWorkflowTemplate(ctx context.Context, req *api.Cr
 		Manifest: req.WorkflowTemplate.Manifest,
 	}
 	workflowTemplate, err := s.resourceManager.CreateWorkflowTemplate(req.Namespace, workflowTemplate)
-	if err != nil {
-		return nil, err
+	if errors.As(err, &userError) {
+		if userError.Code == 409 {
+			return nil, status.Errorf(codes.Aborted, err.Error())
+		}
+		return nil, status.Errorf(codes.Unknown, err.Error())
 	}
 	req.WorkflowTemplate.Uid = workflowTemplate.UID
+	req.WorkflowTemplate.Version = workflowTemplate.Version.String()
 
 	return req.WorkflowTemplate, nil
 }
