@@ -9,8 +9,6 @@ import (
 	"github.com/onepanelio/core/model"
 	"github.com/onepanelio/core/util"
 	"github.com/onepanelio/core/util/ptr"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var userError *util.UserError
@@ -55,10 +53,7 @@ func (s *WorkflowServer) CreateWorkflowTemplate(ctx context.Context, req *api.Cr
 	}
 	workflowTemplate, err := s.resourceManager.CreateWorkflowTemplate(req.Namespace, workflowTemplate)
 	if errors.As(err, &userError) {
-		if userError.Code == 409 {
-			return nil, status.Errorf(codes.Aborted, err.Error())
-		}
-		return nil, status.Errorf(codes.Unknown, err.Error())
+		return nil, userError.GRPCError()
 	}
 	req.WorkflowTemplate.Uid = workflowTemplate.UID
 	req.WorkflowTemplate.Version = workflowTemplate.Version.String()
@@ -69,10 +64,7 @@ func (s *WorkflowServer) CreateWorkflowTemplate(ctx context.Context, req *api.Cr
 func (s *WorkflowServer) GetWorkflowTemplate(ctx context.Context, req *api.GetWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
 	workflowTemplate, err := s.resourceManager.GetWorkflowTemplate(req.Namespace, req.Uid)
 	if errors.As(err, &userError) {
-		if userError.Code == 404 {
-			return nil, status.Errorf(codes.NotFound, err.Error())
-		}
-		return nil, status.Errorf(codes.Unknown, err.Error())
+		return nil, userError.GRPCError()
 	}
 
 	return &api.WorkflowTemplate{

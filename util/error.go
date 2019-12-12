@@ -5,33 +5,35 @@ import (
 	"fmt"
 
 	"github.com/lib/pq"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type UserError struct {
-	Code    int
-	Message string
+	code    codes.Code
+	message string
 }
 
-func NewUserError(code int, message string) *UserError {
+func NewUserError(code codes.Code, message string) *UserError {
 	return &UserError{
-		Code:    code,
-		Message: message,
+		code:    code,
+		message: message,
 	}
 }
 
-func pqError(err *pq.Error) (code int) {
+func pqError(err *pq.Error) (code codes.Code) {
 	switch err.Code {
 	case "23505":
-		code = 409
+		code = codes.AlreadyExists
 	default:
-		code = 500
+		code = codes.Unknown
 	}
 	return
 }
 
-func UserErrorWrap(err error, entity string) *UserError {
+func NewUserErrorWrap(err error, entity string) *UserError {
 	var (
-		code    int
+		code    codes.Code
 		message string
 		pqErr   *pq.Error
 	)
@@ -39,16 +41,20 @@ func UserErrorWrap(err error, entity string) *UserError {
 		code = pqError(pqErr)
 		message = fmt.Sprintf("%v already exists.", entity)
 	} else {
-		code = 500
+		code = codes.Unknown
 		message = "Unknown error."
 	}
 
 	return &UserError{
-		Code:    code,
-		Message: message,
+		code:    code,
+		message: message,
 	}
 }
 
 func (e *UserError) Error() string {
-	return e.Message
+	return e.message
+}
+
+func (e *UserError) GRPCError() error {
+	return status.Errorf(e.code, e.Error())
 }

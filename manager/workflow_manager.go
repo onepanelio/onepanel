@@ -4,6 +4,7 @@ import (
 	"github.com/onepanelio/core/argo"
 	"github.com/onepanelio/core/model"
 	"github.com/onepanelio/core/util"
+	"google.golang.org/grpc/codes"
 )
 
 func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workflow) (createdWorkflow *model.Workflow, err error) {
@@ -31,7 +32,7 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTemplate *model.WorkflowTemplate) (createdWorkflowTemplate *model.WorkflowTemplate, err error) {
 	createdWorkflowTemplate, err = r.workflowRepository.CreateWorkflowTemplate(workflowTemplate)
 	if err != nil {
-		return nil, util.UserErrorWrap(err, "Workflow template")
+		return nil, util.NewUserErrorWrap(err, "Workflow template")
 	}
 
 	return
@@ -40,7 +41,7 @@ func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTempl
 func (r *ResourceManager) GetWorkflowTemplate(namespace, uid string) (workflowTemplate *model.WorkflowTemplate, err error) {
 	workflowTemplate, err = r.workflowRepository.GetWorkflowTemplate(uid)
 	if err != nil {
-		return nil, util.NewUserError(404, "Workflow template not found.")
+		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}
 
 	return
