@@ -31,13 +31,28 @@ func (r *WorkflowRepository) CreateWorkflowTemplate(workflowTemplate *model.Work
 			"uid":  uid,
 			"name": workflowTemplate.Name,
 		}).
-		Suffix("RETURNING id, uid").
+		Suffix("RETURNING id").
 		RunWith(tx).
-		QueryRow().Scan(&workflowTemplate.ID, &workflowTemplate.UID)
+		QueryRow().Scan(&workflowTemplate.ID)
 	if err != nil {
 		return nil, err
 	}
-	tx.Commit()
+
+	err = r.sb.Insert("workflow_template_versions").
+		SetMap(sq.Eq{
+			"workflow_template_id": workflowTemplate.ID,
+			"manifest":             workflowTemplate.Manifest,
+		}).
+		Suffix("RETURNING version").
+		RunWith(tx).
+		QueryRow().Scan(&workflowTemplate.Version)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
 
 	return workflowTemplate, nil
 }

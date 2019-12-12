@@ -44,7 +44,8 @@ func (s *WorkflowServer) CreateWorkflow(ctx context.Context, req *api.CreateWork
 
 func (s *WorkflowServer) CreateWorkflowTemplate(ctx context.Context, req *api.CreateWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
 	workflowTemplate := &model.WorkflowTemplate{
-		Name: req.WorkflowTemplate.Name,
+		Name:     req.WorkflowTemplate.Name,
+		Manifest: req.WorkflowTemplate.Manifest,
 	}
 	workflowTemplate, err := s.resourceManager.CreateWorkflowTemplate(req.Namespace, workflowTemplate)
 	if err != nil {

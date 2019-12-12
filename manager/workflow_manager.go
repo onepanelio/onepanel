@@ -16,7 +16,7 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 		})
 	}
 
-	createdWorkflows, err := r.argClient.Create(workflow.WorkflowTemplate.GetManifest(), opts)
+	createdWorkflows, err := r.argClient.Create(workflow.WorkflowTemplate.GetManifestBytes(), opts)
 	if err != nil {
 		return
 	}

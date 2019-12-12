@@ -4,7 +4,7 @@ CREATE TABLE workflow_template_versions
     id                      serial PRIMARY KEY,
     workflow_template_id    integer NOT NULL REFERENCES workflow_templates ON DELETE CASCADE,
     version                 timestamp NOT NULL DEFAULT (NOW() at time zone 'utc'),
-    manifest                jsonb NOT NULL,
+    manifest                text NOT NULL,
 
     -- auditing info
     created_at              timestamp NOT NULL DEFAULT (NOW() at time zone 'utc'),
