@@ -3,38 +3,22 @@ package repository
 import (
 	"database/sql"
 
-	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
 type DB struct {
-	*sqlx.DB
+	*sql.DB
 }
 
 func NewDB(driverName, dataSourceName string) *DB {
-	db := sqlx.MustConnect(driverName, dataSourceName)
-
-	return &DB{DB: db}
-}
-
-func (db *DB) BaseConnection() *sql.DB {
-	return db.DB.DB
-}
-
-func (db *DB) QueryStructScan(query string, args []interface{}, dest interface{}) (err error) {
-	rows, err := db.Queryx(query, args)
+	db, err := sql.Open(driverName, dataSourceName)
 	if err != nil {
-		return
+		panic(err)
 	}
-	defer rows.Close()
-
-	for rows.Next() {
-		err = rows.StructScan(dest)
-		if err != nil {
-			return
-		}
+	err = db.Ping()
+	if err != nil {
+		db.Close()
+		panic(err)
 	}
-	err = rows.Err()
-
-	return
+	return &DB{DB: db}
 }

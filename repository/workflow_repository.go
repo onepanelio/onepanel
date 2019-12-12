@@ -20,17 +20,24 @@ func (r *WorkflowRepository) CreateWorkflowTemplate(workflowTemplate *model.Work
 		return nil, err
 	}
 
+	tx, err := r.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
 	err = r.sb.Insert("workflow_templates").
 		SetMap(sq.Eq{
 			"uid":  uid,
 			"name": workflowTemplate.Name,
 		}).
 		Suffix("RETURNING id, uid").
-		RunWith(r.db.BaseConnection()).
+		RunWith(tx).
 		QueryRow().Scan(&workflowTemplate.ID, &workflowTemplate.UID)
 	if err != nil {
 		return nil, err
 	}
+	tx.Commit()
 
 	return workflowTemplate, nil
 }
