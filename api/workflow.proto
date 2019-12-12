@@ -20,6 +20,12 @@ service WorkflowService {
             body: "workflowTemplate"
         };
     }
+
+    rpc GetWorkflowTemplate (GetWorkflowTemplateRequest) returns (WorkflowTemplate) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflow_templates/{uid}"
+        };
+    }
 }
 
 message CreateWorkflowRequest {

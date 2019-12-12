@@ -7,6 +7,11 @@ message CreateWorkflowTemplateRequest {
     WorkflowTemplate workflowTemplate = 2;
 }
 
+message GetWorkflowTemplateRequest {
+    string namespace = 1;
+    string uid = 2;
+}
+
 message WorkflowTemplate {
     string uid = 1;
     string name = 2;

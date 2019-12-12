@@ -65,3 +65,19 @@ func (s *WorkflowServer) CreateWorkflowTemplate(ctx context.Context, req *api.Cr
 
 	return req.WorkflowTemplate, nil
 }
+
+func (s *WorkflowServer) GetWorkflowTemplate(ctx context.Context, req *api.GetWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
+	workflowTemplate, err := s.resourceManager.GetWorkflowTemplate(req.Namespace, req.Uid)
+	if errors.As(err, &userError) {
+		if userError.Code == 404 {
+			return nil, status.Errorf(codes.NotFound, err.Error())
+		}
+		return nil, status.Errorf(codes.Unknown, err.Error())
+	}
+
+	return &api.WorkflowTemplate{
+		Uid:      workflowTemplate.UID,
+		Version:  workflowTemplate.Version.String(),
+		Manifest: workflowTemplate.Manifest,
+	}, nil
+}
