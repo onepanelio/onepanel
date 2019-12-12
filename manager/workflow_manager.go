@@ -6,10 +6,6 @@ import (
 )
 
 func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workflow) (createdWorkflow *model.Workflow, err error) {
-	if err != nil {
-		return
-	}
-
 	opts := &argo.Options{
 		Namespace: namespace,
 	}
@@ -29,4 +25,8 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 	createdWorkflow.UID = string(createdWorkflows[0].ObjectMeta.UID)
 
 	return
+}
+
+func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTemplate *model.WorkflowTemplate) (createdWorkflowTemplate *model.WorkflowTemplate, err error) {
+	return r.workflowRepository.CreateWorkflowTemplate(workflowTemplate)
 }

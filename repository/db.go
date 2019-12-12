@@ -21,8 +21,8 @@ func (db *DB) BaseConnection() *sql.DB {
 	return db.DB.DB
 }
 
-func (db *DB) NamedQueryWithStructScan(query string, dest interface{}) (err error) {
-	rows, err := db.NamedQuery(query, dest)
+func (db *DB) QueryStructScan(query string, args []interface{}, dest interface{}) (err error) {
+	rows, err := db.Queryx(query, args)
 	if err != nil {
 		return
 	}

@@ -2,9 +2,14 @@ syntax = "proto3";
 
 package api;
 
+message CreateWorkflowTemplateRequest {
+    string namespace = 1;
+    WorkflowTemplate workflowTemplate = 2;
+}
+
 message WorkflowTemplate {
     string uid = 1;
     string name = 2;
-
+    string version = 3;
     string manifest = 4;
 }

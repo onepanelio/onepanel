@@ -17,7 +17,7 @@ func NewWorkflowServer(resourceManager *manager.ResourceManager) *WorkflowServer
 	return &WorkflowServer{resourceManager: resourceManager}
 }
 
-func (w *WorkflowServer) Create(ctx context.Context, req *api.CreateWorkflowRequest) (*api.Workflow, error) {
+func (s *WorkflowServer) CreateWorkflow(ctx context.Context, req *api.CreateWorkflowRequest) (*api.Workflow, error) {
 	workflow := &model.Workflow{
 		WorkflowTemplate: model.WorkflowTemplate{
 			Manifest: req.Workflow.WorkflowTemplate.Manifest,
@@ -30,7 +30,7 @@ func (w *WorkflowServer) Create(ctx context.Context, req *api.CreateWorkflowRequ
 		})
 	}
 
-	createdWorkflow, err := w.resourceManager.CreateWorkflow(req.Namespace, workflow)
+	createdWorkflow, err := s.resourceManager.CreateWorkflow(req.Namespace, workflow)
 	if err != nil {
 		return nil, err
 	}
@@ -40,4 +40,17 @@ func (w *WorkflowServer) Create(ctx context.Context, req *api.CreateWorkflowRequ
 	}
 
 	return req.Workflow, nil
+}
+
+func (s *WorkflowServer) CreateWorkflowTemplate(ctx context.Context, req *api.CreateWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
+	workflowTemplate := &model.WorkflowTemplate{
+		Name: req.WorkflowTemplate.Name,
+	}
+	workflowTemplate, err := s.resourceManager.CreateWorkflowTemplate(req.Namespace, workflowTemplate)
+	if err != nil {
+		return nil, err
+	}
+	req.WorkflowTemplate.Uid = workflowTemplate.UID
+
+	return req.WorkflowTemplate, nil
 }

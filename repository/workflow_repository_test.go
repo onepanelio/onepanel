@@ -8,24 +8,23 @@ import (
 	"github.com/onepanelio/core/model"
 )
 
-func TestWorkflowRepositoryCreate(t *testing.T) {
+func TestWorkflowRepositoryCreateWorkflowTemplate(t *testing.T) {
 	uid, err := uuid.NewRandom()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	workflow := &model.Workflow{
+	workflowTemplate := &model.WorkflowTemplate{
 		UID: uid.String(),
 	}
 
-	sql, args, err := sq.Insert("workflows").
+	sql, args, err := sq.Insert("workflow_templates").
 		SetMap(sq.Eq{
-			"UID": workflow.UID,
+			"UID": workflowTemplate.UID,
 		}).ToSql()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	t.Log(args)
-	t.Log(sql)
+	t.Log(sql, args)
 }

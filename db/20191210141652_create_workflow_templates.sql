@@ -4,7 +4,6 @@ CREATE TABLE workflow_templates
     id          serial PRIMARY KEY,
     uid         varchar(36) UNIQUE NOT NULL CHECK(uid <> ''),
     name        text UNIQUE NOT NULL CHECK(name <> ''),
-    manifest    text,
 
     -- auditing info
     created_at  timestamp NOT NULL DEFAULT (NOW() at time zone 'utc'),

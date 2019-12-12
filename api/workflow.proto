@@ -7,10 +7,17 @@ import "workflow_template.proto";
 
 service WorkflowService {
     // Creates a Workflow
-    rpc Create (CreateWorkflowRequest) returns (Workflow) {
+    rpc CreateWorkflow (CreateWorkflowRequest) returns (Workflow) {
         option (google.api.http) = {
             post: "/apis/v1beta1/{namespace}/workflows"
             body: "workflow"
+        };
+    }
+
+    rpc CreateWorkflowTemplate (CreateWorkflowTemplateRequest) returns (WorkflowTemplate) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/{namespace}/workflow_templates"
+            body: "workflowTemplate"
         };
     }
 }
