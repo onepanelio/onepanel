@@ -8,6 +8,11 @@ import (
 )
 
 func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workflow) (createdWorkflow *model.Workflow, err error) {
+	workflowTemplate, err := r.workflowRepository.GetWorkflowTemplate(workflow.WorkflowTemplate.UID)
+	if err != nil {
+		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
+	}
+
 	opts := &argo.Options{
 		Namespace: namespace,
 	}
@@ -18,7 +23,7 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 		})
 	}
 
-	createdWorkflows, err := r.argClient.Create(workflow.WorkflowTemplate.GetManifestBytes(), opts)
+	createdWorkflows, err := r.argClient.Create(workflowTemplate.GetManifestBytes(), opts)
 	if err != nil {
 		return
 	}

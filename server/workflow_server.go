@@ -24,7 +24,7 @@ func NewWorkflowServer(resourceManager *manager.ResourceManager) *WorkflowServer
 func (s *WorkflowServer) CreateWorkflow(ctx context.Context, req *api.CreateWorkflowRequest) (*api.Workflow, error) {
 	workflow := &model.Workflow{
 		WorkflowTemplate: model.WorkflowTemplate{
-			Manifest: req.Workflow.WorkflowTemplate.Manifest,
+			UID: req.Workflow.WorkflowTemplate.Uid,
 		},
 	}
 	for _, param := range req.Workflow.Parameters {
