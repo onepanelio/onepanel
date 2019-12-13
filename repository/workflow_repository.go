@@ -78,7 +78,7 @@ func (r *WorkflowRepository) GetWorkflowTemplate(uid string) (workflowTemplate *
 func (r *WorkflowRepository) ListWorkflowTemplateVersions(uid string) (workflowTemplateVersions []*model.WorkflowTemplate, err error) {
 	workflowTemplateVersions = []*model.WorkflowTemplate{}
 
-	query, args, err := r.sb.Select("wt.uid", "wtv.version", "wtv.manifest").
+	query, args, err := r.sb.Select("wt.uid", "wt.name", "wtv.version", "wtv.manifest").
 		From("workflow_template_versions wtv").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{"wt.uid": uid}).
