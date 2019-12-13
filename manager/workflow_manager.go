@@ -46,3 +46,12 @@ func (r *ResourceManager) GetWorkflowTemplate(namespace, uid string) (workflowTe
 
 	return
 }
+
+func (r *ResourceManager) ListWorkflowTemplateVersions(namespace, uid string) (workflowTemplateVersions []*model.WorkflowTemplate, err error) {
+	workflowTemplateVersions, err = r.workflowRepository.ListWorkflowTemplateVersions(uid)
+	if err != nil {
+		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
+	}
+
+	return
+}

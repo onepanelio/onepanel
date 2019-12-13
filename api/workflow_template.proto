@@ -12,6 +12,16 @@ message GetWorkflowTemplateRequest {
     string uid = 2;
 }
 
+message ListWorkflowTemplateVersionsRequest {
+    string namespace = 1;
+    string uid = 2;
+}
+
+message ListWorkflowTemplateVersionsResponse {
+    repeated WorkflowTemplate workflowTemplates = 1;
+    int32 count = 2;
+  }
+
 message WorkflowTemplate {
     string uid = 1;
     string name = 2;

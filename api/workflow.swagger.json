@@ -73,6 +73,36 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/workflow_templates/{uid}/versions": {
+      "get": {
+        "operationId": "ListWorkflowTemplateVersions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiListWorkflowTemplateVersionsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workflows": {
       "post": {
         "summary": "Creates a Workflow",
@@ -108,6 +138,21 @@
     }
   },
   "definitions": {
+    "apiListWorkflowTemplateVersionsResponse": {
+      "type": "object",
+      "properties": {
+        "workflowTemplates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apiWorkflowTemplate"
+          }
+        },
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "apiParameter": {
       "type": "object",
       "properties": {

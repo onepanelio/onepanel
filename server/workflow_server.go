@@ -73,3 +73,25 @@ func (s *WorkflowServer) GetWorkflowTemplate(ctx context.Context, req *api.GetWo
 		Manifest: workflowTemplate.Manifest,
 	}, nil
 }
+
+func (s *WorkflowServer) ListWorkflowTemplateVersions(ctx context.Context, req *api.ListWorkflowTemplateVersionsRequest) (*api.ListWorkflowTemplateVersionsResponse, error) {
+	workflowTemplateVersions, err := s.resourceManager.ListWorkflowTemplateVersions(req.Namespace, req.Uid)
+	if errors.As(err, &userError) {
+		return nil, userError.GRPCError()
+	}
+
+	workflowTemplates := []*api.WorkflowTemplate{}
+	for _, wtv := range workflowTemplateVersions {
+		workflowTemplates = append(workflowTemplates, &api.WorkflowTemplate{
+			Uid:      wtv.UID,
+			Name:     wtv.Name,
+			Version:  wtv.Version.String(),
+			Manifest: wtv.Manifest,
+		})
+	}
+
+	return &api.ListWorkflowTemplateVersionsResponse{
+		Count:             int32(len(workflowTemplateVersions)),
+		WorkflowTemplates: workflowTemplates,
+	}, nil
+}
