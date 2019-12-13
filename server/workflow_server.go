@@ -24,7 +24,8 @@ func NewWorkflowServer(resourceManager *manager.ResourceManager) *WorkflowServer
 func (s *WorkflowServer) CreateWorkflow(ctx context.Context, req *api.CreateWorkflowRequest) (*api.Workflow, error) {
 	workflow := &model.Workflow{
 		WorkflowTemplate: model.WorkflowTemplate{
-			UID: req.Workflow.WorkflowTemplate.Uid,
+			UID:     req.Workflow.WorkflowTemplate.Uid,
+			Version: req.Workflow.WorkflowTemplate.Version,
 		},
 	}
 	for _, param := range req.Workflow.Parameters {
@@ -56,20 +57,20 @@ func (s *WorkflowServer) CreateWorkflowTemplate(ctx context.Context, req *api.Cr
 		return nil, userError.GRPCError()
 	}
 	req.WorkflowTemplate.Uid = workflowTemplate.UID
-	req.WorkflowTemplate.Version = workflowTemplate.Version.String()
+	req.WorkflowTemplate.Version = workflowTemplate.Version
 
 	return req.WorkflowTemplate, nil
 }
 
 func (s *WorkflowServer) GetWorkflowTemplate(ctx context.Context, req *api.GetWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
-	workflowTemplate, err := s.resourceManager.GetWorkflowTemplate(req.Namespace, req.Uid)
+	workflowTemplate, err := s.resourceManager.GetWorkflowTemplate(req.Namespace, req.Uid, req.Version)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
 	}
 
 	return &api.WorkflowTemplate{
 		Uid:      workflowTemplate.UID,
-		Version:  workflowTemplate.Version.String(),
+		Version:  workflowTemplate.Version,
 		Manifest: workflowTemplate.Manifest,
 	}, nil
 }
@@ -85,7 +86,7 @@ func (s *WorkflowServer) ListWorkflowTemplateVersions(ctx context.Context, req *
 		workflowTemplates = append(workflowTemplates, &api.WorkflowTemplate{
 			Uid:      wtv.UID,
 			Name:     wtv.Name,
-			Version:  wtv.Version.String(),
+			Version:  wtv.Version,
 			Manifest: wtv.Manifest,
 		})
 	}

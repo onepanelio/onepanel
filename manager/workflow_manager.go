@@ -8,7 +8,7 @@ import (
 )
 
 func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workflow) (createdWorkflow *model.Workflow, err error) {
-	workflowTemplate, err := r.workflowRepository.GetWorkflowTemplate(workflow.WorkflowTemplate.UID)
+	workflowTemplate, err := r.workflowRepository.GetWorkflowTemplate(workflow.WorkflowTemplate.UID, workflow.WorkflowTemplate.Version)
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}
@@ -43,8 +43,8 @@ func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTempl
 	return
 }
 
-func (r *ResourceManager) GetWorkflowTemplate(namespace, uid string) (workflowTemplate *model.WorkflowTemplate, err error) {
-	workflowTemplate, err = r.workflowRepository.GetWorkflowTemplate(uid)
+func (r *ResourceManager) GetWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *model.WorkflowTemplate, err error) {
+	workflowTemplate, err = r.workflowRepository.GetWorkflowTemplate(uid, version)
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}

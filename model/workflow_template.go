@@ -1,8 +1,6 @@
 package model
 
 import (
-	"time"
-
 	"github.com/google/uuid"
 )
 
@@ -11,7 +9,7 @@ type WorkflowTemplate struct {
 	UID      string
 	Name     string
 	Manifest string
-	Version  *time.Time
+	Version  int32
 }
 
 func (wt *WorkflowTemplate) GetManifestBytes() []byte {

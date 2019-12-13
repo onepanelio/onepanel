@@ -66,6 +66,13 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
           }
         ],
         "tags": [
@@ -194,7 +201,8 @@
           "type": "string"
         },
         "version": {
-          "type": "string"
+          "type": "integer",
+          "format": "int32"
         },
         "manifest": {
           "type": "string"

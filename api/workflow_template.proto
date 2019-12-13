@@ -10,6 +10,7 @@ message CreateWorkflowTemplateRequest {
 message GetWorkflowTemplateRequest {
     string namespace = 1;
     string uid = 2;
+    int32 version = 3;
 }
 
 message ListWorkflowTemplateVersionsRequest {
@@ -25,6 +26,6 @@ message ListWorkflowTemplateVersionsResponse {
 message WorkflowTemplate {
     string uid = 1;
     string name = 2;
-    string version = 3;
+    int32 version = 3;
     string manifest = 4;
 }

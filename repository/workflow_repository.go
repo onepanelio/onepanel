@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/onepanelio/core/model"
 )
@@ -42,6 +44,7 @@ func (r *WorkflowRepository) CreateWorkflowTemplate(workflowTemplate *model.Work
 		SetMap(sq.Eq{
 			"workflow_template_id": workflowTemplate.ID,
 			"manifest":             workflowTemplate.Manifest,
+			"version":              int32(time.Now().Unix()),
 		}).
 		Suffix("RETURNING version").
 		RunWith(tx).
@@ -57,20 +60,24 @@ func (r *WorkflowRepository) CreateWorkflowTemplate(workflowTemplate *model.Work
 	return workflowTemplate, nil
 }
 
-func (r *WorkflowRepository) GetWorkflowTemplate(uid string) (workflowTemplate *model.WorkflowTemplate, err error) {
+func (r *WorkflowRepository) GetWorkflowTemplate(uid string, version int32) (workflowTemplate *model.WorkflowTemplate, err error) {
 	workflowTemplate = &model.WorkflowTemplate{}
 
-	query, args, err := r.sb.Select("wt.uid", "wtv.version", "wtv.manifest").
+	query := r.sb.Select("wt.uid", "wtv.version", "wtv.manifest").
 		From("workflow_template_versions wtv").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{"wt.uid": uid}).
 		OrderBy("wtv.version desc").
-		Limit(1).ToSql()
+		Limit(1)
+	if version != 0 {
+		query = query.Where(sq.Eq{"wtv.version": version})
+	}
+	sql, args, err := query.ToSql()
 	if err != nil {
 		return
 	}
 
-	err = r.db.Get(workflowTemplate, query, args...)
+	err = r.db.Get(workflowTemplate, sql, args...)
 
 	return
 }
