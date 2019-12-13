@@ -64,7 +64,8 @@ func (r *WorkflowRepository) GetWorkflowTemplate(uid string) (workflowTemplate *
 		From("workflow_template_versions wtv").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{"wt.uid": uid}).
-		OrderBy("wtv.version desc").ToSql()
+		OrderBy("wtv.version desc").
+		Limit(1).ToSql()
 	if err != nil {
 		return
 	}
