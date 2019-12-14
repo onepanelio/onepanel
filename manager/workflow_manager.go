@@ -8,9 +8,9 @@ import (
 )
 
 func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workflow) (createdWorkflow *model.Workflow, err error) {
-	workflowTemplate, err := r.workflowRepository.GetWorkflowTemplate(namespace, workflow.WorkflowTemplate.UID, workflow.WorkflowTemplate.Version)
+	workflowTemplate, err := r.GetWorkflowTemplate(namespace, workflow.WorkflowTemplate.UID, workflow.WorkflowTemplate.Version)
 	if err != nil {
-		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
+		return nil, err
 	}
 
 	opts := &argo.Options{
