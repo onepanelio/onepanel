@@ -16,7 +16,7 @@ func NewWorkflowRepository(db *DB) *WorkflowRepository {
 	return &WorkflowRepository{db: db, sb: sq.StatementBuilder.PlaceholderFormat(sq.Dollar)}
 }
 
-func (r *WorkflowRepository) CreateWorkflowTemplate(workflowTemplate *model.WorkflowTemplate) (*model.WorkflowTemplate, error) {
+func (r *WorkflowRepository) CreateWorkflowTemplate(namespace string, workflowTemplate *model.WorkflowTemplate) (*model.WorkflowTemplate, error) {
 	uid, err := workflowTemplate.GenerateUID()
 	if err != nil {
 		return nil, err
@@ -30,8 +30,9 @@ func (r *WorkflowRepository) CreateWorkflowTemplate(workflowTemplate *model.Work
 
 	err = r.sb.Insert("workflow_templates").
 		SetMap(sq.Eq{
-			"uid":  uid,
-			"name": workflowTemplate.Name,
+			"uid":       uid,
+			"name":      workflowTemplate.Name,
+			"namespace": namespace,
 		}).
 		Suffix("RETURNING id").
 		RunWith(tx).
@@ -40,15 +41,13 @@ func (r *WorkflowRepository) CreateWorkflowTemplate(workflowTemplate *model.Work
 		return nil, err
 	}
 
-	err = r.sb.Insert("workflow_template_versions").
+	_, err = r.sb.Insert("workflow_template_versions").
 		SetMap(sq.Eq{
 			"workflow_template_id": workflowTemplate.ID,
 			"manifest":             workflowTemplate.Manifest,
 			"version":              int32(time.Now().Unix()),
 		}).
-		Suffix("RETURNING version").
-		RunWith(tx).
-		QueryRow().Scan(&workflowTemplate.Version)
+		RunWith(tx).Exec()
 	if err != nil {
 		return nil, err
 	}
@@ -60,13 +59,16 @@ func (r *WorkflowRepository) CreateWorkflowTemplate(workflowTemplate *model.Work
 	return workflowTemplate, nil
 }
 
-func (r *WorkflowRepository) GetWorkflowTemplate(uid string, version int32) (workflowTemplate *model.WorkflowTemplate, err error) {
+func (r *WorkflowRepository) GetWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *model.WorkflowTemplate, err error) {
 	workflowTemplate = &model.WorkflowTemplate{}
 
 	query := r.sb.Select("wt.uid", "wtv.version", "wtv.manifest").
 		From("workflow_template_versions wtv").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
-		Where(sq.Eq{"wt.uid": uid}).
+		Where(sq.Eq{
+			"wt.uid":       uid,
+			"wt.namespace": namespace,
+		}).
 		OrderBy("wtv.version desc").
 		Limit(1)
 	if version != 0 {
@@ -82,13 +84,16 @@ func (r *WorkflowRepository) GetWorkflowTemplate(uid string, version int32) (wor
 	return
 }
 
-func (r *WorkflowRepository) ListWorkflowTemplateVersions(uid string) (workflowTemplateVersions []*model.WorkflowTemplate, err error) {
+func (r *WorkflowRepository) ListWorkflowTemplateVersions(namespace, uid string) (workflowTemplateVersions []*model.WorkflowTemplate, err error) {
 	workflowTemplateVersions = []*model.WorkflowTemplate{}
 
 	query, args, err := r.sb.Select("wt.uid", "wt.name", "wtv.version", "wtv.manifest").
 		From("workflow_template_versions wtv").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
-		Where(sq.Eq{"wt.uid": uid}).
+		Where(sq.Eq{
+			"wt.uid":       uid,
+			"wt.namespace": namespace,
+		}).
 		OrderBy("wtv.version desc").ToSql()
 	if err != nil {
 		return

@@ -8,7 +8,7 @@ import (
 )
 
 func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workflow) (createdWorkflow *model.Workflow, err error) {
-	workflowTemplate, err := r.workflowRepository.GetWorkflowTemplate(workflow.WorkflowTemplate.UID, workflow.WorkflowTemplate.Version)
+	workflowTemplate, err := r.workflowRepository.GetWorkflowTemplate(namespace, workflow.WorkflowTemplate.UID, workflow.WorkflowTemplate.Version)
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}
@@ -35,7 +35,7 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 }
 
 func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTemplate *model.WorkflowTemplate) (createdWorkflowTemplate *model.WorkflowTemplate, err error) {
-	createdWorkflowTemplate, err = r.workflowRepository.CreateWorkflowTemplate(workflowTemplate)
+	createdWorkflowTemplate, err = r.workflowRepository.CreateWorkflowTemplate(namespace, workflowTemplate)
 	if err != nil {
 		return nil, util.NewUserErrorWrap(err, "Workflow template")
 	}
@@ -44,7 +44,7 @@ func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTempl
 }
 
 func (r *ResourceManager) GetWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *model.WorkflowTemplate, err error) {
-	workflowTemplate, err = r.workflowRepository.GetWorkflowTemplate(uid, version)
+	workflowTemplate, err = r.workflowRepository.GetWorkflowTemplate(namespace, uid, version)
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}
@@ -53,7 +53,7 @@ func (r *ResourceManager) GetWorkflowTemplate(namespace, uid string, version int
 }
 
 func (r *ResourceManager) ListWorkflowTemplateVersions(namespace, uid string) (workflowTemplateVersions []*model.WorkflowTemplate, err error) {
-	workflowTemplateVersions, err = r.workflowRepository.ListWorkflowTemplateVersions(uid)
+	workflowTemplateVersions, err = r.workflowRepository.ListWorkflowTemplateVersions(namespace, uid)
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}
