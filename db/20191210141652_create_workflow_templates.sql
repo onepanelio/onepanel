@@ -10,7 +10,7 @@ CREATE TABLE workflow_templates
     created_at  timestamp NOT NULL DEFAULT (NOW() at time zone 'utc'),
     modified_at timestamp,
 
-    UNIQUE (uid, namespace)
+    UNIQUE (name, namespace)
 );
 
 -- +goose Down
