@@ -46,6 +46,9 @@ func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTempl
 func (r *ResourceManager) GetWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *model.WorkflowTemplate, err error) {
 	workflowTemplate, err = r.workflowRepository.GetWorkflowTemplate(namespace, uid, version)
 	if err != nil {
+		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
+	}
+	if err == nil && workflowTemplate == nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}
 
@@ -55,7 +58,7 @@ func (r *ResourceManager) GetWorkflowTemplate(namespace, uid string, version int
 func (r *ResourceManager) ListWorkflowTemplateVersions(namespace, uid string) (workflowTemplateVersions []*model.WorkflowTemplate, err error) {
 	workflowTemplateVersions, err = r.workflowRepository.ListWorkflowTemplateVersions(namespace, uid)
 	if err != nil {
-		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
+		return nil, util.NewUserError(codes.NotFound, "Workflow template versions not found.")
 	}
 
 	return

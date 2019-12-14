@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"database/sql"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -60,7 +61,7 @@ func (r *WorkflowRepository) CreateWorkflowTemplate(namespace string, workflowTe
 }
 
 func (r *WorkflowRepository) workflowTemplatesSelectBuilder(namespace, uid string) sq.SelectBuilder {
-	query := r.sb.Select("wt.uid", "wt.name", "wtv.version", "wtv.manifest").
+	sb := r.sb.Select("wt.uid", "wt.name", "wtv.version", "wtv.manifest").
 		From("workflow_template_versions wtv").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{
@@ -69,22 +70,26 @@ func (r *WorkflowRepository) workflowTemplatesSelectBuilder(namespace, uid strin
 		}).
 		OrderBy("wtv.version desc")
 
-	return query
+	return sb
 }
 
 func (r *WorkflowRepository) GetWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *model.WorkflowTemplate, err error) {
 	workflowTemplate = &model.WorkflowTemplate{}
 
-	query := r.workflowTemplatesSelectBuilder(namespace, uid).Limit(1)
+	sb := r.workflowTemplatesSelectBuilder(namespace, uid).Limit(1)
 	if version != 0 {
-		query = query.Where(sq.Eq{"wtv.version": version})
+		sb = sb.Where(sq.Eq{"wtv.version": version})
 	}
-	sql, args, err := query.ToSql()
+	query, args, err := sb.ToSql()
 	if err != nil {
 		return
 	}
 
-	err = r.db.Get(workflowTemplate, sql, args...)
+	err = r.db.Get(workflowTemplate, query, args...)
+	if err == sql.ErrNoRows {
+		err = nil
+		workflowTemplate = nil
+	}
 
 	return
 }
