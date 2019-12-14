@@ -24,6 +24,9 @@ service WorkflowService {
     rpc GetWorkflowTemplate (GetWorkflowTemplateRequest) returns (WorkflowTemplate) {
         option (google.api.http) = {
             get: "/apis/v1beta1/{namespace}/workflow_templates/{uid}"
+            additional_bindings {
+				get: "/apis/v1beta1/{namespace}/workflow_templates/{uid}/versions/{version}"
+			}
         };
     }
 

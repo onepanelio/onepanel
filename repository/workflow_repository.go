@@ -59,18 +59,23 @@ func (r *WorkflowRepository) CreateWorkflowTemplate(namespace string, workflowTe
 	return workflowTemplate, nil
 }
 
-func (r *WorkflowRepository) GetWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *model.WorkflowTemplate, err error) {
-	workflowTemplate = &model.WorkflowTemplate{}
-
-	query := r.sb.Select("wt.uid", "wtv.version", "wtv.manifest").
+func (r *WorkflowRepository) workflowTemplatesSelectBuilder(namespace, uid string) sq.SelectBuilder {
+	query := r.sb.Select("wt.uid", "wt.name", "wtv.version", "wtv.manifest").
 		From("workflow_template_versions wtv").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{
 			"wt.uid":       uid,
 			"wt.namespace": namespace,
 		}).
-		OrderBy("wtv.version desc").
-		Limit(1)
+		OrderBy("wtv.version desc")
+
+	return query
+}
+
+func (r *WorkflowRepository) GetWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *model.WorkflowTemplate, err error) {
+	workflowTemplate = &model.WorkflowTemplate{}
+
+	query := r.workflowTemplatesSelectBuilder(namespace, uid).Limit(1)
 	if version != 0 {
 		query = query.Where(sq.Eq{"wtv.version": version})
 	}
@@ -87,14 +92,7 @@ func (r *WorkflowRepository) GetWorkflowTemplate(namespace, uid string, version 
 func (r *WorkflowRepository) ListWorkflowTemplateVersions(namespace, uid string) (workflowTemplateVersions []*model.WorkflowTemplate, err error) {
 	workflowTemplateVersions = []*model.WorkflowTemplate{}
 
-	query, args, err := r.sb.Select("wt.uid", "wt.name", "wtv.version", "wtv.manifest").
-		From("workflow_template_versions wtv").
-		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
-		Where(sq.Eq{
-			"wt.uid":       uid,
-			"wt.namespace": namespace,
-		}).
-		OrderBy("wtv.version desc").ToSql()
+	query, args, err := r.workflowTemplatesSelectBuilder(namespace, uid).ToSql()
 	if err != nil {
 		return
 	}
