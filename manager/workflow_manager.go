@@ -1,9 +1,12 @@
 package manager
 
 import (
+	"fmt"
+
 	"github.com/onepanelio/core/argo"
 	"github.com/onepanelio/core/model"
 	"github.com/onepanelio/core/util"
+	"github.com/spf13/viper"
 	"google.golang.org/grpc/codes"
 )
 
@@ -22,6 +25,12 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 			Value: param.Value,
 		})
 	}
+
+	if opts.Labels == nil {
+		opts.Labels = &map[string]string{}
+	}
+	(*opts.Labels)[viper.GetString("k8s.labelKeyPrefix")+"workflow-template-uid"] = workflowTemplate.UID
+	(*opts.Labels)[viper.GetString("k8s.labelKeyPrefix")+"workflow-template-version"] = fmt.Sprint(workflowTemplate.Version)
 
 	createdWorkflows, err := r.argClient.Create(workflowTemplate.GetManifestBytes(), opts)
 	if err != nil {

@@ -18,7 +18,7 @@ type Options struct {
 	Entrypoint     string
 	Parameters     []Parameter
 	ServiceAccount string
-	Labels         string
+	Labels         *map[string]string
 }
 
 func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []Workflow, err error) {
@@ -71,6 +71,9 @@ func (c *Client) create(wf *Workflow, opts *Options) (createdWorkflow *Workflow,
 			newParams = append(newParams, param)
 		}
 		wf.Spec.Arguments.Parameters = newParams
+	}
+	if opts.Labels != nil {
+		wf.ObjectMeta.Labels = *opts.Labels
 	}
 
 	createdWorkflow, err = c.Clientset.ArgoprojV1alpha1().Workflows(opts.Namespace).Create(wf)
