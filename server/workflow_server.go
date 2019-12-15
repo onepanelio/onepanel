@@ -21,9 +21,28 @@ func NewWorkflowServer(resourceManager *manager.ResourceManager) *WorkflowServer
 	return &WorkflowServer{resourceManager: resourceManager}
 }
 
+func apiWorkflow(wf *model.Workflow) (workflow *api.Workflow) {
+	workflow = &api.Workflow{
+		Name:   wf.Name,
+		Uid:    wf.UID,
+		Status: wf.Status,
+	}
+
+	if wf.WorkflowTemplate != nil {
+		workflow.WorkflowTemplate = &api.WorkflowTemplate{
+			Uid:      wf.WorkflowTemplate.UID,
+			Name:     wf.WorkflowTemplate.Name,
+			Version:  wf.WorkflowTemplate.Version,
+			Manifest: wf.WorkflowTemplate.Manifest,
+		}
+	}
+
+	return
+}
+
 func (s *WorkflowServer) CreateWorkflow(ctx context.Context, req *api.CreateWorkflowRequest) (*api.Workflow, error) {
 	workflow := &model.Workflow{
-		WorkflowTemplate: model.WorkflowTemplate{
+		WorkflowTemplate: &model.WorkflowTemplate{
 			UID:     req.Workflow.WorkflowTemplate.Uid,
 			Version: req.Workflow.WorkflowTemplate.Version,
 		},
@@ -35,16 +54,12 @@ func (s *WorkflowServer) CreateWorkflow(ctx context.Context, req *api.CreateWork
 		})
 	}
 
-	createdWorkflow, err := s.resourceManager.CreateWorkflow(req.Namespace, workflow)
+	wf, err := s.resourceManager.CreateWorkflow(req.Namespace, workflow)
 	if err != nil {
 		return nil, err
 	}
-	req.Workflow = &api.Workflow{
-		Name: createdWorkflow.Name,
-		Uid:  createdWorkflow.UID,
-	}
 
-	return req.Workflow, nil
+	return apiWorkflow(wf), nil
 }
 
 func (s *WorkflowServer) GetWorkflow(ctx context.Context, req *api.GetWorkflowRequest) (*api.Workflow, error) {
@@ -53,16 +68,7 @@ func (s *WorkflowServer) GetWorkflow(ctx context.Context, req *api.GetWorkflowRe
 		return nil, userError.GRPCError()
 	}
 
-	workflow := &api.Workflow{
-		Uid:  string(wf.UID),
-		Name: wf.Name,
-		WorkflowTemplate: &api.WorkflowTemplate{
-			Uid:     wf.WorkflowTemplate.UID,
-			Version: wf.WorkflowTemplate.Version,
-		},
-	}
-
-	return workflow, nil
+	return apiWorkflow(wf), nil
 }
 
 func (s *WorkflowServer) ListWorkflows(ctx context.Context, req *api.ListWorkflowsRequest) (*api.ListWorkflowsResponse, error) {

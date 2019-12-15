@@ -290,6 +290,9 @@
         "name": {
           "type": "string"
         },
+        "status": {
+          "type": "string"
+        },
         "parameters": {
           "type": "array",
           "items": {

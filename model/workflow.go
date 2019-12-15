@@ -6,7 +6,8 @@ type Workflow struct {
 	Name             string
 	GeneratedName    string
 	Parameters       []Parameter
-	WorkflowTemplate WorkflowTemplate
+	Status           string
+	WorkflowTemplate *WorkflowTemplate
 }
 
 type Parameter struct {

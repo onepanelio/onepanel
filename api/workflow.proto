@@ -72,10 +72,11 @@ message ListWorkflowsResponse {
 message Workflow {
     string uid = 1;
     string name = 2;
+    string status = 3;
 
-    repeated Parameter parameters = 3;
+    repeated Parameter parameters = 4;
 
-    WorkflowTemplate workflowTemplate = 4;
+    WorkflowTemplate workflowTemplate = 5;
 }
 
 message Parameter {

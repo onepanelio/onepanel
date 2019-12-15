@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -37,6 +38,7 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 	if err != nil {
 		return
 	}
+
 	createdWorkflow = workflow
 	createdWorkflow.Name = createdWorkflows[0].Name
 	createdWorkflow.UID = string(createdWorkflows[0].ObjectMeta.UID)
@@ -50,21 +52,29 @@ func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.W
 		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
 	}
 
+	uid := wf.ObjectMeta.Labels[viper.GetString("k8s.labelKeyPrefix")+"workflow-template-uid"]
 	version, err := strconv.ParseInt(
 		wf.ObjectMeta.Labels[viper.GetString("k8s.labelKeyPrefix")+"workflow-template-version"],
 		10,
 		32,
 	)
 	if err != nil {
-		return nil, util.NewUserError(codes.InvalidArgument, "Bad version number.")
+		return nil, util.NewUserError(codes.InvalidArgument, "Invalid version number.")
+	}
+	workflowTemplate, err := r.GetWorkflowTemplate(namespace, uid, int32(version))
+	if err != nil {
+		return nil, err
+	}
+
+	status, err := json.Marshal(wf.Status)
+	if err != nil {
+		return nil, util.NewUserError(codes.InvalidArgument, "Invalid status.")
 	}
 	workflow = &model.Workflow{
-		UID:  string(wf.UID),
-		Name: wf.Name,
-		WorkflowTemplate: model.WorkflowTemplate{
-			UID:     wf.ObjectMeta.Labels[viper.GetString("k8s.labelKeyPrefix")+"workflow-template-uid"],
-			Version: int32(version),
-		},
+		UID:              string(wf.UID),
+		Name:             wf.Name,
+		Status:           string(status),
+		WorkflowTemplate: workflowTemplate,
 	}
 
 	return
