@@ -18,6 +18,7 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 		return nil, err
 	}
 
+	// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
 	opts := &argo.Options{
 		Namespace: namespace,
 	}
