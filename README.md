@@ -29,6 +29,22 @@ On macOS or Linux:
 - Move `bin/protoc` to `/usr/local/bin/`
 - Move `include/google` to `/usr/local/include`
 
+Then use `go get -u` to download the following packages:
+
+```bash
+go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
+go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
+go get -u github.com/golang/protobuf/protoc-gen-go
+```
+
+This will place three binaries in your `$GOBIN`;
+
+* `protoc-gen-grpc-gateway`
+* `protoc-gen-swagger`
+* `protoc-gen-go`
+
+Make sure that your `$GOBIN` is in your `$PATH`.
+
 ## gRPC Code generation
 
 Generate Go, HTTP reverse-proxy and Swagger files:
