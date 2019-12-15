@@ -148,6 +148,34 @@
       }
     },
     "/apis/v1beta1/{namespace}/workflows": {
+      "get": {
+        "operationId": "ListWorkflows",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiListWorkflowsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      },
       "post": {
         "summary": "Creates a Workflow",
         "operationId": "CreateWorkflow",
@@ -179,6 +207,36 @@
           "WorkflowService"
         ]
       }
+    },
+    "/apis/v1beta1/{namespace}/workflows/{name}": {
+      "get": {
+        "operationId": "GetWorkflow",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiWorkflow"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -189,6 +247,21 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/apiWorkflowTemplate"
+          }
+        },
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "apiListWorkflowsResponse": {
+      "type": "object",
+      "properties": {
+        "workflows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apiWorkflow"
           }
         },
         "count": {

@@ -47,6 +47,28 @@ func (s *WorkflowServer) CreateWorkflow(ctx context.Context, req *api.CreateWork
 	return req.Workflow, nil
 }
 
+func (s *WorkflowServer) GetWorkflow(ctx context.Context, req *api.GetWorkflowRequest) (*api.Workflow, error) {
+	wf, err := s.resourceManager.GetWorkflow(req.Namespace, req.Name)
+	if errors.As(err, &userError) {
+		return nil, userError.GRPCError()
+	}
+
+	workflow := &api.Workflow{
+		Uid:  string(wf.UID),
+		Name: wf.Name,
+		WorkflowTemplate: &api.WorkflowTemplate{
+			Uid:     wf.WorkflowTemplate.UID,
+			Version: wf.WorkflowTemplate.Version,
+		},
+	}
+
+	return workflow, nil
+}
+
+func (s *WorkflowServer) ListWorkflows(ctx context.Context, req *api.ListWorkflowsRequest) (*api.ListWorkflowsResponse, error) {
+	return nil, nil
+}
+
 func (s *WorkflowServer) CreateWorkflowTemplate(ctx context.Context, req *api.CreateWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
 	workflowTemplate := &model.WorkflowTemplate{
 		Name:     req.WorkflowTemplate.Name,

@@ -14,6 +14,18 @@ service WorkflowService {
         };
     }
 
+    rpc GetWorkflow (GetWorkflowRequest) returns (Workflow) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflows/{name}"
+        };
+    }
+
+    rpc ListWorkflows (ListWorkflowsRequest) returns (ListWorkflowsResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflows"
+        };
+    }
+
     rpc CreateWorkflowTemplate (CreateWorkflowTemplateRequest) returns (WorkflowTemplate) {
         option (google.api.http) = {
             post: "/apis/v1beta1/{namespace}/workflow_templates"
@@ -40,6 +52,21 @@ service WorkflowService {
 message CreateWorkflowRequest {
     string namespace = 1;
     Workflow workflow = 2;
+}
+
+message GetWorkflowRequest {
+    string namespace = 1;
+    string name = 2;
+}
+
+message ListWorkflowsRequest {
+    string namespace = 1;
+    string uid = 2;
+}
+
+message ListWorkflowsResponse {
+    repeated Workflow workflows = 1;
+    int32 count = 2;
 }
 
 message Workflow {

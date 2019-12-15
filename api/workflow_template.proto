@@ -21,7 +21,7 @@ message ListWorkflowTemplateVersionsRequest {
 message ListWorkflowTemplateVersionsResponse {
     repeated WorkflowTemplate workflowTemplates = 1;
     int32 count = 2;
-  }
+}
 
 message WorkflowTemplate {
     string uid = 1;

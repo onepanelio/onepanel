@@ -4,6 +4,7 @@ import (
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/argoproj/argo/workflow/common"
 	"github.com/argoproj/pkg/json"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
@@ -97,6 +98,12 @@ func (c *Client) Create(manifest []byte, opts *Options) (createdWorkflows []*Wor
 		}
 		createdWorkflows = append(createdWorkflows, createdWorkflow)
 	}
+
+	return
+}
+
+func (c *Client) Get(name string, opts *Options) (workflow *Workflow, err error) {
+	workflow, err = c.Clientset.ArgoprojV1alpha1().Workflows(opts.Namespace).Get(name, v1.GetOptions{})
 
 	return
 }

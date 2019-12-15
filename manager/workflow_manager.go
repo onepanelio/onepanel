@@ -2,6 +2,7 @@ package manager
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/onepanelio/core/argo"
 	"github.com/onepanelio/core/model"
@@ -39,6 +40,32 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 	createdWorkflow = workflow
 	createdWorkflow.Name = createdWorkflows[0].Name
 	createdWorkflow.UID = string(createdWorkflows[0].ObjectMeta.UID)
+
+	return
+}
+
+func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.Workflow, err error) {
+	wf, err := r.argClient.Get(name, &argo.Options{Namespace: namespace})
+	if err != nil {
+		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
+	}
+
+	version, err := strconv.ParseInt(
+		wf.ObjectMeta.Labels[viper.GetString("k8s.labelKeyPrefix")+"workflow-template-version"],
+		10,
+		32,
+	)
+	if err != nil {
+		return nil, util.NewUserError(codes.InvalidArgument, "Bad version number.")
+	}
+	workflow = &model.Workflow{
+		UID:  string(wf.UID),
+		Name: wf.Name,
+		WorkflowTemplate: model.WorkflowTemplate{
+			UID:     wf.ObjectMeta.Labels[viper.GetString("k8s.labelKeyPrefix")+"workflow-template-uid"],
+			Version: int32(version),
+		},
+	}
 
 	return
 }
