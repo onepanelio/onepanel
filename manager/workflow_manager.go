@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workflow) (createdWorkflow *model.Workflow, err error) {
+func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workflow) (*model.Workflow, error) {
 	workflowTemplate, err := r.GetWorkflowTemplate(namespace, workflow.WorkflowTemplate.UID, workflow.WorkflowTemplate.Version)
 	if err != nil {
 		return nil, err
@@ -28,23 +28,23 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 			Value: param.Value,
 		})
 	}
-
 	if opts.Labels == nil {
 		opts.Labels = &map[string]string{}
 	}
 	(*opts.Labels)[viper.GetString("k8s.labelKeyPrefix")+"workflow-template-uid"] = workflowTemplate.UID
 	(*opts.Labels)[viper.GetString("k8s.labelKeyPrefix")+"workflow-template-version"] = fmt.Sprint(workflowTemplate.Version)
-
 	createdWorkflows, err := r.argClient.Create(workflowTemplate.GetManifestBytes(), opts)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	createdWorkflow = workflow
-	createdWorkflow.Name = createdWorkflows[0].Name
-	createdWorkflow.UID = string(createdWorkflows[0].ObjectMeta.UID)
+	workflow.Name = createdWorkflows[0].Name
+	workflow.UID = string(createdWorkflows[0].ObjectMeta.UID)
+	workflow.WorkflowTemplate = workflowTemplate
+	// Manifests could get big, don't return them in this case.
+	workflow.WorkflowTemplate.Manifest = ""
 
-	return
+	return workflow, nil
 }
 
 func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.Workflow, err error) {
@@ -64,7 +64,7 @@ func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.W
 	}
 	workflowTemplate, err := r.GetWorkflowTemplate(namespace, uid, int32(version))
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	// TODO: Do we need to parse parameters into workflow.Parameters?
@@ -82,13 +82,13 @@ func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.W
 	return
 }
 
-func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTemplate *model.WorkflowTemplate) (createdWorkflowTemplate *model.WorkflowTemplate, err error) {
-	createdWorkflowTemplate, err = r.workflowRepository.CreateWorkflowTemplate(namespace, workflowTemplate)
+func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTemplate *model.WorkflowTemplate) (*model.WorkflowTemplate, error) {
+	workflowTemplate, err := r.workflowRepository.CreateWorkflowTemplate(namespace, workflowTemplate)
 	if err != nil {
 		return nil, util.NewUserErrorWrap(err, "Workflow template")
 	}
 
-	return
+	return workflowTemplate, nil
 }
 
 func (r *ResourceManager) GetWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *model.WorkflowTemplate, err error) {
