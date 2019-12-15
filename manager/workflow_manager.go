@@ -67,6 +67,7 @@ func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.W
 		return nil, err
 	}
 
+	// TODO: Do we need to parse parameters into workflow.Parameters?
 	status, err := json.Marshal(wf.Status)
 	if err != nil {
 		return nil, util.NewUserError(codes.InvalidArgument, "Invalid status.")
