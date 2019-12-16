@@ -61,7 +61,7 @@ message GetWorkflowRequest {
 
 message ListWorkflowsRequest {
     string namespace = 1;
-    string uid = 2;
+    string workflowTemplateUid = 2;
 }
 
 message ListWorkflowsResponse {

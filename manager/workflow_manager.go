@@ -83,7 +83,15 @@ func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.W
 }
 
 func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID string) (workflows []*model.Workflow, err error) {
-	wfs, err := r.argClient.ListWorkflows(workflowTemplateUID, &argo.Options{Namespace: namespace})
+	opts := &argo.Options{
+		Namespace: namespace,
+	}
+	if workflowTemplateUID != "" {
+		opts.ListOptions = &argo.ListOptions{
+			LabelSelector: fmt.Sprintf("%sworkflow-template-uid=%s", viper.GetString("k8s.labelKeyPrefix"), workflowTemplateUID),
+		}
+	}
+	wfs, err := r.argClient.ListWorkflows(opts)
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflows not found.")
 	}

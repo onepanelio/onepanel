@@ -81,7 +81,20 @@ func (s *WorkflowServer) GetWorkflow(ctx context.Context, req *api.GetWorkflowRe
 }
 
 func (s *WorkflowServer) ListWorkflows(ctx context.Context, req *api.ListWorkflowsRequest) (*api.ListWorkflowsResponse, error) {
-	return nil, nil
+	workflows, err := s.resourceManager.ListWorkflows(req.Namespace, req.WorkflowTemplateUid)
+	if errors.As(err, &userError) {
+		return nil, userError.GRPCError()
+	}
+
+	apiWorkflows := []*api.Workflow{}
+	for _, wf := range workflows {
+		apiWorkflows = append(apiWorkflows, apiWorkflow(wf))
+	}
+
+	return &api.ListWorkflowsResponse{
+		Count:     int32(len(apiWorkflows)),
+		Workflows: apiWorkflows,
+	}, nil
 }
 
 func (s *WorkflowServer) CreateWorkflowTemplate(ctx context.Context, req *api.CreateWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {

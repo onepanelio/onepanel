@@ -166,7 +166,7 @@
             "type": "string"
           },
           {
-            "name": "uid",
+            "name": "workflowTemplateUid",
             "in": "query",
             "required": false,
             "type": "string"

@@ -6,7 +6,6 @@ import (
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/argoproj/argo/workflow/common"
 	"github.com/argoproj/pkg/json"
-	"github.com/spf13/viper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -18,6 +17,8 @@ type Workflow = wfv1.Workflow
 
 type Parameter = wfv1.Parameter
 
+type ListOptions = v1.ListOptions
+
 type Options struct {
 	Name           string
 	Namespace      string
@@ -26,6 +27,7 @@ type Options struct {
 	Parameters     []Parameter
 	ServiceAccount string
 	Labels         *map[string]string
+	ListOptions    *ListOptions
 }
 
 func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []Workflow, err error) {
@@ -114,13 +116,15 @@ func (c *Client) GetWorkflow(name string, opts *Options) (workflow *Workflow, er
 	return
 }
 
-func (c *Client) ListWorkflows(workflowTemplateUID string, opts *Options) (workflows []*Workflow, err error) {
-	workflowList, err := c.Clientset.ArgoprojV1alpha1().Workflows(opts.Namespace).List(v1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s/workflow-template-uid=%s", viper.GetString("k8s.labelKeyPrefix"), workflowTemplateUID),
-	})
+func (c *Client) ListWorkflows(opts *Options) (workflows []*Workflow, err error) {
+	if opts.ListOptions == nil {
+		opts.ListOptions = &ListOptions{}
+	}
+	workflowList, err := c.Clientset.ArgoprojV1alpha1().Workflows(opts.Namespace).List(*opts.ListOptions)
 	if err != nil {
 		return
 	}
+	fmt.Println(*opts.ListOptions)
 
 	for _, item := range workflowList.Items {
 		workflows = append(workflows, &item)
