@@ -166,7 +166,7 @@ func TestCreateOrResumeInstance(t *testing.T) {
 		Value: ptr.String("create"),
 	})
 
-	wf, err := c.Create(TestInstanceWorkflowManifest, options)
+	wf, err := c.CreateWorkflow(TestInstanceWorkflowManifest, options)
 	if err != nil {
 		t.Error(err)
 		return
@@ -183,7 +183,7 @@ func TestPauseInstance(t *testing.T) {
 		Value: ptr.String("delete"),
 	})
 
-	wf, err := c.Create(TestInstanceWorkflowManifest, options)
+	wf, err := c.CreateWorkflow(TestInstanceWorkflowManifest, options)
 	if err != nil {
 		t.Error(err)
 		return
@@ -203,7 +203,7 @@ func TestChangeInstanceMachineType(t *testing.T) {
 		Value: ptr.String("cpu-1-4"),
 	})
 
-	wf, err := c.Create(TestInstanceWorkflowManifest, options)
+	wf, err := c.CreateWorkflow(TestInstanceWorkflowManifest, options)
 	if err != nil {
 		t.Error(err)
 		return

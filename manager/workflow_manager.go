@@ -33,7 +33,7 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 	}
 	(*opts.Labels)[viper.GetString("k8s.labelKeyPrefix")+"workflow-template-uid"] = workflowTemplate.UID
 	(*opts.Labels)[viper.GetString("k8s.labelKeyPrefix")+"workflow-template-version"] = fmt.Sprint(workflowTemplate.Version)
-	createdWorkflows, err := r.argClient.Create(workflowTemplate.GetManifestBytes(), opts)
+	createdWorkflows, err := r.argClient.CreateWorkflow(workflowTemplate.GetManifestBytes(), opts)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 }
 
 func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.Workflow, err error) {
-	wf, err := r.argClient.Get(name, &argo.Options{Namespace: namespace})
+	wf, err := r.argClient.GetWorkflow(name, &argo.Options{Namespace: namespace})
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
 	}
@@ -77,6 +77,22 @@ func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.W
 		Name:             wf.Name,
 		Status:           string(status),
 		WorkflowTemplate: workflowTemplate,
+	}
+
+	return
+}
+
+func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID string) (workflows []*model.Workflow, err error) {
+	wfs, err := r.argClient.ListWorkflows(workflowTemplateUID, &argo.Options{Namespace: namespace})
+	if err != nil {
+		return nil, util.NewUserError(codes.NotFound, "Workflows not found.")
+	}
+
+	for _, wf := range wfs {
+		workflows = append(workflows, &model.Workflow{
+			Name: wf.ObjectMeta.Name,
+			UID:  string(wf.ObjectMeta.UID),
+		})
 	}
 
 	return

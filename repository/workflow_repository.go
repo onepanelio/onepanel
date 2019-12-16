@@ -61,7 +61,7 @@ func (r *WorkflowRepository) CreateWorkflowTemplate(namespace string, workflowTe
 }
 
 func (r *WorkflowRepository) workflowTemplatesSelectBuilder(namespace, uid string) sq.SelectBuilder {
-	sb := r.sb.Select("wt.uid", "wt.name", "wtv.version", "wtv.manifest").
+	sb := r.sb.Select("wt.uid", "wt.name", "wtv.version").
 		From("workflow_template_versions wtv").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{
@@ -76,7 +76,7 @@ func (r *WorkflowRepository) workflowTemplatesSelectBuilder(namespace, uid strin
 func (r *WorkflowRepository) GetWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *model.WorkflowTemplate, err error) {
 	workflowTemplate = &model.WorkflowTemplate{}
 
-	sb := r.workflowTemplatesSelectBuilder(namespace, uid).Limit(1)
+	sb := r.workflowTemplatesSelectBuilder(namespace, uid).Columns("wtv.manifest").Limit(1)
 	if version != 0 {
 		sb = sb.Where(sq.Eq{"wtv.version": version})
 	}

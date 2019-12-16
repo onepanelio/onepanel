@@ -40,6 +40,15 @@ func apiWorkflow(wf *model.Workflow) (workflow *api.Workflow) {
 	return
 }
 
+func apiWorkflowTemplate(wft *model.WorkflowTemplate) *api.WorkflowTemplate {
+	return &api.WorkflowTemplate{
+		Uid:      wft.UID,
+		Name:     wft.Name,
+		Version:  wft.Version,
+		Manifest: wft.Manifest,
+	}
+}
+
 func (s *WorkflowServer) CreateWorkflow(ctx context.Context, req *api.CreateWorkflowRequest) (*api.Workflow, error) {
 	workflow := &model.Workflow{
 		WorkflowTemplate: &model.WorkflowTemplate{
@@ -96,11 +105,7 @@ func (s *WorkflowServer) GetWorkflowTemplate(ctx context.Context, req *api.GetWo
 		return nil, userError.GRPCError()
 	}
 
-	return &api.WorkflowTemplate{
-		Uid:      workflowTemplate.UID,
-		Version:  workflowTemplate.Version,
-		Manifest: workflowTemplate.Manifest,
-	}, nil
+	return apiWorkflowTemplate(workflowTemplate), nil
 }
 
 func (s *WorkflowServer) ListWorkflowTemplateVersions(ctx context.Context, req *api.ListWorkflowTemplateVersionsRequest) (*api.ListWorkflowTemplateVersionsResponse, error) {
@@ -111,12 +116,7 @@ func (s *WorkflowServer) ListWorkflowTemplateVersions(ctx context.Context, req *
 
 	workflowTemplates := []*api.WorkflowTemplate{}
 	for _, wtv := range workflowTemplateVersions {
-		workflowTemplates = append(workflowTemplates, &api.WorkflowTemplate{
-			Uid:      wtv.UID,
-			Name:     wtv.Name,
-			Version:  wtv.Version,
-			Manifest: wtv.Manifest,
-		})
+		workflowTemplates = append(workflowTemplates, apiWorkflowTemplate(wtv))
 	}
 
 	return &api.ListWorkflowTemplateVersionsResponse{

@@ -1,10 +1,16 @@
 package argo
 
 import (
+	"fmt"
+
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/argoproj/argo/workflow/common"
 	"github.com/argoproj/pkg/json"
+	"github.com/spf13/viper"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/watch"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
@@ -85,7 +91,7 @@ func (c *Client) create(wf *Workflow, opts *Options) (createdWorkflow *Workflow,
 	return
 }
 
-func (c *Client) Create(manifest []byte, opts *Options) (createdWorkflows []*Workflow, err error) {
+func (c *Client) CreateWorkflow(manifest []byte, opts *Options) (createdWorkflows []*Workflow, err error) {
 	workflows, err := unmarshalWorkflows(manifest, true)
 	if err != nil {
 		return nil, err
@@ -102,8 +108,35 @@ func (c *Client) Create(manifest []byte, opts *Options) (createdWorkflows []*Wor
 	return
 }
 
-func (c *Client) Get(name string, opts *Options) (workflow *Workflow, err error) {
+func (c *Client) GetWorkflow(name string, opts *Options) (workflow *Workflow, err error) {
 	workflow, err = c.Clientset.ArgoprojV1alpha1().Workflows(opts.Namespace).Get(name, v1.GetOptions{})
+
+	return
+}
+
+func (c *Client) ListWorkflows(workflowTemplateUID string, opts *Options) (workflows []*Workflow, err error) {
+	workflowList, err := c.Clientset.ArgoprojV1alpha1().Workflows(opts.Namespace).List(v1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s/workflow-template-uid=%s", viper.GetString("k8s.labelKeyPrefix"), workflowTemplateUID),
+	})
+	if err != nil {
+		return
+	}
+
+	for _, item := range workflowList.Items {
+		workflows = append(workflows, &item)
+	}
+
+	return
+}
+
+func (c *Client) WatchWorkflow(name string, opts *Options) (watch watch.Interface, err error) {
+	fieldSelector, err := fields.ParseSelector(fmt.Sprintf("metadata.name=%s", name))
+	if err != nil {
+		return
+	}
+	watch, err = c.Clientset.ArgoprojV1alpha1().Workflows(opts.Namespace).Watch(metav1.ListOptions{
+		FieldSelector: fieldSelector.String(),
+	})
 
 	return
 }
