@@ -2,12 +2,10 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"time"
 
 	"github.com/onepanelio/core/api"
-	"github.com/onepanelio/core/argo"
 	"github.com/onepanelio/core/manager"
 	"github.com/onepanelio/core/model"
 	"github.com/onepanelio/core/util"
@@ -89,36 +87,23 @@ func (s *WorkflowServer) WatchWorkflow(req *api.WatchWorkflowRequest, stream api
 		return userError.GRPCError()
 	}
 
-	wf := &argo.Workflow{}
+	wf := &model.Workflow{}
 	ticker := time.NewTicker(time.Second)
 	for {
 		select {
-		case next := <-watcher.ResultChan():
-			wf, _ = next.Object.(*argo.Workflow)
+		case wf = <-watcher:
 		case <-ticker.C:
 		}
 
 		if wf == nil {
-			continue
-		}
-		status, err := json.Marshal(wf.Status)
-		if err != nil {
-			return err
-		}
-		if err := stream.Send(&api.Workflow{
-			Name:   wf.ObjectMeta.Name,
-			Status: string(status),
-		}); err != nil {
-			return err
-		}
-
-		if !wf.Status.FinishedAt.IsZero() {
 			break
 		}
+		if err := stream.Send(apiWorkflow(wf)); err != nil {
+			return err
+		}
 	}
-	watcher.Stop()
 
-	return err
+	return nil
 }
 
 func (s *WorkflowServer) ListWorkflows(ctx context.Context, req *api.ListWorkflowsRequest) (*api.ListWorkflowsResponse, error) {

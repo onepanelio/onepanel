@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/onepanelio/core/argo"
 	"github.com/onepanelio/core/model"
 	"github.com/onepanelio/core/util"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc/codes"
-	"k8s.io/apimachinery/pkg/watch"
 )
 
 func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workflow) (*model.Workflow, error) {
@@ -83,13 +83,49 @@ func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.W
 	return
 }
 
-func (r *ResourceManager) WatchWorkflow(namespace, name string) (watcher watch.Interface, err error) {
-	watcher, err = r.argClient.WatchWorkflow(name, &argo.Options{Namespace: namespace})
+func (r *ResourceManager) WatchWorkflow(namespace, name string) (<-chan *model.Workflow, error) {
+	wf, err := r.argClient.GetWorkflow(name, &argo.Options{Namespace: namespace})
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
 	}
 
-	return
+	watcher, err := r.argClient.WatchWorkflow(name, &argo.Options{Namespace: namespace})
+	if err != nil {
+		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
+	}
+
+	workflowWatcher := make(chan *model.Workflow)
+	ticker := time.NewTicker(time.Second)
+	go func() {
+		for {
+			select {
+			case next := <-watcher.ResultChan():
+				wf, _ = next.Object.(*argo.Workflow)
+			case <-ticker.C:
+			}
+
+			if wf == nil {
+				continue
+			}
+			status, err := json.Marshal(wf.Status)
+			if err != nil {
+				continue
+			}
+			workflowWatcher <- &model.Workflow{
+				UID:    string(wf.UID),
+				Name:   wf.Name,
+				Status: string(status),
+			}
+
+			if !wf.Status.FinishedAt.IsZero() {
+				break
+			}
+		}
+		close(workflowWatcher)
+		watcher.Stop()
+	}()
+
+	return workflowWatcher, nil
 }
 
 func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID string) (workflows []*model.Workflow, err error) {
