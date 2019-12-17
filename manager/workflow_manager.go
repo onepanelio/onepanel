@@ -10,6 +10,7 @@ import (
 	"github.com/onepanelio/core/util"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc/codes"
+	"k8s.io/apimachinery/pkg/watch"
 )
 
 func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workflow) (*model.Workflow, error) {
@@ -77,6 +78,15 @@ func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.W
 		Name:             wf.Name,
 		Status:           string(status),
 		WorkflowTemplate: workflowTemplate,
+	}
+
+	return
+}
+
+func (r *ResourceManager) WatchWorkflow(namespace, name string) (watcher watch.Interface, err error) {
+	watcher, err = r.argClient.WatchWorkflow(name, &argo.Options{Namespace: namespace})
+	if err != nil {
+		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
 	}
 
 	return
