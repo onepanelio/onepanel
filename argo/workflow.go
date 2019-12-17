@@ -133,12 +133,12 @@ func (c *Client) ListWorkflows(opts *Options) (workflows []*Workflow, err error)
 	return
 }
 
-func (c *Client) WatchWorkflow(name string, opts *Options) (watch watch.Interface, err error) {
+func (c *Client) WatchWorkflow(name string, opts *Options) (watcher watch.Interface, err error) {
 	fieldSelector, err := fields.ParseSelector(fmt.Sprintf("metadata.name=%s", name))
 	if err != nil {
 		return
 	}
-	watch, err = c.Clientset.ArgoprojV1alpha1().Workflows(opts.Namespace).Watch(metav1.ListOptions{
+	watcher, err = c.Clientset.ArgoprojV1alpha1().Workflows(opts.Namespace).Watch(metav1.ListOptions{
 		FieldSelector: fieldSelector.String(),
 	})
 
