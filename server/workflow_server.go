@@ -163,3 +163,20 @@ func (s *WorkflowServer) ListWorkflowTemplateVersions(ctx context.Context, req *
 		WorkflowTemplates: workflowTemplates,
 	}, nil
 }
+
+func (s *WorkflowServer) ListWorkflowTemplates(ctx context.Context, req *api.ListWorkflowTemplatesRequest) (*api.ListWorkflowTemplatesResponse, error) {
+	workflowTemplates, err := s.resourceManager.ListWorkflowTemplates(req.Namespace)
+	if errors.As(err, &userError) {
+		return nil, userError.GRPCError()
+	}
+
+	apiWorkflowTemplates := []*api.WorkflowTemplate{}
+	for _, wtv := range workflowTemplates {
+		apiWorkflowTemplates = append(apiWorkflowTemplates, apiWorkflowTemplate(wtv))
+	}
+
+	return &api.ListWorkflowTemplatesResponse{
+		Count:             int32(len(apiWorkflowTemplates)),
+		WorkflowTemplates: apiWorkflowTemplates,
+	}, nil
+}

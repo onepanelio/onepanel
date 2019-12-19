@@ -19,8 +19,17 @@ message ListWorkflowTemplateVersionsRequest {
 }
 
 message ListWorkflowTemplateVersionsResponse {
-    repeated WorkflowTemplate workflowTemplates = 1;
-    int32 count = 2;
+    int32 count = 1;
+    repeated WorkflowTemplate workflowTemplates = 2;
+}
+
+message ListWorkflowTemplatesRequest {
+    string namespace = 1;
+}
+
+message ListWorkflowTemplatesResponse {
+    int32 count = 1;
+    repeated WorkflowTemplate workflowTemplates = 2;
 }
 
 message WorkflowTemplate {

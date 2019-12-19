@@ -60,12 +60,11 @@ func (r *WorkflowRepository) CreateWorkflowTemplate(namespace string, workflowTe
 	return workflowTemplate, nil
 }
 
-func (r *WorkflowRepository) workflowTemplatesSelectBuilder(namespace, uid string) sq.SelectBuilder {
+func (r *WorkflowRepository) workflowTemplatesSelectBuilder(namespace string) sq.SelectBuilder {
 	sb := r.sb.Select("wt.uid", "wt.name", "wtv.version").
 		From("workflow_template_versions wtv").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{
-			"wt.uid":       uid,
 			"wt.namespace": namespace,
 		}).
 		OrderBy("wtv.version desc")
@@ -76,7 +75,7 @@ func (r *WorkflowRepository) workflowTemplatesSelectBuilder(namespace, uid strin
 func (r *WorkflowRepository) GetWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *model.WorkflowTemplate, err error) {
 	workflowTemplate = &model.WorkflowTemplate{}
 
-	sb := r.workflowTemplatesSelectBuilder(namespace, uid).Columns("wtv.manifest").Limit(1)
+	sb := r.workflowTemplatesSelectBuilder(namespace).Where(sq.Eq{"wt.uid": uid}).Columns("wtv.manifest").Limit(1)
 	if version != 0 {
 		sb = sb.Where(sq.Eq{"wtv.version": version})
 	}
@@ -97,7 +96,20 @@ func (r *WorkflowRepository) GetWorkflowTemplate(namespace, uid string, version 
 func (r *WorkflowRepository) ListWorkflowTemplateVersions(namespace, uid string) (workflowTemplateVersions []*model.WorkflowTemplate, err error) {
 	workflowTemplateVersions = []*model.WorkflowTemplate{}
 
-	query, args, err := r.workflowTemplatesSelectBuilder(namespace, uid).ToSql()
+	query, args, err := r.workflowTemplatesSelectBuilder(namespace).Where(sq.Eq{"wt.uid": uid}).ToSql()
+	if err != nil {
+		return
+	}
+
+	err = r.db.Select(&workflowTemplateVersions, query, args...)
+
+	return
+}
+
+func (r *WorkflowRepository) ListWorkflowTemplates(namespace string) (workflowTemplateVersions []*model.WorkflowTemplate, err error) {
+	workflowTemplateVersions = []*model.WorkflowTemplate{}
+
+	query, args, err := r.workflowTemplatesSelectBuilder(namespace).ToSql()
 	if err != nil {
 		return
 	}
