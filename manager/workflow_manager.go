@@ -84,9 +84,9 @@ func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.W
 }
 
 func (r *ResourceManager) WatchWorkflow(namespace, name string) (<-chan *model.Workflow, error) {
-	wf, err := r.argClient.GetWorkflow(name, &argo.Options{Namespace: namespace})
+	wf, err := r.GetWorkflow(namespace, name)
 	if err != nil {
-		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
+		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}
 
 	watcher, err := r.argClient.WatchWorkflow(name, &argo.Options{Namespace: namespace})
@@ -94,30 +94,32 @@ func (r *ResourceManager) WatchWorkflow(namespace, name string) (<-chan *model.W
 		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
 	}
 
+	var workflow *argo.Workflow
 	workflowWatcher := make(chan *model.Workflow)
 	ticker := time.NewTicker(time.Second)
 	go func() {
 		for {
 			select {
 			case next := <-watcher.ResultChan():
-				wf, _ = next.Object.(*argo.Workflow)
+				workflow, _ = next.Object.(*argo.Workflow)
 			case <-ticker.C:
 			}
 
-			if wf == nil {
+			if workflow == nil {
 				continue
 			}
-			status, err := json.Marshal(wf.Status)
+			status, err := json.Marshal(workflow.Status)
 			if err != nil {
 				continue
 			}
 			workflowWatcher <- &model.Workflow{
-				UID:    string(wf.UID),
-				Name:   wf.Name,
-				Status: string(status),
+				UID:              string(workflow.UID),
+				Name:             workflow.Name,
+				Status:           string(status),
+				WorkflowTemplate: wf.WorkflowTemplate,
 			}
 
-			if !wf.Status.FinishedAt.IsZero() {
+			if !workflow.Status.FinishedAt.IsZero() {
 				break
 			}
 		}
