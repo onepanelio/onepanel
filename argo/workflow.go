@@ -93,6 +93,12 @@ func (c *Client) create(wf *Workflow, opts *Options) (createdWorkflow *Workflow,
 	return
 }
 
+func (c *Client) ValidateWorkflow(manifest []byte) (err error) {
+	_, err = unmarshalWorkflows(manifest, true)
+
+	return
+}
+
 func (c *Client) CreateWorkflow(manifest []byte, opts *Options) (createdWorkflows []*Workflow, err error) {
 	workflows, err := unmarshalWorkflows(manifest, true)
 	if err != nil {

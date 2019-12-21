@@ -155,6 +155,11 @@ func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID string) (
 }
 
 func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTemplate *model.WorkflowTemplate) (*model.WorkflowTemplate, error) {
+	// validate workflow template
+	if err := r.argClient.ValidateWorkflow(workflowTemplate.GetManifestBytes()); err != nil {
+		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
+	}
+
 	workflowTemplate, err := r.workflowRepository.CreateWorkflowTemplate(namespace, workflowTemplate)
 	if err != nil {
 		return nil, util.NewUserErrorWrap(err, "Workflow template")
