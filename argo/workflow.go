@@ -130,10 +130,9 @@ func (c *Client) ListWorkflows(opts *Options) (workflows []*Workflow, err error)
 	if err != nil {
 		return
 	}
-	fmt.Println(*opts.ListOptions)
 
-	for _, item := range workflowList.Items {
-		workflows = append(workflows, &item)
+	for i := range workflowList.Items {
+		workflows = append(workflows, &(workflowList.Items[i]))
 	}
 
 	return
