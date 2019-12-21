@@ -138,6 +138,23 @@ func (s *WorkflowServer) CreateWorkflowTemplate(ctx context.Context, req *api.Cr
 	return req.WorkflowTemplate, nil
 }
 
+func (s *WorkflowServer) CreateWorkflowTemplateVersion(ctx context.Context, req *api.CreateWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
+	workflowTemplate := &model.WorkflowTemplate{
+		UID:      req.WorkflowTemplate.Uid,
+		Name:     req.WorkflowTemplate.Name,
+		Manifest: req.WorkflowTemplate.Manifest,
+	}
+	workflowTemplate, err := s.resourceManager.CreateWorkflowTemplateVersion(req.Namespace, workflowTemplate)
+	if errors.As(err, &userError) {
+		return nil, userError.GRPCError()
+	}
+	req.WorkflowTemplate.Uid = workflowTemplate.UID
+	req.WorkflowTemplate.Name = workflowTemplate.Name
+	req.WorkflowTemplate.Version = workflowTemplate.Version
+
+	return req.WorkflowTemplate, nil
+}
+
 func (s *WorkflowServer) GetWorkflowTemplate(ctx context.Context, req *api.GetWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
 	workflowTemplate, err := s.resourceManager.GetWorkflowTemplate(req.Namespace, req.Uid, req.Version)
 	if errors.As(err, &userError) {

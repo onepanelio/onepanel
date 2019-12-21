@@ -168,6 +168,20 @@ func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTempl
 	return workflowTemplate, nil
 }
 
+func (r *ResourceManager) CreateWorkflowTemplateVersion(namespace string, workflowTemplate *model.WorkflowTemplate) (*model.WorkflowTemplate, error) {
+	// validate workflow template
+	if err := r.argClient.ValidateWorkflow(workflowTemplate.GetManifestBytes()); err != nil {
+		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
+	}
+
+	workflowTemplate, err := r.workflowRepository.CreateWorkflowTemplateVersion(namespace, workflowTemplate)
+	if err != nil {
+		return nil, util.NewUserErrorWrap(err, "Workflow template")
+	}
+
+	return workflowTemplate, nil
+}
+
 func (r *ResourceManager) GetWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *model.WorkflowTemplate, err error) {
 	workflowTemplate, err = r.workflowRepository.GetWorkflowTemplate(namespace, uid, version)
 	if err != nil {

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -15,6 +16,20 @@ type WorkflowRepository struct {
 
 func NewWorkflowRepository(db *DB) *WorkflowRepository {
 	return &WorkflowRepository{db: db, sb: sq.StatementBuilder.PlaceholderFormat(sq.Dollar)}
+}
+
+func (r *WorkflowRepository) insertWorkflowTemplateVersion(workflowTemplate *model.WorkflowTemplate, runner sq.BaseRunner) (err error) {
+	err = r.sb.Insert("workflow_template_versions").
+		SetMap(sq.Eq{
+			"workflow_template_id": workflowTemplate.ID,
+			"manifest":             workflowTemplate.Manifest,
+			"version":              int32(time.Now().Unix()),
+		}).
+		Suffix("RETURNING version").
+		RunWith(runner).
+		QueryRow().Scan(&workflowTemplate.Version)
+
+	return
 }
 
 func (r *WorkflowRepository) CreateWorkflowTemplate(namespace string, workflowTemplate *model.WorkflowTemplate) (*model.WorkflowTemplate, error) {
@@ -42,18 +57,35 @@ func (r *WorkflowRepository) CreateWorkflowTemplate(namespace string, workflowTe
 		return nil, err
 	}
 
-	_, err = r.sb.Insert("workflow_template_versions").
-		SetMap(sq.Eq{
-			"workflow_template_id": workflowTemplate.ID,
-			"manifest":             workflowTemplate.Manifest,
-			"version":              int32(time.Now().Unix()),
-		}).
-		RunWith(tx).Exec()
-	if err != nil {
+	if err = r.insertWorkflowTemplateVersion(workflowTemplate, tx); err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
 	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return workflowTemplate, nil
+}
+
+func (r *WorkflowRepository) CreateWorkflowTemplateVersion(namespace string, workflowTemplate *model.WorkflowTemplate) (*model.WorkflowTemplate, error) {
+	query, args, err := r.sb.Select("id, name").
+		From("workflow_templates").
+		Where(sq.Eq{
+			"namespace": namespace,
+			"uid":       workflowTemplate.UID,
+		}).
+		Limit(1).ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	if err = r.db.Get(workflowTemplate, query, args...); err == sql.ErrNoRows {
+		return nil, nil
+	}
+
+	if err = r.insertWorkflowTemplateVersion(workflowTemplate, r.db.Base()); err != nil {
 		return nil, err
 	}
 
@@ -84,8 +116,7 @@ func (r *WorkflowRepository) GetWorkflowTemplate(namespace, uid string, version 
 		return
 	}
 
-	err = r.db.Get(workflowTemplate, query, args...)
-	if err == sql.ErrNoRows {
+	if err = r.db.Get(workflowTemplate, query, args...); err == sql.ErrNoRows {
 		err = nil
 		workflowTemplate = nil
 	}
