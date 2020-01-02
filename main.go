@@ -18,6 +18,7 @@ import (
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"github.com/gorilla/handlers"
+	"github.com/tmc/grpc-websocket-proxy/wsproxy"
 )
 
 var (
@@ -94,7 +95,7 @@ func startHTTPProxy() {
 	}
 
 	log.Printf("Starting HTTP proxy on port %v", *httpPort)
-	if err = http.ListenAndServe(*httpPort, handlers.CORS()(mux)); err != nil {
+	if err = http.ListenAndServe(*httpPort, wsproxy.WebsocketProxy(handlers.CORS()(mux))); err != nil {
 		log.Fatalf("Failed to serve HTTP listener: %v", err)
 	}
 }

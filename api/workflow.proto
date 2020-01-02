@@ -26,7 +26,11 @@ service WorkflowService {
         };
     }
 
-    rpc WatchWorkflow (WatchWorkflowRequest) returns (stream Workflow) {}
+    rpc WatchWorkflow (WatchWorkflowRequest) returns (stream Workflow) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflows/{name}/watch"
+        };
+    }
 
     rpc CreateWorkflowTemplate (CreateWorkflowTemplateRequest) returns (WorkflowTemplate) {
         option (google.api.http) = {

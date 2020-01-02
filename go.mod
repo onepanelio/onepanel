@@ -30,6 +30,7 @@ require (
 	github.com/pressly/goose v2.6.0+incompatible
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/spf13/viper v1.6.1
+	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5
 	github.com/valyala/fasttemplate v1.1.0 // indirect
 	golang.org/x/crypto v0.0.0-20191128160524-b544559bb6d1 // indirect
 	golang.org/x/net v0.0.0-20191126235420-ef20fe5d7933 // indirect

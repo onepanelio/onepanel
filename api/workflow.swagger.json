@@ -297,6 +297,36 @@
           "WorkflowService"
         ]
       }
+    },
+    "/apis/v1beta1/{namespace}/workflows/{name}/watch": {
+      "get": {
+        "operationId": "WatchWorkflow",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "$ref": "#/x-stream-definitions/apiWorkflow"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
     }
   },
   "definitions": {
