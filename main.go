@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/gorilla/handlers"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/argo"
@@ -16,9 +17,8 @@ import (
 	"github.com/onepanelio/core/server"
 	"github.com/pressly/goose"
 	"github.com/spf13/viper"
-	"google.golang.org/grpc"
-	"github.com/gorilla/handlers"
 	"github.com/tmc/grpc-websocket-proxy/wsproxy"
+	"google.golang.org/grpc"
 )
 
 var (
