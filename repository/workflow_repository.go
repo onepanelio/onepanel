@@ -2,7 +2,6 @@ package repository
 
 import (
 	"database/sql"
-	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -58,7 +57,6 @@ func (r *WorkflowRepository) CreateWorkflowTemplate(namespace string, workflowTe
 	}
 
 	if err = r.insertWorkflowTemplateVersion(workflowTemplate, tx); err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 
