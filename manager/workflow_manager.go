@@ -178,6 +178,9 @@ func (r *ResourceManager) CreateWorkflowTemplateVersion(namespace string, workfl
 	if err != nil {
 		return nil, util.NewUserErrorWrap(err, "Workflow template")
 	}
+	if err == nil && workflowTemplate == nil {
+		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
+	}
 
 	return workflowTemplate, nil
 }
