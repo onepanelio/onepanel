@@ -7,10 +7,10 @@ import (
 )
 
 type Client struct {
-	wfclientset.Clientset
+	*wfclientset.Clientset
 }
 
-func NewClient(configPath ...string) (client *Client) {
+func NewClient(configPath ...string) *Client {
 	var (
 		err    error
 		config *rest.Config
@@ -25,8 +25,5 @@ func NewClient(configPath ...string) (client *Client) {
 		panic(err)
 	}
 
-	wfclient := wfclientset.NewForConfigOrDie(config)
-	client = &Client{Clientset: *wfclient}
-
-	return
+	return &Client{Clientset: wfclientset.NewForConfigOrDie(config)}
 }
