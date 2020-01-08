@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/onepanelio/core/argo"
+	"github.com/onepanelio/core/kube"
 	"github.com/onepanelio/core/model"
 	"github.com/onepanelio/core/util"
 	"github.com/spf13/viper"
@@ -20,11 +20,11 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 	}
 
 	// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
-	opts := &argo.Options{
+	opts := &kube.WorkflowOptions{
 		Namespace: namespace,
 	}
 	for _, param := range workflow.Parameters {
-		opts.Parameters = append(opts.Parameters, argo.Parameter{
+		opts.Parameters = append(opts.Parameters, kube.WorkflowParameter{
 			Name:  param.Name,
 			Value: param.Value,
 		})
@@ -34,7 +34,7 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 	}
 	(*opts.Labels)[viper.GetString("k8s.labelKeyPrefix")+"workflow-template-uid"] = workflowTemplate.UID
 	(*opts.Labels)[viper.GetString("k8s.labelKeyPrefix")+"workflow-template-version"] = fmt.Sprint(workflowTemplate.Version)
-	createdWorkflows, err := r.argClient.CreateWorkflow(workflowTemplate.GetManifestBytes(), opts)
+	createdWorkflows, err := r.kubeClient.CreateWorkflow(workflowTemplate.GetManifestBytes(), opts)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 }
 
 func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.Workflow, err error) {
-	wf, err := r.argClient.GetWorkflow(name, &argo.Options{Namespace: namespace})
+	wf, err := r.kubeClient.GetWorkflow(name, &kube.WorkflowOptions{Namespace: namespace})
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
 	}
@@ -89,19 +89,19 @@ func (r *ResourceManager) WatchWorkflow(namespace, name string) (<-chan *model.W
 		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}
 
-	watcher, err := r.argClient.WatchWorkflow(name, &argo.Options{Namespace: namespace})
+	watcher, err := r.kubeClient.WatchWorkflow(name, &kube.WorkflowOptions{Namespace: namespace})
 	if err != nil {
 		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
 	}
 
-	var workflow *argo.Workflow
+	var workflow *kube.Workflow
 	workflowWatcher := make(chan *model.Workflow)
 	ticker := time.NewTicker(time.Second)
 	go func() {
 		for {
 			select {
 			case next := <-watcher.ResultChan():
-				workflow, _ = next.Object.(*argo.Workflow)
+				workflow, _ = next.Object.(*kube.Workflow)
 			case <-ticker.C:
 			}
 
@@ -131,15 +131,15 @@ func (r *ResourceManager) WatchWorkflow(namespace, name string) (<-chan *model.W
 }
 
 func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID string) (workflows []*model.Workflow, err error) {
-	opts := &argo.Options{
+	opts := &kube.WorkflowOptions{
 		Namespace: namespace,
 	}
 	if workflowTemplateUID != "" {
-		opts.ListOptions = &argo.ListOptions{
+		opts.ListOptions = &kube.ListOptions{
 			LabelSelector: fmt.Sprintf("%sworkflow-template-uid=%s", viper.GetString("k8s.labelKeyPrefix"), workflowTemplateUID),
 		}
 	}
-	wfs, err := r.argClient.ListWorkflows(opts)
+	wfs, err := r.kubeClient.ListWorkflows(opts)
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflows not found.")
 	}
@@ -156,7 +156,7 @@ func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID string) (
 
 func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTemplate *model.WorkflowTemplate) (*model.WorkflowTemplate, error) {
 	// validate workflow template
-	if err := r.argClient.ValidateWorkflow(workflowTemplate.GetManifestBytes()); err != nil {
+	if err := r.kubeClient.ValidateWorkflow(workflowTemplate.GetManifestBytes()); err != nil {
 		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
 	}
 
@@ -170,7 +170,7 @@ func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTempl
 
 func (r *ResourceManager) CreateWorkflowTemplateVersion(namespace string, workflowTemplate *model.WorkflowTemplate) (*model.WorkflowTemplate, error) {
 	// validate workflow template
-	if err := r.argClient.ValidateWorkflow(workflowTemplate.GetManifestBytes()); err != nil {
+	if err := r.kubeClient.ValidateWorkflow(workflowTemplate.GetManifestBytes()); err != nil {
 		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
 	}
 

@@ -1,13 +1,18 @@
 package kube
 
 import (
+	argoprojv1alpha1 "github.com/argoproj/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+type ListOptions = v1.ListOptions
+
 type Client struct {
 	*kubernetes.Clientset
+	argoprojV1alpha1 *argoprojv1alpha1.ArgoprojV1alpha1Client
 }
 
 func NewClient(configPath ...string) (client *Client) {
@@ -25,5 +30,5 @@ func NewClient(configPath ...string) (client *Client) {
 		panic(err)
 	}
 
-	return &Client{Clientset: kubernetes.NewForConfigOrDie(config)}
+	return &Client{Clientset: kubernetes.NewForConfigOrDie(config), argoprojV1alpha1: argoprojv1alpha1.NewForConfigOrDie(config)}
 }

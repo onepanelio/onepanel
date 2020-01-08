@@ -11,7 +11,6 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/onepanelio/core/api"
-	"github.com/onepanelio/core/argo"
 	"github.com/onepanelio/core/kube"
 	"github.com/onepanelio/core/manager"
 	"github.com/onepanelio/core/repository"
@@ -38,11 +37,9 @@ func main() {
 		log.Fatalf("goose up: %v", err)
 	}
 
-	argoClient := argo.NewClient(viper.GetString("KUBECONFIG"))
-
 	kubeClient := kube.NewClient(viper.GetString("KUBECONFIG"))
 
-	go startRPCServer(db, argoClient, kubeClient)
+	go startRPCServer(db, kubeClient)
 	startHTTPProxy()
 }
 
@@ -64,8 +61,8 @@ func initConfig() {
 	})
 }
 
-func startRPCServer(db *repository.DB, argoClient *argo.Client, kubeClient *kube.Client) {
-	resourceManager := manager.NewResourceManager(db, argoClient, kubeClient)
+func startRPCServer(db *repository.DB, kubeClient *kube.Client) {
+	resourceManager := manager.NewResourceManager(db, kubeClient)
 
 	log.Printf("Starting RPC server on port %v", *rpcPort)
 	lis, err := net.Listen("tcp", *rpcPort)

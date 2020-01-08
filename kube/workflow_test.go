@@ -1,4 +1,4 @@
-package argo
+package kube
 
 import (
 	"flag"
@@ -129,9 +129,9 @@ spec:
 
 var (
 	namespace = flag.String("namespace", "default", "namespace of workflows")
-	options   = &Options{
+	options   = &WorkflowOptions{
 		Namespace: *namespace,
-		Parameters: []Parameter{
+		Parameters: []WorkflowParameter{
 			{
 				Name:  "name",
 				Value: ptr.String("vscode"),
@@ -161,7 +161,7 @@ func TestUnmarshalWorkflows(t *testing.T) {
 func TestCreateOrResumeInstance(t *testing.T) {
 	c := NewClient(os.Getenv("KUBECONFIG"))
 
-	options.Parameters = append(options.Parameters, Parameter{
+	options.Parameters = append(options.Parameters, WorkflowParameter{
 		Name:  "action",
 		Value: ptr.String("create"),
 	})
@@ -178,7 +178,7 @@ func TestCreateOrResumeInstance(t *testing.T) {
 func TestPauseInstance(t *testing.T) {
 	c := NewClient(os.Getenv("KUBECONFIG"))
 
-	options.Parameters = append(options.Parameters, Parameter{
+	options.Parameters = append(options.Parameters, WorkflowParameter{
 		Name:  "action",
 		Value: ptr.String("delete"),
 	})
@@ -195,10 +195,10 @@ func TestPauseInstance(t *testing.T) {
 func TestChangeInstanceMachineType(t *testing.T) {
 	c := NewClient(os.Getenv("KUBECONFIG"))
 
-	options.Parameters = append(options.Parameters, Parameter{
+	options.Parameters = append(options.Parameters, WorkflowParameter{
 		Name:  "action",
 		Value: ptr.String("apply"),
-	}, Parameter{
+	}, WorkflowParameter{
 		Name:  "machine-type",
 		Value: ptr.String("cpu-1-4"),
 	})

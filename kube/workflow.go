@@ -1,4 +1,4 @@
-package argo
+package kube
 
 import (
 	"fmt"
@@ -15,16 +15,14 @@ import (
 
 type Workflow = wfv1.Workflow
 
-type Parameter = wfv1.Parameter
+type WorkflowParameter = wfv1.Parameter
 
-type ListOptions = v1.ListOptions
-
-type Options struct {
+type WorkflowOptions struct {
 	Name           string
 	Namespace      string
 	GeneratedName  string
 	Entrypoint     string
-	Parameters     []Parameter
+	Parameters     []WorkflowParameter
 	ServiceAccount string
 	Labels         *map[string]string
 	ListOptions    *ListOptions
@@ -48,9 +46,9 @@ func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []Workflow, err error)
 	return
 }
 
-func (c *Client) create(wf *Workflow, opts *Options) (createdWorkflow *Workflow, err error) {
+func (c *Client) create(wf *Workflow, opts *WorkflowOptions) (createdWorkflow *Workflow, err error) {
 	if opts == nil {
-		opts = &Options{}
+		opts = &WorkflowOptions{}
 	}
 	if opts.Name != "" {
 		wf.ObjectMeta.Name = opts.Name
@@ -85,7 +83,7 @@ func (c *Client) create(wf *Workflow, opts *Options) (createdWorkflow *Workflow,
 		wf.ObjectMeta.Labels = *opts.Labels
 	}
 
-	createdWorkflow, err = c.Clientset.ArgoprojV1alpha1().Workflows(opts.Namespace).Create(wf)
+	createdWorkflow, err = c.argoprojV1alpha1.Workflows(opts.Namespace).Create(wf)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +97,7 @@ func (c *Client) ValidateWorkflow(manifest []byte) (err error) {
 	return
 }
 
-func (c *Client) CreateWorkflow(manifest []byte, opts *Options) (createdWorkflows []*Workflow, err error) {
+func (c *Client) CreateWorkflow(manifest []byte, opts *WorkflowOptions) (createdWorkflows []*Workflow, err error) {
 	workflows, err := unmarshalWorkflows(manifest, true)
 	if err != nil {
 		return nil, err
@@ -116,17 +114,17 @@ func (c *Client) CreateWorkflow(manifest []byte, opts *Options) (createdWorkflow
 	return
 }
 
-func (c *Client) GetWorkflow(name string, opts *Options) (workflow *Workflow, err error) {
-	workflow, err = c.Clientset.ArgoprojV1alpha1().Workflows(opts.Namespace).Get(name, v1.GetOptions{})
+func (c *Client) GetWorkflow(name string, opts *WorkflowOptions) (workflow *Workflow, err error) {
+	workflow, err = c.argoprojV1alpha1.Workflows(opts.Namespace).Get(name, v1.GetOptions{})
 
 	return
 }
 
-func (c *Client) ListWorkflows(opts *Options) (workflows []*Workflow, err error) {
+func (c *Client) ListWorkflows(opts *WorkflowOptions) (workflows []*Workflow, err error) {
 	if opts.ListOptions == nil {
 		opts.ListOptions = &ListOptions{}
 	}
-	workflowList, err := c.Clientset.ArgoprojV1alpha1().Workflows(opts.Namespace).List(*opts.ListOptions)
+	workflowList, err := c.argoprojV1alpha1.Workflows(opts.Namespace).List(*opts.ListOptions)
 	if err != nil {
 		return
 	}
@@ -138,12 +136,12 @@ func (c *Client) ListWorkflows(opts *Options) (workflows []*Workflow, err error)
 	return
 }
 
-func (c *Client) WatchWorkflow(name string, opts *Options) (watcher watch.Interface, err error) {
+func (c *Client) WatchWorkflow(name string, opts *WorkflowOptions) (watcher watch.Interface, err error) {
 	fieldSelector, err := fields.ParseSelector(fmt.Sprintf("metadata.name=%s", name))
 	if err != nil {
 		return
 	}
-	watcher, err = c.Clientset.ArgoprojV1alpha1().Workflows(opts.Namespace).Watch(metav1.ListOptions{
+	watcher, err = c.argoprojV1alpha1.Workflows(opts.Namespace).Watch(metav1.ListOptions{
 		FieldSelector: fieldSelector.String(),
 	})
 
