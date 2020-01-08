@@ -130,7 +130,6 @@ spec:
 var (
 	namespace = flag.String("namespace", "default", "namespace of workflows")
 	options   = &WorkflowOptions{
-		Namespace: *namespace,
 		Parameters: []WorkflowParameter{
 			{
 				Name:  "name",
@@ -166,7 +165,7 @@ func TestCreateOrResumeInstance(t *testing.T) {
 		Value: ptr.String("create"),
 	})
 
-	wf, err := c.CreateWorkflow(TestInstanceWorkflowManifest, options)
+	wf, err := c.CreateWorkflow(*namespace, TestInstanceWorkflowManifest, options)
 	if err != nil {
 		t.Error(err)
 		return
@@ -183,7 +182,7 @@ func TestPauseInstance(t *testing.T) {
 		Value: ptr.String("delete"),
 	})
 
-	wf, err := c.CreateWorkflow(TestInstanceWorkflowManifest, options)
+	wf, err := c.CreateWorkflow(*namespace, TestInstanceWorkflowManifest, options)
 	if err != nil {
 		t.Error(err)
 		return
@@ -203,7 +202,7 @@ func TestChangeInstanceMachineType(t *testing.T) {
 		Value: ptr.String("cpu-1-4"),
 	})
 
-	wf, err := c.CreateWorkflow(TestInstanceWorkflowManifest, options)
+	wf, err := c.CreateWorkflow(*namespace, TestInstanceWorkflowManifest, options)
 	if err != nil {
 		t.Error(err)
 		return

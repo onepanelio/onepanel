@@ -19,7 +19,6 @@ type WorkflowParameter = wfv1.Parameter
 
 type WorkflowOptions struct {
 	Name           string
-	Namespace      string
 	GeneratedName  string
 	Entrypoint     string
 	Parameters     []WorkflowParameter
@@ -46,7 +45,7 @@ func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []Workflow, err error)
 	return
 }
 
-func (c *Client) create(wf *Workflow, opts *WorkflowOptions) (createdWorkflow *Workflow, err error) {
+func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (createdWorkflow *Workflow, err error) {
 	if opts == nil {
 		opts = &WorkflowOptions{}
 	}
@@ -83,7 +82,7 @@ func (c *Client) create(wf *Workflow, opts *WorkflowOptions) (createdWorkflow *W
 		wf.ObjectMeta.Labels = *opts.Labels
 	}
 
-	createdWorkflow, err = c.argoprojV1alpha1.Workflows(opts.Namespace).Create(wf)
+	createdWorkflow, err = c.argoprojV1alpha1.Workflows(namespace).Create(wf)
 	if err != nil {
 		return nil, err
 	}
@@ -97,14 +96,14 @@ func (c *Client) ValidateWorkflow(manifest []byte) (err error) {
 	return
 }
 
-func (c *Client) CreateWorkflow(manifest []byte, opts *WorkflowOptions) (createdWorkflows []*Workflow, err error) {
+func (c *Client) CreateWorkflow(namespace string, manifest []byte, opts *WorkflowOptions) (createdWorkflows []*Workflow, err error) {
 	workflows, err := unmarshalWorkflows(manifest, true)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, wf := range workflows {
-		createdWorkflow, err := c.create(&wf, opts)
+		createdWorkflow, err := c.create(namespace, &wf, opts)
 		if err != nil {
 			return nil, err
 		}
@@ -114,17 +113,17 @@ func (c *Client) CreateWorkflow(manifest []byte, opts *WorkflowOptions) (created
 	return
 }
 
-func (c *Client) GetWorkflow(name string, opts *WorkflowOptions) (workflow *Workflow, err error) {
-	workflow, err = c.argoprojV1alpha1.Workflows(opts.Namespace).Get(name, v1.GetOptions{})
+func (c *Client) GetWorkflow(namespace, name string) (workflow *Workflow, err error) {
+	workflow, err = c.argoprojV1alpha1.Workflows(namespace).Get(name, v1.GetOptions{})
 
 	return
 }
 
-func (c *Client) ListWorkflows(opts *WorkflowOptions) (workflows []*Workflow, err error) {
+func (c *Client) ListWorkflows(namespace string, opts *WorkflowOptions) (workflows []*Workflow, err error) {
 	if opts.ListOptions == nil {
 		opts.ListOptions = &ListOptions{}
 	}
-	workflowList, err := c.argoprojV1alpha1.Workflows(opts.Namespace).List(*opts.ListOptions)
+	workflowList, err := c.argoprojV1alpha1.Workflows(namespace).List(*opts.ListOptions)
 	if err != nil {
 		return
 	}
@@ -136,12 +135,12 @@ func (c *Client) ListWorkflows(opts *WorkflowOptions) (workflows []*Workflow, er
 	return
 }
 
-func (c *Client) WatchWorkflow(name string, opts *WorkflowOptions) (watcher watch.Interface, err error) {
+func (c *Client) WatchWorkflow(namespace, name string) (watcher watch.Interface, err error) {
 	fieldSelector, err := fields.ParseSelector(fmt.Sprintf("metadata.name=%s", name))
 	if err != nil {
 		return
 	}
-	watcher, err = c.argoprojV1alpha1.Workflows(opts.Namespace).Watch(metav1.ListOptions{
+	watcher, err = c.argoprojV1alpha1.Workflows(namespace).Watch(metav1.ListOptions{
 		FieldSelector: fieldSelector.String(),
 	})
 

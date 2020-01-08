@@ -20,9 +20,7 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 	}
 
 	// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
-	opts := &kube.WorkflowOptions{
-		Namespace: namespace,
-	}
+	opts := &kube.WorkflowOptions{}
 	for _, param := range workflow.Parameters {
 		opts.Parameters = append(opts.Parameters, kube.WorkflowParameter{
 			Name:  param.Name,
@@ -34,7 +32,7 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 	}
 	(*opts.Labels)[viper.GetString("k8s.labelKeyPrefix")+"workflow-template-uid"] = workflowTemplate.UID
 	(*opts.Labels)[viper.GetString("k8s.labelKeyPrefix")+"workflow-template-version"] = fmt.Sprint(workflowTemplate.Version)
-	createdWorkflows, err := r.kubeClient.CreateWorkflow(workflowTemplate.GetManifestBytes(), opts)
+	createdWorkflows, err := r.kubeClient.CreateWorkflow(namespace, workflowTemplate.GetManifestBytes(), opts)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +47,7 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 }
 
 func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.Workflow, err error) {
-	wf, err := r.kubeClient.GetWorkflow(name, &kube.WorkflowOptions{Namespace: namespace})
+	wf, err := r.kubeClient.GetWorkflow(namespace, name)
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
 	}
@@ -89,7 +87,7 @@ func (r *ResourceManager) WatchWorkflow(namespace, name string) (<-chan *model.W
 		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}
 
-	watcher, err := r.kubeClient.WatchWorkflow(name, &kube.WorkflowOptions{Namespace: namespace})
+	watcher, err := r.kubeClient.WatchWorkflow(namespace, name)
 	if err != nil {
 		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
 	}
@@ -131,15 +129,13 @@ func (r *ResourceManager) WatchWorkflow(namespace, name string) (<-chan *model.W
 }
 
 func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID string) (workflows []*model.Workflow, err error) {
-	opts := &kube.WorkflowOptions{
-		Namespace: namespace,
-	}
+	opts := &kube.WorkflowOptions{}
 	if workflowTemplateUID != "" {
 		opts.ListOptions = &kube.ListOptions{
 			LabelSelector: fmt.Sprintf("%sworkflow-template-uid=%s", viper.GetString("k8s.labelKeyPrefix"), workflowTemplateUID),
 		}
 	}
-	wfs, err := r.kubeClient.ListWorkflows(opts)
+	wfs, err := r.kubeClient.ListWorkflows(namespace, opts)
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflows not found.")
 	}
