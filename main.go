@@ -12,6 +12,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/argo"
+	"github.com/onepanelio/core/kube"
 	"github.com/onepanelio/core/manager"
 	"github.com/onepanelio/core/repository"
 	"github.com/onepanelio/core/server"
@@ -39,7 +40,9 @@ func main() {
 
 	argoClient := argo.NewClient(viper.GetString("KUBECONFIG"))
 
-	go startRPCServer(db, argoClient)
+	kubeClient := kube.NewClient(viper.GetString("KUBECONFIG"))
+
+	go startRPCServer(db, argoClient, kubeClient)
 	startHTTPProxy()
 }
 
@@ -61,8 +64,8 @@ func initConfig() {
 	})
 }
 
-func startRPCServer(db *repository.DB, argoClient *argo.Client) {
-	resourceManager := manager.NewResourceManager(db, argoClient)
+func startRPCServer(db *repository.DB, argoClient *argo.Client, kubeClient *kube.Client) {
+	resourceManager := manager.NewResourceManager(db, argoClient, kubeClient)
 
 	log.Printf("Starting RPC server on port %v", *rpcPort)
 	lis, err := net.Listen("tcp", *rpcPort)
@@ -72,6 +75,7 @@ func startRPCServer(db *repository.DB, argoClient *argo.Client) {
 
 	s := grpc.NewServer(grpc.UnaryInterceptor(loggingInterceptor))
 	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer(resourceManager))
+	api.RegisterSecretServiceServer(s, server.NewSecretServer(resourceManager))
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve RPC server: %v", err)
@@ -90,6 +94,11 @@ func startHTTPProxy() {
 	opts := []grpc.DialOption{grpc.WithInsecure()}
 
 	err := api.RegisterWorkflowServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+	if err != nil {
+		log.Fatalf("Failed to connect to service: %v", err)
+	}
+
+	err = api.RegisterSecretServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
 	if err != nil {
 		log.Fatalf("Failed to connect to service: %v", err)
 	}

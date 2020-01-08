@@ -8,11 +8,8 @@ import (
 	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/manager"
 	"github.com/onepanelio/core/model"
-	"github.com/onepanelio/core/util"
 	"github.com/onepanelio/core/util/ptr"
 )
-
-var userError *util.UserError
 
 type WorkflowServer struct {
 	resourceManager *manager.ResourceManager
