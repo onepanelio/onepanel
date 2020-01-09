@@ -6,8 +6,8 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/gorilla/handlers"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/onepanelio/core/api"
@@ -16,49 +16,27 @@ import (
 	"github.com/onepanelio/core/repository"
 	"github.com/onepanelio/core/server"
 	"github.com/pressly/goose"
-	"github.com/spf13/viper"
 	"github.com/tmc/grpc-websocket-proxy/wsproxy"
 	"google.golang.org/grpc"
 )
 
 var (
-	configPath = flag.String("config", "config", "Path to YAML file containing config")
-	rpcPort    = flag.String("rpc-port", ":8887", "RPC Port")
-	httpPort   = flag.String("http-port", ":8888", "RPC Port")
+	rpcPort  = flag.String("rpc-port", ":8887", "RPC Port")
+	httpPort = flag.String("http-port", ":8888", "RPC Port")
 )
 
 func main() {
 	flag.Parse()
 
-	initConfig()
-
-	db := repository.NewDB(viper.GetString("db.driverName"), viper.GetString("DB_DATASOURCE"))
+	db := repository.NewDB(os.Getenv("DB_DRIVER_NAME"), os.Getenv("DB_DATASOURCE_NAME"))
 	if err := goose.Run("up", db.Base(), "db"); err != nil {
 		log.Fatalf("goose up: %v", err)
 	}
 
-	kubeClient := kube.NewClient(viper.GetString("KUBECONFIG"))
+	kubeClient := kube.NewClient(os.Getenv("KUBECONFIG"))
 
 	go startRPCServer(db, kubeClient)
 	startHTTPProxy()
-}
-
-func initConfig() {
-	viper.AutomaticEnv()
-	viper.SetConfigName("config")
-	viper.AddConfigPath(*configPath)
-
-	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("Fatal error config file: %s", err)
-	}
-	// Watch for configuration change
-	viper.WatchConfig()
-	viper.OnConfigChange(func(e fsnotify.Event) {
-		// Read in config again
-		if err := viper.ReadInConfig(); err != nil {
-			log.Fatalf("Fatal error config file: %s", err)
-		}
-	})
 }
 
 func startRPCServer(db *repository.DB, kubeClient *kube.Client) {

@@ -1,5 +1,0 @@
-db:
-    driverName: postgres
-    dataSourceName:  ""
-k8s:
-    labelKeyPrefix: "onepanel.io/"

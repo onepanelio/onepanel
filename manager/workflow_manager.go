@@ -3,14 +3,20 @@ package manager
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"time"
 
 	"github.com/onepanelio/core/kube"
 	"github.com/onepanelio/core/model"
 	"github.com/onepanelio/core/util"
-	"github.com/spf13/viper"
 	"google.golang.org/grpc/codes"
+)
+
+var (
+	labelKeyPrefix                  = os.Getenv("KUBE_LABEL_KEY_PREFIX")
+	workflowTemplateUIDLabelKey     = labelKeyPrefix + "workflow-template-uid"
+	workflowTemplateVersionLabelKey = labelKeyPrefix + "workflow-template-version"
 )
 
 func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workflow) (*model.Workflow, error) {
@@ -30,8 +36,8 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 	if opts.Labels == nil {
 		opts.Labels = &map[string]string{}
 	}
-	(*opts.Labels)[viper.GetString("k8s.labelKeyPrefix")+"workflow-template-uid"] = workflowTemplate.UID
-	(*opts.Labels)[viper.GetString("k8s.labelKeyPrefix")+"workflow-template-version"] = fmt.Sprint(workflowTemplate.Version)
+	(*opts.Labels)[workflowTemplateUIDLabelKey] = workflowTemplate.UID
+	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
 	createdWorkflows, err := r.kubeClient.CreateWorkflow(namespace, workflowTemplate.GetManifestBytes(), opts)
 	if err != nil {
 		return nil, err
@@ -52,9 +58,9 @@ func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.W
 		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
 	}
 
-	uid := wf.ObjectMeta.Labels[viper.GetString("k8s.labelKeyPrefix")+"workflow-template-uid"]
+	uid := wf.ObjectMeta.Labels[workflowTemplateUIDLabelKey]
 	version, err := strconv.ParseInt(
-		wf.ObjectMeta.Labels[viper.GetString("k8s.labelKeyPrefix")+"workflow-template-version"],
+		wf.ObjectMeta.Labels[workflowTemplateVersionLabelKey],
 		10,
 		32,
 	)
@@ -132,7 +138,7 @@ func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID string) (
 	opts := &kube.WorkflowOptions{}
 	if workflowTemplateUID != "" {
 		opts.ListOptions = &kube.ListOptions{
-			LabelSelector: fmt.Sprintf("%sworkflow-template-uid=%s", viper.GetString("k8s.labelKeyPrefix"), workflowTemplateUID),
+			LabelSelector: fmt.Sprintf("%sworkflow-template-uid=%s", labelKeyPrefix, workflowTemplateUID),
 		}
 	}
 	wfs, err := r.kubeClient.ListWorkflows(namespace, opts)
