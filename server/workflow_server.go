@@ -103,6 +103,31 @@ func (s *WorkflowServer) WatchWorkflow(req *api.WatchWorkflowRequest, stream api
 	return nil
 }
 
+func (s *WorkflowServer) GetWorkflowLogs(req *api.GetWorkflowLogsRequest, stream api.WorkflowService_GetWorkflowLogsServer) error {
+	watcher, err := s.resourceManager.GetWorkflowLogs(req.Namespace, req.Name, req.PodName, req.ContainerName)
+	if errors.As(err, &userError) {
+		return userError.GRPCError()
+	}
+
+	le := &model.LogEntry{}
+	ticker := time.NewTicker(time.Second)
+	for {
+		select {
+		case le = <-watcher:
+		case <-ticker.C:
+		}
+
+		if le == nil {
+			break
+		}
+		if err := stream.Send(&api.LogEntry{Content: le.Content}); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (s *WorkflowServer) ListWorkflows(ctx context.Context, req *api.ListWorkflowsRequest) (*api.ListWorkflowsResponse, error) {
 	workflows, err := s.resourceManager.ListWorkflows(req.Namespace, req.WorkflowTemplateUid)
 	if errors.As(err, &userError) {

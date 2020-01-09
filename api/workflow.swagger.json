@@ -298,6 +298,48 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/workflows/{name}/pods/{podName}/log": {
+      "get": {
+        "operationId": "GetWorkflowLogs",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "$ref": "#/x-stream-definitions/apiLogEntry"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "podName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "containerName",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workflows/{name}/watch": {
       "get": {
         "operationId": "WatchWorkflow",
@@ -372,6 +414,14 @@
           "items": {
             "$ref": "#/definitions/apiWorkflow"
           }
+        }
+      }
+    },
+    "apiLogEntry": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "string"
         }
       }
     },
@@ -466,6 +516,18 @@
     }
   },
   "x-stream-definitions": {
+    "apiLogEntry": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/apiLogEntry"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of apiLogEntry"
+    },
     "apiWorkflow": {
       "type": "object",
       "properties": {
