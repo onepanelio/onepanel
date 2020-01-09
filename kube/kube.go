@@ -15,6 +15,10 @@ type Client struct {
 	argoprojV1alpha1 *argoprojv1alpha1.ArgoprojV1alpha1Client
 }
 
+func (c *Client) ArgoprojV1alpha1() argoprojv1alpha1.ArgoprojV1alpha1Interface {
+	return c.argoprojV1alpha1
+}
+
 func NewClient(configPath ...string) (client *Client) {
 	var (
 		err    error

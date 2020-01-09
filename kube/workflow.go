@@ -82,7 +82,7 @@ func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (
 		wf.ObjectMeta.Labels = *opts.Labels
 	}
 
-	createdWorkflow, err = c.argoprojV1alpha1.Workflows(namespace).Create(wf)
+	createdWorkflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func (c *Client) CreateWorkflow(namespace string, manifest []byte, opts *Workflo
 }
 
 func (c *Client) GetWorkflow(namespace, name string) (workflow *Workflow, err error) {
-	workflow, err = c.argoprojV1alpha1.Workflows(namespace).Get(name, v1.GetOptions{})
+	workflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Get(name, v1.GetOptions{})
 
 	return
 }
@@ -123,7 +123,7 @@ func (c *Client) ListWorkflows(namespace string, opts *WorkflowOptions) (workflo
 	if opts.ListOptions == nil {
 		opts.ListOptions = &ListOptions{}
 	}
-	workflowList, err := c.argoprojV1alpha1.Workflows(namespace).List(*opts.ListOptions)
+	workflowList, err := c.ArgoprojV1alpha1().Workflows(namespace).List(*opts.ListOptions)
 	if err != nil {
 		return
 	}
@@ -140,7 +140,7 @@ func (c *Client) WatchWorkflow(namespace, name string) (watcher watch.Interface,
 	if err != nil {
 		return
 	}
-	watcher, err = c.argoprojV1alpha1.Workflows(namespace).Watch(metav1.ListOptions{
+	watcher, err = c.ArgoprojV1alpha1().Workflows(namespace).Watch(metav1.ListOptions{
 		FieldSelector: fieldSelector.String(),
 	})
 
