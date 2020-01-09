@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package api;
+
+message CreateWorkflowTemplateRequest {
+    string namespace = 1;
+    WorkflowTemplate workflowTemplate = 2;
+}
+
+message GetWorkflowTemplateRequest {
+    string namespace = 1;
+    string uid = 2;
+    int32 version = 3;
+}
+
+message ListWorkflowTemplateVersionsRequest {
+    string namespace = 1;
+    string uid = 2;
+}
+
+message ListWorkflowTemplateVersionsResponse {
+    int32 count = 1;
+    repeated WorkflowTemplate workflowTemplates = 2;
+}
+
+message ListWorkflowTemplatesRequest {
+    string namespace = 1;
+}
+
+message ListWorkflowTemplatesResponse {
+    int32 count = 1;
+    repeated WorkflowTemplate workflowTemplates = 2;
+}
+
+message WorkflowTemplate {
+    string uid = 1;
+    string name = 2;
+    int32 version = 3;
+    string manifest = 4;
+}

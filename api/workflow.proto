@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+package api;
+
+import "google/api/annotations.proto";
+import "workflow_template.proto";
+
+service WorkflowService {
+    // Creates a Workflow
+    rpc CreateWorkflow (CreateWorkflowRequest) returns (Workflow) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/{namespace}/workflows"
+            body: "workflow"
+        };
+    }
+
+    rpc GetWorkflow (GetWorkflowRequest) returns (Workflow) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflows/{name}"
+        };
+    }
+
+    rpc ListWorkflows (ListWorkflowsRequest) returns (ListWorkflowsResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflows"
+        };
+    }
+
+    rpc WatchWorkflow (WatchWorkflowRequest) returns (stream Workflow) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflows/{name}/watch"
+        };
+    }
+
+    rpc CreateWorkflowTemplate (CreateWorkflowTemplateRequest) returns (WorkflowTemplate) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/{namespace}/workflow_templates"
+            body: "workflowTemplate"
+        };
+    }
+
+    rpc CreateWorkflowTemplateVersion (CreateWorkflowTemplateRequest) returns (WorkflowTemplate) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/{namespace}/workflow_templates/{workflowTemplate.uid}/versions"
+            body: "workflowTemplate"
+        };
+    }
+
+    rpc GetWorkflowTemplate (GetWorkflowTemplateRequest) returns (WorkflowTemplate) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflow_templates/{uid}"
+            additional_bindings {
+				get: "/apis/v1beta1/{namespace}/workflow_templates/{uid}/versions/{version}"
+			}
+        };
+    }
+
+    rpc ListWorkflowTemplateVersions (ListWorkflowTemplateVersionsRequest) returns (ListWorkflowTemplateVersionsResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflow_templates/{uid}/versions"
+        };
+    }
+
+    rpc ListWorkflowTemplates (ListWorkflowTemplatesRequest) returns (ListWorkflowTemplatesResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflow_templates"
+        };
+    }
+}
+
+message CreateWorkflowRequest {
+    string namespace = 1;
+    Workflow workflow = 2;
+}
+
+message GetWorkflowRequest {
+    string namespace = 1;
+    string name = 2;
+}
+
+message WatchWorkflowRequest {
+    string namespace = 1;
+    string name = 2;
+}
+
+message ListWorkflowsRequest {
+    string namespace = 1;
+    string workflowTemplateUid = 2;
+}
+
+message ListWorkflowsResponse {
+    int32 count = 1;
+    repeated Workflow workflows = 2;
+}
+
+message Workflow {
+    string uid = 1;
+    string name = 2;
+    string status = 3;
+
+    repeated Parameter parameters = 4;
+
+    WorkflowTemplate workflowTemplate = 5;
+}
+
+message Parameter {
+    string name = 1;
+    string value = 2;
+}
