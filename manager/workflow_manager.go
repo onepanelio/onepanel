@@ -139,7 +139,7 @@ func (r *ResourceManager) GetWorkflowLogs(namespace, name, podName, containerNam
 	stream, err := r.kubeClient.GetPodLogs(namespace, podName, containerName)
 
 	logWatcher := make(chan *model.LogEntry)
-	if err != nil {
+	if err == nil {
 		go func() {
 			scanner := bufio.NewScanner(stream)
 			for scanner.Scan() {
