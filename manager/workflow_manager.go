@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -132,6 +133,25 @@ func (r *ResourceManager) WatchWorkflow(namespace, name string) (<-chan *model.W
 	}()
 
 	return workflowWatcher, nil
+}
+
+func (r *ResourceManager) GetWorkflowLogs(namespace, name, podName, containerName string) (<-chan *model.LogEntry, error) {
+	stream, err := r.kubeClient.GetPodLogs(namespace, podName, containerName)
+	// TODO: Catch exact kubernetes error
+	if err != nil {
+		return nil, util.NewUserError(codes.NotFound, "Log not found.")
+	}
+
+	logWatcher := make(chan *model.LogEntry)
+	go func() {
+		scanner := bufio.NewScanner(stream)
+		for scanner.Scan() {
+			logWatcher <- &model.LogEntry{Content: scanner.Text()}
+		}
+		close(logWatcher)
+	}()
+
+	return logWatcher, err
 }
 
 func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID string) (workflows []*model.Workflow, err error) {
