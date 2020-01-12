@@ -425,17 +425,6 @@
         }
       }
     },
-    "apiParameter": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "value": {
-          "type": "string"
-        }
-      }
-    },
     "apiWorkflow": {
       "type": "object",
       "properties": {
@@ -451,11 +440,22 @@
         "parameters": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/apiParameter"
+            "$ref": "#/definitions/apiWorkflowParameter"
           }
         },
         "workflowTemplate": {
           "$ref": "#/definitions/apiWorkflowTemplate"
+        }
+      }
+    },
+    "apiWorkflowParameter": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
         }
       }
     },
