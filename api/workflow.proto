@@ -115,12 +115,12 @@ message Workflow {
     string name = 2;
     string status = 3;
 
-    repeated Parameter parameters = 4;
+    repeated WorkflowParameter parameters = 4;
 
     WorkflowTemplate workflowTemplate = 5;
 }
 
-message Parameter {
+message WorkflowParameter {
     string name = 1;
     string value = 2;
 }
