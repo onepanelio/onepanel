@@ -54,12 +54,12 @@ func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (
 	}
 
 	//TODO - Load this data from onepanel config-map or secret
-	podGCStrategy := env.GetEnv("ARGO_POD_GC_STRATEGY", "onPodCompletion")
+	podGCStrategy := env.GetEnv("ARGO_POD_GC_STRATEGY", "OnPodCompletion")
 	if podGCStrategy != "" {
 		strategy := PodGCStrategy(podGCStrategy)
 		opts.PodGCStrategy = &strategy
 	} else {
-		strategy := PodGCStrategy("onPodCompletion")
+		strategy := PodGCStrategy("OnPodCompletion")
 		opts.PodGCStrategy = &strategy
 	}
 	if opts.Name != "" {
