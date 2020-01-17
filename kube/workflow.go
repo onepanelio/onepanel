@@ -53,15 +53,6 @@ func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (
 		opts = &WorkflowOptions{}
 	}
 
-	//TODO - Load this data from onepanel config-map or secret
-	podGCStrategy := env.GetEnv("ARGO_POD_GC_STRATEGY", "OnPodCompletion")
-	if podGCStrategy != "" {
-		strategy := PodGCStrategy(podGCStrategy)
-		opts.PodGCStrategy = &strategy
-	} else {
-		strategy := PodGCStrategy("OnPodCompletion")
-		opts.PodGCStrategy = &strategy
-	}
 	if opts.Name != "" {
 		wf.ObjectMeta.Name = opts.Name
 	}
@@ -94,6 +85,17 @@ func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (
 	if opts.Labels != nil {
 		wf.ObjectMeta.Labels = *opts.Labels
 	}
+
+	//TODO - Load this data from onepanel config-map or secret
+	podGCStrategy := env.GetEnv("ARGO_POD_GC_STRATEGY", "OnPodCompletion")
+	if podGCStrategy != "" {
+		strategy := PodGCStrategy(podGCStrategy)
+		opts.PodGCStrategy = &strategy
+	} else {
+		strategy := PodGCStrategy("OnPodCompletion")
+		opts.PodGCStrategy = &strategy
+	}
+
 	if wf.Spec.PodGC == nil {
 		wf.Spec.PodGC = &wfv1.PodGC{
 			Strategy: *opts.PodGCStrategy,
