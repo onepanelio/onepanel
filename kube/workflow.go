@@ -101,12 +101,6 @@ func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (
 		}
 	}
 
-	if wf.Spec.PodGC == nil {
-		wf.Spec.PodGC = &wfv1.PodGC{
-			Strategy: *opts.PodGCStrategy,
-		}
-	}
-
 	createdWorkflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
 	if err != nil {
 		return nil, err
