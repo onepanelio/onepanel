@@ -8,6 +8,7 @@ require (
 	github.com/Masterminds/squirrel v1.1.0
 	github.com/argoproj/argo v2.4.2+incompatible
 	github.com/argoproj/pkg v0.0.0-20191031223000-02a6aac40ac4
+	github.com/aws/aws-sdk-go v1.28.5
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/elazarl/goproxy v0.0.0-20191011121108-aa519ddbe484 // indirect
 	github.com/evanphx/json-patch v4.5.0+incompatible // indirect
