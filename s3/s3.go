@@ -1,8 +1,7 @@
 package s3
 
 import (
-	"io/ioutil"
-	"time"
+	"io"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -14,17 +13,18 @@ type Client struct {
 	*s3.S3
 }
 
-type Object struct {
-	Key          *string    `json:"key"`
-	LastModified *time.Time `json:"last_modified"`
-	Size         *int64     `json:"size"`
-	IsPrefix     bool       `json:"is_prefix"`
+type Config struct {
+	AccessKey string
+	SecretKey string
+	Endpoint  string
+	Region    string
 }
 
-func NewClient(id, secret, region string) (s3Client *Client, err error) {
+func NewClient(config Config) (s3Client *Client, err error) {
 	session, err := session.NewSession(&aws.Config{
-		Credentials: credentials.NewStaticCredentials(id, secret, ""),
-		Region:      aws.String(region),
+		Credentials: credentials.NewStaticCredentials(config.AccessKey, config.SecretKey, ""),
+		Region:      aws.String(config.Region),
+		Endpoint:    aws.String(config.Endpoint),
 	})
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func NewClient(id, secret, region string) (s3Client *Client, err error) {
 	return &Client{S3: s3.New(session)}, nil
 }
 
-func (c *Client) GetObject(bucket, key string) (content *[]byte, err error) {
+func (c *Client) StreamObject(bucket, key string) (stream io.ReadCloser, err error) {
 	out, err := c.S3.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(key),
@@ -41,12 +41,12 @@ func (c *Client) GetObject(bucket, key string) (content *[]byte, err error) {
 		return
 	}
 
-	defer out.Body.Close()
-	data, err := ioutil.ReadAll(out.Body)
-	if err != nil {
-		return
-	}
-	content = &data
+	switch {
+	case (out.Body != nil):
+		return out.Body, nil
 
-	return
+	default:
+		defer out.Body.Close()
+		return nil, err
+	}
 }

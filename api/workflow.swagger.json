@@ -298,7 +298,7 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/workflows/{name}/pods/{podName}/log": {
+    "/apis/v1beta1/{namespace}/workflows/{name}/pods/{podName}/containers/{containerName}/logs": {
       "get": {
         "operationId": "GetWorkflowLogs",
         "responses": {
@@ -330,8 +330,8 @@
           },
           {
             "name": "containerName",
-            "in": "query",
-            "required": false,
+            "in": "path",
+            "required": true,
             "type": "string"
           }
         ],
