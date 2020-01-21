@@ -7,7 +7,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/onepanelio/core/util/env"
 )
+
+var objectRange = env.GetEnv("ARTIFACT_RERPOSITORY_OBJECT_RANGE", "bytes=-102400")
 
 type Client struct {
 	*s3.S3
@@ -36,17 +39,16 @@ func (c *Client) StreamObject(bucket, key string) (stream io.ReadCloser, err err
 	out, err := c.S3.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(key),
+		Range:  aws.String(objectRange),
 	})
 	if err != nil {
 		return
 	}
 
-	switch {
-	case (out.Body != nil):
-		return out.Body, nil
-
-	default:
+	stream = out.Body
+	if stream == nil {
 		defer out.Body.Close()
-		return nil, err
 	}
+
+	return
 }
