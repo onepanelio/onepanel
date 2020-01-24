@@ -134,11 +134,17 @@ func (r *ResourceManager) WatchWorkflow(namespace, name string) (<-chan *model.W
 	return workflowWatcher, nil
 }
 
-func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID string) (workflows []*model.Workflow, err error) {
+func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID, workflowTemplateVersion string) (workflows []*model.Workflow, err error) {
 	opts := &kube.WorkflowOptions{}
 	if workflowTemplateUID != "" {
+		labelSelect := fmt.Sprintf("%sworkflow-template-uid=%s", labelKeyPrefix, workflowTemplateUID)
+
+		if workflowTemplateVersion != "" {
+			labelSelect = fmt.Sprintf("%s,%sworkflow-template-version=%s", labelSelect, labelKeyPrefix, workflowTemplateVersion)
+		}
+
 		opts.ListOptions = &kube.ListOptions{
-			LabelSelector: fmt.Sprintf("%sworkflow-template-uid=%s", labelKeyPrefix, workflowTemplateUID),
+			LabelSelector: labelSelect,
 		}
 	}
 	wfs, err := r.kubeClient.ListWorkflows(namespace, opts)
