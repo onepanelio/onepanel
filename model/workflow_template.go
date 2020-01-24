@@ -10,6 +10,7 @@ type WorkflowTemplate struct {
 	Name     string
 	Manifest string
 	Version  int32
+	IsLatest bool `db:"is_latest"`
 }
 
 func (wt *WorkflowTemplate) GetManifestBytes() []byte {

@@ -176,10 +176,39 @@ func (r *ResourceManager) CreateWorkflowTemplateVersion(namespace string, workfl
 		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
 	}
 
+	if err := r.workflowRepository.RemoveIsLatestFromWorkflowTemplateVersions(workflowTemplate); err != nil {
+		return nil, err
+	}
+
 	workflowTemplate, err := r.workflowRepository.CreateWorkflowTemplateVersion(namespace, workflowTemplate)
 	if err != nil {
 		return nil, util.NewUserErrorWrap(err, "Workflow template")
 	}
+
+	if err == nil && workflowTemplate == nil {
+		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
+	}
+
+	return workflowTemplate, nil
+}
+
+func (r *ResourceManager) UpdateWorkflowTemplateVersion(namespace string, workflowTemplate *model.WorkflowTemplate) (*model.WorkflowTemplate, error) {
+	// validate workflow template
+	if err := r.kubeClient.ValidateWorkflow(workflowTemplate.GetManifestBytes()); err != nil {
+		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
+	}
+
+	originalWorkflowTemplate, err := r.workflowRepository.GetWorkflowTemplate(namespace, workflowTemplate.UID, workflowTemplate.Version)
+	if err != nil {
+		return nil, err
+	}
+
+	workflowTemplate.ID = originalWorkflowTemplate.ID
+	workflowTemplate, err = r.workflowRepository.UpdateWorkflowTemplateVersion(workflowTemplate)
+	if err != nil {
+		return nil, util.NewUserErrorWrap(err, "Workflow template")
+	}
+
 	if err == nil && workflowTemplate == nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}

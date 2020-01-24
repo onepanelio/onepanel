@@ -32,6 +32,7 @@ func apiWorkflow(wf *model.Workflow) (workflow *api.Workflow) {
 			Name:     wf.WorkflowTemplate.Name,
 			Version:  wf.WorkflowTemplate.Version,
 			Manifest: wf.WorkflowTemplate.Manifest,
+			IsLatest: wf.WorkflowTemplate.IsLatest,
 		}
 	}
 
@@ -44,6 +45,7 @@ func apiWorkflowTemplate(wft *model.WorkflowTemplate) *api.WorkflowTemplate {
 		Name:     wft.Name,
 		Version:  wft.Version,
 		Manifest: wft.Manifest,
+		IsLatest: wft.IsLatest,
 	}
 }
 
@@ -142,6 +144,25 @@ func (s *WorkflowServer) CreateWorkflowTemplateVersion(ctx context.Context, req 
 		Manifest: req.WorkflowTemplate.Manifest,
 	}
 	workflowTemplate, err := s.resourceManager.CreateWorkflowTemplateVersion(req.Namespace, workflowTemplate)
+	if errors.As(err, &userError) {
+		return nil, userError.GRPCError()
+	}
+	req.WorkflowTemplate.Uid = workflowTemplate.UID
+	req.WorkflowTemplate.Name = workflowTemplate.Name
+	req.WorkflowTemplate.Version = workflowTemplate.Version
+
+	return req.WorkflowTemplate, nil
+}
+
+func (s *WorkflowServer) UpdateWorkflowTemplateVersion(ctx context.Context, req *api.UpdateWorkflowTemplateVersionRequest) (*api.WorkflowTemplate, error) {
+	workflowTemplate := &model.WorkflowTemplate{
+		UID:      req.WorkflowTemplate.Uid,
+		Name:     req.WorkflowTemplate.Name,
+		Manifest: req.WorkflowTemplate.Manifest,
+		Version: req.WorkflowTemplate.Version,
+	}
+
+	workflowTemplate, err := s.resourceManager.UpdateWorkflowTemplateVersion(req.Namespace, workflowTemplate)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
 	}

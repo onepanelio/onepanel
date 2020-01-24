@@ -7,6 +7,11 @@ message CreateWorkflowTemplateRequest {
     WorkflowTemplate workflowTemplate = 2;
 }
 
+message UpdateWorkflowTemplateVersionRequest {
+    string namespace = 1;
+    WorkflowTemplate workflowTemplate = 2;
+}
+
 message GetWorkflowTemplateRequest {
     string namespace = 1;
     string uid = 2;
@@ -37,4 +42,5 @@ message WorkflowTemplate {
     string name = 2;
     int32 version = 3;
     string manifest = 4;
+    bool isLatest = 5;
 }
