@@ -106,6 +106,7 @@ message GetWorkflowLogsRequest {
 message ListWorkflowsRequest {
     string namespace = 1;
     string workflowTemplateUid = 2;
+    string workflowTemplateVersion = 3;
 }
 
 message ListWorkflowsResponse {

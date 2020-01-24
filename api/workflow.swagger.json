@@ -275,6 +275,12 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "workflowTemplateVersion",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
