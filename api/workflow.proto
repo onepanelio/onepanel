@@ -45,6 +45,13 @@ service WorkflowService {
         };
     }
 
+    rpc UpdateWorkflowTemplateVersion (UpdateWorkflowTemplateVersionRequest) returns (WorkflowTemplate) {
+        option (google.api.http) = {
+            put: "/apis/v1beta1/{namespace}/workflow_templates/{workflowTemplate.uid}/versions/{workflowTemplate.version}"
+            body: "workflowTemplate"
+        };
+    }
+
     rpc CreateWorkflowTemplateVersion (CreateWorkflowTemplateRequest) returns (WorkflowTemplate) {
         option (google.api.http) = {
             post: "/apis/v1beta1/{namespace}/workflow_templates/{workflowTemplate.uid}/versions"

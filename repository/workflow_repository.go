@@ -23,6 +23,7 @@ func (r *WorkflowRepository) insertWorkflowTemplateVersion(workflowTemplate *mod
 			"workflow_template_id": workflowTemplate.ID,
 			"manifest":             workflowTemplate.Manifest,
 			"version":              int32(time.Now().Unix()),
+			"is_latest":            workflowTemplate.IsLatest,
 		}).
 		Suffix("RETURNING version").
 		RunWith(runner).
@@ -67,6 +68,25 @@ func (r *WorkflowRepository) CreateWorkflowTemplate(namespace string, workflowTe
 	return workflowTemplate, nil
 }
 
+func (r *WorkflowRepository) RemoveIsLatestFromWorkflowTemplateVersions(workflowTemplate *model.WorkflowTemplate) error {
+	query, args, err := r.sb.Update("workflow_template_versions").
+		Set("is_latest", true).
+		Where(sq.Eq{
+			"workflow_template_id": workflowTemplate.ID,
+			"is_latest":            false,
+		}).
+		ToSql()
+	if err != nil {
+		return err
+	}
+
+	if _, err := r.db.Exec(query, args...); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *WorkflowRepository) CreateWorkflowTemplateVersion(namespace string, workflowTemplate *model.WorkflowTemplate) (*model.WorkflowTemplate, error) {
 	query, args, err := r.sb.Select("id, name").
 		From("workflow_templates").
@@ -90,8 +110,28 @@ func (r *WorkflowRepository) CreateWorkflowTemplateVersion(namespace string, wor
 	return workflowTemplate, nil
 }
 
+func (r *WorkflowRepository) UpdateWorkflowTemplateVersion(workflowTemplate *model.WorkflowTemplate) (*model.WorkflowTemplate, error) {
+	query, args, err := r.sb.Update("workflow_template_versions").
+		Set("manifest", workflowTemplate.Manifest).
+		Where(sq.Eq{
+			"workflow_template_id": workflowTemplate.ID,
+			"version":              workflowTemplate.Version,
+		}).
+		ToSql()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := r.db.Exec(query, args...); err != nil {
+		return nil, err
+	}
+
+	return workflowTemplate, nil
+}
+
 func (r *WorkflowRepository) workflowTemplatesSelectBuilder(namespace string) sq.SelectBuilder {
-	sb := r.sb.Select("wt.uid", "wt.name", "wtv.version").
+	sb := r.sb.Select("wt.id", "wt.uid", "wt.name", "wtv.version", "wtv.is_latest").
 		From("workflow_template_versions wtv").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{

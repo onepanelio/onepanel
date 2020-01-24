@@ -207,6 +207,51 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/workflow_templates/{workflowTemplate.uid}/versions/{workflowTemplate.version}": {
+      "put": {
+        "operationId": "UpdateWorkflowTemplateVersion",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiWorkflowTemplate"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "workflowTemplate.uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "workflowTemplate.version",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiWorkflowTemplate"
+            }
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workflows": {
       "get": {
         "operationId": "ListWorkflows",
@@ -474,6 +519,10 @@
         },
         "manifest": {
           "type": "string"
+        },
+        "isLatest": {
+          "type": "boolean",
+          "format": "boolean"
         }
       }
     },
