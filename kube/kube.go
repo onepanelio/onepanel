@@ -11,8 +11,8 @@ import (
 type ListOptions = v1.ListOptions
 
 type Client struct {
-	*kubernetes.Clientset
-	argoprojV1alpha1 *argoprojv1alpha1.ArgoprojV1alpha1Client
+	kubernetes.Interface
+	argoprojV1alpha1 argoprojv1alpha1.ArgoprojV1alpha1Interface
 }
 
 func (c *Client) ArgoprojV1alpha1() argoprojv1alpha1.ArgoprojV1alpha1Interface {
@@ -34,5 +34,5 @@ func NewClient(configPath ...string) (client *Client) {
 		panic(err)
 	}
 
-	return &Client{Clientset: kubernetes.NewForConfigOrDie(config), argoprojV1alpha1: argoprojv1alpha1.NewForConfigOrDie(config)}
+	return &Client{Interface: kubernetes.NewForConfigOrDie(config), argoprojV1alpha1: argoprojv1alpha1.NewForConfigOrDie(config)}
 }
