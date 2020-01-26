@@ -148,7 +148,7 @@ func (r *ResourceManager) GetWorkflowLogs(namespace, name, podName, containerNam
 		s3Client *s3.Client
 	)
 
-	if wf.Status.Completed() {
+	if wf.Status.Nodes[podName].Completed() {
 		s3Client, err = s3.NewClient(s3.Config{
 			AccessKey: os.Getenv("ARTIFACT_REPOSITORY_ACCESS_KEY"),
 			SecretKey: os.Getenv("ARTIFACT_REPOSITORY_SECRET_KEY"),
