@@ -35,7 +35,7 @@ func NewClient(config Config) (s3Client *Client, err error) {
 	return &Client{S3: s3.New(session)}, nil
 }
 
-func (c *Client) StreamObject(bucket, key string) (stream io.ReadCloser, err error) {
+func (c *Client) GetObject(bucket, key string) (stream io.ReadCloser, err error) {
 	out, err := c.S3.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(key),

@@ -158,7 +158,7 @@ func (r *ResourceManager) GetWorkflowLogs(namespace, name, podName, containerNam
 		if err != nil {
 			return nil, util.NewUserError(codes.PermissionDenied, "Can't connect to S3 storage.")
 		}
-		stream, err = s3Client.StreamObject(os.Getenv("ARTIFACT_REPOSITORY_BUCKET"), "artifacts/"+namespace+"/"+name+"/"+podName+"/"+containerName+".log")
+		stream, err = s3Client.GetObject(os.Getenv("ARTIFACT_REPOSITORY_BUCKET"), "artifacts/"+namespace+"/"+name+"/"+podName+"/"+containerName+".log")
 	} else {
 		stream, err = r.kubeClient.GetPodLogs(namespace, podName, containerName)
 	}
