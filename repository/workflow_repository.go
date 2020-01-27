@@ -131,7 +131,7 @@ func (r *WorkflowRepository) UpdateWorkflowTemplateVersion(workflowTemplate *mod
 }
 
 func (r *WorkflowRepository) workflowTemplatesSelectBuilder(namespace string) sq.SelectBuilder {
-	sb := r.sb.Select("wt.id", "wt.uid", "wt.name", "wtv.version", "wtv.is_latest").
+	sb := r.sb.Select("wt.id", "wt.created_at", "wt.uid", "wt.name", "wtv.version", "wtv.is_latest").
 		From("workflow_template_versions wtv").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{

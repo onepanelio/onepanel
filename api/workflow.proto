@@ -119,13 +119,14 @@ message LogEntry {
 }
 
 message Workflow {
-    string uid = 1;
-    string name = 2;
-    string status = 3;
+    string createdAt = 1;
+    string uid = 2;
+    string name = 3;
+    string status = 4;
 
-    repeated WorkflowParameter parameters = 4;
+    repeated WorkflowParameter parameters = 5;
 
-    WorkflowTemplate workflowTemplate = 5;
+    WorkflowTemplate workflowTemplate = 6;
 }
 
 message WorkflowParameter {

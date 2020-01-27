@@ -21,9 +21,10 @@ func NewWorkflowServer(resourceManager *manager.ResourceManager) *WorkflowServer
 
 func apiWorkflow(wf *model.Workflow) (workflow *api.Workflow) {
 	workflow = &api.Workflow{
-		Name:   wf.Name,
-		Uid:    wf.UID,
-		Status: wf.Status,
+		CreatedAt: wf.CreatedAt.UTC().Format(time.RFC3339),
+		Name:      wf.Name,
+		Uid:       wf.UID,
+		Status:    wf.Status,
 	}
 
 	if wf.WorkflowTemplate != nil {
@@ -41,11 +42,12 @@ func apiWorkflow(wf *model.Workflow) (workflow *api.Workflow) {
 
 func apiWorkflowTemplate(wft *model.WorkflowTemplate) *api.WorkflowTemplate {
 	return &api.WorkflowTemplate{
-		Uid:      wft.UID,
-		Name:     wft.Name,
-		Version:  wft.Version,
-		Manifest: wft.Manifest,
-		IsLatest: wft.IsLatest,
+		Uid:       wft.UID,
+		CreatedAt: wft.CreatedAt.UTC().Format(time.RFC3339),
+		Name:      wft.Name,
+		Version:   wft.Version,
+		Manifest:  wft.Manifest,
+		IsLatest:  wft.IsLatest,
 	}
 }
 

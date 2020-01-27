@@ -479,6 +479,9 @@
     "apiWorkflow": {
       "type": "object",
       "properties": {
+        "createdAt": {
+          "type": "string"
+        },
         "uid": {
           "type": "string"
         },
@@ -513,6 +516,9 @@
     "apiWorkflowTemplate": {
       "type": "object",
       "properties": {
+        "createdAt": {
+          "type": "string"
+        },
         "uid": {
           "type": "string"
         },

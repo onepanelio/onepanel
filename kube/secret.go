@@ -20,3 +20,9 @@ func (c *Client) CreateSecret(namespace string, secret *Secret) (err error) {
 
 	return
 }
+
+func (c *Client) GetSecret(namespace, name string) (secret *apiv1.Secret, err error) {
+	secret, err = c.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
+
+	return
+}

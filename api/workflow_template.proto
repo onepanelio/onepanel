@@ -38,9 +38,10 @@ message ListWorkflowTemplatesResponse {
 }
 
 message WorkflowTemplate {
-    string uid = 1;
-    string name = 2;
-    int32 version = 3;
-    string manifest = 4;
-    bool isLatest = 5;
+    string createdAt = 1;
+    string uid = 2;
+    string name = 3;
+    int32 version = 4;
+    string manifest = 5;
+    bool isLatest = 6;
 }

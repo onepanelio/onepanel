@@ -2,15 +2,17 @@ package model
 
 import (
 	"github.com/google/uuid"
+	"time"
 )
 
 type WorkflowTemplate struct {
-	ID       uint64
-	UID      string
-	Name     string
-	Manifest string
-	Version  int32
-	IsLatest bool `db:"is_latest"`
+	ID        uint64
+	CreatedAt time.Time `db:"created_at"`
+	UID       string
+	Name      string
+	Manifest  string
+	Version   int32
+	IsLatest  bool `db:"is_latest"`
 }
 
 func (wt *WorkflowTemplate) GetManifestBytes() []byte {
