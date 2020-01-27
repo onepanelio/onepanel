@@ -146,19 +146,21 @@ func (r *ResourceManager) GetWorkflowLogs(namespace, name, podName, containerNam
 	var (
 		stream   io.ReadCloser
 		s3Client *s3.Client
+		config   map[string]string
 	)
 
 	if wf.Status.Nodes[podName].Completed() {
-		s3Client, err = s3.NewClient(s3.Config{
-			AccessKey: os.Getenv("ARTIFACT_REPOSITORY_ACCESS_KEY"),
-			SecretKey: os.Getenv("ARTIFACT_REPOSITORY_SECRET_KEY"),
-			Region:    os.Getenv("ARTIFACT_REPOSITORY_REGION"),
-			Endpoint:  os.Getenv("ARTIFACT_REPOSITORY_ENDPOINT"),
-		})
+		config, err = r.getNamespaceConfig(namespace)
+		if err != nil {
+			return nil, util.NewUserError(codes.PermissionDenied, "Can't get configuration.")
+		}
+
+		s3Client, err = r.getS3Client(namespace, config)
 		if err != nil {
 			return nil, util.NewUserError(codes.PermissionDenied, "Can't connect to S3 storage.")
 		}
-		stream, err = s3Client.GetObject(os.Getenv("ARTIFACT_REPOSITORY_BUCKET"), "artifacts/"+namespace+"/"+name+"/"+podName+"/"+containerName+".log")
+
+		stream, err = s3Client.GetObject(config["artifactRepositoryS3Bucket"], "artifacts/"+namespace+"/"+name+"/"+podName+"/"+containerName+".log")
 	} else {
 		stream, err = r.kubeClient.GetPodLogs(namespace, podName, containerName)
 	}

@@ -26,9 +26,14 @@ func (c *Client) GetSecret(namespace, name string) (secret *Secret, err error) {
 	if err != nil {
 		return
 	}
+
+	data := make(map[string]string)
+	for key := range s.Data {
+		data[key] = string(s.Data[key])
+	}
 	secret = &Secret{
 		Name: name,
-		Data: s.StringData,
+		Data: data,
 	}
 
 	return
