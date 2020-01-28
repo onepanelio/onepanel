@@ -230,11 +230,12 @@ func (m *GetWorkflowLogsRequest) GetContainerName() string {
 }
 
 type ListWorkflowsRequest struct {
-	Namespace            string   `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	WorkflowTemplateUid  string   `protobuf:"bytes,2,opt,name=workflowTemplateUid,proto3" json:"workflowTemplateUid,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Namespace               string   `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	WorkflowTemplateUid     string   `protobuf:"bytes,2,opt,name=workflowTemplateUid,proto3" json:"workflowTemplateUid,omitempty"`
+	WorkflowTemplateVersion string   `protobuf:"bytes,3,opt,name=workflowTemplateVersion,proto3" json:"workflowTemplateVersion,omitempty"`
+	XXX_NoUnkeyedLiteral    struct{} `json:"-"`
+	XXX_unrecognized        []byte   `json:"-"`
+	XXX_sizecache           int32    `json:"-"`
 }
 
 func (m *ListWorkflowsRequest) Reset()         { *m = ListWorkflowsRequest{} }
@@ -272,6 +273,13 @@ func (m *ListWorkflowsRequest) GetNamespace() string {
 func (m *ListWorkflowsRequest) GetWorkflowTemplateUid() string {
 	if m != nil {
 		return m.WorkflowTemplateUid
+	}
+	return ""
+}
+
+func (m *ListWorkflowsRequest) GetWorkflowTemplateVersion() string {
+	if m != nil {
+		return m.WorkflowTemplateVersion
 	}
 	return ""
 }
@@ -363,11 +371,12 @@ func (m *LogEntry) GetContent() string {
 }
 
 type Workflow struct {
-	Uid                  string               `protobuf:"bytes,1,opt,name=uid,proto3" json:"uid,omitempty"`
-	Name                 string               `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Status               string               `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
-	Parameters           []*WorkflowParameter `protobuf:"bytes,4,rep,name=parameters,proto3" json:"parameters,omitempty"`
-	WorkflowTemplate     *WorkflowTemplate    `protobuf:"bytes,5,opt,name=workflowTemplate,proto3" json:"workflowTemplate,omitempty"`
+	CreatedAt            string               `protobuf:"bytes,1,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	Uid                  string               `protobuf:"bytes,2,opt,name=uid,proto3" json:"uid,omitempty"`
+	Name                 string               `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Status               string               `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
+	Parameters           []*WorkflowParameter `protobuf:"bytes,5,rep,name=parameters,proto3" json:"parameters,omitempty"`
+	WorkflowTemplate     *WorkflowTemplate    `protobuf:"bytes,6,opt,name=workflowTemplate,proto3" json:"workflowTemplate,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
 	XXX_sizecache        int32                `json:"-"`
@@ -397,6 +406,13 @@ func (m *Workflow) XXX_DiscardUnknown() {
 }
 
 var xxx_messageInfo_Workflow proto.InternalMessageInfo
+
+func (m *Workflow) GetCreatedAt() string {
+	if m != nil {
+		return m.CreatedAt
+	}
+	return ""
+}
 
 func (m *Workflow) GetUid() string {
 	if m != nil {
@@ -566,6 +582,7 @@ type WorkflowServiceClient interface {
 	WatchWorkflow(ctx context.Context, in *WatchWorkflowRequest, opts ...grpc.CallOption) (WorkflowService_WatchWorkflowClient, error)
 	GetWorkflowLogs(ctx context.Context, in *GetWorkflowLogsRequest, opts ...grpc.CallOption) (WorkflowService_GetWorkflowLogsClient, error)
 	CreateWorkflowTemplate(ctx context.Context, in *CreateWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error)
+	UpdateWorkflowTemplateVersion(ctx context.Context, in *UpdateWorkflowTemplateVersionRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error)
 	CreateWorkflowTemplateVersion(ctx context.Context, in *CreateWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error)
 	GetWorkflowTemplate(ctx context.Context, in *GetWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error)
 	ListWorkflowTemplateVersions(ctx context.Context, in *ListWorkflowTemplateVersionsRequest, opts ...grpc.CallOption) (*ListWorkflowTemplateVersionsResponse, error)
@@ -680,6 +697,15 @@ func (c *workflowServiceClient) CreateWorkflowTemplate(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *workflowServiceClient) UpdateWorkflowTemplateVersion(ctx context.Context, in *UpdateWorkflowTemplateVersionRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error) {
+	out := new(WorkflowTemplate)
+	err := c.cc.Invoke(ctx, "/api.WorkflowService/UpdateWorkflowTemplateVersion", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *workflowServiceClient) CreateWorkflowTemplateVersion(ctx context.Context, in *CreateWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error) {
 	out := new(WorkflowTemplate)
 	err := c.cc.Invoke(ctx, "/api.WorkflowService/CreateWorkflowTemplateVersion", in, out, opts...)
@@ -725,6 +751,7 @@ type WorkflowServiceServer interface {
 	WatchWorkflow(*WatchWorkflowRequest, WorkflowService_WatchWorkflowServer) error
 	GetWorkflowLogs(*GetWorkflowLogsRequest, WorkflowService_GetWorkflowLogsServer) error
 	CreateWorkflowTemplate(context.Context, *CreateWorkflowTemplateRequest) (*WorkflowTemplate, error)
+	UpdateWorkflowTemplateVersion(context.Context, *UpdateWorkflowTemplateVersionRequest) (*WorkflowTemplate, error)
 	CreateWorkflowTemplateVersion(context.Context, *CreateWorkflowTemplateRequest) (*WorkflowTemplate, error)
 	GetWorkflowTemplate(context.Context, *GetWorkflowTemplateRequest) (*WorkflowTemplate, error)
 	ListWorkflowTemplateVersions(context.Context, *ListWorkflowTemplateVersionsRequest) (*ListWorkflowTemplateVersionsResponse, error)
@@ -752,6 +779,9 @@ func (*UnimplementedWorkflowServiceServer) GetWorkflowLogs(req *GetWorkflowLogsR
 }
 func (*UnimplementedWorkflowServiceServer) CreateWorkflowTemplate(ctx context.Context, req *CreateWorkflowTemplateRequest) (*WorkflowTemplate, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateWorkflowTemplate not implemented")
+}
+func (*UnimplementedWorkflowServiceServer) UpdateWorkflowTemplateVersion(ctx context.Context, req *UpdateWorkflowTemplateVersionRequest) (*WorkflowTemplate, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateWorkflowTemplateVersion not implemented")
 }
 func (*UnimplementedWorkflowServiceServer) CreateWorkflowTemplateVersion(ctx context.Context, req *CreateWorkflowTemplateRequest) (*WorkflowTemplate, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateWorkflowTemplateVersion not implemented")
@@ -884,6 +914,24 @@ func _WorkflowService_CreateWorkflowTemplate_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WorkflowService_UpdateWorkflowTemplateVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateWorkflowTemplateVersionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkflowServiceServer).UpdateWorkflowTemplateVersion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.WorkflowService/UpdateWorkflowTemplateVersion",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkflowServiceServer).UpdateWorkflowTemplateVersion(ctx, req.(*UpdateWorkflowTemplateVersionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _WorkflowService_CreateWorkflowTemplateVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateWorkflowTemplateRequest)
 	if err := dec(in); err != nil {
@@ -975,6 +1023,10 @@ var _WorkflowService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateWorkflowTemplate",
 			Handler:    _WorkflowService_CreateWorkflowTemplate_Handler,
+		},
+		{
+			MethodName: "UpdateWorkflowTemplateVersion",
+			Handler:    _WorkflowService_UpdateWorkflowTemplateVersion_Handler,
 		},
 		{
 			MethodName: "CreateWorkflowTemplateVersion",

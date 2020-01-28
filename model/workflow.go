@@ -1,7 +1,10 @@
 package model
 
+import "time"
+
 type Workflow struct {
 	ID               uint64
+	CreatedAt        time.Time `db:"created_at"`
 	UID              string
 	Name             string
 	GeneratedName    string

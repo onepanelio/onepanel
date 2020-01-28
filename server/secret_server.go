@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/manager"
@@ -29,4 +28,25 @@ func (s *SecretServer) CreateSecret(ctx context.Context, req *api.CreateSecretRe
 	}
 
 	return &empty.Empty{}, nil
+}
+
+func (s *SecretServer) GetSecret(ctx context.Context, req *api.GetSecretRequest) (*api.Secret, error) {
+	secret, err := s.resourceManager.GetSecret(req.Namespace, req.Name)
+
+	if err != nil {
+		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
+	}
+
+	formattedData := make(map[string]string)
+	for key := range secret.Data {
+		data := secret.Data[key]
+		formattedData[key] = string(data)
+	}
+
+	apiSecret := &api.Secret{
+		Name: secret.Name,
+		Data: formattedData,
+	}
+
+	return apiSecret, nil
 }
