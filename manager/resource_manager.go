@@ -11,6 +11,14 @@ type ResourceManager struct {
 	workflowRepository *repository.WorkflowRepository
 }
 
+const (
+	artifactRepositoryEndpointKey       = "artifactRepositoryEndpoint"
+	artifactRepositoryBucketKey         = "artifactRepositoryBucket"
+	artifactRepositoryRegionKey         = "artifactRepositoryRegion"
+	artifactRepositoryAccessKeyValueKey = "artifactRepositoryAccessKeyValue"
+	artifactRepositorySecretKeyValueKey = "artifactRepositorySecretKeyValue"
+)
+
 func (r *ResourceManager) getNamespaceConfig(namespace string) (config map[string]string, err error) {
 	configMap, err := r.kubeClient.GetConfigMap(namespace, "onepanel")
 	if err != nil {
@@ -22,18 +30,18 @@ func (r *ResourceManager) getNamespaceConfig(namespace string) (config map[strin
 	if err != nil {
 		return
 	}
-	config["artifactRepositoryS3AccessKeyValue"] = secret.Data["artifactRepositoryS3AccessKeyValue"]
-	config["artifactRepositoryS3SecretKeyValue"] = secret.Data["artifactRepositoryS3SecretKeyValue"]
+	config[artifactRepositoryAccessKeyValueKey] = secret.Data[artifactRepositoryAccessKeyValueKey]
+	config[artifactRepositorySecretKeyValueKey] = secret.Data[artifactRepositorySecretKeyValueKey]
 
 	return
 }
 
 func (r *ResourceManager) getS3Client(namespace string, config map[string]string) (s3Client *s3.Client, err error) {
 	s3Client, err = s3.NewClient(s3.Config{
-		Endpoint:  config["artifactRepositoryS3Endpoint"],
-		Region:    config["artifactRepositoryS3Region"],
-		AccessKey: config["artifactRepositoryS3AccessKeyValue"],
-		SecretKey: config["artifactRepositoryS3SecretKeyValue"],
+		Endpoint:  config[artifactRepositoryEndpointKey],
+		Region:    config[artifactRepositoryRegionKey],
+		AccessKey: config[artifactRepositoryAccessKeyValueKey],
+		SecretKey: config[artifactRepositorySecretKeyValueKey],
 	})
 	if err != nil {
 		return
