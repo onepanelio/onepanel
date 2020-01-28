@@ -1,7 +1,7 @@
 package kube
 
 import (
-	apiv1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -11,7 +11,7 @@ type Secret struct {
 }
 
 func (c *Client) CreateSecret(namespace string, secret *Secret) (err error) {
-	_, err = c.CoreV1().Secrets(namespace).Create(&apiv1.Secret{
+	_, err = c.CoreV1().Secrets(namespace).Create(&corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: secret.Name,
 		},
@@ -21,8 +21,20 @@ func (c *Client) CreateSecret(namespace string, secret *Secret) (err error) {
 	return
 }
 
-func (c *Client) GetSecret(namespace, name string) (secret *apiv1.Secret, err error) {
-	secret, err = c.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
+func (c *Client) GetSecret(namespace, name string) (secret *Secret, err error) {
+	s, err := c.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		return
+	}
+
+	data := make(map[string]string)
+	for key := range s.Data {
+		data[key] = string(s.Data[key])
+	}
+	secret = &Secret{
+		Name: name,
+		Data: data,
+	}
 
 	return
 }

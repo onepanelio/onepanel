@@ -4,12 +4,14 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"time"
 
 	"github.com/onepanelio/core/kube"
 	"github.com/onepanelio/core/model"
+	"github.com/onepanelio/core/s3"
 	"github.com/onepanelio/core/util"
 	"google.golang.org/grpc/codes"
 )
@@ -136,7 +138,32 @@ func (r *ResourceManager) WatchWorkflow(namespace, name string) (<-chan *model.W
 }
 
 func (r *ResourceManager) GetWorkflowLogs(namespace, name, podName, containerName string) (<-chan *model.LogEntry, error) {
-	stream, err := r.kubeClient.GetPodLogs(namespace, podName, containerName)
+	wf, err := r.kubeClient.GetWorkflow(namespace, name)
+	if err != nil {
+		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
+	}
+
+	var (
+		stream   io.ReadCloser
+		s3Client *s3.Client
+		config   map[string]string
+	)
+
+	if wf.Status.Nodes[podName].Completed() {
+		config, err = r.getNamespaceConfig(namespace)
+		if err != nil {
+			return nil, util.NewUserError(codes.PermissionDenied, "Can't get configuration.")
+		}
+
+		s3Client, err = r.getS3Client(namespace, config)
+		if err != nil {
+			return nil, util.NewUserError(codes.PermissionDenied, "Can't connect to S3 storage.")
+		}
+
+		stream, err = s3Client.GetObject(config["artifactRepositoryS3Bucket"], "artifacts/"+namespace+"/"+name+"/"+podName+"/"+containerName+".log")
+	} else {
+		stream, err = r.kubeClient.GetPodLogs(namespace, podName, containerName)
+	}
 	// TODO: Catch exact kubernetes error
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Log not found.")
