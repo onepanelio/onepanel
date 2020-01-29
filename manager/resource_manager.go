@@ -4,6 +4,7 @@ import (
 	"github.com/onepanelio/core/kube"
 	"github.com/onepanelio/core/repository"
 	"github.com/onepanelio/core/s3"
+	"strconv"
 )
 
 type ResourceManager struct {
@@ -15,6 +16,7 @@ const (
 	artifactRepositoryEndpointKey       = "artifactRepositoryEndpoint"
 	artifactRepositoryBucketKey         = "artifactRepositoryBucket"
 	artifactRepositoryRegionKey         = "artifactRepositoryRegion"
+	artifactRepositoryInSecureKey       = "artifactRepositoryInsecure"
 	artifactRepositoryAccessKeyValueKey = "artifactRepositoryAccessKey"
 	artifactRepositorySecretKeyValueKey = "artifactRepositorySecretKey"
 )
@@ -37,11 +39,16 @@ func (r *ResourceManager) getNamespaceConfig(namespace string) (config map[strin
 }
 
 func (r *ResourceManager) getS3Client(namespace string, config map[string]string) (s3Client *s3.Client, err error) {
+	insecure, err := strconv.ParseBool(config[artifactRepositoryInSecureKey])
+	if err != nil {
+		return
+	}
 	s3Client, err = s3.NewClient(s3.Config{
 		Endpoint:  config[artifactRepositoryEndpointKey],
 		Region:    config[artifactRepositoryRegionKey],
 		AccessKey: config[artifactRepositoryAccessKeyValueKey],
 		SecretKey: config[artifactRepositorySecretKeyValueKey],
+		InSecure:  insecure,
 	})
 	if err != nil {
 		return

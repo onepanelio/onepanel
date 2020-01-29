@@ -2,18 +2,16 @@ package s3
 
 import (
 	"io"
+	"strconv"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
+	minio "github.com/minio/minio-go/v6"
 	"github.com/onepanelio/core/util/env"
 )
 
-var objectRange = env.GetEnv("ARTIFACT_RERPOSITORY_OBJECT_RANGE", "bytes=-102400")
+var objectRange = env.GetEnv("ARTIFACT_RERPOSITORY_OBJECT_RANGE", "-102400")
 
 type Client struct {
-	*s3.S3
+	*minio.Client
 }
 
 type Config struct {
@@ -21,33 +19,35 @@ type Config struct {
 	SecretKey string
 	Endpoint  string
 	Region    string
+	InSecure  bool
 }
 
 func NewClient(config Config) (s3Client *Client, err error) {
-	session, err := session.NewSession(&aws.Config{
-		Credentials: credentials.NewStaticCredentials(config.AccessKey, config.SecretKey, ""),
-		Region:      aws.String(config.Region),
-		Endpoint:    aws.String(config.Endpoint),
-	})
-	if err != nil {
-		return nil, err
+	var minioClient *minio.Client
+	if config.Region != "" {
+		minioClient, err = minio.NewWithRegion(config.Endpoint, config.AccessKey, config.SecretKey, !config.InSecure, config.Region)
+	} else {
+		minioClient, err = minio.New(config.Endpoint, config.AccessKey, config.SecretKey, !config.InSecure)
 	}
-	return &Client{S3: s3.New(session)}, nil
-}
-
-func (c *Client) GetObject(bucket, key string) (stream io.ReadCloser, err error) {
-	out, err := c.S3.GetObject(&s3.GetObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(key),
-		Range:  aws.String(objectRange),
-	})
 	if err != nil {
 		return
 	}
+	return &Client{Client: minioClient}, nil
+}
 
-	stream = out.Body
+func (c *Client) GetObject(bucket, key string) (stream io.ReadCloser, err error) {
+	opts := minio.GetObjectOptions{}
+	end, err := strconv.Atoi(objectRange)
+	if err != nil {
+		return
+	}
+	opts.SetRange(0, int64(end))
+	stream, err = c.Client.GetObject(bucket, key, opts)
+	if err != nil {
+		return
+	}
 	if stream == nil {
-		defer out.Body.Close()
+		defer stream.Close()
 	}
 
 	return
