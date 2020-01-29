@@ -15,8 +15,8 @@ const (
 	artifactRepositoryEndpointKey       = "artifactRepositoryEndpoint"
 	artifactRepositoryBucketKey         = "artifactRepositoryBucket"
 	artifactRepositoryRegionKey         = "artifactRepositoryRegion"
-	artifactRepositoryAccessKeyValueKey = "artifactRepositoryAccessKeyValue"
-	artifactRepositorySecretKeyValueKey = "artifactRepositorySecretKeyValue"
+	artifactRepositoryAccessKeyValueKey = "artifactRepositoryAccessKey"
+	artifactRepositorySecretKeyValueKey = "artifactRepositorySecretKey"
 )
 
 func (r *ResourceManager) getNamespaceConfig(namespace string) (config map[string]string, err error) {
