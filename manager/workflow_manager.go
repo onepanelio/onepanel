@@ -47,6 +47,7 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 	}
 
 	workflow.Name = createdWorkflows[0].Name
+	workflow.CreatedAt = createdWorkflows[0].CreationTimestamp.UTC()
 	workflow.UID = string(createdWorkflows[0].ObjectMeta.UID)
 	workflow.WorkflowTemplate = workflowTemplate
 	// Manifests could get big, don't return them in this case.
@@ -82,6 +83,7 @@ func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.W
 	}
 	workflow = &model.Workflow{
 		UID:              string(wf.UID),
+		CreatedAt:        workflowTemplate.CreatedAt,
 		Name:             wf.Name,
 		Status:           string(status),
 		WorkflowTemplate: workflowTemplate,

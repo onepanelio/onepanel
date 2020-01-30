@@ -29,11 +29,12 @@ func apiWorkflow(wf *model.Workflow) (workflow *api.Workflow) {
 
 	if wf.WorkflowTemplate != nil {
 		workflow.WorkflowTemplate = &api.WorkflowTemplate{
-			Uid:      wf.WorkflowTemplate.UID,
-			Name:     wf.WorkflowTemplate.Name,
-			Version:  wf.WorkflowTemplate.Version,
-			Manifest: wf.WorkflowTemplate.Manifest,
-			IsLatest: wf.WorkflowTemplate.IsLatest,
+			Uid:       wf.WorkflowTemplate.UID,
+			CreatedAt: wf.WorkflowTemplate.CreatedAt.UTC().Format(time.RFC3339),
+			Name:      wf.WorkflowTemplate.Name,
+			Version:   wf.WorkflowTemplate.Version,
+			Manifest:  wf.WorkflowTemplate.Manifest,
+			IsLatest:  wf.WorkflowTemplate.IsLatest,
 		}
 	}
 
