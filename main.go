@@ -79,7 +79,19 @@ func startHTTPProxy() {
 	}
 
 	log.Printf("Starting HTTP proxy on port %v", *httpPort)
-	if err = http.ListenAndServe(*httpPort, wsproxy.WebsocketProxy(handlers.CORS()(mux))); err != nil {
+
+	// Allow all origins
+	ogValidator := func(str string) bool {
+		return true
+	}
+
+	// Allow Content-Type for JSON
+	allowedHeaders := handlers.AllowedHeaders([]string{"Content-Type"})
+
+	// Allow PUT. Have to include all others as it clears them out.
+	allowedMethods := handlers.AllowedMethods([]string{"HEAD", "GET", "POST", "PUT"})
+
+	if err = http.ListenAndServe(*httpPort, wsproxy.WebsocketProxy(handlers.CORS(handlers.AllowedOriginValidator(ogValidator), allowedHeaders, allowedMethods)(mux))); err != nil {
 		log.Fatalf("Failed to serve HTTP listener: %v", err)
 	}
 }

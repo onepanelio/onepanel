@@ -16,6 +16,7 @@ import (
 type Workflow = wfv1.Workflow
 
 type WorkflowParameter = wfv1.Parameter
+
 type PodGCStrategy = wfv1.PodGCStrategy
 
 type WorkflowOptions struct {

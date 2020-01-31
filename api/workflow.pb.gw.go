@@ -292,10 +292,6 @@ func request_WorkflowService_WatchWorkflow_0(ctx context.Context, marshaler runt
 
 }
 
-var (
-	filter_WorkflowService_GetWorkflowLogs_0 = &utilities.DoubleArray{Encoding: map[string]int{"namespace": 0, "name": 1, "podName": 2}, Base: []int{1, 1, 2, 3, 0, 0, 0}, Check: []int{0, 1, 1, 1, 2, 3, 4}}
-)
-
 func request_WorkflowService_GetWorkflowLogs_0(ctx context.Context, marshaler runtime.Marshaler, client WorkflowServiceClient, req *http.Request, pathParams map[string]string) (WorkflowService_GetWorkflowLogsClient, runtime.ServerMetadata, error) {
 	var protoReq GetWorkflowLogsRequest
 	var metadata runtime.ServerMetadata
@@ -340,11 +336,15 @@ func request_WorkflowService_GetWorkflowLogs_0(ctx context.Context, marshaler ru
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "podName", err)
 	}
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	val, ok = pathParams["containerName"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "containerName")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_WorkflowService_GetWorkflowLogs_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.ContainerName, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "containerName", err)
 	}
 
 	stream, err := client.GetWorkflowLogs(ctx, &protoReq)
@@ -426,6 +426,120 @@ func local_request_WorkflowService_CreateWorkflowTemplate_0(ctx context.Context,
 	}
 
 	msg, err := server.CreateWorkflowTemplate(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
+func request_WorkflowService_UpdateWorkflowTemplateVersion_0(ctx context.Context, marshaler runtime.Marshaler, client WorkflowServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq UpdateWorkflowTemplateVersionRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.WorkflowTemplate); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["namespace"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "namespace")
+	}
+
+	protoReq.Namespace, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "namespace", err)
+	}
+
+	val, ok = pathParams["workflowTemplate.uid"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "workflowTemplate.uid")
+	}
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "workflowTemplate.uid", val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "workflowTemplate.uid", err)
+	}
+
+	val, ok = pathParams["workflowTemplate.version"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "workflowTemplate.version")
+	}
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "workflowTemplate.version", val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "workflowTemplate.version", err)
+	}
+
+	msg, err := client.UpdateWorkflowTemplateVersion(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_WorkflowService_UpdateWorkflowTemplateVersion_0(ctx context.Context, marshaler runtime.Marshaler, server WorkflowServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq UpdateWorkflowTemplateVersionRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.WorkflowTemplate); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["namespace"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "namespace")
+	}
+
+	protoReq.Namespace, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "namespace", err)
+	}
+
+	val, ok = pathParams["workflowTemplate.uid"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "workflowTemplate.uid")
+	}
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "workflowTemplate.uid", val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "workflowTemplate.uid", err)
+	}
+
+	val, ok = pathParams["workflowTemplate.version"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "workflowTemplate.version")
+	}
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "workflowTemplate.version", val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "workflowTemplate.version", err)
+	}
+
+	msg, err := server.UpdateWorkflowTemplateVersion(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -940,6 +1054,26 @@ func RegisterWorkflowServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 
 	})
 
+	mux.Handle("PUT", pattern_WorkflowService_UpdateWorkflowTemplateVersion_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_WorkflowService_UpdateWorkflowTemplateVersion_0(rctx, inboundMarshaler, server, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_WorkflowService_UpdateWorkflowTemplateVersion_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	mux.Handle("POST", pattern_WorkflowService_CreateWorkflowTemplateVersion_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -1201,6 +1335,26 @@ func RegisterWorkflowServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 
 	})
 
+	mux.Handle("PUT", pattern_WorkflowService_UpdateWorkflowTemplateVersion_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_WorkflowService_UpdateWorkflowTemplateVersion_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_WorkflowService_UpdateWorkflowTemplateVersion_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	mux.Handle("POST", pattern_WorkflowService_CreateWorkflowTemplateVersion_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -1313,9 +1467,11 @@ var (
 
 	pattern_WorkflowService_WatchWorkflow_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"apis", "v1beta1", "namespace", "workflows", "name", "watch"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_WorkflowService_GetWorkflowLogs_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5, 1, 0, 4, 1, 5, 6, 2, 7}, []string{"apis", "v1beta1", "namespace", "workflows", "name", "pods", "podName", "log"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_WorkflowService_GetWorkflowLogs_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5, 1, 0, 4, 1, 5, 6, 2, 7, 1, 0, 4, 1, 5, 8, 2, 9}, []string{"apis", "v1beta1", "namespace", "workflows", "name", "pods", "podName", "containers", "containerName", "logs"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_WorkflowService_CreateWorkflowTemplate_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"apis", "v1beta1", "namespace", "workflow_templates"}, "", runtime.AssumeColonVerbOpt(true)))
+
+	pattern_WorkflowService_UpdateWorkflowTemplateVersion_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5, 1, 0, 4, 1, 5, 6}, []string{"apis", "v1beta1", "namespace", "workflow_templates", "workflowTemplate.uid", "versions", "workflowTemplate.version"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_WorkflowService_CreateWorkflowTemplateVersion_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"apis", "v1beta1", "namespace", "workflow_templates", "workflowTemplate.uid", "versions"}, "", runtime.AssumeColonVerbOpt(true)))
 
@@ -1340,6 +1496,8 @@ var (
 	forward_WorkflowService_GetWorkflowLogs_0 = runtime.ForwardResponseStream
 
 	forward_WorkflowService_CreateWorkflowTemplate_0 = runtime.ForwardResponseMessage
+
+	forward_WorkflowService_UpdateWorkflowTemplateVersion_0 = runtime.ForwardResponseMessage
 
 	forward_WorkflowService_CreateWorkflowTemplateVersion_0 = runtime.ForwardResponseMessage
 

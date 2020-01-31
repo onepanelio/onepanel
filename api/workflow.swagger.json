@@ -207,6 +207,51 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/workflow_templates/{workflowTemplate.uid}/versions/{workflowTemplate.version}": {
+      "put": {
+        "operationId": "UpdateWorkflowTemplateVersion",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiWorkflowTemplate"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "workflowTemplate.uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "workflowTemplate.version",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiWorkflowTemplate"
+            }
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workflows": {
       "get": {
         "operationId": "ListWorkflows",
@@ -227,6 +272,12 @@
           },
           {
             "name": "workflowTemplateUid",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "workflowTemplateVersion",
             "in": "query",
             "required": false,
             "type": "string"
@@ -298,7 +349,7 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/workflows/{name}/pods/{podName}/log": {
+    "/apis/v1beta1/{namespace}/workflows/{name}/pods/{podName}/containers/{containerName}/logs": {
       "get": {
         "operationId": "GetWorkflowLogs",
         "responses": {
@@ -330,8 +381,8 @@
           },
           {
             "name": "containerName",
-            "in": "query",
-            "required": false,
+            "in": "path",
+            "required": true,
             "type": "string"
           }
         ],
@@ -428,6 +479,9 @@
     "apiWorkflow": {
       "type": "object",
       "properties": {
+        "createdAt": {
+          "type": "string"
+        },
         "uid": {
           "type": "string"
         },
@@ -462,6 +516,9 @@
     "apiWorkflowTemplate": {
       "type": "object",
       "properties": {
+        "createdAt": {
+          "type": "string"
+        },
         "uid": {
           "type": "string"
         },
@@ -474,6 +531,10 @@
         },
         "manifest": {
           "type": "string"
+        },
+        "isLatest": {
+          "type": "boolean",
+          "format": "boolean"
         }
       }
     },
