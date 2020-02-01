@@ -69,7 +69,3 @@ func NewResourceManager(db *repository.DB, kubeClient *kube.Client) *ResourceMan
 		workflowRepository: repository.NewWorkflowRepository(db),
 	}
 }
-
-func (r *ResourceManager) GetDefaultNamespace() {
-
-}
