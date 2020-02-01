@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"strconv"
 	"time"
 
@@ -17,7 +16,6 @@ import (
 )
 
 var (
-	labelKeyPrefix                  = os.Getenv("KUBE_LABEL_KEY_PREFIX")
 	workflowTemplateUIDLabelKey     = labelKeyPrefix + "workflow-template-uid"
 	workflowTemplateVersionLabelKey = labelKeyPrefix + "workflow-template-version"
 )

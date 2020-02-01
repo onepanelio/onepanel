@@ -1,16 +1,12 @@
 package kube
 
 import (
+	"github.com/onepanelio/core/model"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type Secret struct {
-	Name string
-	Data map[string]string
-}
-
-func (c *Client) CreateSecret(namespace string, secret *Secret) (err error) {
+func (c *Client) CreateSecret(namespace string, secret *model.Secret) (err error) {
 	_, err = c.CoreV1().Secrets(namespace).Create(&corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: secret.Name,
@@ -21,7 +17,7 @@ func (c *Client) CreateSecret(namespace string, secret *Secret) (err error) {
 	return
 }
 
-func (c *Client) GetSecret(namespace, name string) (secret *Secret, err error) {
+func (c *Client) GetSecret(namespace, name string) (secret *model.Secret, err error) {
 	s, err := c.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return
@@ -31,7 +27,7 @@ func (c *Client) GetSecret(namespace, name string) (secret *Secret, err error) {
 	for key := range s.Data {
 		data[key] = string(s.Data[key])
 	}
-	secret = &Secret{
+	secret = &model.Secret{
 		Name: name,
 		Data: data,
 	}

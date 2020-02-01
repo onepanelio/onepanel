@@ -1,13 +1,16 @@
 package kube
 
-import "testing"
+import (
+	"testing"
 
-import "github.com/stretchr/testify/assert"
+	"github.com/onepanelio/core/model"
+	"github.com/stretchr/testify/assert"
+)
 
 func TestCreateSecret(t *testing.T) {
 	c := NewTestClient()
 
-	err := c.CreateSecret("namespace", &Secret{
+	err := c.CreateSecret("namespace", &model.Secret{
 		Name: "name",
 	})
 	assert.Nil(t, err)
@@ -16,7 +19,7 @@ func TestCreateSecret(t *testing.T) {
 func TestGetSecret(t *testing.T) {
 	c := NewTestClient()
 
-	err := c.CreateSecret("namespace", &Secret{
+	err := c.CreateSecret("namespace", &model.Secret{
 		Name: "name",
 	})
 	assert.Nil(t, err)

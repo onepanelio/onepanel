@@ -1,13 +1,16 @@
 package kube
 
-import "testing"
+import (
+	"testing"
 
-import "github.com/stretchr/testify/assert"
+	"github.com/onepanelio/core/model"
+	"github.com/stretchr/testify/assert"
+)
 
 func TestCreateConfigMap(t *testing.T) {
 	c := NewTestClient()
 
-	err := c.CreateConfigMap("namespace", &ConfigMap{
+	err := c.CreateConfigMap("namespace", &model.ConfigMap{
 		Name: "name",
 	})
 	assert.Nil(t, err)
@@ -16,7 +19,7 @@ func TestCreateConfigMap(t *testing.T) {
 func TestGetConfigMap(t *testing.T) {
 	c := NewTestClient()
 
-	err := c.CreateConfigMap("namespace", &ConfigMap{
+	err := c.CreateConfigMap("namespace", &model.ConfigMap{
 		Name: "name",
 	})
 	assert.Nil(t, err)

@@ -13,6 +13,8 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
+type ListOptions = metav1.ListOptions
+
 type Workflow = wfv1.Workflow
 
 type WorkflowParameter = wfv1.Parameter
