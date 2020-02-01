@@ -30,6 +30,25 @@ func (s *SecretServer) CreateSecret(ctx context.Context, req *api.CreateSecretRe
 	return &empty.Empty{}, nil
 }
 
+func (s *SecretServer) SecretExists(ctx context.Context, req *api.SecretExistsRequest) (secretExists *api.SecretExistsResponse, err error) {
+	var secretExistsBool bool
+	secretExistsBool, err = s.resourceManager.SecretExists(req.Namespace, req.SecretName)
+	if err != nil {
+		return &api.SecretExistsResponse{
+			Exists: false,
+		}, util.NewUserError(codes.Unknown, "Unknown error.")
+	}
+
+	return secretExistsResponse(secretExistsBool), nil
+}
+
+func secretExistsResponse(secretExists bool) (secretExistsResFilled *api.SecretExistsResponse) {
+	secretExistsResFilled = &api.SecretExistsResponse{
+		Exists: secretExists,
+	}
+	return
+}
+
 func (s *SecretServer) GetSecret(ctx context.Context, req *api.GetSecretRequest) (*api.Secret, error) {
 	secret, err := s.resourceManager.GetSecret(req.Namespace, req.Name)
 	if err != nil {

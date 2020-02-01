@@ -26,6 +26,92 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
+type SecretExistsRequest struct {
+	Namespace            string   `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	SecretName           string   `protobuf:"bytes,2,opt,name=secretName,proto3" json:"secretName,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SecretExistsRequest) Reset()         { *m = SecretExistsRequest{} }
+func (m *SecretExistsRequest) String() string { return proto.CompactTextString(m) }
+func (*SecretExistsRequest) ProtoMessage()    {}
+func (*SecretExistsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6acf428160d7a216, []int{0}
+}
+
+func (m *SecretExistsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SecretExistsRequest.Unmarshal(m, b)
+}
+func (m *SecretExistsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SecretExistsRequest.Marshal(b, m, deterministic)
+}
+func (m *SecretExistsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SecretExistsRequest.Merge(m, src)
+}
+func (m *SecretExistsRequest) XXX_Size() int {
+	return xxx_messageInfo_SecretExistsRequest.Size(m)
+}
+func (m *SecretExistsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SecretExistsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SecretExistsRequest proto.InternalMessageInfo
+
+func (m *SecretExistsRequest) GetNamespace() string {
+	if m != nil {
+		return m.Namespace
+	}
+	return ""
+}
+
+func (m *SecretExistsRequest) GetSecretName() string {
+	if m != nil {
+		return m.SecretName
+	}
+	return ""
+}
+
+type SecretExistsResponse struct {
+	Exists               bool     `protobuf:"varint,1,opt,name=exists,proto3" json:"exists,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SecretExistsResponse) Reset()         { *m = SecretExistsResponse{} }
+func (m *SecretExistsResponse) String() string { return proto.CompactTextString(m) }
+func (*SecretExistsResponse) ProtoMessage()    {}
+func (*SecretExistsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6acf428160d7a216, []int{1}
+}
+
+func (m *SecretExistsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SecretExistsResponse.Unmarshal(m, b)
+}
+func (m *SecretExistsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SecretExistsResponse.Marshal(b, m, deterministic)
+}
+func (m *SecretExistsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SecretExistsResponse.Merge(m, src)
+}
+func (m *SecretExistsResponse) XXX_Size() int {
+	return xxx_messageInfo_SecretExistsResponse.Size(m)
+}
+func (m *SecretExistsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SecretExistsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SecretExistsResponse proto.InternalMessageInfo
+
+func (m *SecretExistsResponse) GetExists() bool {
+	if m != nil {
+		return m.Exists
+	}
+	return false
+}
+
 type CreateSecretRequest struct {
 	Namespace            string   `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	Secret               *Secret  `protobuf:"bytes,2,opt,name=secret,proto3" json:"secret,omitempty"`
@@ -38,7 +124,7 @@ func (m *CreateSecretRequest) Reset()         { *m = CreateSecretRequest{} }
 func (m *CreateSecretRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateSecretRequest) ProtoMessage()    {}
 func (*CreateSecretRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6acf428160d7a216, []int{0}
+	return fileDescriptor_6acf428160d7a216, []int{2}
 }
 
 func (m *CreateSecretRequest) XXX_Unmarshal(b []byte) error {
@@ -168,6 +254,8 @@ func (m *Secret) GetData() map[string]string {
 }
 
 func init() {
+	proto.RegisterType((*SecretExistsRequest)(nil), "api.SecretExistsRequest")
+	proto.RegisterType((*SecretExistsResponse)(nil), "api.SecretExistsResponse")
 	proto.RegisterType((*CreateSecretRequest)(nil), "api.CreateSecretRequest")
 	proto.RegisterType((*GetSecretRequest)(nil), "api.GetSecretRequest")
 	proto.RegisterType((*Secret)(nil), "api.Secret")
