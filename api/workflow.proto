@@ -123,10 +123,11 @@ message Workflow {
     string uid = 2;
     string name = 3;
     string status = 4;
+    bool environment = 5;
 
-    repeated WorkflowParameter parameters = 5;
+    repeated WorkflowParameter parameters = 6;
 
-    WorkflowTemplate workflowTemplate = 6;
+    WorkflowTemplate workflowTemplate = 7;
 }
 
 message WorkflowParameter {

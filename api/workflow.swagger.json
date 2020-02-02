@@ -491,6 +491,10 @@
         "status": {
           "type": "string"
         },
+        "environment": {
+          "type": "boolean",
+          "format": "boolean"
+        },
         "parameters": {
           "type": "array",
           "items": {
