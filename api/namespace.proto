@@ -20,5 +20,4 @@ message ListNamespacesResponse {
 
 message Namespace {
     string name = 1;
-    map<string, string> labels = 2;
 }

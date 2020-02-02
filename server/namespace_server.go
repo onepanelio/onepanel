@@ -21,8 +21,7 @@ func NewNamespaceServer(resourceManager *manager.ResourceManager) *NamespaceServ
 
 func apiNamespace(ns *model.Namespace) (namespace *api.Namespace) {
 	namespace = &api.Namespace{
-		Name:   ns.Name,
-		Labels: ns.Labels,
+		Name: ns.Name,
 	}
 
 	return
