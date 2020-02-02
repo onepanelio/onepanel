@@ -1,0 +1,87 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "namespace.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/apis/v1beta1/namespaces": {
+      "get": {
+        "operationId": "ListNamespaces",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiListNamespacesResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "listOptions.labelSelector",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "listOptions.fieldSelector",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "NamespaceService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "apiListNamespacesResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "namespaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apiNamespace"
+          }
+        }
+      }
+    },
+    "apiListOptions": {
+      "type": "object",
+      "properties": {
+        "labelSelector": {
+          "type": "string"
+        },
+        "fieldSelector": {
+          "type": "string"
+        }
+      }
+    },
+    "apiNamespace": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
