@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/manager"
 	"github.com/onepanelio/core/model"
@@ -27,8 +28,8 @@ func apiNamespace(ns *model.Namespace) (namespace *api.Namespace) {
 	return
 }
 
-func (s *NamespaceServer) ListNamespaces(ctx context.Context, req *api.ListNamespacesRequest) (*api.ListNamespacesResponse, error) {
-	namespaces, err := s.resourceManager.ListNamespaces(modelListOptions(req.ListOptions))
+func (s *NamespaceServer) ListNamespaces(ctx context.Context, empty *empty.Empty) (*api.ListNamespacesResponse, error) {
+	namespaces, err := s.resourceManager.ListNamespaces()
 	if err != nil {
 		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
 	}

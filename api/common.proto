@@ -1,8 +1,0 @@
-syntax = "proto3";
-
-package api;
-
-message ListOptions {
-    string labelSelector = 1;
-    string fieldSelector = 2;
-}

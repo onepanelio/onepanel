@@ -22,20 +22,6 @@
             }
           }
         },
-        "parameters": [
-          {
-            "name": "listOptions.labelSelector",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "listOptions.fieldSelector",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
         "tags": [
           "NamespaceService"
         ]
@@ -55,17 +41,6 @@
           "items": {
             "$ref": "#/definitions/apiNamespace"
           }
-        }
-      }
-    },
-    "apiListOptions": {
-      "type": "object",
-      "properties": {
-        "labelSelector": {
-          "type": "string"
-        },
-        "fieldSelector": {
-          "type": "string"
         }
       }
     },

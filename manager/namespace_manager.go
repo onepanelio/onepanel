@@ -1,9 +1,15 @@
 package manager
 
 import (
+	"fmt"
+
 	"github.com/onepanelio/core/model"
 )
 
-func (r *ResourceManager) ListNamespaces(opts model.ListOptions) (namespaces []*model.Namespace, err error) {
-	return r.kubeClient.ListNamespaces(opts)
+var onepanelEnabledLabelKey = labelKeyPrefix + "enabled"
+
+func (r *ResourceManager) ListNamespaces() (namespaces []*model.Namespace, err error) {
+	return r.kubeClient.ListNamespaces(model.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", onepanelEnabledLabelKey, "true"),
+	})
 }
