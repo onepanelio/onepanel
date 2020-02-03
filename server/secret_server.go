@@ -48,14 +48,35 @@ func (s *SecretServer) GetSecret(ctx context.Context, req *api.GetSecretRequest)
 	if err != nil {
 		return nil, util.NewUserError(codes.Unknown, err.Error())
 	}
-	secretGet, err = getSecretResponse(secret)
+	secretGet, err = getSecret(secret)
 	if err != nil {
 		return nil, util.NewUserError(codes.Unknown, err.Error())
 	}
 	return secretGet, nil
 }
 
-func getSecretResponse(secret *apiv1.Secret) (secretGetFilled *api.Secret, err error) {
+func (s *SecretServer) GetSecrets(ctx context.Context, req *api.GetSecretsRequest) (secrets *api.Secrets, err error) {
+	var rawSecrets []apiv1.Secret
+	rawSecrets, err = s.resourceManager.GetSecrets(req.Namespace)
+	if err != nil {
+		return nil, util.NewUserError(codes.Unknown, err.Error())
+	}
+	var apiSecret *api.Secret
+	var apiSecrets []*api.Secret
+	for _, rawSecret := range rawSecrets {
+		apiSecret, err = getSecret(&rawSecret)
+		if err != nil {
+			return nil, err
+		}
+		apiSecrets = append(apiSecrets, apiSecret)
+	}
+	secrets = &api.Secrets{
+		Secrets: apiSecrets,
+	}
+	return
+}
+
+func getSecret(secret *apiv1.Secret) (secretGetFilled *api.Secret, err error) {
 	var secretData map[string]string
 	secretData = make(map[string]string)
 	for key, data := range secret.Data {

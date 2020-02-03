@@ -16,3 +16,7 @@ func (r *ResourceManager) SecretExists(namespace string, secretName string) (exi
 func (r *ResourceManager) GetSecret(namespace, name string) (secret *model.Secret, err error) {
 	return r.kubeClient.GetSecret(namespace, name)
 }
+
+func (r *ResourceManager) GetSecrets(namespace string) (secrets []apiv1.Secret, err error) {
+	return r.kubeClient.GetSecrets(namespace)
+}

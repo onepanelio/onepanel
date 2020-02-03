@@ -54,3 +54,14 @@ func (c *Client) GetSecret(namespace string, secretName string) (secret *apiv1.S
 	}
 	return nil, nil
 }
+
+func (c *Client) GetSecrets(namespace string) (secrets []apiv1.Secret, err error) {
+	listedSecrets, err := c.CoreV1().Secrets(namespace).List(metav1.ListOptions{})
+	if err != nil {
+		return
+	}
+	for _, secret := range listedSecrets.Items {
+		secrets = append(secrets, secret)
+	}
+	return
+}
