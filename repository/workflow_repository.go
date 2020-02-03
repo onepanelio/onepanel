@@ -136,8 +136,7 @@ func (r *WorkflowRepository) workflowTemplatesSelectBuilder(namespace string) sq
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{
 			"wt.namespace": namespace,
-		}).
-		OrderBy("wtv.version desc")
+		})
 
 	return sb
 }
@@ -145,7 +144,10 @@ func (r *WorkflowRepository) workflowTemplatesSelectBuilder(namespace string) sq
 func (r *WorkflowRepository) GetWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *model.WorkflowTemplate, err error) {
 	workflowTemplate = &model.WorkflowTemplate{}
 
-	sb := r.workflowTemplatesSelectBuilder(namespace).Where(sq.Eq{"wt.uid": uid}).Columns("wtv.manifest").Limit(1)
+	sb := r.workflowTemplatesSelectBuilder(namespace).Where(sq.Eq{"wt.uid": uid}).
+		Columns("wtv.manifest").
+		OrderBy("wtv.version desc").
+		Limit(1)
 	if version != 0 {
 		sb = sb.Where(sq.Eq{"wtv.version": version})
 	}
@@ -165,7 +167,9 @@ func (r *WorkflowRepository) GetWorkflowTemplate(namespace, uid string, version 
 func (r *WorkflowRepository) ListWorkflowTemplateVersions(namespace, uid string) (workflowTemplateVersions []*model.WorkflowTemplate, err error) {
 	workflowTemplateVersions = []*model.WorkflowTemplate{}
 
-	query, args, err := r.workflowTemplatesSelectBuilder(namespace).Where(sq.Eq{"wt.uid": uid}).ToSql()
+	query, args, err := r.workflowTemplatesSelectBuilder(namespace).Where(sq.Eq{"wt.uid": uid}).
+		Columns("wtv.manifest").
+		OrderBy("wtv.version desc").ToSql()
 	if err != nil {
 		return
 	}
@@ -178,7 +182,9 @@ func (r *WorkflowRepository) ListWorkflowTemplateVersions(namespace, uid string)
 func (r *WorkflowRepository) ListWorkflowTemplates(namespace string) (workflowTemplateVersions []*model.WorkflowTemplate, err error) {
 	workflowTemplateVersions = []*model.WorkflowTemplate{}
 
-	query, args, err := r.workflowTemplatesSelectBuilder(namespace).ToSql()
+	query, args, err := r.workflowTemplatesSelectBuilder(namespace).
+		Options("DISTINCT ON (wt.id) wt.id,").
+		OrderBy("wt.id desc").ToSql()
 	if err != nil {
 		return
 	}
