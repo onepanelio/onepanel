@@ -65,3 +65,11 @@ func (c *Client) GetSecrets(namespace string) (secrets []apiv1.Secret, err error
 	}
 	return
 }
+
+func (c *Client) DeleteSecret(namespace string, secretName string) (deleted bool, err error) {
+	err = c.CoreV1().Secrets(namespace).Delete(secretName, &metav1.DeleteOptions{})
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
