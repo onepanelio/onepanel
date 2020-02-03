@@ -37,20 +37,20 @@ func (c *Client) SecretExists(namespace string, secretName string) (exists bool,
 	return false, nil
 }
 
-func (c *Client) GetSecret(namespace, name string) (secret *model.Secret, err error) {
-	s, err := c.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
+func (c *Client) GetSecret(namespace string, secretName string) (secret *apiv1.Secret, err error) {
+	var foundSecret *apiv1.Secret
+	foundSecret, err = c.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
 	if err != nil {
-		return
+		if err, ok := err.(*errors.StatusError); ok {
+			if err.ErrStatus.Reason == "NotFound" {
+				return nil, nil
+			}
+			return nil, err
+		}
+		return nil, err
 	}
-
-	data := make(map[string]string)
-	for key := range s.Data {
-		data[key] = string(s.Data[key])
+	if foundSecret != nil {
+		return foundSecret, nil
 	}
-	secret = &model.Secret{
-		Name: name,
-		Data: data,
-	}
-
-	return
+	return nil, nil
 }

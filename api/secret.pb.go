@@ -112,6 +112,53 @@ func (m *SecretExistsResponse) GetExists() bool {
 	return false
 }
 
+type GetSecretRequest struct {
+	Namespace            string   `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	SecretName           string   `protobuf:"bytes,2,opt,name=secretName,proto3" json:"secretName,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetSecretRequest) Reset()         { *m = GetSecretRequest{} }
+func (m *GetSecretRequest) String() string { return proto.CompactTextString(m) }
+func (*GetSecretRequest) ProtoMessage()    {}
+func (*GetSecretRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6acf428160d7a216, []int{2}
+}
+
+func (m *GetSecretRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetSecretRequest.Unmarshal(m, b)
+}
+func (m *GetSecretRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetSecretRequest.Marshal(b, m, deterministic)
+}
+func (m *GetSecretRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetSecretRequest.Merge(m, src)
+}
+func (m *GetSecretRequest) XXX_Size() int {
+	return xxx_messageInfo_GetSecretRequest.Size(m)
+}
+func (m *GetSecretRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetSecretRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetSecretRequest proto.InternalMessageInfo
+
+func (m *GetSecretRequest) GetNamespace() string {
+	if m != nil {
+		return m.Namespace
+	}
+	return ""
+}
+
+func (m *GetSecretRequest) GetSecretName() string {
+	if m != nil {
+		return m.SecretName
+	}
+	return ""
+}
+
 type CreateSecretRequest struct {
 	Namespace            string   `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	Secret               *Secret  `protobuf:"bytes,2,opt,name=secret,proto3" json:"secret,omitempty"`
@@ -124,7 +171,7 @@ func (m *CreateSecretRequest) Reset()         { *m = CreateSecretRequest{} }
 func (m *CreateSecretRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateSecretRequest) ProtoMessage()    {}
 func (*CreateSecretRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6acf428160d7a216, []int{2}
+	return fileDescriptor_6acf428160d7a216, []int{3}
 }
 
 func (m *CreateSecretRequest) XXX_Unmarshal(b []byte) error {
@@ -256,6 +303,7 @@ func (m *Secret) GetData() map[string]string {
 func init() {
 	proto.RegisterType((*SecretExistsRequest)(nil), "api.SecretExistsRequest")
 	proto.RegisterType((*SecretExistsResponse)(nil), "api.SecretExistsResponse")
+	proto.RegisterType((*GetSecretRequest)(nil), "api.GetSecretRequest")
 	proto.RegisterType((*CreateSecretRequest)(nil), "api.CreateSecretRequest")
 	proto.RegisterType((*GetSecretRequest)(nil), "api.GetSecretRequest")
 	proto.RegisterType((*Secret)(nil), "api.Secret")
@@ -332,6 +380,15 @@ func (c *secretServiceClient) GetSecret(ctx context.Context, in *GetSecretReques
 	return out, nil
 }
 
+func (c *secretServiceClient) GetSecret(ctx context.Context, in *GetSecretRequest, opts ...grpc.CallOption) (*Secret, error) {
+	out := new(Secret)
+	err := c.cc.Invoke(ctx, "/api.SecretService/GetSecret", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SecretServiceServer is the server API for SecretService service.
 type SecretServiceServer interface {
 	CreateSecret(context.Context, *CreateSecretRequest) (*empty.Empty, error)
@@ -344,6 +401,9 @@ type UnimplementedSecretServiceServer struct {
 
 func (*UnimplementedSecretServiceServer) CreateSecret(ctx context.Context, req *CreateSecretRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateSecret not implemented")
+}
+func (*UnimplementedSecretServiceServer) GetSecret(ctx context.Context, req *GetSecretRequest) (*Secret, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSecret not implemented")
 }
 func (*UnimplementedSecretServiceServer) GetSecret(ctx context.Context, req *GetSecretRequest) (*Secret, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSecret not implemented")
@@ -389,6 +449,24 @@ func _SecretService_GetSecret_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SecretService_GetSecret_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSecretRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SecretServiceServer).GetSecret(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.SecretService/GetSecret",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SecretServiceServer).GetSecret(ctx, req.(*GetSecretRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _SecretService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "api.SecretService",
 	HandlerType: (*SecretServiceServer)(nil),
@@ -396,6 +474,10 @@ var _SecretService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateSecret",
 			Handler:    _SecretService_CreateSecret_Handler,
+		},
+		{
+			MethodName: "GetSecret",
+			Handler:    _SecretService_GetSecret_Handler,
 		},
 		{
 			MethodName: "GetSecret",

@@ -2,6 +2,7 @@ package manager
 
 import (
 	"github.com/onepanelio/core/model"
+	apiv1 "k8s.io/api/core/v1"
 )
 
 func (r *ResourceManager) CreateSecret(namespace string, secret *model.Secret) (err error) {
