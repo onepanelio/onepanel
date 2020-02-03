@@ -24,3 +24,7 @@ func (r *ResourceManager) GetSecrets(namespace string) (secrets []apiv1.Secret, 
 func (r *ResourceManager) DeleteSecret(namespace string, secretName string) (deleted bool, err error) {
 	return r.kubeClient.DeleteSecret(namespace, secretName)
 }
+
+func (r *ResourceManager) DeleteSecretKey(namespace string, secretName string, key string) (deleted bool, err error) {
+	return r.kubeClient.DeleteSecretKey(namespace, secretName, key)
+}

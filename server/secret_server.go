@@ -89,6 +89,19 @@ func (s *SecretServer) DeleteSecret(ctx context.Context, req *api.DeleteSecretRe
 	}, nil
 }
 
+func (s *SecretServer) DeleteSecretKey(ctx context.Context, req *api.DeleteSecretKeyRequest) (deleted *api.DeleteSecretKeyResponse, err error) {
+	var isDeleted bool
+	isDeleted, err = s.resourceManager.DeleteSecretKey(req.Namespace, req.SecretName, req.Key)
+	if err != nil {
+		return &api.DeleteSecretKeyResponse{
+			Deleted: false,
+		}, util.NewUserError(codes.Unknown, err.Error())
+	}
+	return &api.DeleteSecretKeyResponse{
+		Deleted: isDeleted,
+	}, nil
+}
+
 func getSecret(secret *apiv1.Secret) (secretGetFilled *api.Secret, err error) {
 	var secretData map[string]string
 	secretData = make(map[string]string)

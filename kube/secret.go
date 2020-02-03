@@ -6,6 +6,7 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func (c *Client) CreateSecret(namespace string, secret *model.Secret) (err error) {
@@ -72,4 +73,42 @@ func (c *Client) DeleteSecret(namespace string, secretName string) (deleted bool
 		return false, err
 	}
 	return true, nil
+}
+
+func (c *Client) DeleteSecretKey(namespace string, secretName string, key string) (deleted bool, err error) {
+	//Check if the secret has the key to delete
+	secretFound, secretFindErr := c.GetSecret(namespace, secretName)
+	if secretFindErr != nil {
+		return false, secretFindErr
+	}
+	secretDataKeyExists := false
+	for secretDataKey := range secretFound.Data {
+		if secretDataKey == key {
+			secretDataKeyExists = true
+			break
+		}
+	}
+
+	if secretDataKeyExists {
+		//  patchStringPath specifies a patch operation for a secret key.
+		type patchStringPath struct {
+			Op   string `json:"op"`
+			Path string `json:"path"`
+		}
+		payload := []patchStringPath{{
+			Op:   "remove",
+			Path: "/data/" + key,
+		}}
+		payloadBytes, _ := json.Marshal(payload)
+		_, errSecret := c.CoreV1().Secrets(namespace).Patch(secretName, types.JSONPatchType, payloadBytes)
+		if errSecret != nil {
+			return false, errSecret
+		}
+		return true, nil
+	}
+	return true, nil
+}
+
+func (c *Client) UpdateSecretKeyValue() {
+
 }
