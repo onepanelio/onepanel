@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package api;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+service NamespaceService {
+    rpc ListNamespaces(google.protobuf.Empty) returns (ListNamespacesResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/namespaces"
+        };
+    }
+}
+
+message ListNamespacesResponse {
+    int32 count = 1;
+    repeated Namespace namespaces = 2;
+}
+
+message Namespace {
+    string name = 1;
+}

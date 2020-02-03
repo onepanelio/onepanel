@@ -51,6 +51,7 @@ func startRPCServer(db *repository.DB, kubeClient *kube.Client) {
 	s := grpc.NewServer(grpc.UnaryInterceptor(loggingInterceptor))
 	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer(resourceManager))
 	api.RegisterSecretServiceServer(s, server.NewSecretServer(resourceManager))
+	api.RegisterNamespaceServiceServer(s, server.NewNamespaceServer(resourceManager))
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve RPC server: %v", err)
@@ -68,15 +69,9 @@ func startHTTPProxy() {
 	mux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithInsecure()}
 
-	err := api.RegisterWorkflowServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
-	if err != nil {
-		log.Fatalf("Failed to connect to service: %v", err)
-	}
-
-	err = api.RegisterSecretServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
-	if err != nil {
-		log.Fatalf("Failed to connect to service: %v", err)
-	}
+	registerHandler(api.RegisterWorkflowServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
+	registerHandler(api.RegisterSecretServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
+	registerHandler(api.RegisterNamespaceServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
 
 	log.Printf("Starting HTTP proxy on port %v", *httpPort)
 
@@ -91,8 +86,17 @@ func startHTTPProxy() {
 	// Allow PUT. Have to include all others as it clears them out.
 	allowedMethods := handlers.AllowedMethods([]string{"HEAD", "GET", "POST", "PUT"})
 
-	if err = http.ListenAndServe(*httpPort, wsproxy.WebsocketProxy(handlers.CORS(handlers.AllowedOriginValidator(ogValidator), allowedHeaders, allowedMethods)(mux))); err != nil {
+	if err := http.ListenAndServe(*httpPort, wsproxy.WebsocketProxy(handlers.CORS(handlers.AllowedOriginValidator(ogValidator), allowedHeaders, allowedMethods)(mux))); err != nil {
 		log.Fatalf("Failed to serve HTTP listener: %v", err)
+	}
+}
+
+type registerFunc func(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error
+
+func registerHandler(register registerFunc, ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) {
+	err := register(ctx, mux, endpoint, opts)
+	if err != nil {
+		log.Fatalf("Failed to register handler: %v", err)
 	}
 }
 

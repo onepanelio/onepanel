@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"strconv"
 	"time"
 
@@ -17,7 +16,6 @@ import (
 )
 
 var (
-	labelKeyPrefix                  = os.Getenv("KUBE_LABEL_KEY_PREFIX")
 	workflowTemplateUIDLabelKey     = labelKeyPrefix + "workflow-template-uid"
 	workflowTemplateVersionLabelKey = labelKeyPrefix + "workflow-template-version"
 )
@@ -186,10 +184,10 @@ func (r *ResourceManager) GetWorkflowLogs(namespace, name, podName, containerNam
 func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID, workflowTemplateVersion string) (workflows []*model.Workflow, err error) {
 	opts := &kube.WorkflowOptions{}
 	if workflowTemplateUID != "" {
-		labelSelect := fmt.Sprintf("%sworkflow-template-uid=%s", labelKeyPrefix, workflowTemplateUID)
+		labelSelect := fmt.Sprintf("%s=%s", workflowTemplateUIDLabelKey, workflowTemplateUID)
 
 		if workflowTemplateVersion != "" {
-			labelSelect = fmt.Sprintf("%s,%sworkflow-template-version=%s", labelSelect, labelKeyPrefix, workflowTemplateVersion)
+			labelSelect = fmt.Sprintf("%s,%s=%s", labelSelect, workflowTemplateVersionLabelKey, workflowTemplateVersion)
 		}
 
 		opts.ListOptions = &kube.ListOptions{
