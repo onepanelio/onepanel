@@ -29,12 +29,13 @@ func apiWorkflow(wf *model.Workflow) (workflow *api.Workflow) {
 
 	if wf.WorkflowTemplate != nil {
 		workflow.WorkflowTemplate = &api.WorkflowTemplate{
-			Uid:       wf.WorkflowTemplate.UID,
-			CreatedAt: wf.WorkflowTemplate.CreatedAt.UTC().Format(time.RFC3339),
-			Name:      wf.WorkflowTemplate.Name,
-			Version:   wf.WorkflowTemplate.Version,
-			Manifest:  wf.WorkflowTemplate.Manifest,
-			IsLatest:  wf.WorkflowTemplate.IsLatest,
+			Uid:        wf.WorkflowTemplate.UID,
+			CreatedAt:  wf.WorkflowTemplate.CreatedAt.UTC().Format(time.RFC3339),
+			Name:       wf.WorkflowTemplate.Name,
+			Version:    wf.WorkflowTemplate.Version,
+			Manifest:   wf.WorkflowTemplate.Manifest,
+			IsLatest:   wf.WorkflowTemplate.IsLatest,
+			IsArchived: wf.WorkflowTemplate.IsArchived,
 		}
 	}
 
@@ -43,12 +44,13 @@ func apiWorkflow(wf *model.Workflow) (workflow *api.Workflow) {
 
 func apiWorkflowTemplate(wft *model.WorkflowTemplate) *api.WorkflowTemplate {
 	return &api.WorkflowTemplate{
-		Uid:       wft.UID,
-		CreatedAt: wft.CreatedAt.UTC().Format(time.RFC3339),
-		Name:      wft.Name,
-		Version:   wft.Version,
-		Manifest:  wft.Manifest,
-		IsLatest:  wft.IsLatest,
+		Uid:        wft.UID,
+		CreatedAt:  wft.CreatedAt.UTC().Format(time.RFC3339),
+		Name:       wft.Name,
+		Version:    wft.Version,
+		Manifest:   wft.Manifest,
+		IsLatest:   wft.IsLatest,
+		IsArchived: wft.IsArchived,
 	}
 }
 
@@ -241,5 +243,18 @@ func (s *WorkflowServer) ListWorkflowTemplates(ctx context.Context, req *api.Lis
 	return &api.ListWorkflowTemplatesResponse{
 		Count:             int32(len(apiWorkflowTemplates)),
 		WorkflowTemplates: apiWorkflowTemplates,
+	}, nil
+}
+
+func (s *WorkflowServer) ArchiveWorkflowTemplate(ctx context.Context, req *api.ArchiveWorkflowTemplateRequest) (*api.ArchiveWorkflowTemplateResponse, error) {
+	archived, err := s.resourceManager.ArchiveWorkflowTemplate(req.Namespace, req.Uid)
+	if errors.As(err, &userError) {
+		return nil, userError.GRPCError()
+	}
+
+	return &api.ArchiveWorkflowTemplateResponse{
+		WorkflowTemplate: &api.WorkflowTemplate{
+			IsArchived: archived,
+		},
 	}, nil
 }

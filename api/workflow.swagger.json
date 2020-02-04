@@ -100,6 +100,34 @@
         "tags": [
           "WorkflowService"
         ]
+      },
+      "delete": {
+        "operationId": "ArchiveWorkflowTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiArchiveWorkflowTemplateResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
       }
     },
     "/apis/v1beta1/{namespace}/workflow_templates/{uid}/versions": {
@@ -423,6 +451,14 @@
     }
   },
   "definitions": {
+    "apiArchiveWorkflowTemplateResponse": {
+      "type": "object",
+      "properties": {
+        "workflowTemplate": {
+          "$ref": "#/definitions/apiWorkflowTemplate"
+        }
+      }
+    },
     "apiListWorkflowTemplateVersionsResponse": {
       "type": "object",
       "properties": {
@@ -533,6 +569,10 @@
           "type": "string"
         },
         "isLatest": {
+          "type": "boolean",
+          "format": "boolean"
+        },
+        "isArchived": {
           "type": "boolean",
           "format": "boolean"
         }
