@@ -291,6 +291,14 @@ func (r *ResourceManager) ListWorkflowTemplateVersions(namespace, uid string) (w
 }
 
 func (r *ResourceManager) ListWorkflowTemplates(namespace string) (workflowTemplateVersions []*model.WorkflowTemplate, err error) {
+	allowed, err := r.kubeClient.IsAuthorized(namespace, "list", "argoproj.io", "workflow", "")
+	if err != nil {
+		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
+	}
+	if !allowed {
+		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
+	}
+
 	workflowTemplateVersions, err = r.workflowRepository.ListWorkflowTemplates(namespace)
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow templates not found.")
