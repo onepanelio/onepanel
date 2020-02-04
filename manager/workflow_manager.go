@@ -223,7 +223,7 @@ func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTempl
 		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
 	}
 
-	workflowTemplate, err := r.workflowRepository.CreateWorkflowTemplate(namespace, workflowTemplate)
+	workflowTemplate, err = r.workflowRepository.CreateWorkflowTemplate(namespace, workflowTemplate)
 	if err != nil {
 		return nil, util.NewUserErrorWrap(err, "Workflow template")
 	}
@@ -249,7 +249,7 @@ func (r *ResourceManager) CreateWorkflowTemplateVersion(namespace string, workfl
 		return nil, err
 	}
 
-	workflowTemplate, err := r.workflowRepository.CreateWorkflowTemplateVersion(namespace, workflowTemplate)
+	workflowTemplate, err = r.workflowRepository.CreateWorkflowTemplateVersion(namespace, workflowTemplate)
 	if err != nil {
 		return nil, util.NewUserErrorWrap(err, "Workflow template")
 	}
