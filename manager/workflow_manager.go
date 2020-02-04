@@ -360,7 +360,7 @@ func (r *ResourceManager) ArchiveWorkflowTemplate(namespace, uid string) (archiv
 	if err != nil {
 		return false, util.NewUserError(codes.Unknown, "Unknown error.")
 	}
-	if err == nil && workflowTemplate == nil {
+	if workflowTemplate == nil {
 		return false, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}
 
