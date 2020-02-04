@@ -6,6 +6,8 @@ import (
 	"github.com/argoproj/argo/workflow/common"
 	"github.com/argoproj/pkg/json"
 	"github.com/onepanelio/core/util/env"
+	v12 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -101,6 +103,50 @@ func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (
 	} else {
 		wf.Spec.PodGC = &wfv1.PodGC{
 			Strategy: *opts.PodGCStrategy,
+		}
+	}
+
+	secretName := "onepanel-default-env"
+	addSecretValsToTemplate := true
+	secret, secretGetErr := c.Clientset.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
+	if secretGetErr != nil {
+		if err, ok := secretGetErr.(*errors.StatusError); ok {
+			if err.ErrStatus.Reason == "NotFound" {
+				addSecretValsToTemplate = false
+			} else {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+
+	if addSecretValsToTemplate && secret != nil {
+		//Generate ENV vars from secret, if there is a container present in the workflow
+		for _, template := range wf.Spec.Templates {
+			if template.Container == nil {
+				continue
+			}
+			//Get template ENV vars, avoid over-writing them with secret values
+			templateEnvs := template.Container.Env
+			toAddEnvsToTemplate := template.Container.Env
+			for key, value := range secret.Data {
+				//Flag to prevent over-writing user's envs
+				addSecretAsEnv := true
+				for _, templateEnv := range templateEnvs {
+					if templateEnv.Name == key {
+						addSecretAsEnv = false
+						break
+					}
+				}
+				if addSecretAsEnv {
+					toAddEnvsToTemplate = append(toAddEnvsToTemplate, v12.EnvVar{
+						Name:  key,
+						Value: string(value),
+					})
+				}
+			}
+			template.Container.Env = toAddEnvsToTemplate
 		}
 	}
 
