@@ -3,8 +3,11 @@ package kube
 import (
 	"github.com/onepanelio/core/model"
 	corev1 "k8s.io/api/core/v1"
+	"encoding/base64"
+	"encoding/json"
+	goerrors "errors"
 	apiv1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -109,6 +112,105 @@ func (c *Client) DeleteSecretKey(namespace string, secretName string, key string
 	return true, nil
 }
 
-func (c *Client) UpdateSecretKeyValue() {
+func (c *Client) AddSecretKeyValue(namespace string, secretName string, key string, value string) (inserted bool, err error) {
+	//Check if the secret has the key already
+	secretFound, secretFindErr := c.GetSecret(namespace, secretName)
+	if secretFindErr != nil {
+		return false, secretFindErr
+	}
+	if len(secretFound.Data) > 0 {
+		secretDataKeyExists := false
+		for secretDataKey := range secretFound.Data {
+			if secretDataKey == key {
+				secretDataKeyExists = true
+				break
+			}
+		}
+		if secretDataKeyExists {
+			errorMsg := "Key: " + key + " already exists in secret."
+			return false, goerrors.New(errorMsg)
+		}
+	}
+	//  patchStringPathAddNode specifies an add operation for a node
+	type patchStringPathAddNode struct {
+		Op    string            `json:"op"`
+		Path  string            `json:"path"`
+		Value map[string]string `json:"value"`
+	}
 
+	// "/data" may not exist due to 0 items. Create it so we can add an element.
+	if len(secretFound.Data) == 0 {
+		valMap := make(map[string]string)
+		valueEnc := base64.StdEncoding.EncodeToString([]byte(value))
+		valMap[key] = valueEnc
+		payloadAddNode := []patchStringPathAddNode{{
+			Op:    "add",
+			Path:  "/data",
+			Value: valMap,
+		}}
+		payloadAddNodeBytes, err := json.Marshal(payloadAddNode)
+		if err != nil {
+			return false, err
+		}
+		_, errSecret := c.CoreV1().Secrets(namespace).Patch(secretName, types.JSONPatchType, payloadAddNodeBytes)
+		if errSecret != nil {
+			return false, errSecret
+		}
+		return true, nil
+	}
+	//  patchStringPathAddKeyValue specifies an add operation, a key and value
+	type patchStringPathAddKeyValue struct {
+		Op    string `json:"op"`
+		Path  string `json:"path"`
+		Value string `json:"value"`
+	}
+	valueEnc := base64.StdEncoding.EncodeToString([]byte(value))
+	payload := []patchStringPathAddKeyValue{{
+		Op:    "add",
+		Path:  "/data/" + key,
+		Value: valueEnc,
+	}}
+	payloadBytes, _ := json.Marshal(payload)
+	_, errSecret := c.CoreV1().Secrets(namespace).Patch(secretName, types.JSONPatchType, payloadBytes)
+	if errSecret != nil {
+		return false, errSecret
+	}
+	return true, nil
+}
+
+func (c *Client) UpdateSecretKeyValue(namespace string, secretName string, key string, value string) (updated bool, err error) {
+	//Check if the secret has the key to update
+	secretFound, secretFindErr := c.GetSecret(namespace, secretName)
+	if secretFindErr != nil {
+		return false, secretFindErr
+	}
+	secretDataKeyExists := false
+	for secretDataKey := range secretFound.Data {
+		if secretDataKey == key {
+			secretDataKeyExists = true
+			break
+		}
+	}
+	if !secretDataKeyExists {
+		errorMsg := "Key: " + key + " not found in secret."
+		return false, goerrors.New(errorMsg)
+	}
+	//  patchStringPath specifies a patch operation for a secret key.
+	type patchStringPathWithValue struct {
+		Op    string `json:"op"`
+		Path  string `json:"path"`
+		Value string `json:"value"`
+	}
+	valueEnc := base64.StdEncoding.EncodeToString([]byte(value))
+	payload := []patchStringPathWithValue{{
+		Op:    "replace",
+		Path:  "/data/" + key,
+		Value: valueEnc,
+	}}
+	payloadBytes, _ := json.Marshal(payload)
+	_, errSecret := c.CoreV1().Secrets(namespace).Patch(secretName, types.JSONPatchType, payloadBytes)
+	if errSecret != nil {
+		return false, errSecret
+	}
+	return true, nil
 }

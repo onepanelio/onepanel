@@ -28,3 +28,11 @@ func (r *ResourceManager) DeleteSecret(namespace string, secretName string) (del
 func (r *ResourceManager) DeleteSecretKey(namespace string, secretName string, key string) (deleted bool, err error) {
 	return r.kubeClient.DeleteSecretKey(namespace, secretName, key)
 }
+
+func (r *ResourceManager) AddSecretKeyValue(namespace string, secretName string, key string, value string) (inserted bool, err error) {
+	return r.kubeClient.AddSecretKeyValue(namespace, secretName, key, value)
+}
+
+func (r *ResourceManager) UpdateSecretKeyValue(namespace string, secretName string, key string, value string) (updated bool, err error) {
+	return r.kubeClient.UpdateSecretKeyValue(namespace, secretName, key, value)
+}

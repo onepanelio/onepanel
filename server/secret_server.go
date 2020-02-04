@@ -102,6 +102,32 @@ func (s *SecretServer) DeleteSecretKey(ctx context.Context, req *api.DeleteSecre
 	}, nil
 }
 
+func (s *SecretServer) AddSecretKeyValue(ctx context.Context, req *api.AddSecretValueRequest) (updated *api.AddSecretValueResponse, err error) {
+	var isAdded bool
+	isAdded, err = s.resourceManager.AddSecretKeyValue(req.Namespace, req.SecretName, req.AddSecretBody.Key, req.AddSecretBody.Value)
+	if err != nil {
+		return &api.AddSecretValueResponse{
+			Inserted: false,
+		}, util.NewUserError(codes.Unknown, err.Error())
+	}
+	return &api.AddSecretValueResponse{
+		Inserted: isAdded,
+	}, nil
+}
+
+func (s *SecretServer) UpdateSecretKeyValue(ctx context.Context, req *api.UpdateSecretKeyValueRequest) (updated *api.UpdateSecretKeyValueResponse, err error) {
+	var isUpdated bool
+	isUpdated, err = s.resourceManager.UpdateSecretKeyValue(req.Namespace, req.SecretName, req.Key, req.Value)
+	if err != nil {
+		return &api.UpdateSecretKeyValueResponse{
+			Updated: false,
+		}, util.NewUserError(codes.Unknown, err.Error())
+	}
+	return &api.UpdateSecretKeyValueResponse{
+		Updated: isUpdated,
+	}, nil
+}
+
 func getSecret(secret *apiv1.Secret) (secretGetFilled *api.Secret, err error) {
 	var secretData map[string]string
 	secretData = make(map[string]string)
