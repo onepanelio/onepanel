@@ -253,8 +253,7 @@ func (r *ResourceManager) CreateWorkflowTemplateVersion(namespace string, workfl
 	if err != nil {
 		return nil, util.NewUserErrorWrap(err, "Workflow template")
 	}
-
-	if err == nil && workflowTemplate == nil {
+	if workflowTemplate == nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}
 
@@ -285,8 +284,7 @@ func (r *ResourceManager) UpdateWorkflowTemplateVersion(namespace string, workfl
 	if err != nil {
 		return nil, util.NewUserErrorWrap(err, "Workflow template")
 	}
-
-	if err == nil && workflowTemplate == nil {
+	if workflowTemplate == nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}
 
@@ -306,7 +304,7 @@ func (r *ResourceManager) GetWorkflowTemplate(namespace, uid string, version int
 	if err != nil {
 		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
 	}
-	if err == nil && workflowTemplate == nil {
+	if workflowTemplate == nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}
 
