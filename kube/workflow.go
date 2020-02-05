@@ -1,13 +1,14 @@
 package kube
 
 import (
+	"errors"
 	"fmt"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/argoproj/argo/workflow/common"
 	"github.com/argoproj/pkg/json"
 	"github.com/onepanelio/core/util/env"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/watch"
@@ -106,11 +107,13 @@ func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (
 	}
 
 	secretName := "onepanel-default-env"
+	var secret *corev1.Secret
+	var statusError *k8serrors.StatusError
 	addSecretValsToTemplate := true
-	secret, secretGetErr := c.Clientset.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
-	if secretGetErr != nil {
-		if err, ok := secretGetErr.(*errors.StatusError); ok {
-			if err.ErrStatus.Reason == "NotFound" {
+	secret, err = c.Clientset.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
+	if err != nil {
+		if errors.As(err, &statusError) {
+			if statusError.ErrStatus.Reason == "NotFound" {
 				addSecretValsToTemplate = false
 			} else {
 				return nil, err
@@ -120,7 +123,7 @@ func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (
 		}
 	}
 
-	if addSecretValsToTemplate && secret != nil {
+	if addSecretValsToTemplate {
 		//Generate ENV vars from secret, if there is a container present in the workflow
 		for _, template := range wf.Spec.Templates {
 			if template.Container == nil {
