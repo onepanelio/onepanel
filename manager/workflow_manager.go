@@ -210,12 +210,20 @@ func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID, workflow
 }
 
 func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTemplate *model.WorkflowTemplate) (*model.WorkflowTemplate, error) {
+	allowed, err := r.kubeClient.IsAuthorized(namespace, "create", "argoproj.io", "workflow", "")
+	if err != nil {
+		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
+	}
+	if !allowed {
+		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
+	}
+
 	// validate workflow template
 	if err := r.kubeClient.ValidateWorkflow(workflowTemplate.GetManifestBytes()); err != nil {
 		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
 	}
 
-	workflowTemplate, err := r.workflowRepository.CreateWorkflowTemplate(namespace, workflowTemplate)
+	workflowTemplate, err = r.workflowRepository.CreateWorkflowTemplate(namespace, workflowTemplate)
 	if err != nil {
 		return nil, util.NewUserErrorWrap(err, "Workflow template")
 	}
@@ -224,6 +232,14 @@ func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTempl
 }
 
 func (r *ResourceManager) CreateWorkflowTemplateVersion(namespace string, workflowTemplate *model.WorkflowTemplate) (*model.WorkflowTemplate, error) {
+	allowed, err := r.kubeClient.IsAuthorized(namespace, "create", "argoproj.io", "workflow", "")
+	if err != nil {
+		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
+	}
+	if !allowed {
+		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
+	}
+
 	// validate workflow template
 	if err := r.kubeClient.ValidateWorkflow(workflowTemplate.GetManifestBytes()); err != nil {
 		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
@@ -233,7 +249,7 @@ func (r *ResourceManager) CreateWorkflowTemplateVersion(namespace string, workfl
 		return nil, err
 	}
 
-	workflowTemplate, err := r.workflowRepository.CreateWorkflowTemplateVersion(namespace, workflowTemplate)
+	workflowTemplate, err = r.workflowRepository.CreateWorkflowTemplateVersion(namespace, workflowTemplate)
 	if err != nil {
 		return nil, util.NewUserErrorWrap(err, "Workflow template")
 	}
@@ -246,6 +262,14 @@ func (r *ResourceManager) CreateWorkflowTemplateVersion(namespace string, workfl
 }
 
 func (r *ResourceManager) UpdateWorkflowTemplateVersion(namespace string, workflowTemplate *model.WorkflowTemplate) (*model.WorkflowTemplate, error) {
+	allowed, err := r.kubeClient.IsAuthorized(namespace, "update", "argoproj.io", "workflow", "")
+	if err != nil {
+		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
+	}
+	if !allowed {
+		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
+	}
+
 	// validate workflow template
 	if err := r.kubeClient.ValidateWorkflow(workflowTemplate.GetManifestBytes()); err != nil {
 		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
@@ -270,6 +294,14 @@ func (r *ResourceManager) UpdateWorkflowTemplateVersion(namespace string, workfl
 }
 
 func (r *ResourceManager) GetWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *model.WorkflowTemplate, err error) {
+	allowed, err := r.kubeClient.IsAuthorized(namespace, "get", "argoproj.io", "workflow", "")
+	if err != nil {
+		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
+	}
+	if !allowed {
+		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
+	}
+
 	workflowTemplate, err = r.workflowRepository.GetWorkflowTemplate(namespace, uid, version)
 	if err != nil {
 		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
@@ -282,6 +314,14 @@ func (r *ResourceManager) GetWorkflowTemplate(namespace, uid string, version int
 }
 
 func (r *ResourceManager) ListWorkflowTemplateVersions(namespace, uid string) (workflowTemplateVersions []*model.WorkflowTemplate, err error) {
+	allowed, err := r.kubeClient.IsAuthorized(namespace, "list", "argoproj.io", "workflow", "")
+	if err != nil {
+		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
+	}
+	if !allowed {
+		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
+	}
+
 	workflowTemplateVersions, err = r.workflowRepository.ListWorkflowTemplateVersions(namespace, uid)
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow template versions not found.")
@@ -291,6 +331,14 @@ func (r *ResourceManager) ListWorkflowTemplateVersions(namespace, uid string) (w
 }
 
 func (r *ResourceManager) ListWorkflowTemplates(namespace string) (workflowTemplateVersions []*model.WorkflowTemplate, err error) {
+	allowed, err := r.kubeClient.IsAuthorized(namespace, "list", "argoproj.io", "workflow", "")
+	if err != nil {
+		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
+	}
+	if !allowed {
+		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
+	}
+
 	workflowTemplateVersions, err = r.workflowRepository.ListWorkflowTemplates(namespace)
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow templates not found.")
