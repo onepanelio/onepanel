@@ -22,9 +22,9 @@ func (c *Client) CreateSecret(namespace string, secret *model.Secret) (err error
 	return
 }
 
-func (c *Client) SecretExists(namespace string, secretName string) (exists bool, err error) {
+func (c *Client) SecretExists(namespace string, name string) (exists bool, err error) {
 	var foundSecret *corev1.Secret
-	foundSecret, err = c.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
+	foundSecret, err = c.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		if err, ok := err.(*errors.StatusError); ok {
 			if err.ErrStatus.Reason == "NotFound" {
@@ -40,9 +40,9 @@ func (c *Client) SecretExists(namespace string, secretName string) (exists bool,
 	return false, nil
 }
 
-func (c *Client) GetSecret(namespace string, secretName string) (secretRes *model.Secret, err error) {
+func (c *Client) GetSecret(namespace string, name string) (secretRes *model.Secret, err error) {
 	var foundSecret *corev1.Secret
-	foundSecret, err = c.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
+	foundSecret, err = c.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		if err, ok := err.(*errors.StatusError); ok {
 			if err.ErrStatus.Reason == "NotFound" {
@@ -77,17 +77,17 @@ func (c *Client) ListSecrets(namespace string) (secrets []model.Secret, err erro
 	return
 }
 
-func (c *Client) DeleteSecret(namespace string, secretName string) (deleted bool, err error) {
-	err = c.CoreV1().Secrets(namespace).Delete(secretName, &metav1.DeleteOptions{})
+func (c *Client) DeleteSecret(namespace string, name string) (deleted bool, err error) {
+	err = c.CoreV1().Secrets(namespace).Delete(name, &metav1.DeleteOptions{})
 	if err != nil {
 		return false, err
 	}
 	return true, nil
 }
 
-func (c *Client) DeleteSecretKey(namespace string, secretName string, key string) (deleted bool, err error) {
+func (c *Client) DeleteSecretKey(namespace string, name string, key string) (deleted bool, err error) {
 	//Check if the secret has the key to delete
-	secretFound, secretFindErr := c.GetSecret(namespace, secretName)
+	secretFound, secretFindErr := c.GetSecret(namespace, name)
 	if secretFindErr != nil {
 		return false, secretFindErr
 	}
@@ -110,7 +110,7 @@ func (c *Client) DeleteSecretKey(namespace string, secretName string, key string
 			Path: "/data/" + key,
 		}}
 		payloadBytes, _ := json.Marshal(payload)
-		_, errSecret := c.CoreV1().Secrets(namespace).Patch(secretName, types.JSONPatchType, payloadBytes)
+		_, errSecret := c.CoreV1().Secrets(namespace).Patch(name, types.JSONPatchType, payloadBytes)
 		if errSecret != nil {
 			return false, errSecret
 		}
@@ -119,9 +119,9 @@ func (c *Client) DeleteSecretKey(namespace string, secretName string, key string
 	return true, nil
 }
 
-func (c *Client) AddSecretKeyValue(namespace string, secretName string, key string, value string) (inserted bool, err error) {
+func (c *Client) AddSecretKeyValue(namespace string, name string, key string, value string) (inserted bool, err error) {
 	//Check if the secret has the key already
-	secretFound, secretFindErr := c.GetSecret(namespace, secretName)
+	secretFound, secretFindErr := c.GetSecret(namespace, name)
 	if secretFindErr != nil {
 		return false, secretFindErr
 	}
@@ -159,7 +159,7 @@ func (c *Client) AddSecretKeyValue(namespace string, secretName string, key stri
 		if err != nil {
 			return false, err
 		}
-		_, errSecret := c.CoreV1().Secrets(namespace).Patch(secretName, types.JSONPatchType, payloadAddNodeBytes)
+		_, errSecret := c.CoreV1().Secrets(namespace).Patch(name, types.JSONPatchType, payloadAddNodeBytes)
 		if errSecret != nil {
 			return false, errSecret
 		}
@@ -178,16 +178,16 @@ func (c *Client) AddSecretKeyValue(namespace string, secretName string, key stri
 		Value: valueEnc,
 	}}
 	payloadBytes, _ := json.Marshal(payload)
-	_, errSecret := c.CoreV1().Secrets(namespace).Patch(secretName, types.JSONPatchType, payloadBytes)
+	_, errSecret := c.CoreV1().Secrets(namespace).Patch(name, types.JSONPatchType, payloadBytes)
 	if errSecret != nil {
 		return false, errSecret
 	}
 	return true, nil
 }
 
-func (c *Client) UpdateSecretKeyValue(namespace string, secretName string, key string, value string) (updated bool, err error) {
+func (c *Client) UpdateSecretKeyValue(namespace string, name string, key string, value string) (updated bool, err error) {
 	//Check if the secret has the key to update
-	secretFound, secretFindErr := c.GetSecret(namespace, secretName)
+	secretFound, secretFindErr := c.GetSecret(namespace, name)
 	if secretFindErr != nil {
 		return false, secretFindErr
 	}
@@ -215,7 +215,7 @@ func (c *Client) UpdateSecretKeyValue(namespace string, secretName string, key s
 		Value: valueEnc,
 	}}
 	payloadBytes, _ := json.Marshal(payload)
-	_, errSecret := c.CoreV1().Secrets(namespace).Patch(secretName, types.JSONPatchType, payloadBytes)
+	_, errSecret := c.CoreV1().Secrets(namespace).Patch(name, types.JSONPatchType, payloadBytes)
 	if errSecret != nil {
 		return false, errSecret
 	}
