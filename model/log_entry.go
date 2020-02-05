@@ -1,5 +1,8 @@
 package model
 
+import "time"
+
 type LogEntry struct {
-	Content string
+	Timestamp time.Time
+	Content   string
 }

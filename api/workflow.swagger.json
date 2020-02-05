@@ -507,6 +507,9 @@
     "apiLogEntry": {
       "type": "object",
       "properties": {
+        "timestamp": {
+          "type": "string"
+        },
         "content": {
           "type": "string"
         }
