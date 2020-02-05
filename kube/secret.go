@@ -62,7 +62,7 @@ func (c *Client) GetSecret(namespace string, name string) (secretRes *model.Secr
 	return nil, nil
 }
 
-func (c *Client) ListSecrets(namespace string) (secrets []model.Secret, err error) {
+func (c *Client) ListSecrets(namespace string) (secrets []*model.Secret, err error) {
 	listedSecrets, err := c.CoreV1().Secrets(namespace).List(metav1.ListOptions{})
 	if err != nil {
 		return
@@ -72,7 +72,7 @@ func (c *Client) ListSecrets(namespace string) (secrets []model.Secret, err erro
 			Name: secret.Name,
 			Data: convertSecretToMap(&secret),
 		}
-		secrets = append(secrets, secretModel)
+		secrets = append(secrets, &secretModel)
 	}
 	return
 }
