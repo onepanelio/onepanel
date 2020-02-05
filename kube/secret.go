@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	goerrors "errors"
+	"github.com/onepanelio/core/model"
 	apiv1 "k8s.io/api/core/v1"
 	errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,7 +42,7 @@ func (c *Client) SecretExists(namespace string, secretName string) (exists bool,
 	return false, nil
 }
 
-func (c *Client) GetSecret(namespace string, secretName string) (secret *apiv1.Secret, err error) {
+func (c *Client) GetSecret(namespace string, secretName string) (secretRes *model.Secret, err error) {
 	var foundSecret *apiv1.Secret
 	foundSecret, err = c.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
 	if err != nil {
@@ -54,18 +55,26 @@ func (c *Client) GetSecret(namespace string, secretName string) (secret *apiv1.S
 		return nil, err
 	}
 	if foundSecret != nil {
-		return foundSecret, nil
+		secretRes = &Secret{
+			Name: foundSecret.Name,
+			Data: convertSecretToMap(foundSecret),
+		}
+		return secretRes, nil
 	}
 	return nil, nil
 }
 
-func (c *Client) GetSecrets(namespace string) (secrets []apiv1.Secret, err error) {
+func (c *Client) GetSecrets(namespace string) (secrets []model.Secret, err error) {
 	listedSecrets, err := c.CoreV1().Secrets(namespace).List(metav1.ListOptions{})
 	if err != nil {
 		return
 	}
 	for _, secret := range listedSecrets.Items {
-		secrets = append(secrets, secret)
+		secretModel := Secret{
+			Name: secret.Name,
+			Data: convertSecretToMap(&secret),
+		}
+		secrets = append(secrets, secretModel)
 	}
 	return
 }
@@ -213,4 +222,12 @@ func (c *Client) UpdateSecretKeyValue(namespace string, secretName string, key s
 		return false, errSecret
 	}
 	return true, nil
+}
+
+func convertSecretToMap(foundSecret *apiv1.Secret) (modelData map[string]string) {
+	modelData = make(map[string]string)
+	for secretKey, secretData := range foundSecret.Data {
+		modelData[secretKey] = string(secretData)
+	}
+	return modelData
 }

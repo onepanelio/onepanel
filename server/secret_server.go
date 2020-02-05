@@ -43,30 +43,32 @@ func (s *SecretServer) SecretExists(ctx context.Context, req *api.SecretExistsRe
 }
 
 func (s *SecretServer) GetSecret(ctx context.Context, req *api.GetSecretRequest) (secretGet *api.Secret, err error) {
-	var secret *apiv1.Secret
-	secret, err = s.resourceManager.GetSecret(req.Namespace, req.SecretName)
+	secretModel := model.Secret{
+		Name: req.SecretName,
+	}
+	var secretModelRes *model.Secret
+	secretModelRes, err = s.resourceManager.GetSecret(req.Namespace, &secretModel)
 	if err != nil {
 		return nil, util.NewUserError(codes.Unknown, err.Error())
 	}
-	secretGet, err = getSecret(secret)
-	if err != nil {
-		return nil, util.NewUserError(codes.Unknown, err.Error())
+	secretGet = &api.Secret{
+		Name: secretModelRes.Name,
+		Data: secretModelRes.Data,
 	}
 	return secretGet, nil
 }
 
 func (s *SecretServer) GetSecrets(ctx context.Context, req *api.GetSecretsRequest) (secrets *api.Secrets, err error) {
-	var rawSecrets []apiv1.Secret
+	var rawSecrets []model.Secret
 	rawSecrets, err = s.resourceManager.GetSecrets(req.Namespace)
 	if err != nil {
 		return nil, util.NewUserError(codes.Unknown, err.Error())
 	}
-	var apiSecret *api.Secret
 	var apiSecrets []*api.Secret
 	for _, rawSecret := range rawSecrets {
-		apiSecret, err = getSecret(&rawSecret)
-		if err != nil {
-			return nil, err
+		apiSecret := &api.Secret{
+			Name: rawSecret.Name,
+			Data: rawSecret.Data,
 		}
 		apiSecrets = append(apiSecrets, apiSecret)
 	}
@@ -126,20 +128,6 @@ func (s *SecretServer) UpdateSecretKeyValue(ctx context.Context, req *api.Update
 	return &api.UpdateSecretKeyValueResponse{
 		Updated: isUpdated,
 	}, nil
-}
-
-func getSecret(secret *apiv1.Secret) (secretGetFilled *api.Secret, err error) {
-	var secretData map[string]string
-	secretData = make(map[string]string)
-	for key, data := range secret.Data {
-		secretData[key] = string(data)
-
-	}
-	secretGetFilled = &api.Secret{
-		Name: secret.Name,
-		Data: secretData,
-	}
-	return secretGetFilled, nil
 }
 
 func secretExistsResponse(secretExists bool) (secretExistsResFilled *api.SecretExistsResponse) {

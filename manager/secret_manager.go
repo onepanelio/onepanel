@@ -2,7 +2,6 @@ package manager
 
 import (
 	"github.com/onepanelio/core/model"
-	apiv1 "k8s.io/api/core/v1"
 )
 
 func (r *ResourceManager) CreateSecret(namespace string, secret *model.Secret) (err error) {
@@ -13,11 +12,12 @@ func (r *ResourceManager) SecretExists(namespace string, secretName string) (exi
 	return r.kubeClient.SecretExists(namespace, secretName)
 }
 
-func (r *ResourceManager) GetSecret(namespace, name string) (secret *model.Secret, err error) {
-	return r.kubeClient.GetSecret(namespace, name)
+func (r *ResourceManager) GetSecret(namespace string, secret *model.Secret) (secretRes *model.Secret, err error) {
+	return r.kubeClient.GetSecret(namespace, secret.Name)
 }
 
-func (r *ResourceManager) GetSecrets(namespace string) (secrets []apiv1.Secret, err error) {
+//todo rename to list
+func (r *ResourceManager) GetSecrets(namespace string) (secrets []model.Secret, err error) {
 	return r.kubeClient.GetSecrets(namespace)
 }
 
