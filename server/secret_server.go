@@ -18,6 +18,13 @@ func NewSecretServer(resourceManager *manager.ResourceManager) *SecretServer {
 	return &SecretServer{resourceManager: resourceManager}
 }
 
+func apiSecret(s *model.Secret) *api.Secret {
+	return &api.Secret{
+		Name: s.Name,
+		Data: s.Data,
+	}
+}
+
 func (s *SecretServer) CreateSecret(ctx context.Context, req *api.CreateSecretRequest) (*empty.Empty, error) {
 	err := s.resourceManager.CreateSecret(req.Namespace, &model.Secret{
 		Name: req.Secret.Name,
@@ -42,20 +49,13 @@ func (s *SecretServer) SecretExists(ctx context.Context, req *api.SecretExistsRe
 	return secretExistsResponse(secretExistsBool), nil
 }
 
-func (s *SecretServer) GetSecret(ctx context.Context, req *api.GetSecretRequest) (secretGet *api.Secret, err error) {
-	secretModel := model.Secret{
-		Name: req.Name,
-	}
-	var secretModelRes *model.Secret
-	secretModelRes, err = s.resourceManager.GetSecret(req.Namespace, &secretModel)
+func (s *SecretServer) GetSecret(ctx context.Context, req *api.GetSecretRequest) (*api.Secret, error) {
+	secret, err := s.resourceManager.GetSecret(req.Namespace, req.Name)
 	if err != nil {
 		return nil, util.NewUserError(codes.Unknown, err.Error())
 	}
-	secretGet = &api.Secret{
-		Name: secretModelRes.Name,
-		Data: secretModelRes.Data,
-	}
-	return secretGet, nil
+
+	return apiSecret(secret), nil
 }
 
 func (s *SecretServer) ListSecrets(ctx context.Context, req *api.GetSecretsRequest) (secrets *api.Secrets, err error) {
