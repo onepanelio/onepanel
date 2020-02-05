@@ -6,10 +6,9 @@ import (
 	"github.com/argoproj/argo/workflow/common"
 	"github.com/argoproj/pkg/json"
 	"github.com/onepanelio/core/util/env"
-	v12 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/watch"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -140,7 +139,7 @@ func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (
 					}
 				}
 				if addSecretAsEnv {
-					toAddEnvsToTemplate = append(toAddEnvsToTemplate, v12.EnvVar{
+					toAddEnvsToTemplate = append(toAddEnvsToTemplate, corev1.EnvVar{
 						Name:  key,
 						Value: string(value),
 					})
@@ -182,7 +181,7 @@ func (c *Client) CreateWorkflow(namespace string, manifest []byte, opts *Workflo
 }
 
 func (c *Client) GetWorkflow(namespace, name string) (workflow *Workflow, err error) {
-	workflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Get(name, v1.GetOptions{})
+	workflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
 
 	return
 }
