@@ -32,7 +32,7 @@ func (s *SecretServer) CreateSecret(ctx context.Context, req *api.CreateSecretRe
 
 func (s *SecretServer) SecretExists(ctx context.Context, req *api.SecretExistsRequest) (secretExists *api.SecretExistsResponse, err error) {
 	var secretExistsBool bool
-	secretExistsBool, err = s.resourceManager.SecretExists(req.Namespace, req.SecretName)
+	secretExistsBool, err = s.resourceManager.SecretExists(req.Namespace, req.Name)
 	if err != nil {
 		return &api.SecretExistsResponse{
 			Exists: false,
@@ -44,7 +44,7 @@ func (s *SecretServer) SecretExists(ctx context.Context, req *api.SecretExistsRe
 
 func (s *SecretServer) GetSecret(ctx context.Context, req *api.GetSecretRequest) (secretGet *api.Secret, err error) {
 	secretModel := model.Secret{
-		Name: req.SecretName,
+		Name: req.Name,
 	}
 	var secretModelRes *model.Secret
 	secretModelRes, err = s.resourceManager.GetSecret(req.Namespace, &secretModel)
@@ -80,7 +80,7 @@ func (s *SecretServer) ListSecrets(ctx context.Context, req *api.GetSecretsReque
 
 func (s *SecretServer) DeleteSecret(ctx context.Context, req *api.DeleteSecretRequest) (deleted *api.DeleteSecretResponse, err error) {
 	var isDeleted bool
-	isDeleted, err = s.resourceManager.DeleteSecret(req.Namespace, req.SecretName)
+	isDeleted, err = s.resourceManager.DeleteSecret(req.Namespace, req.Name)
 	if err != nil {
 		return &api.DeleteSecretResponse{
 			Deleted: false,
@@ -93,7 +93,7 @@ func (s *SecretServer) DeleteSecret(ctx context.Context, req *api.DeleteSecretRe
 
 func (s *SecretServer) DeleteSecretKey(ctx context.Context, req *api.DeleteSecretKeyRequest) (deleted *api.DeleteSecretKeyResponse, err error) {
 	var isDeleted bool
-	isDeleted, err = s.resourceManager.DeleteSecretKey(req.Namespace, req.SecretName, req.Key)
+	isDeleted, err = s.resourceManager.DeleteSecretKey(req.Namespace, req.Name, req.Key)
 	if err != nil {
 		return &api.DeleteSecretKeyResponse{
 			Deleted: false,
@@ -106,7 +106,7 @@ func (s *SecretServer) DeleteSecretKey(ctx context.Context, req *api.DeleteSecre
 
 func (s *SecretServer) AddSecretKeyValue(ctx context.Context, req *api.AddSecretValueRequest) (updated *api.AddSecretValueResponse, err error) {
 	var isAdded bool
-	isAdded, err = s.resourceManager.AddSecretKeyValue(req.Namespace, req.SecretName, req.AddSecretBody.Key, req.AddSecretBody.Value)
+	isAdded, err = s.resourceManager.AddSecretKeyValue(req.Namespace, req.Name, req.AddSecretBody.Key, req.AddSecretBody.Value)
 	if err != nil {
 		return &api.AddSecretValueResponse{
 			Inserted: false,
@@ -119,7 +119,7 @@ func (s *SecretServer) AddSecretKeyValue(ctx context.Context, req *api.AddSecret
 
 func (s *SecretServer) UpdateSecretKeyValue(ctx context.Context, req *api.UpdateSecretKeyValueRequest) (updated *api.UpdateSecretKeyValueResponse, err error) {
 	var isUpdated bool
-	isUpdated, err = s.resourceManager.UpdateSecretKeyValue(req.Namespace, req.SecretName, req.Key, req.Value)
+	isUpdated, err = s.resourceManager.UpdateSecretKeyValue(req.Namespace, req.Name, req.Key, req.Value)
 	if err != nil {
 		return &api.UpdateSecretKeyValueResponse{
 			Updated: false,
