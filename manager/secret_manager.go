@@ -16,9 +16,8 @@ func (r *ResourceManager) GetSecret(namespace string, secret *model.Secret) (sec
 	return r.kubeClient.GetSecret(namespace, secret.Name)
 }
 
-//todo rename to list
-func (r *ResourceManager) GetSecrets(namespace string) (secrets []model.Secret, err error) {
-	return r.kubeClient.GetSecrets(namespace)
+func (r *ResourceManager) ListSecrets(namespace string) (secrets []model.Secret, err error) {
+	return r.kubeClient.ListSecrets(namespace)
 }
 
 func (r *ResourceManager) DeleteSecret(namespace string, secretName string) (deleted bool, err error) {

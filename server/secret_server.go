@@ -58,9 +58,9 @@ func (s *SecretServer) GetSecret(ctx context.Context, req *api.GetSecretRequest)
 	return secretGet, nil
 }
 
-func (s *SecretServer) GetSecrets(ctx context.Context, req *api.GetSecretsRequest) (secrets *api.Secrets, err error) {
+func (s *SecretServer) ListSecrets(ctx context.Context, req *api.GetSecretsRequest) (secrets *api.Secrets, err error) {
 	var rawSecrets []model.Secret
-	rawSecrets, err = s.resourceManager.GetSecrets(req.Namespace)
+	rawSecrets, err = s.resourceManager.ListSecrets(req.Namespace)
 	if err != nil {
 		return nil, util.NewUserError(codes.Unknown, err.Error())
 	}

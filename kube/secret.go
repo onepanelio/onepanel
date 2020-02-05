@@ -64,7 +64,7 @@ func (c *Client) GetSecret(namespace string, secretName string) (secretRes *mode
 	return nil, nil
 }
 
-func (c *Client) GetSecrets(namespace string) (secrets []model.Secret, err error) {
+func (c *Client) ListSecrets(namespace string) (secrets []model.Secret, err error) {
 	listedSecrets, err := c.CoreV1().Secrets(namespace).List(metav1.ListOptions{})
 	if err != nil {
 		return
