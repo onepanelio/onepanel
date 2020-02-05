@@ -1,13 +1,11 @@
 package kube
 
 import (
-	"github.com/onepanelio/core/model"
-	corev1 "k8s.io/api/core/v1"
 	"encoding/base64"
 	"encoding/json"
 	goerrors "errors"
 	"github.com/onepanelio/core/model"
-	apiv1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -25,7 +23,7 @@ func (c *Client) CreateSecret(namespace string, secret *model.Secret) (err error
 }
 
 func (c *Client) SecretExists(namespace string, secretName string) (exists bool, err error) {
-	var foundSecret *apiv1.Secret
+	var foundSecret *corev1.Secret
 	foundSecret, err = c.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
 	if err != nil {
 		if err, ok := err.(*errors.StatusError); ok {
@@ -43,7 +41,7 @@ func (c *Client) SecretExists(namespace string, secretName string) (exists bool,
 }
 
 func (c *Client) GetSecret(namespace string, secretName string) (secretRes *model.Secret, err error) {
-	var foundSecret *apiv1.Secret
+	var foundSecret *corev1.Secret
 	foundSecret, err = c.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
 	if err != nil {
 		if err, ok := err.(*errors.StatusError); ok {
@@ -55,7 +53,7 @@ func (c *Client) GetSecret(namespace string, secretName string) (secretRes *mode
 		return nil, err
 	}
 	if foundSecret != nil {
-		secretRes = &Secret{
+		secretRes = &model.Secret{
 			Name: foundSecret.Name,
 			Data: convertSecretToMap(foundSecret),
 		}
@@ -70,7 +68,7 @@ func (c *Client) ListSecrets(namespace string) (secrets []model.Secret, err erro
 		return
 	}
 	for _, secret := range listedSecrets.Items {
-		secretModel := Secret{
+		secretModel := model.Secret{
 			Name: secret.Name,
 			Data: convertSecretToMap(&secret),
 		}
@@ -224,7 +222,7 @@ func (c *Client) UpdateSecretKeyValue(namespace string, secretName string, key s
 	return true, nil
 }
 
-func convertSecretToMap(foundSecret *apiv1.Secret) (modelData map[string]string) {
+func convertSecretToMap(foundSecret *corev1.Secret) (modelData map[string]string) {
 	modelData = make(map[string]string)
 	for secretKey, secretData := range foundSecret.Data {
 		modelData[secretKey] = string(secretData)

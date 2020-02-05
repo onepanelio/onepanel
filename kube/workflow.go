@@ -110,7 +110,7 @@ func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (
 	var secret *corev1.Secret
 	var statusError *k8serrors.StatusError
 	addSecretValsToTemplate := true
-	secret, err = c.Clientset.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
+	secret, err = c.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
 	if err != nil {
 		if errors.As(err, &statusError) {
 			if statusError.ErrStatus.Reason == "NotFound" {

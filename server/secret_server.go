@@ -136,17 +136,3 @@ func secretExistsResponse(secretExists bool) (secretExistsResFilled *api.SecretE
 	}
 	return
 }
-
-func (s *SecretServer) GetSecret(ctx context.Context, req *api.GetSecretRequest) (*api.Secret, error) {
-	secret, err := s.resourceManager.GetSecret(req.Namespace, req.Name)
-	if err != nil {
-		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
-	}
-
-	apiSecret := &api.Secret{
-		Name: secret.Name,
-		Data: secret.Data,
-	}
-
-	return apiSecret, nil
-}
