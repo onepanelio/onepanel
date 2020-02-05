@@ -1,16 +1,16 @@
 package manager
 
 import (
-	"os"
 	"strconv"
 
 	"github.com/onepanelio/core/kube"
 	"github.com/onepanelio/core/repository"
 	"github.com/onepanelio/core/s3"
+	"github.com/onepanelio/core/util/env"
 )
 
 var (
-	labelKeyPrefix = os.Getenv("KUBE_LABEL_KEY_PREFIX")
+	labelKeyPrefix = env.GetEnv("KUBE_LABEL_KEY_PREFIX", "onepanel.io/")
 )
 
 type ResourceManager struct {
