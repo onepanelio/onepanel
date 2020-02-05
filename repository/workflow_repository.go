@@ -131,7 +131,7 @@ func (r *WorkflowRepository) UpdateWorkflowTemplateVersion(workflowTemplate *mod
 }
 
 func (r *WorkflowRepository) workflowTemplatesSelectBuilder(namespace string) sq.SelectBuilder {
-	sb := r.sb.Select("wt.id", "wt.created_at", "wt.uid", "wt.name", "wtv.version", "wtv.is_latest").
+	sb := r.sb.Select("wt.id", "wt.created_at", "wt.uid", "wt.name", "wt.is_archived", "wtv.version", "wtv.is_latest").
 		From("workflow_template_versions wtv").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{
@@ -184,6 +184,9 @@ func (r *WorkflowRepository) ListWorkflowTemplates(namespace string) (workflowTe
 
 	query, args, err := r.workflowTemplatesSelectBuilder(namespace).
 		Options("DISTINCT ON (wt.id) wt.id,").
+		Where(sq.Eq{
+			"wt.is_archived": false,
+		}).
 		OrderBy("wt.id desc").ToSql()
 	if err != nil {
 		return
@@ -192,4 +195,24 @@ func (r *WorkflowRepository) ListWorkflowTemplates(namespace string) (workflowTe
 	err = r.db.Select(&workflowTemplateVersions, query, args...)
 
 	return
+}
+
+func (r *WorkflowRepository) ArchiveWorkflowTemplate(namespace, uid string) (bool, error) {
+	query, args, err := r.sb.Update("workflow_templates").
+		Set("is_archived", true).
+		Where(sq.Eq{
+			"uid":       uid,
+			"namespace": namespace,
+		}).
+		ToSql()
+
+	if err != nil {
+		return false, err
+	}
+
+	if _, err := r.db.Exec(query, args...); err != nil {
+		return false, err
+	}
+
+	return true, nil
 }

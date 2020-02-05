@@ -37,6 +37,15 @@ message ListWorkflowTemplatesResponse {
     repeated WorkflowTemplate workflowTemplates = 2;
 }
 
+message ArchiveWorkflowTemplateRequest {
+    string namespace = 1;
+    string uid = 2;
+}
+
+message ArchiveWorkflowTemplateResponse {
+    WorkflowTemplate workflowTemplate = 1;
+}
+
 message WorkflowTemplate {
     string createdAt = 1;
     string uid = 2;
@@ -44,4 +53,5 @@ message WorkflowTemplate {
     int32 version = 4;
     string manifest = 5;
     bool isLatest = 6;
+    bool isArchived = 7;
 }

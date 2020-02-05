@@ -253,8 +253,7 @@ func (r *ResourceManager) CreateWorkflowTemplateVersion(namespace string, workfl
 	if err != nil {
 		return nil, util.NewUserErrorWrap(err, "Workflow template")
 	}
-
-	if err == nil && workflowTemplate == nil {
+	if workflowTemplate == nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}
 
@@ -285,8 +284,7 @@ func (r *ResourceManager) UpdateWorkflowTemplateVersion(namespace string, workfl
 	if err != nil {
 		return nil, util.NewUserErrorWrap(err, "Workflow template")
 	}
-
-	if err == nil && workflowTemplate == nil {
+	if workflowTemplate == nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}
 
@@ -306,7 +304,7 @@ func (r *ResourceManager) GetWorkflowTemplate(namespace, uid string, version int
 	if err != nil {
 		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
 	}
-	if err == nil && workflowTemplate == nil {
+	if workflowTemplate == nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}
 
@@ -342,6 +340,31 @@ func (r *ResourceManager) ListWorkflowTemplates(namespace string) (workflowTempl
 	workflowTemplateVersions, err = r.workflowRepository.ListWorkflowTemplates(namespace)
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow templates not found.")
+	}
+
+	return
+}
+
+func (r *ResourceManager) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, err error) {
+	allowed, err := r.kubeClient.IsAuthorized(namespace, "delete", "argoproj.io", "workflow", "")
+	if err != nil {
+		return false, util.NewUserError(codes.Unknown, "Unknown error.")
+	}
+	if !allowed {
+		return false, util.NewUserError(codes.PermissionDenied, "Permission denied.")
+	}
+
+	workflowTemplate, err := r.workflowRepository.GetWorkflowTemplate(namespace, uid, 0)
+	if err != nil {
+		return false, util.NewUserError(codes.Unknown, "Unknown error.")
+	}
+	if workflowTemplate == nil {
+		return false, util.NewUserError(codes.NotFound, "Workflow template not found.")
+	}
+
+	archived, err = r.workflowRepository.ArchiveWorkflowTemplate(namespace, uid)
+	if !archived || err != nil {
+		return false, util.NewUserError(codes.Unknown, "Unknown error.")
 	}
 
 	return
