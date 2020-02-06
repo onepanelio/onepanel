@@ -2,7 +2,8 @@ package manager
 
 import (
 	"github.com/onepanelio/core/model"
-	corev1 "k8s.io/api/core/v1"
+	"github.com/onepanelio/core/util"
+	"google.golang.org/grpc/codes"
 )
 
 func (r *ResourceManager) CreateSecret(namespace string, secret *model.Secret) (err error) {
@@ -18,17 +19,11 @@ func (r *ResourceManager) GetSecret(namespace, name string) (secret *model.Secre
 }
 
 func (r *ResourceManager) ListSecrets(namespace string) (secrets []*model.Secret, err error) {
-	secretList, err := r.kubeClient.ListSecrets(namespace)
+	secrets, err = r.kubeClient.ListSecrets(namespace)
 	if err != nil {
-		return nil, err
+		return nil, util.NewUserError(codes.NotFound, "No secrets were found.")
 	}
-	for _, secret := range secretList.Items {
-		secretModel := model.Secret{
-			Name: secret.Name,
-			Data: convertSecretToMap(&secret),
-		}
-		secrets = append(secrets, &secretModel)
-	}
+
 	return
 }
 
@@ -46,11 +41,4 @@ func (r *ResourceManager) AddSecretKeyValue(namespace string, name string, key s
 
 func (r *ResourceManager) UpdateSecretKeyValue(namespace string, name string, key string, value string) (updated bool, err error) {
 	return r.kubeClient.UpdateSecretKeyValue(namespace, name, key, value)
-}
-func convertSecretToMap(foundSecret *corev1.Secret) (modelData map[string]string) {
-	modelData = make(map[string]string)
-	for secretKey, secretData := range foundSecret.Data {
-		modelData[secretKey] = string(secretData)
-	}
-	return modelData
 }

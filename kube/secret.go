@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	goerrors "errors"
+
 	"github.com/onepanelio/core/model"
 	corev1 "k8s.io/api/core/v1"
 	errors "k8s.io/apimachinery/pkg/api/errors"
@@ -63,8 +64,21 @@ func (c *Client) GetSecret(namespace string, name string) (secretRes *model.Secr
 	return nil, nil
 }
 
-func (c *Client) ListSecrets(namespace string) (secrets *corev1.SecretList, err error) {
-	return c.CoreV1().Secrets(namespace).List(metav1.ListOptions{})
+func (c *Client) ListSecrets(namespace string) (secrets []*model.Secret, err error) {
+	secretsList, err := c.CoreV1().Secrets(namespace).List(metav1.ListOptions{})
+	if err != nil {
+		return
+	}
+
+	for _, secret := range secretsList.Items {
+		secretModel := model.Secret{
+			Name: secret.Name,
+			Data: convertSecretToMap(&secret),
+		}
+		secrets = append(secrets, &secretModel)
+	}
+
+	return
 }
 
 func (c *Client) DeleteSecret(namespace string, name string) (deleted bool, err error) {
