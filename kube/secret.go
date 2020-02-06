@@ -125,6 +125,11 @@ func (c *Client) AddSecretKeyValue(namespace string, name string, key string, va
 	if secretFindErr != nil {
 		return false, secretFindErr
 	}
+
+	if secretFound == nil {
+		return false, goerrors.New("Secret was not found.")
+	}
+
 	if len(secretFound.Data) > 0 {
 		secretDataKeyExists := false
 		for secretDataKey := range secretFound.Data {
