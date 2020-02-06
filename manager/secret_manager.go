@@ -44,7 +44,7 @@ func (r *ResourceManager) AddSecretKeyValue(namespace string, name string, key s
 	return r.kubeClient.AddSecretKeyValue(namespace, name, key, value)
 }
 
-func (r *ResourceManager) UpdateSecretKeyValue(namespace string, secret model.Secret) (updated bool, err error) {
+func (r *ResourceManager) UpdateSecretKeyValue(namespace string, secret *model.Secret) (updated bool, err error) {
 	if len(secret.Data) == 0 {
 		return false, util.NewUserError(codes.InvalidArgument, "data cannot be empty.")
 	}

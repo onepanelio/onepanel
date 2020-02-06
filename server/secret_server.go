@@ -145,7 +145,7 @@ func (s *SecretServer) UpdateSecretKeyValue(ctx context.Context, req *api.Update
 		Name: req.Secret.Name,
 		Data: req.Secret.Data,
 	}
-	isUpdated, err = s.resourceManager.UpdateSecretKeyValue(req.Namespace, secret)
+	isUpdated, err = s.resourceManager.UpdateSecretKeyValue(req.Namespace, &secret)
 	if errors.As(err, &userError) {
 		return &api.UpdateSecretKeyValueResponse{
 			Updated: false,
