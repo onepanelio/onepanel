@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/manager"
@@ -59,7 +60,7 @@ func (s *SecretServer) GetSecret(ctx context.Context, req *api.GetSecretRequest)
 	return apiSecret(secret), nil
 }
 
-func (s *SecretServer) ListSecrets(ctx context.Context, req *api.GetSecretsRequest) (secrets *api.Secrets, err error) {
+func (s *SecretServer) ListSecrets(ctx context.Context, req *api.ListSecretsRequest) (secrets *api.ListSecretsResponse, err error) {
 	var modelSecrets []*model.Secret
 	modelSecrets, err = s.resourceManager.ListSecrets(req.Namespace)
 	if err != nil {
@@ -69,7 +70,8 @@ func (s *SecretServer) ListSecrets(ctx context.Context, req *api.GetSecretsReque
 	for _, rawSecret := range modelSecrets {
 		apiSecrets = append(apiSecrets, apiSecret(rawSecret))
 	}
-	secrets = &api.Secrets{
+	secrets = &api.ListSecretsResponse{
+		Count:   int32(len(apiSecrets)),
 		Secrets: apiSecrets,
 	}
 	return
@@ -112,10 +114,10 @@ func (s *SecretServer) DeleteSecretKey(ctx context.Context, req *api.DeleteSecre
 	}, nil
 }
 
-func (s *SecretServer) AddSecretKeyValue(ctx context.Context, req *api.AddSecretValueRequest) (updated *api.AddSecretValueResponse, err error) {
+func (s *SecretServer) AddSecretKeyValue(ctx context.Context, req *api.AddSecretKeyValueRequest) (updated *api.AddSecretKeyValueResponse, err error) {
 	var isAdded bool
 	if len(req.Secret.Data) == 0 {
-		return &api.AddSecretValueResponse{
+		return &api.AddSecretKeyValueResponse{
 			Inserted: false,
 		}, util.NewUserError(codes.InvalidArgument, errors.New("Data cannot be empty").Error())
 	}
@@ -129,11 +131,11 @@ func (s *SecretServer) AddSecretKeyValue(ctx context.Context, req *api.AddSecret
 	}
 	isAdded, err = s.resourceManager.AddSecretKeyValue(req.Namespace, req.Secret.Name, singleKey, singleVal)
 	if err != nil {
-		return &api.AddSecretValueResponse{
+		return &api.AddSecretKeyValueResponse{
 			Inserted: false,
 		}, util.NewUserError(codes.Unknown, err.Error())
 	}
-	return &api.AddSecretValueResponse{
+	return &api.AddSecretKeyValueResponse{
 		Inserted: isAdded,
 	}, nil
 }
