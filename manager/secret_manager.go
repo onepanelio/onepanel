@@ -2,17 +2,10 @@ package manager
 
 import (
 	"github.com/onepanelio/core/model"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (r *ResourceManager) CreateSecret(namespace string, secret *model.Secret) (err error) {
-	return r.kubeClient.CreateSecret(namespace, &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: secret.Name,
-		},
-		StringData: secret.Data,
-	})
+	return r.kubeClient.CreateSecret(namespace, secret)
 }
 
 func (r *ResourceManager) SecretExists(namespace string, name string) (exists bool, err error) {
