@@ -1,6 +1,8 @@
 package manager
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"github.com/onepanelio/core/model"
 	"github.com/onepanelio/core/util"
 	"google.golang.org/grpc/codes"
@@ -40,5 +42,38 @@ func (r *ResourceManager) AddSecretKeyValue(namespace string, name string, key s
 }
 
 func (r *ResourceManager) UpdateSecretKeyValue(namespace string, name string, key string, value string) (updated bool, err error) {
-	return r.kubeClient.UpdateSecretKeyValue(namespace, name, key, value)
+	//Check if the secret has the key to update
+	secretFound, err := r.GetSecret(namespace, name)
+	if err != nil {
+		return false, util.NewUserError(codes.NotFound, "Unable to find secret.")
+	}
+	secretDataKeyExists := false
+	for secretDataKey := range secretFound.Data {
+		if secretDataKey == key {
+			secretDataKeyExists = true
+			break
+		}
+	}
+	if !secretDataKeyExists {
+		errorMsg := "Key: " + key + " not found in secret."
+		return false, util.NewUserError(codes.NotFound, errorMsg)
+	}
+	//  patchStringPath specifies a patch operation for a secret key.
+	type patchStringPathWithValue struct {
+		Op    string `json:"op"`
+		Path  string `json:"path"`
+		Value string `json:"value"`
+	}
+	valueEnc := base64.StdEncoding.EncodeToString([]byte(value))
+	payload := []patchStringPathWithValue{{
+		Op:    "replace",
+		Path:  "/data/" + key,
+		Value: valueEnc,
+	}}
+	payloadBytes, _ := json.Marshal(payload)
+	err = r.kubeClient.UpdateSecretKeyValue(namespace, name, payloadBytes)
+	if err != nil {
+		return false, util.NewUserError(codes.Unknown, "Unable to update secret key value.")
+	}
+	return true, nil
 }

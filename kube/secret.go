@@ -194,41 +194,9 @@ func (c *Client) AddSecretKeyValue(namespace string, name string, key string, va
 	return true, nil
 }
 
-func (c *Client) UpdateSecretKeyValue(namespace string, name string, key string, value string) (updated bool, err error) {
-	//Check if the secret has the key to update
-	secretFound, secretFindErr := c.GetSecret(namespace, name)
-	if secretFindErr != nil {
-		return false, secretFindErr
-	}
-	secretDataKeyExists := false
-	for secretDataKey := range secretFound.Data {
-		if secretDataKey == key {
-			secretDataKeyExists = true
-			break
-		}
-	}
-	if !secretDataKeyExists {
-		errorMsg := "Key: " + key + " not found in secret."
-		return false, goerrors.New(errorMsg)
-	}
-	//  patchStringPath specifies a patch operation for a secret key.
-	type patchStringPathWithValue struct {
-		Op    string `json:"op"`
-		Path  string `json:"path"`
-		Value string `json:"value"`
-	}
-	valueEnc := base64.StdEncoding.EncodeToString([]byte(value))
-	payload := []patchStringPathWithValue{{
-		Op:    "replace",
-		Path:  "/data/" + key,
-		Value: valueEnc,
-	}}
-	payloadBytes, _ := json.Marshal(payload)
-	_, errSecret := c.CoreV1().Secrets(namespace).Patch(name, types.JSONPatchType, payloadBytes)
-	if errSecret != nil {
-		return false, errSecret
-	}
-	return true, nil
+func (c *Client) UpdateSecretKeyValue(namespace string, name string, payloadBytes []byte) (err error) {
+	_, err = c.CoreV1().Secrets(namespace).Patch(name, types.JSONPatchType, payloadBytes)
+	return
 }
 
 func convertSecretToMap(foundSecret *corev1.Secret) (modelData map[string]string) {
