@@ -7,7 +7,6 @@ import (
 
 	"github.com/onepanelio/core/model"
 	corev1 "k8s.io/api/core/v1"
-	errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -34,24 +33,16 @@ func (c *Client) SecretExists(namespace string, secret *model.Secret) (*model.Se
 	return &retSecret, nil
 }
 
-func (c *Client) GetSecret(namespace string, name string) (secretRes *model.Secret, err error) {
-	var foundSecret *corev1.Secret
-	foundSecret, err = c.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
+func (c *Client) GetSecret(namespace string, secret *model.Secret) (*model.Secret, error) {
+	foundSecret, err := c.CoreV1().Secrets(namespace).Get(secret.Name, metav1.GetOptions{})
 	if err != nil {
-		if err, ok := err.(*errors.StatusError); ok {
-			if err.ErrStatus.Reason == "NotFound" {
-				return nil, nil
-			}
-			return nil, err
-		}
 		return nil, err
 	}
 	if foundSecret != nil {
-		secretRes = &model.Secret{
+		return &model.Secret{
 			Name: foundSecret.Name,
 			Data: convertSecretToMap(foundSecret),
-		}
-		return secretRes, nil
+		}, nil
 	}
 	return nil, nil
 }

@@ -40,7 +40,24 @@ func (r *ResourceManager) SecretExists(namespace string, name string) (exists bo
 }
 
 func (r *ResourceManager) GetSecret(namespace, name string) (secret *model.Secret, err error) {
-	return r.kubeClient.GetSecret(namespace, name)
+	secretGet := model.Secret{
+		Name: name,
+	}
+	secret, err = r.kubeClient.GetSecret(namespace, &secretGet)
+	var statusError *errors.StatusError
+	if err != nil {
+		if goerrors.As(err, &statusError) {
+			if statusError.ErrStatus.Reason == "NotFound" {
+				return secret, util.NewUserError(codes.NotFound, "Secret Not Found.")
+			}
+			return secret, util.NewUserError(codes.Unknown, "Error when getting secret.")
+		}
+		return secret, util.NewUserError(codes.Unknown, "Error when getting secret.")
+	}
+	if secret == nil {
+		return nil, util.NewUserError(codes.Unknown, "Error when getting secret.")
+	}
+	return
 }
 
 func (r *ResourceManager) ListSecrets(namespace string) (secrets []*model.Secret, err error) {

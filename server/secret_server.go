@@ -53,10 +53,9 @@ func (s *SecretServer) SecretExists(ctx context.Context, req *api.SecretExistsRe
 
 func (s *SecretServer) GetSecret(ctx context.Context, req *api.GetSecretRequest) (*api.Secret, error) {
 	secret, err := s.resourceManager.GetSecret(req.Namespace, req.Name)
-	if err != nil {
-		return nil, util.NewUserError(codes.Unknown, err.Error())
+	if errors.As(err, &userError) {
+		return nil, userError.GRPCError()
 	}
-
 	return apiSecret(secret), nil
 }
 
