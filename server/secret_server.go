@@ -142,7 +142,11 @@ func (s *SecretServer) AddSecretKeyValue(ctx context.Context, req *api.AddSecret
 
 func (s *SecretServer) UpdateSecretKeyValue(ctx context.Context, req *api.UpdateSecretKeyValueRequest) (updated *api.UpdateSecretKeyValueResponse, err error) {
 	var isUpdated bool
-	isUpdated, err = s.resourceManager.UpdateSecretKeyValue(req.Namespace, req.Secret.Name, req.Secret.Data)
+	secret := model.Secret{
+		Name: req.Secret.Name,
+		Data: req.Secret.Data,
+	}
+	isUpdated, err = s.resourceManager.UpdateSecretKeyValue(req.Namespace, secret)
 	if errors.As(err, &userError) {
 		return &api.UpdateSecretKeyValueResponse{
 			Updated: false,
