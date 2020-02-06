@@ -79,10 +79,10 @@ func (s *SecretServer) ListSecrets(ctx context.Context, req *api.ListSecretsRequ
 func (s *SecretServer) DeleteSecret(ctx context.Context, req *api.DeleteSecretRequest) (deleted *api.DeleteSecretResponse, err error) {
 	var isDeleted bool
 	isDeleted, err = s.resourceManager.DeleteSecret(req.Namespace, req.Name)
-	if err != nil {
+	if errors.As(err, &userError) {
 		return &api.DeleteSecretResponse{
 			Deleted: false,
-		}, util.NewUserError(codes.Unknown, err.Error())
+		}, userError.GRPCError()
 	}
 	return &api.DeleteSecretResponse{
 		Deleted: isDeleted,

@@ -64,12 +64,8 @@ func (c *Client) ListSecrets(namespace string) (secrets []*model.Secret, err err
 	return
 }
 
-func (c *Client) DeleteSecret(namespace string, name string) (deleted bool, err error) {
-	err = c.CoreV1().Secrets(namespace).Delete(name, &metav1.DeleteOptions{})
-	if err != nil {
-		return false, err
-	}
-	return true, nil
+func (c *Client) DeleteSecret(namespace string, secret *model.Secret) (err error) {
+	return c.CoreV1().Secrets(namespace).Delete(secret.Name, &metav1.DeleteOptions{})
 }
 
 func (c *Client) DeleteSecretKey(namespace string, name string, key string) (deleted bool, err error) {

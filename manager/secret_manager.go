@@ -70,7 +70,14 @@ func (r *ResourceManager) ListSecrets(namespace string) (secrets []*model.Secret
 }
 
 func (r *ResourceManager) DeleteSecret(namespace string, name string) (deleted bool, err error) {
-	return r.kubeClient.DeleteSecret(namespace, name)
+	secret := &model.Secret{
+		Name: name,
+	}
+	err = r.kubeClient.DeleteSecret(namespace, secret)
+	if err != nil {
+		return false, util.NewUserError(codes.Unknown, "Secret unable to be deleted.")
+	}
+	return true, nil
 }
 
 func (r *ResourceManager) DeleteSecretKey(namespace string, name string, key string) (deleted bool, err error) {
