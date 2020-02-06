@@ -127,7 +127,10 @@ func (s *WorkflowServer) GetWorkflowLogs(req *api.GetWorkflowLogsRequest, stream
 		if le == nil {
 			break
 		}
-		if err := stream.Send(&api.LogEntry{Content: le.Content}); err != nil {
+		if err := stream.Send(&api.LogEntry{
+			Timestamp: le.Timestamp.String(),
+			Content:   le.Content,
+		}); err != nil {
 			return err
 		}
 	}

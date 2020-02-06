@@ -121,7 +121,8 @@ message ListWorkflowsResponse {
 }
 
 message LogEntry {
-    string content = 1;
+    string timestamp = 1;
+    string content = 2;
 }
 
 message Workflow {

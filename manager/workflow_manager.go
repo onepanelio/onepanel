@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/onepanelio/core/kube"
@@ -173,7 +174,18 @@ func (r *ResourceManager) GetWorkflowLogs(namespace, name, podName, containerNam
 	go func() {
 		scanner := bufio.NewScanner(stream)
 		for scanner.Scan() {
-			logWatcher <- &model.LogEntry{Content: scanner.Text()}
+			text := scanner.Text()
+			parts := strings.Split(text, " ")
+			timestamp, err := time.Parse(time.RFC3339, parts[0])
+			if err != nil {
+				logWatcher <- &model.LogEntry{Content: text}
+			} else {
+				logWatcher <- &model.LogEntry{
+					Timestamp: timestamp,
+					Content:   strings.Join(parts[1:], " "),
+				}
+			}
+
 		}
 		close(logWatcher)
 	}()
