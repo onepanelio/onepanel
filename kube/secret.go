@@ -24,10 +24,11 @@ func (c *Client) CreateSecret(namespace string, secret *model.Secret) (err error
 
 func (c *Client) SecretExists(namespace string, name string) (exists bool, err error) {
 	var foundSecret *corev1.Secret
+	var statusError *errors.StatusError
 	foundSecret, err = c.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
-		if err, ok := err.(*errors.StatusError); ok {
-			if err.ErrStatus.Reason == "NotFound" {
+		if goerrors.As(err, &statusError) {
+			if statusError.ErrStatus.Reason == "NotFound" {
 				return false, nil
 			}
 			return false, err
