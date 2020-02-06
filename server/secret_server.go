@@ -142,24 +142,11 @@ func (s *SecretServer) AddSecretKeyValue(ctx context.Context, req *api.AddSecret
 
 func (s *SecretServer) UpdateSecretKeyValue(ctx context.Context, req *api.UpdateSecretKeyValueRequest) (updated *api.UpdateSecretKeyValueResponse, err error) {
 	var isUpdated bool
-	if len(req.Secret.Data) == 0 {
+	isUpdated, err = s.resourceManager.UpdateSecretKeyValue(req.Namespace, req.Secret.Name, req.Secret.Data)
+	if errors.As(err, &userError) {
 		return &api.UpdateSecretKeyValueResponse{
 			Updated: false,
-		}, util.NewUserError(codes.InvalidArgument, errors.New("Data cannot be empty").Error())
-	}
-	//Currently, support for 1 key only
-	singleKey := ""
-	singleVal := ""
-	for key, value := range req.Secret.Data {
-		singleKey = key
-		singleVal = value
-		break
-	}
-	isUpdated, err = s.resourceManager.UpdateSecretKeyValue(req.Namespace, req.Secret.Name, singleKey, singleVal)
-	if err != nil {
-		return &api.UpdateSecretKeyValueResponse{
-			Updated: false,
-		}, util.NewUserError(codes.Unknown, err.Error())
+		}, userError.GRPCError()
 	}
 	return &api.UpdateSecretKeyValueResponse{
 		Updated: isUpdated,

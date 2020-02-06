@@ -41,7 +41,19 @@ func (r *ResourceManager) AddSecretKeyValue(namespace string, name string, key s
 	return r.kubeClient.AddSecretKeyValue(namespace, name, key, value)
 }
 
-func (r *ResourceManager) UpdateSecretKeyValue(namespace string, name string, key string, value string) (updated bool, err error) {
+func (r *ResourceManager) UpdateSecretKeyValue(namespace string, name string, data map[string]string) (updated bool, err error) {
+	if len(data) == 0 {
+		return false, util.NewUserError(codes.InvalidArgument, "data cannot be empty.")
+	}
+	//Currently, support for 1 key only
+	key := ""
+	value := ""
+	for dataKey, dataValue := range data {
+		key = dataKey
+		value = dataValue
+		break
+	}
+
 	//Check if the secret has the key to update
 	secretFound, err := r.GetSecret(namespace, name)
 	if err != nil {
