@@ -8,8 +8,6 @@ import (
 	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/manager"
 	"github.com/onepanelio/core/model"
-	"github.com/onepanelio/core/util"
-	"google.golang.org/grpc/codes"
 )
 
 type SecretServer struct {
@@ -91,22 +89,17 @@ func (s *SecretServer) DeleteSecret(ctx context.Context, req *api.DeleteSecretRe
 
 func (s *SecretServer) DeleteSecretKey(ctx context.Context, req *api.DeleteSecretKeyRequest) (deleted *api.DeleteSecretKeyResponse, err error) {
 	var isDeleted bool
-	if len(req.Secret.Data) == 0 {
-		return &api.DeleteSecretKeyResponse{
-			Deleted: false,
-		}, util.NewUserError(codes.InvalidArgument, errors.New("Data cannot be empty").Error())
+	secret := model.Secret{
+		Name: req.Secret.Name,
+		Data: req.Secret.Data,
 	}
-	//Currently, support for 1 key only
-	singleKey := ""
-	for key := range req.Secret.Data {
-		singleKey = key
-		break
-	}
-	isDeleted, err = s.resourceManager.DeleteSecretKey(req.Namespace, req.Secret.Name, singleKey)
+	isDeleted, err = s.resourceManager.DeleteSecretKey(req.Namespace, &secret)
 	if err != nil {
-		return &api.DeleteSecretKeyResponse{
-			Deleted: false,
-		}, util.NewUserError(codes.Unknown, err.Error())
+		if errors.As(err, &userError) {
+			return &api.DeleteSecretKeyResponse{
+				Deleted: false,
+			}, userError.GRPCError()
+		}
 	}
 	return &api.DeleteSecretKeyResponse{
 		Deleted: isDeleted,
