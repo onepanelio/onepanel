@@ -3,9 +3,11 @@ package manager
 import (
 	"encoding/base64"
 	"encoding/json"
+	goerrors "errors"
 	"github.com/onepanelio/core/model"
 	"github.com/onepanelio/core/util"
 	"google.golang.org/grpc/codes"
+	"k8s.io/apimachinery/pkg/api/errors"
 )
 
 func (r *ResourceManager) CreateSecret(namespace string, secret *model.Secret) (err error) {
@@ -16,7 +18,25 @@ func (r *ResourceManager) CreateSecret(namespace string, secret *model.Secret) (
 }
 
 func (r *ResourceManager) SecretExists(namespace string, name string) (exists bool, err error) {
-	return r.kubeClient.SecretExists(namespace, name)
+	var foundSecret *model.Secret
+	var statusError *errors.StatusError
+	secret := model.Secret{
+		Name: name,
+	}
+	foundSecret, err = r.kubeClient.SecretExists(namespace, &secret)
+	if err != nil {
+		if goerrors.As(err, &statusError) {
+			if statusError.ErrStatus.Reason == "NotFound" {
+				return false, util.NewUserError(codes.NotFound, "Secret Not Found.")
+			}
+			return false, util.NewUserError(codes.Unknown, "Error when checking existence of secret.")
+		}
+		return false, util.NewUserError(codes.Unknown, "Error when checking existence of secret.")
+	}
+	if foundSecret.Name == "" {
+		return false, nil
+	}
+	return true, nil
 }
 
 func (r *ResourceManager) GetSecret(namespace, name string) (secret *model.Secret, err error) {
