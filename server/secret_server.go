@@ -41,13 +41,14 @@ func (s *SecretServer) CreateSecret(ctx context.Context, req *api.CreateSecretRe
 func (s *SecretServer) SecretExists(ctx context.Context, req *api.SecretExistsRequest) (secretExists *api.SecretExistsResponse, err error) {
 	var secretExistsBool bool
 	secretExistsBool, err = s.resourceManager.SecretExists(req.Namespace, req.Name)
-	if err != nil {
+	if errors.As(err, &userError) {
 		return &api.SecretExistsResponse{
 			Exists: false,
-		}, util.NewUserError(codes.Unknown, "Unknown error.")
+		}, userError.GRPCError()
 	}
-
-	return secretExistsResponse(secretExistsBool), nil
+	return &api.SecretExistsResponse{
+		Exists: secretExistsBool,
+	}, userError.GRPCError()
 }
 
 func (s *SecretServer) GetSecret(ctx context.Context, req *api.GetSecretRequest) (*api.Secret, error) {
@@ -154,11 +155,4 @@ func (s *SecretServer) UpdateSecretKeyValue(ctx context.Context, req *api.Update
 	return &api.UpdateSecretKeyValueResponse{
 		Updated: isUpdated,
 	}, nil
-}
-
-func secretExistsResponse(secretExists bool) (secretExistsResFilled *api.SecretExistsResponse) {
-	secretExistsResFilled = &api.SecretExistsResponse{
-		Exists: secretExists,
-	}
-	return
 }
