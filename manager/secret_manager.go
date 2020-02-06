@@ -9,7 +9,10 @@ import (
 )
 
 func (r *ResourceManager) CreateSecret(namespace string, secret *model.Secret) (err error) {
-	return r.kubeClient.CreateSecret(namespace, secret)
+	if err = r.kubeClient.CreateSecret(namespace, secret); err != nil {
+		return util.NewUserError(codes.Unknown, "Secret was not created.")
+	}
+	return
 }
 
 func (r *ResourceManager) SecretExists(namespace string, name string) (exists bool, err error) {

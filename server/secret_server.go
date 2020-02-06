@@ -32,10 +32,9 @@ func (s *SecretServer) CreateSecret(ctx context.Context, req *api.CreateSecretRe
 		Name: req.Secret.Name,
 		Data: req.Secret.Data,
 	})
-	if err != nil {
-		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
+	if errors.As(err, &userError) {
+		return nil, userError.GRPCError()
 	}
-
 	return &empty.Empty{}, nil
 }
 
