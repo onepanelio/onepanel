@@ -63,19 +63,8 @@ func (c *Client) GetSecret(namespace string, name string) (secretRes *model.Secr
 	return nil, nil
 }
 
-func (c *Client) ListSecrets(namespace string) (secrets []*model.Secret, err error) {
-	listedSecrets, err := c.CoreV1().Secrets(namespace).List(metav1.ListOptions{})
-	if err != nil {
-		return
-	}
-	for _, secret := range listedSecrets.Items {
-		secretModel := model.Secret{
-			Name: secret.Name,
-			Data: convertSecretToMap(&secret),
-		}
-		secrets = append(secrets, &secretModel)
-	}
-	return
+func (c *Client) ListSecrets(namespace string) (secrets *corev1.SecretList, err error) {
+	return c.CoreV1().Secrets(namespace).List(metav1.ListOptions{})
 }
 
 func (c *Client) DeleteSecret(namespace string, name string) (deleted bool, err error) {

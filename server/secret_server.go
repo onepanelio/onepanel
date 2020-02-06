@@ -64,7 +64,7 @@ func (s *SecretServer) ListSecrets(ctx context.Context, req *api.ListSecretsRequ
 	var modelSecrets []*model.Secret
 	modelSecrets, err = s.resourceManager.ListSecrets(req.Namespace)
 	if err != nil {
-		return nil, util.NewUserError(codes.Unknown, err.Error())
+		return nil, util.NewUserError(codes.Unknown, "Error encountered with listing secrets.")
 	}
 	var apiSecrets []*api.Secret
 	for _, rawSecret := range modelSecrets {
