@@ -80,8 +80,49 @@ func (r *ResourceManager) DeleteSecret(namespace string, name string) (deleted b
 	return true, nil
 }
 
-func (r *ResourceManager) DeleteSecretKey(namespace string, name string, key string) (deleted bool, err error) {
-	return r.kubeClient.DeleteSecretKey(namespace, name, key)
+func (r *ResourceManager) DeleteSecretKey(namespace string, secret *model.Secret) (deleted bool, err error) {
+	if len(secret.Data) == 0 {
+		return false, util.NewUserError(codes.InvalidArgument, "Data cannot be empty")
+	}
+	//Currently, support for 1 key only
+	key := ""
+	for dataKey := range secret.Data {
+		key = dataKey
+		break
+	}
+	//Check if the secret has the key to delete
+	secretFound, err := r.GetSecret(namespace, secret.Name)
+	if err != nil {
+		return false, util.NewUserError(codes.NotFound, "Secret not found.")
+	}
+	secretDataKeyExists := false
+
+	for secretDataKey := range secretFound.Data {
+		if secretDataKey == key {
+			secretDataKeyExists = true
+			break
+		}
+	}
+
+	if secretDataKeyExists {
+		//  patchStringPath specifies a patch operation for a secret key.
+		type patchStringPath struct {
+			Op   string `json:"op"`
+			Path string `json:"path"`
+		}
+		payload := []patchStringPath{{
+			Op:   "remove",
+			Path: "/data/" + key,
+		}}
+		payloadBytes, _ := json.Marshal(payload)
+		err = r.kubeClient.DeleteSecretKey(namespace, secret, payloadBytes)
+		if err != nil {
+			return false, util.NewUserError(codes.Unknown, "Unable to delete key from Secret.")
+		}
+		return true, nil
+
+	}
+	return false, util.NewUserError(codes.NotFound, "Key not found in Secret.")
 }
 
 func (r *ResourceManager) AddSecretKeyValue(namespace string, name string, key string, value string) (inserted bool, err error) {

@@ -68,43 +68,14 @@ func (c *Client) DeleteSecret(namespace string, secret *model.Secret) (err error
 	return c.CoreV1().Secrets(namespace).Delete(secret.Name, &metav1.DeleteOptions{})
 }
 
-func (c *Client) DeleteSecretKey(namespace string, name string, key string) (deleted bool, err error) {
-	//Check if the secret has the key to delete
-	secretFound, secretFindErr := c.GetSecret(namespace, name)
-	if secretFindErr != nil {
-		return false, secretFindErr
-	}
-	secretDataKeyExists := false
-	for secretDataKey := range secretFound.Data {
-		if secretDataKey == key {
-			secretDataKeyExists = true
-			break
-		}
-	}
-
-	if secretDataKeyExists {
-		//  patchStringPath specifies a patch operation for a secret key.
-		type patchStringPath struct {
-			Op   string `json:"op"`
-			Path string `json:"path"`
-		}
-		payload := []patchStringPath{{
-			Op:   "remove",
-			Path: "/data/" + key,
-		}}
-		payloadBytes, _ := json.Marshal(payload)
-		_, errSecret := c.CoreV1().Secrets(namespace).Patch(name, types.JSONPatchType, payloadBytes)
-		if errSecret != nil {
-			return false, errSecret
-		}
-		return true, nil
-	}
-	return true, nil
+func (c *Client) DeleteSecretKey(namespace string, secret *model.Secret, payload []byte) (err error) {
+	_, err = c.CoreV1().Secrets(namespace).Patch(secret.Name, types.JSONPatchType, payload)
+	return
 }
 
-func (c *Client) AddSecretKeyValue(namespace string, name string, key string, value string) (inserted bool, err error) {
+func (c *Client) AddSecretKeyValue(namespace string, secret *model.Secret) (inserted bool, err error) {
 	//Check if the secret has the key already
-	secretFound, secretFindErr := c.GetSecret(namespace, name)
+	secretFound, secretFindErr := c.GetSecret(namespace, secret)
 	if secretFindErr != nil {
 		return false, secretFindErr
 	}
@@ -113,6 +84,8 @@ func (c *Client) AddSecretKeyValue(namespace string, name string, key string, va
 		return false, goerrors.New("Secret was not found.")
 	}
 
+	key := "todo"
+	value := "todo"
 	if len(secretFound.Data) > 0 {
 		secretDataKeyExists := false
 		for secretDataKey := range secretFound.Data {
