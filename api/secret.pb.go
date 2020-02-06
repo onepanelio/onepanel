@@ -26,7 +26,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-type AddSecretValueRequest struct {
+type AddSecretKeyValueRequest struct {
 	Namespace            string   `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	Secret               *Secret  `protobuf:"bytes,2,opt,name=secret,proto3" json:"secret,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -34,129 +34,82 @@ type AddSecretValueRequest struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *AddSecretValueRequest) Reset()         { *m = AddSecretValueRequest{} }
-func (m *AddSecretValueRequest) String() string { return proto.CompactTextString(m) }
-func (*AddSecretValueRequest) ProtoMessage()    {}
-func (*AddSecretValueRequest) Descriptor() ([]byte, []int) {
+func (m *AddSecretKeyValueRequest) Reset()         { *m = AddSecretKeyValueRequest{} }
+func (m *AddSecretKeyValueRequest) String() string { return proto.CompactTextString(m) }
+func (*AddSecretKeyValueRequest) ProtoMessage()    {}
+func (*AddSecretKeyValueRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6acf428160d7a216, []int{0}
 }
 
-func (m *AddSecretValueRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_AddSecretValueRequest.Unmarshal(m, b)
+func (m *AddSecretKeyValueRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_AddSecretKeyValueRequest.Unmarshal(m, b)
 }
-func (m *AddSecretValueRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_AddSecretValueRequest.Marshal(b, m, deterministic)
+func (m *AddSecretKeyValueRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_AddSecretKeyValueRequest.Marshal(b, m, deterministic)
 }
-func (m *AddSecretValueRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AddSecretValueRequest.Merge(m, src)
+func (m *AddSecretKeyValueRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AddSecretKeyValueRequest.Merge(m, src)
 }
-func (m *AddSecretValueRequest) XXX_Size() int {
-	return xxx_messageInfo_AddSecretValueRequest.Size(m)
+func (m *AddSecretKeyValueRequest) XXX_Size() int {
+	return xxx_messageInfo_AddSecretKeyValueRequest.Size(m)
 }
-func (m *AddSecretValueRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_AddSecretValueRequest.DiscardUnknown(m)
+func (m *AddSecretKeyValueRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_AddSecretKeyValueRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_AddSecretValueRequest proto.InternalMessageInfo
+var xxx_messageInfo_AddSecretKeyValueRequest proto.InternalMessageInfo
 
-func (m *AddSecretValueRequest) GetNamespace() string {
+func (m *AddSecretKeyValueRequest) GetNamespace() string {
 	if m != nil {
 		return m.Namespace
 	}
 	return ""
 }
 
-func (m *AddSecretValueRequest) GetSecret() *Secret {
+func (m *AddSecretKeyValueRequest) GetSecret() *Secret {
 	if m != nil {
 		return m.Secret
 	}
 	return nil
 }
 
-type AddSecretValueResponse struct {
+type AddSecretKeyValueResponse struct {
 	Inserted             bool     `protobuf:"varint,1,opt,name=inserted,proto3" json:"inserted,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *AddSecretValueResponse) Reset()         { *m = AddSecretValueResponse{} }
-func (m *AddSecretValueResponse) String() string { return proto.CompactTextString(m) }
-func (*AddSecretValueResponse) ProtoMessage()    {}
-func (*AddSecretValueResponse) Descriptor() ([]byte, []int) {
+func (m *AddSecretKeyValueResponse) Reset()         { *m = AddSecretKeyValueResponse{} }
+func (m *AddSecretKeyValueResponse) String() string { return proto.CompactTextString(m) }
+func (*AddSecretKeyValueResponse) ProtoMessage()    {}
+func (*AddSecretKeyValueResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6acf428160d7a216, []int{1}
 }
 
-func (m *AddSecretValueResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_AddSecretValueResponse.Unmarshal(m, b)
+func (m *AddSecretKeyValueResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_AddSecretKeyValueResponse.Unmarshal(m, b)
 }
-func (m *AddSecretValueResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_AddSecretValueResponse.Marshal(b, m, deterministic)
+func (m *AddSecretKeyValueResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_AddSecretKeyValueResponse.Marshal(b, m, deterministic)
 }
-func (m *AddSecretValueResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AddSecretValueResponse.Merge(m, src)
+func (m *AddSecretKeyValueResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AddSecretKeyValueResponse.Merge(m, src)
 }
-func (m *AddSecretValueResponse) XXX_Size() int {
-	return xxx_messageInfo_AddSecretValueResponse.Size(m)
+func (m *AddSecretKeyValueResponse) XXX_Size() int {
+	return xxx_messageInfo_AddSecretKeyValueResponse.Size(m)
 }
-func (m *AddSecretValueResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_AddSecretValueResponse.DiscardUnknown(m)
+func (m *AddSecretKeyValueResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_AddSecretKeyValueResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_AddSecretValueResponse proto.InternalMessageInfo
+var xxx_messageInfo_AddSecretKeyValueResponse proto.InternalMessageInfo
 
-func (m *AddSecretValueResponse) GetInserted() bool {
+func (m *AddSecretKeyValueResponse) GetInserted() bool {
 	if m != nil {
 		return m.Inserted
 	}
 	return false
-}
-
-type AddSecretBody struct {
-	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Value                string   `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *AddSecretBody) Reset()         { *m = AddSecretBody{} }
-func (m *AddSecretBody) String() string { return proto.CompactTextString(m) }
-func (*AddSecretBody) ProtoMessage()    {}
-func (*AddSecretBody) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6acf428160d7a216, []int{2}
-}
-
-func (m *AddSecretBody) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_AddSecretBody.Unmarshal(m, b)
-}
-func (m *AddSecretBody) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_AddSecretBody.Marshal(b, m, deterministic)
-}
-func (m *AddSecretBody) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AddSecretBody.Merge(m, src)
-}
-func (m *AddSecretBody) XXX_Size() int {
-	return xxx_messageInfo_AddSecretBody.Size(m)
-}
-func (m *AddSecretBody) XXX_DiscardUnknown() {
-	xxx_messageInfo_AddSecretBody.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_AddSecretBody proto.InternalMessageInfo
-
-func (m *AddSecretBody) GetKey() string {
-	if m != nil {
-		return m.Key
-	}
-	return ""
-}
-
-func (m *AddSecretBody) GetValue() string {
-	if m != nil {
-		return m.Value
-	}
-	return ""
 }
 
 type SecretExistsRequest struct {
@@ -171,7 +124,7 @@ func (m *SecretExistsRequest) Reset()         { *m = SecretExistsRequest{} }
 func (m *SecretExistsRequest) String() string { return proto.CompactTextString(m) }
 func (*SecretExistsRequest) ProtoMessage()    {}
 func (*SecretExistsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6acf428160d7a216, []int{3}
+	return fileDescriptor_6acf428160d7a216, []int{2}
 }
 
 func (m *SecretExistsRequest) XXX_Unmarshal(b []byte) error {
@@ -217,7 +170,7 @@ func (m *SecretExistsResponse) Reset()         { *m = SecretExistsResponse{} }
 func (m *SecretExistsResponse) String() string { return proto.CompactTextString(m) }
 func (*SecretExistsResponse) ProtoMessage()    {}
 func (*SecretExistsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6acf428160d7a216, []int{4}
+	return fileDescriptor_6acf428160d7a216, []int{3}
 }
 
 func (m *SecretExistsResponse) XXX_Unmarshal(b []byte) error {
@@ -257,7 +210,7 @@ func (m *UpdateSecretKeyValueRequest) Reset()         { *m = UpdateSecretKeyValu
 func (m *UpdateSecretKeyValueRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateSecretKeyValueRequest) ProtoMessage()    {}
 func (*UpdateSecretKeyValueRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6acf428160d7a216, []int{5}
+	return fileDescriptor_6acf428160d7a216, []int{4}
 }
 
 func (m *UpdateSecretKeyValueRequest) XXX_Unmarshal(b []byte) error {
@@ -303,7 +256,7 @@ func (m *UpdateSecretKeyValueResponse) Reset()         { *m = UpdateSecretKeyVal
 func (m *UpdateSecretKeyValueResponse) String() string { return proto.CompactTextString(m) }
 func (*UpdateSecretKeyValueResponse) ProtoMessage()    {}
 func (*UpdateSecretKeyValueResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6acf428160d7a216, []int{6}
+	return fileDescriptor_6acf428160d7a216, []int{5}
 }
 
 func (m *UpdateSecretKeyValueResponse) XXX_Unmarshal(b []byte) error {
@@ -343,7 +296,7 @@ func (m *DeleteSecretRequest) Reset()         { *m = DeleteSecretRequest{} }
 func (m *DeleteSecretRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteSecretRequest) ProtoMessage()    {}
 func (*DeleteSecretRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6acf428160d7a216, []int{7}
+	return fileDescriptor_6acf428160d7a216, []int{6}
 }
 
 func (m *DeleteSecretRequest) XXX_Unmarshal(b []byte) error {
@@ -390,7 +343,7 @@ func (m *DeleteSecretKeyRequest) Reset()         { *m = DeleteSecretKeyRequest{}
 func (m *DeleteSecretKeyRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteSecretKeyRequest) ProtoMessage()    {}
 func (*DeleteSecretKeyRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6acf428160d7a216, []int{8}
+	return fileDescriptor_6acf428160d7a216, []int{7}
 }
 
 func (m *DeleteSecretKeyRequest) XXX_Unmarshal(b []byte) error {
@@ -436,7 +389,7 @@ func (m *DeleteSecretKeyResponse) Reset()         { *m = DeleteSecretKeyResponse
 func (m *DeleteSecretKeyResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteSecretKeyResponse) ProtoMessage()    {}
 func (*DeleteSecretKeyResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6acf428160d7a216, []int{9}
+	return fileDescriptor_6acf428160d7a216, []int{8}
 }
 
 func (m *DeleteSecretKeyResponse) XXX_Unmarshal(b []byte) error {
@@ -475,7 +428,7 @@ func (m *DeleteSecretResponse) Reset()         { *m = DeleteSecretResponse{} }
 func (m *DeleteSecretResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteSecretResponse) ProtoMessage()    {}
 func (*DeleteSecretResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6acf428160d7a216, []int{10}
+	return fileDescriptor_6acf428160d7a216, []int{9}
 }
 
 func (m *DeleteSecretResponse) XXX_Unmarshal(b []byte) error {
@@ -503,43 +456,90 @@ func (m *DeleteSecretResponse) GetDeleted() bool {
 	return false
 }
 
-type GetSecretsRequest struct {
+type ListSecretsRequest struct {
 	Namespace            string   `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetSecretsRequest) Reset()         { *m = GetSecretsRequest{} }
-func (m *GetSecretsRequest) String() string { return proto.CompactTextString(m) }
-func (*GetSecretsRequest) ProtoMessage()    {}
-func (*GetSecretsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6acf428160d7a216, []int{11}
+func (m *ListSecretsRequest) Reset()         { *m = ListSecretsRequest{} }
+func (m *ListSecretsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListSecretsRequest) ProtoMessage()    {}
+func (*ListSecretsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6acf428160d7a216, []int{10}
 }
 
-func (m *GetSecretsRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetSecretsRequest.Unmarshal(m, b)
+func (m *ListSecretsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListSecretsRequest.Unmarshal(m, b)
 }
-func (m *GetSecretsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetSecretsRequest.Marshal(b, m, deterministic)
+func (m *ListSecretsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListSecretsRequest.Marshal(b, m, deterministic)
 }
-func (m *GetSecretsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetSecretsRequest.Merge(m, src)
+func (m *ListSecretsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListSecretsRequest.Merge(m, src)
 }
-func (m *GetSecretsRequest) XXX_Size() int {
-	return xxx_messageInfo_GetSecretsRequest.Size(m)
+func (m *ListSecretsRequest) XXX_Size() int {
+	return xxx_messageInfo_ListSecretsRequest.Size(m)
 }
-func (m *GetSecretsRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetSecretsRequest.DiscardUnknown(m)
+func (m *ListSecretsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListSecretsRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetSecretsRequest proto.InternalMessageInfo
+var xxx_messageInfo_ListSecretsRequest proto.InternalMessageInfo
 
-func (m *GetSecretsRequest) GetNamespace() string {
+func (m *ListSecretsRequest) GetNamespace() string {
 	if m != nil {
 		return m.Namespace
 	}
 	return ""
+}
+
+type ListSecretsResponse struct {
+	Count                int32     `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	Secrets              []*Secret `protobuf:"bytes,2,rep,name=secrets,proto3" json:"secrets,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
+	XXX_unrecognized     []byte    `json:"-"`
+	XXX_sizecache        int32     `json:"-"`
+}
+
+func (m *ListSecretsResponse) Reset()         { *m = ListSecretsResponse{} }
+func (m *ListSecretsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListSecretsResponse) ProtoMessage()    {}
+func (*ListSecretsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6acf428160d7a216, []int{11}
+}
+
+func (m *ListSecretsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListSecretsResponse.Unmarshal(m, b)
+}
+func (m *ListSecretsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListSecretsResponse.Marshal(b, m, deterministic)
+}
+func (m *ListSecretsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListSecretsResponse.Merge(m, src)
+}
+func (m *ListSecretsResponse) XXX_Size() int {
+	return xxx_messageInfo_ListSecretsResponse.Size(m)
+}
+func (m *ListSecretsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListSecretsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListSecretsResponse proto.InternalMessageInfo
+
+func (m *ListSecretsResponse) GetCount() int32 {
+	if m != nil {
+		return m.Count
+	}
+	return 0
+}
+
+func (m *ListSecretsResponse) GetSecrets() []*Secret {
+	if m != nil {
+		return m.Secrets
+	}
+	return nil
 }
 
 type CreateSecretRequest struct {
@@ -683,49 +683,9 @@ func (m *Secret) GetData() map[string]string {
 	return nil
 }
 
-type Secrets struct {
-	Secrets              []*Secret `protobuf:"bytes,1,rep,name=secrets,proto3" json:"secrets,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
-	XXX_unrecognized     []byte    `json:"-"`
-	XXX_sizecache        int32     `json:"-"`
-}
-
-func (m *Secrets) Reset()         { *m = Secrets{} }
-func (m *Secrets) String() string { return proto.CompactTextString(m) }
-func (*Secrets) ProtoMessage()    {}
-func (*Secrets) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6acf428160d7a216, []int{15}
-}
-
-func (m *Secrets) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Secrets.Unmarshal(m, b)
-}
-func (m *Secrets) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Secrets.Marshal(b, m, deterministic)
-}
-func (m *Secrets) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Secrets.Merge(m, src)
-}
-func (m *Secrets) XXX_Size() int {
-	return xxx_messageInfo_Secrets.Size(m)
-}
-func (m *Secrets) XXX_DiscardUnknown() {
-	xxx_messageInfo_Secrets.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Secrets proto.InternalMessageInfo
-
-func (m *Secrets) GetSecrets() []*Secret {
-	if m != nil {
-		return m.Secrets
-	}
-	return nil
-}
-
 func init() {
-	proto.RegisterType((*AddSecretValueRequest)(nil), "api.AddSecretValueRequest")
-	proto.RegisterType((*AddSecretValueResponse)(nil), "api.AddSecretValueResponse")
-	proto.RegisterType((*AddSecretBody)(nil), "api.AddSecretBody")
+	proto.RegisterType((*AddSecretKeyValueRequest)(nil), "api.AddSecretKeyValueRequest")
+	proto.RegisterType((*AddSecretKeyValueResponse)(nil), "api.AddSecretKeyValueResponse")
 	proto.RegisterType((*SecretExistsRequest)(nil), "api.SecretExistsRequest")
 	proto.RegisterType((*SecretExistsResponse)(nil), "api.SecretExistsResponse")
 	proto.RegisterType((*UpdateSecretKeyValueRequest)(nil), "api.UpdateSecretKeyValueRequest")
@@ -734,61 +694,61 @@ func init() {
 	proto.RegisterType((*DeleteSecretKeyRequest)(nil), "api.DeleteSecretKeyRequest")
 	proto.RegisterType((*DeleteSecretKeyResponse)(nil), "api.DeleteSecretKeyResponse")
 	proto.RegisterType((*DeleteSecretResponse)(nil), "api.DeleteSecretResponse")
-	proto.RegisterType((*GetSecretsRequest)(nil), "api.GetSecretsRequest")
+	proto.RegisterType((*ListSecretsRequest)(nil), "api.ListSecretsRequest")
+	proto.RegisterType((*ListSecretsResponse)(nil), "api.ListSecretsResponse")
 	proto.RegisterType((*CreateSecretRequest)(nil), "api.CreateSecretRequest")
 	proto.RegisterType((*GetSecretRequest)(nil), "api.GetSecretRequest")
 	proto.RegisterType((*Secret)(nil), "api.Secret")
 	proto.RegisterMapType((map[string]string)(nil), "api.Secret.DataEntry")
-	proto.RegisterType((*Secrets)(nil), "api.Secrets")
 }
 
 func init() { proto.RegisterFile("secret.proto", fileDescriptor_6acf428160d7a216) }
 
 var fileDescriptor_6acf428160d7a216 = []byte{
-	// 683 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x55, 0x51, 0x4f, 0x13, 0x41,
-	0x10, 0xce, 0xb5, 0xd8, 0xd2, 0x69, 0x89, 0xb0, 0x94, 0x5a, 0xaf, 0x7d, 0x28, 0x4b, 0x4c, 0x0a,
-	0x26, 0x77, 0xb4, 0x98, 0x80, 0xbc, 0x18, 0x15, 0xc2, 0x03, 0x3e, 0x95, 0x68, 0x8c, 0x26, 0xc6,
-	0x85, 0x1b, 0xc9, 0x45, 0xb8, 0x3b, 0xbb, 0x5b, 0xe2, 0x45, 0x49, 0x8c, 0x89, 0x8f, 0x3e, 0xe9,
-	0x3f, 0xf3, 0x2f, 0xf8, 0xe6, 0x9f, 0x30, 0xb7, 0xbb, 0x77, 0xbd, 0x96, 0x0b, 0x1c, 0x84, 0xb7,
-	0xdb, 0x99, 0x9b, 0xf9, 0xbe, 0xf9, 0x66, 0x67, 0x16, 0x6a, 0x1c, 0x8f, 0x86, 0x28, 0xac, 0x60,
-	0xe8, 0x0b, 0x9f, 0x14, 0x59, 0xe0, 0x9a, 0xad, 0x63, 0xdf, 0x3f, 0x3e, 0x41, 0x5b, 0x9a, 0x0e,
-	0x47, 0x1f, 0x6c, 0x3c, 0x0d, 0x44, 0xa8, 0xfe, 0x30, 0xdb, 0xda, 0xc9, 0x02, 0xd7, 0x66, 0x9e,
-	0xe7, 0x0b, 0x26, 0x5c, 0xdf, 0xe3, 0xca, 0x4b, 0xdf, 0xc0, 0xd2, 0x53, 0xc7, 0x39, 0x90, 0x29,
-	0x5f, 0xb1, 0x93, 0x11, 0x0e, 0xf0, 0xd3, 0x08, 0xb9, 0x20, 0x6d, 0xa8, 0x78, 0xec, 0x14, 0x79,
-	0xc0, 0x8e, 0xb0, 0x69, 0x74, 0x8c, 0x6e, 0x65, 0x30, 0x36, 0x90, 0x15, 0x28, 0x29, 0x1a, 0xcd,
-	0x42, 0xc7, 0xe8, 0x56, 0xfb, 0x55, 0x8b, 0x05, 0xae, 0xa5, 0xd2, 0x0c, 0xb4, 0x8b, 0x3e, 0x82,
-	0xc6, 0x74, 0x6e, 0x1e, 0xf8, 0x1e, 0x47, 0x62, 0xc2, 0xac, 0xeb, 0x71, 0x1c, 0x0a, 0x74, 0x64,
-	0xee, 0xd9, 0x41, 0x72, 0xa6, 0x9b, 0x30, 0x97, 0x44, 0x3d, 0xf3, 0x9d, 0x90, 0xcc, 0x43, 0xf1,
-	0x23, 0x86, 0x9a, 0x43, 0xf4, 0x49, 0xea, 0x70, 0xe7, 0x2c, 0xca, 0x27, 0xc1, 0x2b, 0x03, 0x75,
-	0xa0, 0x7b, 0xb0, 0xa8, 0xa2, 0x76, 0x3f, 0xbb, 0x5c, 0xf0, 0x7c, 0x85, 0x10, 0x98, 0x89, 0x0e,
-	0x3a, 0x93, 0xfc, 0xa6, 0x16, 0xd4, 0x27, 0x13, 0x69, 0xd6, 0x0d, 0x28, 0xa1, 0xb4, 0x68, 0xce,
-	0xfa, 0x44, 0xdf, 0x43, 0xeb, 0x65, 0xe0, 0x30, 0x81, 0x2a, 0x6a, 0x1f, 0xc3, 0xdb, 0x56, 0x72,
-	0x0b, 0xda, 0xd9, 0x08, 0x9a, 0x59, 0x13, 0xca, 0x23, 0xe9, 0x8f, 0xe5, 0x8c, 0x8f, 0x91, 0x28,
-	0x3b, 0x78, 0x82, 0x71, 0xe4, 0xcd, 0x45, 0x79, 0x0b, 0x8d, 0x74, 0xa2, 0x7d, 0x0c, 0x6f, 0xb1,
-	0xbe, 0x0d, 0xb8, 0x77, 0x21, 0xf9, 0xb8, 0x34, 0x47, 0xba, 0x92, 0xd2, 0xf4, 0x91, 0xae, 0x43,
-	0x7d, 0xb2, 0xb4, 0x2b, 0x23, 0x7a, 0xb0, 0xb0, 0x87, 0x42, 0xfd, 0x9e, 0xef, 0x7e, 0xd0, 0xd7,
-	0xb0, 0xf8, 0x7c, 0x88, 0xec, 0x7a, 0xfa, 0xe5, 0xaa, 0x79, 0x07, 0xe6, 0x13, 0x32, 0x37, 0x6f,
-	0xcb, 0x37, 0x03, 0x4a, 0x2a, 0x47, 0xe2, 0x36, 0xc6, 0x6e, 0xb2, 0x0a, 0x33, 0x0e, 0x13, 0xac,
-	0x59, 0xe8, 0x14, 0xbb, 0xd5, 0xfe, 0x52, 0x8a, 0x87, 0xb5, 0xc3, 0x04, 0xdb, 0xf5, 0xc4, 0x30,
-	0x1c, 0xc8, 0x5f, 0xcc, 0x4d, 0xa8, 0x24, 0xa6, 0xbc, 0x33, 0xb7, 0x5d, 0xd8, 0x32, 0xe8, 0x3a,
-	0x94, 0xb5, 0xa4, 0xe4, 0x01, 0x94, 0x55, 0x75, 0xd1, 0x88, 0x14, 0xa7, 0x2b, 0x8f, 0x7d, 0xfd,
-	0x7f, 0x65, 0x98, 0x53, 0xb6, 0x03, 0x1c, 0x9e, 0xb9, 0x47, 0x48, 0x38, 0xd4, 0xd2, 0x32, 0x93,
-	0xa6, 0x8c, 0xcb, 0x50, 0xde, 0x6c, 0x58, 0x6a, 0x9f, 0x59, 0xf1, 0xb2, 0xb3, 0x76, 0xa3, 0x65,
-	0x47, 0x7b, 0xdf, 0xff, 0xfc, 0xfd, 0x55, 0x78, 0x48, 0x97, 0xa3, 0x45, 0xc7, 0xed, 0xb3, 0xde,
-	0x21, 0x0a, 0xd6, 0xb3, 0xbf, 0x24, 0xf2, 0x9d, 0xdb, 0x1a, 0x7e, 0x5b, 0x77, 0x80, 0x7c, 0x85,
-	0x5a, 0x7a, 0xce, 0x35, 0x68, 0xc6, 0x0e, 0x31, 0xef, 0x67, 0x78, 0xd4, 0x6d, 0xa3, 0x9b, 0x12,
-	0xb7, 0x47, 0xec, 0x2b, 0x71, 0x95, 0xed, 0xdc, 0x56, 0x5b, 0x83, 0x30, 0xa8, 0x24, 0xfd, 0x27,
-	0xaa, 0x33, 0xd3, 0xf7, 0xc1, 0x4c, 0xcb, 0x47, 0xd7, 0x25, 0xd2, 0x1a, 0xe9, 0xe6, 0x45, 0x22,
-	0xef, 0xa0, 0xfa, 0xc2, 0xe5, 0xf1, 0x85, 0x27, 0x8d, 0x49, 0x90, 0xa4, 0xba, 0x5a, 0x0a, 0x85,
-	0xd3, 0x55, 0x09, 0xb3, 0x42, 0xae, 0x16, 0x92, 0x8c, 0xa0, 0x96, 0x9e, 0x40, 0x2d, 0x60, 0xc6,
-	0xbe, 0xd1, 0x02, 0x66, 0x8d, 0x6b, 0x5c, 0xd6, 0x5a, 0xfe, 0xb2, 0x7e, 0x18, 0x70, 0x77, 0x6a,
-	0x5d, 0x90, 0xd6, 0x05, 0x80, 0xf1, 0x86, 0x32, 0xdb, 0xd9, 0xce, 0xc9, 0x0e, 0xae, 0xe5, 0xe9,
-	0xa0, 0x7e, 0x7b, 0x15, 0x8f, 0x9f, 0x06, 0x2c, 0x24, 0x4f, 0x55, 0xbc, 0x93, 0x89, 0x29, 0xc1,
-	0x32, 0x1f, 0x55, 0xb3, 0x95, 0xe9, 0xd3, 0x3c, 0x9e, 0x48, 0x1e, 0x8f, 0xe9, 0x75, 0x79, 0x24,
-	0xf7, 0xf9, 0xb7, 0x01, 0xf5, 0xac, 0x67, 0x82, 0x74, 0x24, 0xec, 0x25, 0x6f, 0x94, 0xb9, 0x7c,
-	0xc9, 0x1f, 0x93, 0x32, 0xf5, 0xaf, 0x4b, 0xef, 0xb0, 0x24, 0x27, 0x75, 0xe3, 0x7f, 0x00, 0x00,
-	0x00, 0xff, 0xff, 0x3e, 0x08, 0xa8, 0x83, 0xb9, 0x08, 0x00, 0x00,
+	// 677 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x55, 0x5f, 0x4f, 0xd4, 0x40,
+	0x10, 0x4f, 0x0f, 0x38, 0xb8, 0xe1, 0x8c, 0xb8, 0x9c, 0x50, 0xca, 0x69, 0x8e, 0x25, 0x26, 0x80,
+	0x49, 0xcb, 0x1d, 0x0f, 0x20, 0x2f, 0xc6, 0x08, 0xe1, 0x01, 0x9f, 0x4a, 0x34, 0x26, 0xc6, 0xc4,
+	0xe5, 0x6e, 0x24, 0x0d, 0xd0, 0xd6, 0xee, 0x96, 0x78, 0x51, 0x12, 0x63, 0xe2, 0x27, 0xc0, 0x6f,
+	0xe6, 0x57, 0xf0, 0x73, 0x18, 0xd3, 0xdd, 0x6d, 0xaf, 0xc7, 0x15, 0x28, 0xfe, 0x79, 0xdb, 0xd9,
+	0xdf, 0xee, 0xfc, 0x66, 0x7e, 0x33, 0x3b, 0x0b, 0x75, 0x8e, 0xdd, 0x08, 0x85, 0x1d, 0x46, 0x81,
+	0x08, 0xc8, 0x18, 0x0b, 0x3d, 0x6b, 0xf1, 0x28, 0x08, 0x8e, 0x4e, 0xd0, 0x91, 0x5b, 0x87, 0xf1,
+	0x7b, 0x07, 0x4f, 0x43, 0xd1, 0x57, 0x27, 0xac, 0xa6, 0x06, 0x59, 0xe8, 0x39, 0xcc, 0xf7, 0x03,
+	0xc1, 0x84, 0x17, 0xf8, 0x5c, 0xa1, 0xf4, 0x2d, 0x98, 0xcf, 0x7a, 0xbd, 0x03, 0xe9, 0x72, 0x1f,
+	0xfb, 0xaf, 0xd8, 0x49, 0x8c, 0x2e, 0x7e, 0x88, 0x91, 0x0b, 0xd2, 0x84, 0x9a, 0xcf, 0x4e, 0x91,
+	0x87, 0xac, 0x8b, 0xa6, 0xd1, 0x32, 0x56, 0x6a, 0xee, 0x60, 0x83, 0x2c, 0x43, 0x55, 0x45, 0x62,
+	0x56, 0x5a, 0xc6, 0xca, 0x74, 0x67, 0xda, 0x66, 0xa1, 0x67, 0x2b, 0x4f, 0xae, 0x86, 0xe8, 0x26,
+	0x2c, 0x14, 0xb8, 0xe7, 0x61, 0xe0, 0x73, 0x24, 0x16, 0x4c, 0x79, 0x3e, 0xc7, 0x48, 0x60, 0x4f,
+	0xba, 0x9f, 0x72, 0x33, 0x9b, 0xee, 0xc1, 0xac, 0xba, 0xb5, 0xfb, 0xd1, 0xe3, 0x82, 0x97, 0x0b,
+	0x89, 0xc0, 0x78, 0x62, 0xc8, 0x80, 0x6a, 0xae, 0x5c, 0x53, 0x1b, 0x1a, 0xc3, 0x8e, 0x34, 0xf9,
+	0x1c, 0x54, 0x51, 0xee, 0x68, 0x6a, 0x6d, 0xd1, 0x77, 0xb0, 0xf8, 0x32, 0xec, 0x31, 0x81, 0xff,
+	0x4d, 0x93, 0x2d, 0x68, 0x16, 0x33, 0xe8, 0xc8, 0x4c, 0x98, 0x8c, 0x25, 0x9e, 0xaa, 0x92, 0x9a,
+	0x89, 0x28, 0x3b, 0x78, 0x82, 0xe9, 0xcd, 0x3f, 0x17, 0xe5, 0x0d, 0xcc, 0xe5, 0x1d, 0xed, 0x63,
+	0xff, 0x1f, 0xe6, 0xb7, 0x01, 0xf3, 0x23, 0xce, 0x07, 0xa9, 0xf5, 0x24, 0x94, 0xa5, 0xa6, 0x4d,
+	0xba, 0x0e, 0x8d, 0xe1, 0xd4, 0x6e, 0xbc, 0xd1, 0x01, 0xf2, 0xc2, 0xe3, 0x42, 0x9d, 0x2f, 0xd7,
+	0x20, 0xd4, 0x85, 0xd9, 0xa1, 0x3b, 0x9a, 0xa4, 0x01, 0x13, 0xdd, 0x20, 0xf6, 0x85, 0xbc, 0x30,
+	0xe1, 0x2a, 0x83, 0x3c, 0x82, 0x49, 0x95, 0x11, 0x37, 0x2b, 0xad, 0xb1, 0xcb, 0xd9, 0xa6, 0x18,
+	0x7d, 0x0d, 0xb3, 0xcf, 0x23, 0x64, 0xb7, 0x2b, 0x4a, 0x29, 0x21, 0x77, 0x60, 0x66, 0x0f, 0xc5,
+	0xdf, 0xd6, 0xfa, 0x8b, 0x01, 0x55, 0xe5, 0x23, 0x83, 0x8d, 0x01, 0x4c, 0x56, 0x61, 0xbc, 0xc7,
+	0x04, 0xd3, 0x29, 0xde, 0xcf, 0xc5, 0x61, 0xef, 0x30, 0xc1, 0x76, 0x7d, 0x11, 0xf5, 0x5d, 0x79,
+	0xc4, 0xda, 0x84, 0x5a, 0xb6, 0x45, 0x66, 0x60, 0xec, 0x18, 0xfb, 0xda, 0x55, 0xb2, 0x4c, 0x54,
+	0x3c, 0x4b, 0x1a, 0x59, 0xb3, 0x2b, 0x63, 0xbb, 0xb2, 0x65, 0x74, 0x7e, 0x4d, 0xc2, 0x1d, 0xe5,
+	0xf3, 0x00, 0xa3, 0x33, 0xaf, 0x8b, 0x84, 0x43, 0x3d, 0x2f, 0x1a, 0x31, 0x25, 0x6f, 0x81, 0x8e,
+	0xd6, 0x9c, 0xad, 0xe6, 0x97, 0x9d, 0x0e, 0x37, 0x7b, 0x37, 0x19, 0x6e, 0xb4, 0xfd, 0xf5, 0xc7,
+	0xcf, 0x8b, 0xca, 0x63, 0xba, 0x94, 0x0c, 0x36, 0xee, 0x9c, 0xb5, 0x0f, 0x51, 0xb0, 0xb6, 0xf3,
+	0x29, 0x13, 0xe3, 0xdc, 0xd1, 0x15, 0xda, 0xd6, 0x7a, 0x92, 0xcf, 0x50, 0xcf, 0x8f, 0x02, 0x4d,
+	0x5a, 0x30, 0x66, 0xac, 0x85, 0x02, 0x44, 0xf5, 0x0a, 0xdd, 0x94, 0xbc, 0x6d, 0xe2, 0xdc, 0xc8,
+	0xab, 0xf6, 0xce, 0x1d, 0x35, 0x58, 0x08, 0x83, 0x5a, 0x56, 0x4d, 0xa2, 0x74, 0xbe, 0x5c, 0x5d,
+	0x2b, 0xdf, 0x06, 0x74, 0x5d, 0x32, 0xad, 0x91, 0x95, 0xb2, 0x4c, 0xe4, 0x18, 0xa6, 0x73, 0xed,
+	0x4d, 0xe6, 0xa5, 0xb7, 0xd1, 0x47, 0x62, 0x99, 0xa3, 0x80, 0xce, 0x6e, 0x55, 0x72, 0x2e, 0x93,
+	0x9b, 0x55, 0x25, 0x31, 0xd4, 0xf3, 0x2f, 0x56, 0xab, 0x59, 0x30, 0x9f, 0xb4, 0x9a, 0x45, 0xcf,
+	0x3b, 0xcd, 0x71, 0xad, 0x7c, 0x8e, 0xdf, 0x0c, 0xb8, 0x7b, 0x69, 0xbc, 0x90, 0xc5, 0x11, 0x82,
+	0xc1, 0x44, 0xb3, 0x9a, 0xc5, 0xe0, 0x70, 0x39, 0xd7, 0xca, 0x94, 0x53, 0x7f, 0xbc, 0x2a, 0x8e,
+	0x0b, 0x03, 0xee, 0x8d, 0x7c, 0x6d, 0xe4, 0x81, 0x24, 0xbb, 0xea, 0x47, 0xb5, 0x1e, 0x5e, 0x05,
+	0xeb, 0x68, 0x9e, 0xca, 0x68, 0x9e, 0xd0, 0xdb, 0x46, 0x93, 0xb5, 0xf8, 0x77, 0x03, 0x1a, 0x45,
+	0x9f, 0x0b, 0x69, 0x49, 0xe6, 0x6b, 0x7e, 0x36, 0x6b, 0xe9, 0x9a, 0x13, 0xc3, 0x62, 0x75, 0x6e,
+	0x1b, 0xde, 0x61, 0x55, 0x3e, 0xde, 0x8d, 0xdf, 0x01, 0x00, 0x00, 0xff, 0xff, 0x17, 0x5e, 0xfe,
+	0xaa, 0xbc, 0x08, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -806,10 +766,10 @@ type SecretServiceClient interface {
 	CreateSecret(ctx context.Context, in *CreateSecretRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	SecretExists(ctx context.Context, in *SecretExistsRequest, opts ...grpc.CallOption) (*SecretExistsResponse, error)
 	GetSecret(ctx context.Context, in *GetSecretRequest, opts ...grpc.CallOption) (*Secret, error)
-	ListSecrets(ctx context.Context, in *GetSecretsRequest, opts ...grpc.CallOption) (*Secrets, error)
+	ListSecrets(ctx context.Context, in *ListSecretsRequest, opts ...grpc.CallOption) (*ListSecretsResponse, error)
 	DeleteSecret(ctx context.Context, in *DeleteSecretRequest, opts ...grpc.CallOption) (*DeleteSecretResponse, error)
 	DeleteSecretKey(ctx context.Context, in *DeleteSecretKeyRequest, opts ...grpc.CallOption) (*DeleteSecretKeyResponse, error)
-	AddSecretKeyValue(ctx context.Context, in *AddSecretValueRequest, opts ...grpc.CallOption) (*AddSecretValueResponse, error)
+	AddSecretKeyValue(ctx context.Context, in *AddSecretKeyValueRequest, opts ...grpc.CallOption) (*AddSecretKeyValueResponse, error)
 	UpdateSecretKeyValue(ctx context.Context, in *UpdateSecretKeyValueRequest, opts ...grpc.CallOption) (*UpdateSecretKeyValueResponse, error)
 }
 
@@ -848,8 +808,8 @@ func (c *secretServiceClient) GetSecret(ctx context.Context, in *GetSecretReques
 	return out, nil
 }
 
-func (c *secretServiceClient) ListSecrets(ctx context.Context, in *GetSecretsRequest, opts ...grpc.CallOption) (*Secrets, error) {
-	out := new(Secrets)
+func (c *secretServiceClient) ListSecrets(ctx context.Context, in *ListSecretsRequest, opts ...grpc.CallOption) (*ListSecretsResponse, error) {
+	out := new(ListSecretsResponse)
 	err := c.cc.Invoke(ctx, "/api.SecretService/ListSecrets", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -875,8 +835,8 @@ func (c *secretServiceClient) DeleteSecretKey(ctx context.Context, in *DeleteSec
 	return out, nil
 }
 
-func (c *secretServiceClient) AddSecretKeyValue(ctx context.Context, in *AddSecretValueRequest, opts ...grpc.CallOption) (*AddSecretValueResponse, error) {
-	out := new(AddSecretValueResponse)
+func (c *secretServiceClient) AddSecretKeyValue(ctx context.Context, in *AddSecretKeyValueRequest, opts ...grpc.CallOption) (*AddSecretKeyValueResponse, error) {
+	out := new(AddSecretKeyValueResponse)
 	err := c.cc.Invoke(ctx, "/api.SecretService/AddSecretKeyValue", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -898,10 +858,10 @@ type SecretServiceServer interface {
 	CreateSecret(context.Context, *CreateSecretRequest) (*empty.Empty, error)
 	SecretExists(context.Context, *SecretExistsRequest) (*SecretExistsResponse, error)
 	GetSecret(context.Context, *GetSecretRequest) (*Secret, error)
-	ListSecrets(context.Context, *GetSecretsRequest) (*Secrets, error)
+	ListSecrets(context.Context, *ListSecretsRequest) (*ListSecretsResponse, error)
 	DeleteSecret(context.Context, *DeleteSecretRequest) (*DeleteSecretResponse, error)
 	DeleteSecretKey(context.Context, *DeleteSecretKeyRequest) (*DeleteSecretKeyResponse, error)
-	AddSecretKeyValue(context.Context, *AddSecretValueRequest) (*AddSecretValueResponse, error)
+	AddSecretKeyValue(context.Context, *AddSecretKeyValueRequest) (*AddSecretKeyValueResponse, error)
 	UpdateSecretKeyValue(context.Context, *UpdateSecretKeyValueRequest) (*UpdateSecretKeyValueResponse, error)
 }
 
@@ -918,7 +878,7 @@ func (*UnimplementedSecretServiceServer) SecretExists(ctx context.Context, req *
 func (*UnimplementedSecretServiceServer) GetSecret(ctx context.Context, req *GetSecretRequest) (*Secret, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSecret not implemented")
 }
-func (*UnimplementedSecretServiceServer) ListSecrets(ctx context.Context, req *GetSecretsRequest) (*Secrets, error) {
+func (*UnimplementedSecretServiceServer) ListSecrets(ctx context.Context, req *ListSecretsRequest) (*ListSecretsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListSecrets not implemented")
 }
 func (*UnimplementedSecretServiceServer) DeleteSecret(ctx context.Context, req *DeleteSecretRequest) (*DeleteSecretResponse, error) {
@@ -927,7 +887,7 @@ func (*UnimplementedSecretServiceServer) DeleteSecret(ctx context.Context, req *
 func (*UnimplementedSecretServiceServer) DeleteSecretKey(ctx context.Context, req *DeleteSecretKeyRequest) (*DeleteSecretKeyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteSecretKey not implemented")
 }
-func (*UnimplementedSecretServiceServer) AddSecretKeyValue(ctx context.Context, req *AddSecretValueRequest) (*AddSecretValueResponse, error) {
+func (*UnimplementedSecretServiceServer) AddSecretKeyValue(ctx context.Context, req *AddSecretKeyValueRequest) (*AddSecretKeyValueResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddSecretKeyValue not implemented")
 }
 func (*UnimplementedSecretServiceServer) UpdateSecretKeyValue(ctx context.Context, req *UpdateSecretKeyValueRequest) (*UpdateSecretKeyValueResponse, error) {
@@ -993,7 +953,7 @@ func _SecretService_GetSecret_Handler(srv interface{}, ctx context.Context, dec 
 }
 
 func _SecretService_ListSecrets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetSecretsRequest)
+	in := new(ListSecretsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1005,7 +965,7 @@ func _SecretService_ListSecrets_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: "/api.SecretService/ListSecrets",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SecretServiceServer).ListSecrets(ctx, req.(*GetSecretsRequest))
+		return srv.(SecretServiceServer).ListSecrets(ctx, req.(*ListSecretsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1047,7 +1007,7 @@ func _SecretService_DeleteSecretKey_Handler(srv interface{}, ctx context.Context
 }
 
 func _SecretService_AddSecretKeyValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddSecretValueRequest)
+	in := new(AddSecretKeyValueRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1059,7 +1019,7 @@ func _SecretService_AddSecretKeyValue_Handler(srv interface{}, ctx context.Conte
 		FullMethod: "/api.SecretService/AddSecretKeyValue",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SecretServiceServer).AddSecretKeyValue(ctx, req.(*AddSecretValueRequest))
+		return srv.(SecretServiceServer).AddSecretKeyValue(ctx, req.(*AddSecretKeyValueRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

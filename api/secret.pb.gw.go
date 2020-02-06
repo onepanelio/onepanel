@@ -254,7 +254,7 @@ func local_request_SecretService_GetSecret_0(ctx context.Context, marshaler runt
 }
 
 func request_SecretService_ListSecrets_0(ctx context.Context, marshaler runtime.Marshaler, client SecretServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetSecretsRequest
+	var protoReq ListSecretsRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -281,7 +281,7 @@ func request_SecretService_ListSecrets_0(ctx context.Context, marshaler runtime.
 }
 
 func local_request_SecretService_ListSecrets_0(ctx context.Context, marshaler runtime.Marshaler, server SecretServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetSecretsRequest
+	var protoReq ListSecretsRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -475,7 +475,7 @@ func local_request_SecretService_DeleteSecretKey_0(ctx context.Context, marshale
 }
 
 func request_SecretService_AddSecretKeyValue_0(ctx context.Context, marshaler runtime.Marshaler, client SecretServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq AddSecretValueRequest
+	var protoReq AddSecretKeyValueRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -521,7 +521,7 @@ func request_SecretService_AddSecretKeyValue_0(ctx context.Context, marshaler ru
 }
 
 func local_request_SecretService_AddSecretKeyValue_0(ctx context.Context, marshaler runtime.Marshaler, server SecretServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq AddSecretValueRequest
+	var protoReq AddSecretKeyValueRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
