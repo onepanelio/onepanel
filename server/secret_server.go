@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/manager"
@@ -89,7 +90,18 @@ func (s *SecretServer) DeleteSecret(ctx context.Context, req *api.DeleteSecretRe
 
 func (s *SecretServer) DeleteSecretKey(ctx context.Context, req *api.DeleteSecretKeyRequest) (deleted *api.DeleteSecretKeyResponse, err error) {
 	var isDeleted bool
-	isDeleted, err = s.resourceManager.DeleteSecretKey(req.Namespace, req.Name, req.Key)
+	if len(req.Secret.Data) == 0 {
+		return &api.DeleteSecretKeyResponse{
+			Deleted: false,
+		}, util.NewUserError(codes.InvalidArgument, errors.New("Data cannot be empty").Error())
+	}
+	//Currently, support for 1 key only
+	singleKey := ""
+	for key := range req.Secret.Data {
+		singleKey = key
+		break
+	}
+	isDeleted, err = s.resourceManager.DeleteSecretKey(req.Namespace, req.Secret.Name, singleKey)
 	if err != nil {
 		return &api.DeleteSecretKeyResponse{
 			Deleted: false,
@@ -102,7 +114,20 @@ func (s *SecretServer) DeleteSecretKey(ctx context.Context, req *api.DeleteSecre
 
 func (s *SecretServer) AddSecretKeyValue(ctx context.Context, req *api.AddSecretValueRequest) (updated *api.AddSecretValueResponse, err error) {
 	var isAdded bool
-	isAdded, err = s.resourceManager.AddSecretKeyValue(req.Namespace, req.Name, req.AddSecretBody.Key, req.AddSecretBody.Value)
+	if len(req.Secret.Data) == 0 {
+		return &api.AddSecretValueResponse{
+			Inserted: false,
+		}, util.NewUserError(codes.InvalidArgument, errors.New("Data cannot be empty").Error())
+	}
+	//Currently, support for 1 key only
+	singleKey := ""
+	singleVal := ""
+	for key, value := range req.Secret.Data {
+		singleKey = key
+		singleVal = value
+		break
+	}
+	isAdded, err = s.resourceManager.AddSecretKeyValue(req.Namespace, req.Secret.Name, singleKey, singleVal)
 	if err != nil {
 		return &api.AddSecretValueResponse{
 			Inserted: false,
@@ -115,7 +140,20 @@ func (s *SecretServer) AddSecretKeyValue(ctx context.Context, req *api.AddSecret
 
 func (s *SecretServer) UpdateSecretKeyValue(ctx context.Context, req *api.UpdateSecretKeyValueRequest) (updated *api.UpdateSecretKeyValueResponse, err error) {
 	var isUpdated bool
-	isUpdated, err = s.resourceManager.UpdateSecretKeyValue(req.Namespace, req.Name, req.Key, req.Value)
+	if len(req.Secret.Data) == 0 {
+		return &api.UpdateSecretKeyValueResponse{
+			Updated: false,
+		}, util.NewUserError(codes.InvalidArgument, errors.New("Data cannot be empty").Error())
+	}
+	//Currently, support for 1 key only
+	singleKey := ""
+	singleVal := ""
+	for key, value := range req.Secret.Data {
+		singleKey = key
+		singleVal = value
+		break
+	}
+	isUpdated, err = s.resourceManager.UpdateSecretKeyValue(req.Namespace, req.Secret.Name, singleKey, singleVal)
 	if err != nil {
 		return &api.UpdateSecretKeyValueResponse{
 			Updated: false,
