@@ -60,21 +60,21 @@ func (s *SecretServer) GetSecret(ctx context.Context, req *api.GetSecretRequest)
 	return apiSecret(secret), nil
 }
 
-func (s *SecretServer) ListSecrets(ctx context.Context, req *api.ListSecretsRequest) (secrets *api.ListSecretsResponse, err error) {
-	var modelSecrets []*model.Secret
-	modelSecrets, err = s.resourceManager.ListSecrets(req.Namespace)
-	if err != nil {
-		return nil, util.NewUserError(codes.Unknown, "Error encountered with listing secrets.")
+func (s *SecretServer) ListSecrets(ctx context.Context, req *api.ListSecretsRequest) (*api.ListSecretsResponse, error) {
+	secrets, err := s.resourceManager.ListSecrets(req.Namespace)
+	if errors.As(err, &userError) {
+		return nil, userError.GRPCError()
 	}
+
 	var apiSecrets []*api.Secret
-	for _, rawSecret := range modelSecrets {
-		apiSecrets = append(apiSecrets, apiSecret(rawSecret))
+	for _, secret := range secrets {
+		apiSecrets = append(apiSecrets, apiSecret(secret))
 	}
-	secrets = &api.ListSecretsResponse{
+
+	return &api.ListSecretsResponse{
 		Count:   int32(len(apiSecrets)),
 		Secrets: apiSecrets,
-	}
-	return
+	}, nil
 }
 
 func (s *SecretServer) DeleteSecret(ctx context.Context, req *api.DeleteSecretRequest) (deleted *api.DeleteSecretResponse, err error) {
