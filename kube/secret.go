@@ -11,14 +11,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (c *Client) CreateSecret(namespace string, secret *model.Secret) (err error) {
-	_, err = c.CoreV1().Secrets(namespace).Create(&corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: secret.Name,
-		},
-		StringData: secret.Data,
-	})
-
+func (c *Client) CreateSecret(namespace string, secret *corev1.Secret) (err error) {
+	_, err = c.CoreV1().Secrets(namespace).Create(secret)
 	return
 }
 
