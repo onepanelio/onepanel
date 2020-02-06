@@ -48,7 +48,7 @@ func (s *SecretServer) SecretExists(ctx context.Context, req *api.SecretExistsRe
 	}
 	return &api.SecretExistsResponse{
 		Exists: secretExistsBool,
-	}, userError.GRPCError()
+	}, nil
 }
 
 func (s *SecretServer) GetSecret(ctx context.Context, req *api.GetSecretRequest) (*api.Secret, error) {
