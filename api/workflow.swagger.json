@@ -419,6 +419,36 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/workflows/{name}/terminate": {
+      "put": {
+        "operationId": "TerminateWorkflow",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workflows/{name}/watch": {
       "get": {
         "operationId": "WatchWorkflow",

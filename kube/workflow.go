@@ -1,14 +1,17 @@
 package kube
 
 import (
+	"encoding/json"
 	"fmt"
+
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/argoproj/argo/workflow/common"
-	"github.com/argoproj/pkg/json"
+	argojson "github.com/argoproj/pkg/json"
 	"github.com/onepanelio/core/util/env"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
@@ -34,11 +37,11 @@ type WorkflowOptions struct {
 
 func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []Workflow, err error) {
 	var wf Workflow
-	var jsonOpts []json.JSONOpt
+	var jsonOpts []argojson.JSONOpt
 	if strict {
-		jsonOpts = append(jsonOpts, json.DisallowUnknownFields)
+		jsonOpts = append(jsonOpts, argojson.DisallowUnknownFields)
 	}
-	err = json.Unmarshal(wfBytes, &wf, jsonOpts...)
+	err = argojson.Unmarshal(wfBytes, &wf, jsonOpts...)
 	if err == nil {
 		return []Workflow{wf}, nil
 	}
@@ -165,6 +168,24 @@ func (c *Client) WatchWorkflow(namespace, name string) (watcher watch.Interface,
 	watcher, err = c.ArgoprojV1alpha1().Workflows(namespace).Watch(metav1.ListOptions{
 		FieldSelector: fieldSelector.String(),
 	})
+
+	return
+}
+
+func (c *Client) TerminateWorkflow(namespace, name string) (err error) {
+	obj := map[string]interface{}{
+		"spec": map[string]interface{}{
+			"activeDeadlineSeconds": 0,
+		},
+	}
+	patch, err := json.Marshal(obj)
+	if err != nil {
+		return
+	}
+	_, err = c.ArgoprojV1alpha1().Workflows(namespace).Patch(name, types.MergePatchType, patch)
+	if err != nil {
+		return
+	}
 
 	return
 }
