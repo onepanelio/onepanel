@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"github.com/onepanelio/core/model"
 	"strconv"
 
 	"github.com/onepanelio/core/kube"
@@ -34,7 +35,9 @@ func (r *ResourceManager) getNamespaceConfig(namespace string) (config map[strin
 	}
 	config = configMap.Data
 
-	secret, err := r.kubeClient.GetSecret(namespace, "onepanel")
+	secret, err := r.kubeClient.GetSecret(namespace, &model.Secret{
+		Name: "onepanel",
+	})
 	if err != nil {
 		return
 	}
