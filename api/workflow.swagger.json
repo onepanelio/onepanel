@@ -100,8 +100,10 @@
         "tags": [
           "WorkflowService"
         ]
-      },
-      "delete": {
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_templates/{uid}/archive": {
+      "put": {
         "operationId": "ArchiveWorkflowTemplate",
         "responses": {
           "200": {

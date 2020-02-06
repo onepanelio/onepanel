@@ -89,7 +89,7 @@ service WorkflowService {
 
     rpc ArchiveWorkflowTemplate (ArchiveWorkflowTemplateRequest) returns (ArchiveWorkflowTemplateResponse) {
         option (google.api.http) = {
-            delete: "/apis/v1beta1/{namespace}/workflow_templates/{uid}"
+            put: "/apis/v1beta1/{namespace}/workflow_templates/{uid}/archive"
         };
     }
 }
