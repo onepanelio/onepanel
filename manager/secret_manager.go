@@ -125,8 +125,88 @@ func (r *ResourceManager) DeleteSecretKey(namespace string, secret *model.Secret
 	return false, util.NewUserError(codes.NotFound, "Key not found in Secret.")
 }
 
-func (r *ResourceManager) AddSecretKeyValue(namespace string, name string, key string, value string) (inserted bool, err error) {
-	return r.kubeClient.AddSecretKeyValue(namespace, name, key, value)
+func (r *ResourceManager) AddSecretKeyValue(namespace string, secret *model.Secret) (inserted bool, err error) {
+	if len(secret.Data) == 0 {
+		return false, util.NewUserError(codes.InvalidArgument, "Data cannot be empty")
+	}
+	//Currently, support for 1 key only
+	key := ""
+	value := ""
+	for dataKey, dataValue := range secret.Data {
+		key = dataKey
+		value = dataValue
+		break
+	}
+
+	secretFound, err := r.GetSecret(namespace, secret.Name)
+	if err != nil {
+		return false, util.NewUserError(codes.NotFound, "Secret not found.")
+	}
+
+	if secretFound == nil {
+		return false, goerrors.New("Secret was not found.")
+	}
+	//Check if the secret has the key already
+	if len(secretFound.Data) > 0 {
+		secretDataKeyExists := false
+		for secretDataKey := range secretFound.Data {
+			if secretDataKey == key {
+				secretDataKeyExists = true
+				break
+			}
+		}
+		if secretDataKeyExists {
+			errorMsg := "Key: " + key + " already exists in secret."
+			return false, util.NewUserError(codes.AlreadyExists, errorMsg)
+		}
+	}
+
+	//  patchStringPathAddNode specifies an add operation for a node
+	type patchStringPathAddNode struct {
+		Op    string            `json:"op"`
+		Path  string            `json:"path"`
+		Value map[string]string `json:"value"`
+	}
+	var payload []byte
+	// "/data" may not exist due to 0 items. Create it with our new key and value
+	if len(secretFound.Data) == 0 {
+		valMap := make(map[string]string)
+		valueEnc := base64.StdEncoding.EncodeToString([]byte(value))
+		valMap[key] = valueEnc
+		payloadAddNode := []patchStringPathAddNode{{
+			Op:    "add",
+			Path:  "/data",
+			Value: valMap,
+		}}
+		payload, err = json.Marshal(payloadAddNode)
+		if err != nil {
+			return false, util.NewUserError(codes.InvalidArgument, "Error building JSON.")
+		}
+	} else {
+		//  patchStringPathAddKeyValue specifies an add operation, a key and value
+		type patchStringPathAddKeyValue struct {
+			Op    string `json:"op"`
+			Path  string `json:"path"`
+			Value string `json:"value"`
+		}
+		valueEnc := base64.StdEncoding.EncodeToString([]byte(value))
+		payloadAddData := []patchStringPathAddKeyValue{{
+			Op:    "add",
+			Path:  "/data/" + key,
+			Value: valueEnc,
+		}}
+		payload, err = json.Marshal(payloadAddData)
+		if err != nil {
+			return false, util.NewUserError(codes.InvalidArgument, "Error building JSON.")
+		}
+	}
+	err = r.kubeClient.AddSecretKeyValue(namespace, &model.Secret{
+		Name: secret.Name,
+	}, payload)
+	if err != nil {
+		return false, util.NewUserError(codes.Unknown, "Error adding key and value to Secret.")
+	}
+	return true, nil
 }
 
 func (r *ResourceManager) UpdateSecretKeyValue(namespace string, secret *model.Secret) (updated bool, err error) {

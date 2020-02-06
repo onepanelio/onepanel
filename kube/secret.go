@@ -1,10 +1,6 @@
 package kube
 
 import (
-	"encoding/base64"
-	"encoding/json"
-	goerrors "errors"
-
 	"github.com/onepanelio/core/model"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -73,77 +69,9 @@ func (c *Client) DeleteSecretKey(namespace string, secret *model.Secret, payload
 	return
 }
 
-func (c *Client) AddSecretKeyValue(namespace string, secret *model.Secret) (inserted bool, err error) {
-	//Check if the secret has the key already
-	secretFound, secretFindErr := c.GetSecret(namespace, secret)
-	if secretFindErr != nil {
-		return false, secretFindErr
-	}
-
-	if secretFound == nil {
-		return false, goerrors.New("Secret was not found.")
-	}
-
-	key := "todo"
-	value := "todo"
-	if len(secretFound.Data) > 0 {
-		secretDataKeyExists := false
-		for secretDataKey := range secretFound.Data {
-			if secretDataKey == key {
-				secretDataKeyExists = true
-				break
-			}
-		}
-		if secretDataKeyExists {
-			errorMsg := "Key: " + key + " already exists in secret."
-			return false, goerrors.New(errorMsg)
-		}
-	}
-	//  patchStringPathAddNode specifies an add operation for a node
-	type patchStringPathAddNode struct {
-		Op    string            `json:"op"`
-		Path  string            `json:"path"`
-		Value map[string]string `json:"value"`
-	}
-
-	// "/data" may not exist due to 0 items. Create it so we can add an element.
-	if len(secretFound.Data) == 0 {
-		valMap := make(map[string]string)
-		valueEnc := base64.StdEncoding.EncodeToString([]byte(value))
-		valMap[key] = valueEnc
-		payloadAddNode := []patchStringPathAddNode{{
-			Op:    "add",
-			Path:  "/data",
-			Value: valMap,
-		}}
-		payloadAddNodeBytes, err := json.Marshal(payloadAddNode)
-		if err != nil {
-			return false, err
-		}
-		_, errSecret := c.CoreV1().Secrets(namespace).Patch(name, types.JSONPatchType, payloadAddNodeBytes)
-		if errSecret != nil {
-			return false, errSecret
-		}
-		return true, nil
-	}
-	//  patchStringPathAddKeyValue specifies an add operation, a key and value
-	type patchStringPathAddKeyValue struct {
-		Op    string `json:"op"`
-		Path  string `json:"path"`
-		Value string `json:"value"`
-	}
-	valueEnc := base64.StdEncoding.EncodeToString([]byte(value))
-	payload := []patchStringPathAddKeyValue{{
-		Op:    "add",
-		Path:  "/data/" + key,
-		Value: valueEnc,
-	}}
-	payloadBytes, _ := json.Marshal(payload)
-	_, errSecret := c.CoreV1().Secrets(namespace).Patch(name, types.JSONPatchType, payloadBytes)
-	if errSecret != nil {
-		return false, errSecret
-	}
-	return true, nil
+func (c *Client) AddSecretKeyValue(namespace string, secret *model.Secret, payload []byte) (err error) {
+	_, err = c.CoreV1().Secrets(namespace).Patch(secret.Name, types.JSONPatchType, payload)
+	return
 }
 
 func (c *Client) UpdateSecretKeyValue(namespace string, name string, payloadBytes []byte) (err error) {

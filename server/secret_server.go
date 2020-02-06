@@ -115,24 +115,17 @@ func (s *SecretServer) DeleteSecretKey(ctx context.Context, req *api.DeleteSecre
 
 func (s *SecretServer) AddSecretKeyValue(ctx context.Context, req *api.AddSecretKeyValueRequest) (updated *api.AddSecretKeyValueResponse, err error) {
 	var isAdded bool
-	if len(req.Secret.Data) == 0 {
-		return &api.AddSecretKeyValueResponse{
-			Inserted: false,
-		}, util.NewUserError(codes.InvalidArgument, errors.New("Data cannot be empty").Error())
+	secret := &model.Secret{
+		Name: req.Secret.Name,
+		Data: req.Secret.Data,
 	}
-	//Currently, support for 1 key only
-	singleKey := ""
-	singleVal := ""
-	for key, value := range req.Secret.Data {
-		singleKey = key
-		singleVal = value
-		break
-	}
-	isAdded, err = s.resourceManager.AddSecretKeyValue(req.Namespace, req.Secret.Name, singleKey, singleVal)
+	isAdded, err = s.resourceManager.AddSecretKeyValue(req.Namespace, secret)
 	if err != nil {
-		return &api.AddSecretKeyValueResponse{
-			Inserted: false,
-		}, util.NewUserError(codes.Unknown, err.Error())
+		if errors.As(err, &userError) {
+			return &api.AddSecretKeyValueResponse{
+				Inserted: false,
+			}, userError.GRPCError()
+		}
 	}
 	return &api.AddSecretKeyValueResponse{
 		Inserted: isAdded,
