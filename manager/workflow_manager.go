@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/argoproj/argo/workflow/common"
-	argojson "github.com/argoproj/pkg/json"
 	"github.com/onepanelio/core/util/env"
 	"io"
 	"strconv"
@@ -44,7 +42,7 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 	}
 	(*opts.Labels)[workflowTemplateUIDLabelKey] = workflowTemplate.UID
 	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
-	workflows, err := unmarshalWorkflows(workflowTemplate.GetManifestBytes(), true)
+	workflows, err := kube.UnmarshalWorkflows(workflowTemplate.GetManifestBytes(), true)
 	if err != nil {
 		return nil, util.NewUserError(codes.Unknown, "Unable to retrieve workflows from workflow template.")
 	}
@@ -399,24 +397,6 @@ func (r *ResourceManager) ArchiveWorkflowTemplate(namespace, uid string) (archiv
 	archived, err = r.workflowRepository.ArchiveWorkflowTemplate(namespace, uid)
 	if !archived || err != nil {
 		return false, util.NewUserError(codes.Unknown, "Unknown error.")
-	}
-
-	return
-}
-
-func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []kube.Workflow, err error) {
-	var wf kube.Workflow
-	var jsonOpts []argojson.JSONOpt
-	if strict {
-		jsonOpts = append(jsonOpts, argojson.DisallowUnknownFields)
-	}
-	err = argojson.Unmarshal(wfBytes, &wf, jsonOpts...)
-	if err == nil {
-		return []kube.Workflow{wf}, nil
-	}
-	wfs, err = common.SplitWorkflowYAMLFile(wfBytes, strict)
-	if err == nil {
-		return
 	}
 
 	return

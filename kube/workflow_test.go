@@ -148,7 +148,7 @@ var (
 )
 
 func TestUnmarshalWorkflows(t *testing.T) {
-	wfs, err := unmarshalWorkflows([]byte(TestInstanceWorkflowManifest), true)
+	wfs, err := UnmarshalWorkflows([]byte(TestInstanceWorkflowManifest), true)
 	if err != nil {
 		t.Error(err)
 		return

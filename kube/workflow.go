@@ -34,7 +34,7 @@ type WorkflowOptions struct {
 	PodGCStrategy  *PodGCStrategy
 }
 
-func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []Workflow, err error) {
+func UnmarshalWorkflows(wfBytes []byte, strict bool) (wfs []Workflow, err error) {
 	var wf Workflow
 	var jsonOpts []argojson.JSONOpt
 	if strict {
@@ -53,7 +53,7 @@ func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []Workflow, err error)
 }
 
 func (c *Client) ValidateWorkflow(manifest []byte) (err error) {
-	_, err = unmarshalWorkflows(manifest, true)
+	_, err = UnmarshalWorkflows(manifest, true)
 
 	return
 }
