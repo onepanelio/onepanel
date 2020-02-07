@@ -2,14 +2,16 @@ package kube
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/argoproj/argo/workflow/common"
 	argojson "github.com/argoproj/pkg/json"
 	"github.com/onepanelio/core/util/env"
+	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
@@ -107,6 +109,52 @@ func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (
 		}
 	}
 
+	secretName := "onepanel-default-env"
+	var secret *corev1.Secret
+	var statusError *k8serrors.StatusError
+	addSecretValsToTemplate := true
+	secret, err = c.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
+	if err != nil {
+		if errors.As(err, &statusError) {
+			if statusError.ErrStatus.Reason == "NotFound" {
+				addSecretValsToTemplate = false
+			} else {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+
+	if addSecretValsToTemplate {
+		//Generate ENV vars from secret, if there is a container present in the workflow
+		for _, template := range wf.Spec.Templates {
+			if template.Container == nil {
+				continue
+			}
+			//Get template ENV vars, avoid over-writing them with secret values
+			templateEnvs := template.Container.Env
+			toAddEnvsToTemplate := template.Container.Env
+			for key, value := range secret.Data {
+				//Flag to prevent over-writing user's envs
+				addSecretAsEnv := true
+				for _, templateEnv := range templateEnvs {
+					if templateEnv.Name == key {
+						addSecretAsEnv = false
+						break
+					}
+				}
+				if addSecretAsEnv {
+					toAddEnvsToTemplate = append(toAddEnvsToTemplate, corev1.EnvVar{
+						Name:  key,
+						Value: string(value),
+					})
+				}
+			}
+			template.Container.Env = toAddEnvsToTemplate
+		}
+	}
+
 	createdWorkflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
 	if err != nil {
 		return nil, err
@@ -139,7 +187,7 @@ func (c *Client) CreateWorkflow(namespace string, manifest []byte, opts *Workflo
 }
 
 func (c *Client) GetWorkflow(namespace, name string) (workflow *Workflow, err error) {
-	workflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Get(name, v1.GetOptions{})
+	workflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
 
 	return
 }
