@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/argoproj/argo/workflow/common"
 	argojson "github.com/argoproj/pkg/json"
@@ -204,7 +203,6 @@ func (c *Client) ListWorkflows(namespace string, opts *WorkflowOptions) (workflo
 	for i := range workflowList.Items {
 		workflows = append(workflows, &(workflowList.Items[i]))
 	}
-
 	return
 }
 
