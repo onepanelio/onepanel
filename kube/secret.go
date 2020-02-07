@@ -18,8 +18,8 @@ func (c *Client) CreateSecret(namespace string, secret *model.Secret) (err error
 	return
 }
 
-func (c *Client) SecretExists(namespace string, secret *model.Secret) (*model.Secret, error) {
-	secretK8s, err := c.CoreV1().Secrets(namespace).Get(secret.Name, metav1.GetOptions{})
+func (c *Client) SecretExists(namespace, name string) (*model.Secret, error) {
+	secretK8s, err := c.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return &model.Secret{}, err
 	}
@@ -29,8 +29,8 @@ func (c *Client) SecretExists(namespace string, secret *model.Secret) (*model.Se
 	return &retSecret, nil
 }
 
-func (c *Client) GetSecret(namespace string, secret *model.Secret) (*model.Secret, error) {
-	foundSecret, err := c.CoreV1().Secrets(namespace).Get(secret.Name, metav1.GetOptions{})
+func (c *Client) GetSecret(namespace, name string) (*model.Secret, error) {
+	foundSecret, err := c.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -60,22 +60,22 @@ func (c *Client) ListSecrets(namespace string) (secrets []*model.Secret, err err
 	return
 }
 
-func (c *Client) DeleteSecret(namespace string, secret *model.Secret) (err error) {
-	return c.CoreV1().Secrets(namespace).Delete(secret.Name, &metav1.DeleteOptions{})
+func (c *Client) DeleteSecret(namespace, name string) (err error) {
+	return c.CoreV1().Secrets(namespace).Delete(name, &metav1.DeleteOptions{})
 }
 
-func (c *Client) DeleteSecretKey(namespace string, secret *model.Secret, payload []byte) (err error) {
-	_, err = c.CoreV1().Secrets(namespace).Patch(secret.Name, types.JSONPatchType, payload)
+func (c *Client) DeleteSecretKey(namespace, name string, payload []byte) (err error) {
+	_, err = c.CoreV1().Secrets(namespace).Patch(name, types.JSONPatchType, payload)
 	return
 }
 
-func (c *Client) AddSecretKeyValue(namespace string, secret *model.Secret, payload []byte) (err error) {
-	_, err = c.CoreV1().Secrets(namespace).Patch(secret.Name, types.JSONPatchType, payload)
+func (c *Client) AddSecretKeyValue(namespace, name string, payload []byte) (err error) {
+	_, err = c.CoreV1().Secrets(namespace).Patch(name, types.JSONPatchType, payload)
 	return
 }
 
-func (c *Client) UpdateSecretKeyValue(namespace string, name string, payloadBytes []byte) (err error) {
-	_, err = c.CoreV1().Secrets(namespace).Patch(name, types.JSONPatchType, payloadBytes)
+func (c *Client) UpdateSecretKeyValue(namespace string, name string, payload []byte) (err error) {
+	_, err = c.CoreV1().Secrets(namespace).Patch(name, types.JSONPatchType, payload)
 	return
 }
 

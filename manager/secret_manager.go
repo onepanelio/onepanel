@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	goerrors "errors"
+
 	"github.com/onepanelio/core/model"
 	"github.com/onepanelio/core/util"
 	"google.golang.org/grpc/codes"
@@ -20,10 +21,7 @@ func (r *ResourceManager) CreateSecret(namespace string, secret *model.Secret) (
 func (r *ResourceManager) SecretExists(namespace string, name string) (exists bool, err error) {
 	var foundSecret *model.Secret
 	var statusError *errors.StatusError
-	secret := model.Secret{
-		Name: name,
-	}
-	foundSecret, err = r.kubeClient.SecretExists(namespace, &secret)
+	foundSecret, err = r.kubeClient.SecretExists(namespace, name)
 	if err != nil {
 		if goerrors.As(err, &statusError) {
 			if statusError.ErrStatus.Reason == "NotFound" {
@@ -40,10 +38,7 @@ func (r *ResourceManager) SecretExists(namespace string, name string) (exists bo
 }
 
 func (r *ResourceManager) GetSecret(namespace, name string) (secret *model.Secret, err error) {
-	secretGet := model.Secret{
-		Name: name,
-	}
-	secret, err = r.kubeClient.GetSecret(namespace, &secretGet)
+	secret, err = r.kubeClient.GetSecret(namespace, name)
 	var statusError *errors.StatusError
 	if err != nil {
 		if goerrors.As(err, &statusError) {
@@ -70,10 +65,7 @@ func (r *ResourceManager) ListSecrets(namespace string) (secrets []*model.Secret
 }
 
 func (r *ResourceManager) DeleteSecret(namespace string, name string) (deleted bool, err error) {
-	secret := &model.Secret{
-		Name: name,
-	}
-	err = r.kubeClient.DeleteSecret(namespace, secret)
+	err = r.kubeClient.DeleteSecret(namespace, name)
 	if err != nil {
 		return false, util.NewUserError(codes.Unknown, "Secret unable to be deleted.")
 	}
@@ -115,7 +107,7 @@ func (r *ResourceManager) DeleteSecretKey(namespace string, secret *model.Secret
 			Path: "/data/" + key,
 		}}
 		payloadBytes, _ := json.Marshal(payload)
-		err = r.kubeClient.DeleteSecretKey(namespace, secret, payloadBytes)
+		err = r.kubeClient.DeleteSecretKey(namespace, secret.Name, payloadBytes)
 		if err != nil {
 			return false, util.NewUserError(codes.Unknown, "Unable to delete key from Secret.")
 		}
@@ -200,9 +192,7 @@ func (r *ResourceManager) AddSecretKeyValue(namespace string, secret *model.Secr
 			return false, util.NewUserError(codes.InvalidArgument, "Error building JSON.")
 		}
 	}
-	err = r.kubeClient.AddSecretKeyValue(namespace, &model.Secret{
-		Name: secret.Name,
-	}, payload)
+	err = r.kubeClient.AddSecretKeyValue(namespace, secret.Name, payload)
 	if err != nil {
 		return false, util.NewUserError(codes.Unknown, "Error adding key and value to Secret.")
 	}
