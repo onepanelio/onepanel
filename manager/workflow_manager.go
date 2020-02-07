@@ -221,6 +221,14 @@ func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID, workflow
 	return
 }
 
+func (r *ResourceManager) TerminateWorkflow(namespace, name string) (err error) {
+	if err = r.kubeClient.TerminateWorkflow(namespace, name); err != nil {
+		return util.NewUserError(codes.Unknown, "Could not terminate workflow.")
+	}
+
+	return
+}
+
 func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTemplate *model.WorkflowTemplate) (*model.WorkflowTemplate, error) {
 	allowed, err := r.kubeClient.IsAuthorized(namespace, "create", "argoproj.io", "workflow", "")
 	if err != nil {

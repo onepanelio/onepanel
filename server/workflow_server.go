@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/manager"
 	"github.com/onepanelio/core/model"
@@ -153,6 +154,15 @@ func (s *WorkflowServer) ListWorkflows(ctx context.Context, req *api.ListWorkflo
 		Count:     int32(len(apiWorkflows)),
 		Workflows: apiWorkflows,
 	}, nil
+}
+
+func (s *WorkflowServer) TerminateWorkflow(ctx context.Context, req *api.TerminateWorkflowRequest) (*empty.Empty, error) {
+	err := s.resourceManager.TerminateWorkflow(req.Namespace, req.Name)
+	if errors.As(err, &userError) {
+		return nil, userError.GRPCError()
+	}
+
+	return &empty.Empty{}, nil
 }
 
 func (s *WorkflowServer) CreateWorkflowTemplate(ctx context.Context, req *api.CreateWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {

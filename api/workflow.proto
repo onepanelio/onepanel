@@ -3,6 +3,7 @@ syntax = "proto3";
 package api;
 
 import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
 import "workflow_template.proto";
 
 service WorkflowService {
@@ -35,6 +36,12 @@ service WorkflowService {
     rpc GetWorkflowLogs (GetWorkflowLogsRequest) returns (stream LogEntry) {
         option (google.api.http) = {
             get: "/apis/v1beta1/{namespace}/workflows/{name}/pods/{podName}/containers/{containerName}/logs"
+        };
+    }
+
+    rpc TerminateWorkflow (TerminateWorkflowRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            put: "/apis/v1beta1/{namespace}/workflows/{name}/terminate"
         };
     }
 
@@ -82,7 +89,7 @@ service WorkflowService {
 
     rpc ArchiveWorkflowTemplate (ArchiveWorkflowTemplateRequest) returns (ArchiveWorkflowTemplateResponse) {
         option (google.api.http) = {
-            delete: "/apis/v1beta1/{namespace}/workflow_templates/{uid}"
+            put: "/apis/v1beta1/{namespace}/workflow_templates/{uid}/archive"
         };
     }
 }
@@ -98,6 +105,11 @@ message GetWorkflowRequest {
 }
 
 message WatchWorkflowRequest {
+    string namespace = 1;
+    string name = 2;
+}
+
+message TerminateWorkflowRequest {
     string namespace = 1;
     string name = 2;
 }
