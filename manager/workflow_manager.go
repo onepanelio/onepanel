@@ -213,8 +213,9 @@ func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID, workflow
 
 	for _, wf := range wfs {
 		workflows = append(workflows, &model.Workflow{
-			Name: wf.ObjectMeta.Name,
-			UID:  string(wf.ObjectMeta.UID),
+			Name:      wf.ObjectMeta.Name,
+			UID:       string(wf.ObjectMeta.UID),
+			CreatedAt: wf.CreationTimestamp.UTC(),
 		})
 	}
 
