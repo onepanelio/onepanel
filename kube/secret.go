@@ -74,8 +74,8 @@ func (c *Client) AddSecretKeyValue(namespace, name string, payload []byte) (err 
 	return
 }
 
-func (c *Client) UpdateSecretKeyValue(namespace string, name string, payloadBytes []byte) (err error) {
-	_, err = c.CoreV1().Secrets(namespace).Patch(name, types.JSONPatchType, payloadBytes)
+func (c *Client) UpdateSecretKeyValue(namespace string, name string, payload []byte) (err error) {
+	_, err = c.CoreV1().Secrets(namespace).Patch(name, types.JSONPatchType, payload)
 	return
 }
 
