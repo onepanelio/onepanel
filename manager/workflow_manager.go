@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -210,6 +211,12 @@ func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID, workflow
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflows not found.")
 	}
+	sort.Slice(wfs, func(i, j int) bool {
+		ith := wfs[i].CreationTimestamp.Time
+		jth := wfs[j].CreationTimestamp.Time
+		//Most recent first
+		return ith.After(jth)
+	})
 
 	for _, wf := range wfs {
 		workflows = append(workflows, &model.Workflow{
