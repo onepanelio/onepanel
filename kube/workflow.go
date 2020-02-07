@@ -7,7 +7,6 @@ import (
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/argoproj/argo/workflow/common"
 	argojson "github.com/argoproj/pkg/json"
-	"github.com/onepanelio/core/util/env"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -54,59 +53,6 @@ func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []Workflow, err error)
 }
 
 func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (createdWorkflow *Workflow, err error) {
-
-	if opts == nil {
-		opts = &WorkflowOptions{}
-	}
-
-	if opts.Name != "" {
-		wf.ObjectMeta.Name = opts.Name
-	}
-	if opts.GeneratedName != "" {
-		wf.ObjectMeta.GenerateName = opts.GeneratedName
-	}
-	if opts.Entrypoint != "" {
-		wf.Spec.Entrypoint = opts.Entrypoint
-	}
-	if opts.ServiceAccount != "" {
-		wf.Spec.ServiceAccountName = opts.ServiceAccount
-	}
-	if len(opts.Parameters) > 0 {
-		newParams := make([]wfv1.Parameter, 0)
-		passedParams := make(map[string]bool)
-		for _, param := range opts.Parameters {
-			newParams = append(newParams, param)
-			passedParams[param.Name] = true
-		}
-
-		for _, param := range wf.Spec.Arguments.Parameters {
-			if _, ok := passedParams[param.Name]; ok {
-				// this parameter was overridden via command line
-				continue
-			}
-			newParams = append(newParams, param)
-		}
-		wf.Spec.Arguments.Parameters = newParams
-	}
-	if opts.Labels != nil {
-		wf.ObjectMeta.Labels = *opts.Labels
-	}
-
-	if opts.PodGCStrategy == nil {
-		if wf.Spec.PodGC == nil {
-			//TODO - Load this data from onepanel config-map or secret
-			podGCStrategy := env.GetEnv("ARGO_POD_GC_STRATEGY", "OnPodCompletion")
-			strategy := PodGCStrategy(podGCStrategy)
-			wf.Spec.PodGC = &wfv1.PodGC{
-				Strategy: strategy,
-			}
-		}
-	} else {
-		wf.Spec.PodGC = &wfv1.PodGC{
-			Strategy: *opts.PodGCStrategy,
-		}
-	}
-
 	createdWorkflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
 	if err != nil {
 		return nil, err
