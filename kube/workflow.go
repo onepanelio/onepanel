@@ -204,6 +204,12 @@ func (c *Client) ListWorkflows(namespace string, opts *WorkflowOptions) (workflo
 	for i := range workflowList.Items {
 		workflows = append(workflows, &(workflowList.Items[i]))
 	}
+	sort.Slice(workflows, func(i, j int) bool {
+		ith := workflows[i].CreationTimestamp.Time
+		jth := workflows[j].CreationTimestamp.Time
+		//Most recent first
+		return ith.After(jth)
+	})
 
 	return
 }
