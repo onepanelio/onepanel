@@ -52,35 +52,21 @@ func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []Workflow, err error)
 	return
 }
 
-func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (createdWorkflow *Workflow, err error) {
-	createdWorkflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
-	if err != nil {
-		return nil, err
-	}
-
-	return
-}
-
 func (c *Client) ValidateWorkflow(manifest []byte) (err error) {
 	_, err = unmarshalWorkflows(manifest, true)
 
 	return
 }
 
-func (c *Client) CreateWorkflow(namespace string, manifest []byte, opts *WorkflowOptions) (createdWorkflows []*Workflow, err error) {
-	workflows, err := unmarshalWorkflows(manifest, true)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, wf := range workflows {
-		createdWorkflow, err := c.create(namespace, &wf, opts)
+func (c *Client) CreateWorkflow(namespace string, wfs []*Workflow) (createdWorkflows []*Workflow, err error) {
+	var createdWorkflow *Workflow
+	for _, wf := range wfs {
+		createdWorkflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
 		if err != nil {
 			return nil, err
 		}
 		createdWorkflows = append(createdWorkflows, createdWorkflow)
 	}
-
 	return
 }
 

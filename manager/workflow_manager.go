@@ -54,7 +54,7 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 		preparedWorkflows = append(preparedWorkflows, preparedWorkflow)
 	}
 
-	createdWorkflows, err := r.kubeClient.CreateWorkflow(namespace, workflowTemplate.GetManifestBytes(), opts)
+	createdWorkflows, err := r.kubeClient.CreateWorkflow(namespace, preparedWorkflows)
 	if err != nil {
 		return nil, util.NewUserError(codes.Unknown, "Unable to create workflow.")
 	}
