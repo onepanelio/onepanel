@@ -24,7 +24,7 @@ var (
 func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workflow) (*model.Workflow, error) {
 	workflowTemplate, err := r.GetWorkflowTemplate(namespace, workflow.WorkflowTemplate.UID, workflow.WorkflowTemplate.Version)
 	if err != nil {
-		return nil, err
+		return nil, util.NewUserError(codes.Unknown, "Unable to get workflow template.")
 	}
 
 	// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
@@ -42,7 +42,7 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
 	createdWorkflows, err := r.kubeClient.CreateWorkflow(namespace, workflowTemplate.GetManifestBytes(), opts)
 	if err != nil {
-		return nil, err
+		return nil, util.NewUserError(codes.Unknown, "Unable to create workflow.")
 	}
 
 	workflow.Name = createdWorkflows[0].Name
@@ -314,7 +314,7 @@ func (r *ResourceManager) UpdateWorkflowTemplateVersion(namespace string, workfl
 func (r *ResourceManager) GetWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *model.WorkflowTemplate, err error) {
 	allowed, err := r.kubeClient.IsAuthorized(namespace, "get", "argoproj.io", "workflow", "")
 	if err != nil {
-		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
+		return nil, util.NewUserError(codes.Unknown, "Failed to check authorization.")
 	}
 	if !allowed {
 		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
@@ -322,7 +322,7 @@ func (r *ResourceManager) GetWorkflowTemplate(namespace, uid string, version int
 
 	workflowTemplate, err = r.workflowRepository.GetWorkflowTemplate(namespace, uid, version)
 	if err != nil {
-		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
+		return nil, util.NewUserError(codes.Unknown, "Unable to get workflow template.")
 	}
 	if workflowTemplate == nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
