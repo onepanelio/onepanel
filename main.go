@@ -3,12 +3,16 @@ package main
 import (
 	"context"
 	"flag"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"log"
 	"net"
 	"net/http"
 	"os"
 
 	"github.com/gorilla/handlers"
+	"github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/kube"
@@ -21,8 +25,9 @@ import (
 )
 
 var (
-	rpcPort  = flag.String("rpc-port", ":8887", "RPC Port")
-	httpPort = flag.String("http-port", ":8888", "RPC Port")
+	rpcPort      = flag.String("rpc-port", ":8887", "RPC Port")
+	httpPort     = flag.String("http-port", ":8888", "RPC Port")
+	recoveryFunc grpc_recovery.RecoveryHandlerFunc
 )
 
 func main() {
@@ -47,8 +52,15 @@ func startRPCServer(db *repository.DB, kubeClient *kube.Client) {
 	if err != nil {
 		log.Fatalf("Failed to start RPC listener: %v", err)
 	}
-
-	s := grpc.NewServer(grpc.UnaryInterceptor(loggingInterceptor))
+	recoveryFunc = func(p interface{}) (err error) {
+		return status.Errorf(codes.Unknown, "panic triggered: %v", p)
+	}
+	opts := []grpc_recovery.Option{
+		grpc_recovery.WithRecoveryHandler(recoveryFunc),
+	}
+	s := grpc.NewServer(grpc.UnaryInterceptor(
+		grpc_middleware.ChainUnaryServer(loggingInterceptor,
+			grpc_recovery.UnaryServerInterceptor(opts...))))
 	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer(resourceManager))
 	api.RegisterSecretServiceServer(s, server.NewSecretServer(resourceManager))
 	api.RegisterNamespaceServiceServer(s, server.NewNamespaceServer(resourceManager))
