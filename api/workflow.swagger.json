@@ -421,6 +421,36 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/workflows/{name}/resubmit": {
+      "put": {
+        "operationId": "ResubmitWorkflow",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiWorkflow"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workflows/{name}/terminate": {
       "put": {
         "operationId": "TerminateWorkflow",

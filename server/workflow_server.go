@@ -158,6 +158,15 @@ func (s *WorkflowServer) ListWorkflows(ctx context.Context, req *api.ListWorkflo
 	}, nil
 }
 
+func (s *WorkflowServer) ResubmitWorkflow(ctx context.Context, req *api.ResubmitWorkflowRequest) (*api.Workflow, error) {
+	wf, err := s.resourceManager.ResubmitWorkflow(req.Namespace, req.Name)
+	if errors.As(err, &userError) {
+		return nil, userError.GRPCError()
+	}
+
+	return apiWorkflow(wf), nil
+}
+
 func (s *WorkflowServer) TerminateWorkflow(ctx context.Context, req *api.TerminateWorkflowRequest) (*empty.Empty, error) {
 	err := s.resourceManager.TerminateWorkflow(req.Namespace, req.Name)
 	if errors.As(err, &userError) {

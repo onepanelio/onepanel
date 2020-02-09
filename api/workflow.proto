@@ -39,6 +39,12 @@ service WorkflowService {
         };
     }
 
+    rpc ResubmitWorkflow (ResubmitWorkflowRequest) returns (Workflow) {
+        option (google.api.http) = {
+            put: "/apis/v1beta1/{namespace}/workflows/{name}/resubmit"
+        };
+    }
+
     rpc TerminateWorkflow (TerminateWorkflowRequest) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             put: "/apis/v1beta1/{namespace}/workflows/{name}/terminate"
@@ -105,6 +111,11 @@ message GetWorkflowRequest {
 }
 
 message WatchWorkflowRequest {
+    string namespace = 1;
+    string name = 2;
+}
+
+message ResubmitWorkflowRequest {
     string namespace = 1;
     string name = 2;
 }

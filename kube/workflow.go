@@ -1,13 +1,16 @@
 package kube
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/argoproj/argo/workflow/common"
+	"github.com/argoproj/argo/workflow/util"
 	argoutil "github.com/argoproj/argo/workflow/util"
 	argojson "github.com/argoproj/pkg/json"
+	"github.com/onepanelio/core/model"
 	"github.com/onepanelio/core/util/env"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -34,6 +37,21 @@ type WorkflowOptions struct {
 	Labels         *map[string]string
 	ListOptions    *ListOptions
 	PodGCStrategy  *PodGCStrategy
+}
+
+func modelWorkflow(wf *wfv1.Workflow) (workflow *model.Workflow) {
+	status, err := json.Marshal(wf.Status)
+	if err != nil {
+		return
+	}
+	workflow = &model.Workflow{
+		UID: string(wf.UID),
+		//CreatedAt: wf.CreationTimestamp,
+		Name:   wf.Name,
+		Status: string(status),
+	}
+
+	return
 }
 
 func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []Workflow, err error) {
@@ -218,11 +236,57 @@ func (c *Client) WatchWorkflow(namespace, name string) (watcher watch.Interface,
 	return
 }
 
-func (c *Client) TerminateWorkflow(namespace, name string) (err error) {
-	err = argoutil.TerminateWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), name)
+func (c *Client) RetryWorkflow(namespace, name string) (workflow *Workflow, err error) {
+	workflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return
 	}
+
+	workflow, err = util.RetryWorkflow(c, c.ArgoprojV1alpha1().Workflows(namespace), workflow)
+
+	return
+}
+
+func (c *Client) ResubmitWorkflow(namespace, name string) (workflow *model.Workflow, err error) {
+	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		return
+	}
+
+	wf, err = util.FormulateResubmitWorkflow(wf, true)
+	if err != nil {
+		return
+	}
+
+	wf, err = util.SubmitWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), c, namespace, wf, &util.SubmitOpts{})
+	if err != nil {
+		return
+	}
+
+	workflow = modelWorkflow(wf)
+
+	return
+}
+
+func (c *Client) ResumeWorkflow(namespace, name string) (workflow *Workflow, err error) {
+	err = util.ResumeWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), name)
+	if err != nil {
+		return
+	}
+
+	workflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
+
+	return
+}
+
+func (c *Client) SuspendWorkflow(namespace, name string) (err error) {
+	err = util.SuspendWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), name)
+
+	return
+}
+
+func (c *Client) TerminateWorkflow(namespace, name string) (err error) {
+	err = argoutil.TerminateWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), name)
 
 	return
 }
