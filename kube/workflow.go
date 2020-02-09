@@ -1,18 +1,18 @@
 package kube
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/argoproj/argo/workflow/common"
+	argoutil "github.com/argoproj/argo/workflow/util"
 	argojson "github.com/argoproj/pkg/json"
 	"github.com/onepanelio/core/util/env"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
@@ -219,16 +219,7 @@ func (c *Client) WatchWorkflow(namespace, name string) (watcher watch.Interface,
 }
 
 func (c *Client) TerminateWorkflow(namespace, name string) (err error) {
-	obj := map[string]interface{}{
-		"spec": map[string]interface{}{
-			"activeDeadlineSeconds": 0,
-		},
-	}
-	patch, err := json.Marshal(obj)
-	if err != nil {
-		return
-	}
-	_, err = c.ArgoprojV1alpha1().Workflows(namespace).Patch(name, types.MergePatchType, patch)
+	err = argoutil.TerminateWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), name)
 	if err != nil {
 		return
 	}
