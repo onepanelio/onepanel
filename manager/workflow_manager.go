@@ -313,7 +313,7 @@ func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID, workflow
 }
 
 func (r *ResourceManager) ResubmitWorkflow(namespace, name string) (workflow *model.Workflow, err error) {
-	workflow, err = r.kubeClient.ResubmitWorkflow(namespace, name)
+	workflow, err = r.kubeClient.ResubmitWorkflow(namespace, name, false)
 	if err != nil {
 		return nil, util.NewUserError(codes.Unknown, "Could not resubmit workflow.")
 	}
