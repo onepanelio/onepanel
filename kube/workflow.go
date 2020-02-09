@@ -45,10 +45,10 @@ func modelWorkflow(wf *wfv1.Workflow) (workflow *model.Workflow) {
 		return
 	}
 	workflow = &model.Workflow{
-		UID: string(wf.UID),
-		//CreatedAt: wf.CreationTimestamp,
-		Name:   wf.Name,
-		Status: string(status),
+		UID:       string(wf.UID),
+		CreatedAt: wf.CreationTimestamp.UTC(),
+		Name:      wf.Name,
+		Status:    string(status),
 	}
 
 	return
@@ -247,13 +247,13 @@ func (c *Client) RetryWorkflow(namespace, name string) (workflow *Workflow, err 
 	return
 }
 
-func (c *Client) ResubmitWorkflow(namespace, name string) (workflow *model.Workflow, err error) {
+func (c *Client) ResubmitWorkflow(namespace, name string, memoized bool) (workflow *model.Workflow, err error) {
 	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return
 	}
 
-	wf, err = util.FormulateResubmitWorkflow(wf, true)
+	wf, err = util.FormulateResubmitWorkflow(wf, memoized)
 	if err != nil {
 		return
 	}
