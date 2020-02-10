@@ -7,7 +7,7 @@ type Workflow struct {
 	CreatedAt        time.Time `db:"created_at"`
 	UID              string
 	Name             string
-	GeneratedName    string
+	GenerateName     string
 	Parameters       []Parameter
 	Status           string
 	WorkflowTemplate *WorkflowTemplate
