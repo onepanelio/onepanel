@@ -4,15 +4,21 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	goerrors "errors"
-
 	"github.com/onepanelio/core/model"
 	"github.com/onepanelio/core/util"
+	"github.com/onepanelio/core/util/logging"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"k8s.io/apimachinery/pkg/api/errors"
 )
 
 func (r *ResourceManager) CreateSecret(namespace string, secret *model.Secret) (err error) {
 	if err = r.kubeClient.CreateSecret(namespace, secret); err != nil {
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Secret":    secret,
+			"Error":     err.Error(),
+		}).Error("Error creating secret.")
 		return util.NewUserError(codes.Unknown, "Secret was not created.")
 	}
 	return
@@ -21,14 +27,30 @@ func (r *ResourceManager) CreateSecret(namespace string, secret *model.Secret) (
 func (r *ResourceManager) SecretExists(namespace string, name string) (exists bool, err error) {
 	var foundSecret *model.Secret
 	var statusError *errors.StatusError
+
 	foundSecret, err = r.kubeClient.SecretExists(namespace, name)
 	if err != nil {
 		if goerrors.As(err, &statusError) {
 			if statusError.ErrStatus.Reason == "NotFound" {
+				logging.Logger.Log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"Name":      name,
+					"Error":     err.Error(),
+				}).Warning("Secret not found.")
 				return false, util.NewUserError(codes.NotFound, "Secret Not Found.")
 			}
+			logging.Logger.Log.WithFields(log.Fields{
+				"Namespace": namespace,
+				"Name":      name,
+				"Error":     err.Error(),
+			}).Error("Checking existence of secret.")
 			return false, util.NewUserError(codes.Unknown, "Error when checking existence of secret.")
 		}
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"Error":     err.Error(),
+		}).Error("Checking existence of secret.")
 		return false, util.NewUserError(codes.Unknown, "Error when checking existence of secret.")
 	}
 	if foundSecret.Name == "" {
@@ -43,13 +65,33 @@ func (r *ResourceManager) GetSecret(namespace, name string) (secret *model.Secre
 	if err != nil {
 		if goerrors.As(err, &statusError) {
 			if statusError.ErrStatus.Reason == "NotFound" {
+				logging.Logger.Log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"Name":      name,
+					"Error":     err.Error(),
+				}).Error("Secret not found error.")
 				return secret, util.NewUserError(codes.NotFound, "Secret Not Found.")
 			}
+			logging.Logger.Log.WithFields(log.Fields{
+				"Namespace": namespace,
+				"Name":      name,
+				"Error":     err.Error(),
+			}).Error("Error getting secret.")
 			return secret, util.NewUserError(codes.Unknown, "Error when getting secret.")
 		}
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"Error":     err.Error(),
+		}).Error("Error getting secret.")
 		return secret, util.NewUserError(codes.Unknown, "Error when getting secret.")
 	}
 	if secret == nil {
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"Error":     "Secret is nil.",
+		}).Error("Error getting secret.")
 		return nil, util.NewUserError(codes.Unknown, "Error when getting secret.")
 	}
 	return
@@ -58,6 +100,10 @@ func (r *ResourceManager) GetSecret(namespace, name string) (secret *model.Secre
 func (r *ResourceManager) ListSecrets(namespace string) (secrets []*model.Secret, err error) {
 	secrets, err = r.kubeClient.ListSecrets(namespace)
 	if err != nil {
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Error":     err.Error(),
+		}).Error("No secrets were found.")
 		return nil, util.NewUserError(codes.NotFound, "No secrets were found.")
 	}
 
@@ -67,6 +113,11 @@ func (r *ResourceManager) ListSecrets(namespace string) (secrets []*model.Secret
 func (r *ResourceManager) DeleteSecret(namespace string, name string) (deleted bool, err error) {
 	err = r.kubeClient.DeleteSecret(namespace, name)
 	if err != nil {
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"Error":     err.Error(),
+		}).Error("Unable to delete a secret.")
 		return false, util.NewUserError(codes.Unknown, "Secret unable to be deleted.")
 	}
 	return true, nil
@@ -85,6 +136,11 @@ func (r *ResourceManager) DeleteSecretKey(namespace string, secret *model.Secret
 	//Check if the secret has the key to delete
 	secretFound, err := r.GetSecret(namespace, secret.Name)
 	if err != nil {
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Secret":    secret,
+			"Error":     err.Error(),
+		}).Error("Error with getting a secret.")
 		return false, util.NewUserError(codes.NotFound, "Secret not found.")
 	}
 	secretDataKeyExists := false
@@ -109,6 +165,11 @@ func (r *ResourceManager) DeleteSecretKey(namespace string, secret *model.Secret
 		payloadBytes, _ := json.Marshal(payload)
 		err = r.kubeClient.DeleteSecretKey(namespace, secret.Name, payloadBytes)
 		if err != nil {
+			logging.Logger.Log.WithFields(log.Fields{
+				"Namespace": namespace,
+				"Secret":    secret,
+				"Error":     err.Error(),
+			}).Error("Unable to a key from a secret.")
 			return false, util.NewUserError(codes.Unknown, "Unable to delete key from Secret.")
 		}
 		return true, nil
@@ -132,11 +193,16 @@ func (r *ResourceManager) AddSecretKeyValue(namespace string, secret *model.Secr
 
 	secretFound, err := r.GetSecret(namespace, secret.Name)
 	if err != nil {
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Secret":    secret,
+			"Error":     err.Error(),
+		}).Error("Unable to find the secret.")
 		return false, util.NewUserError(codes.NotFound, "Secret not found.")
 	}
 
 	if secretFound == nil {
-		return false, goerrors.New("Secret was not found.")
+		return false, util.NewUserError(codes.NotFound, "Secret not found.")
 	}
 	//Check if the secret has the key already
 	if len(secretFound.Data) > 0 {
@@ -172,6 +238,11 @@ func (r *ResourceManager) AddSecretKeyValue(namespace string, secret *model.Secr
 		}}
 		payload, err = json.Marshal(payloadAddNode)
 		if err != nil {
+			logging.Logger.Log.WithFields(log.Fields{
+				"Namespace": namespace,
+				"Secret":    secret,
+				"Error":     err.Error(),
+			}).Error("Error building JSON.")
 			return false, util.NewUserError(codes.InvalidArgument, "Error building JSON.")
 		}
 	} else {
@@ -189,11 +260,21 @@ func (r *ResourceManager) AddSecretKeyValue(namespace string, secret *model.Secr
 		}}
 		payload, err = json.Marshal(payloadAddData)
 		if err != nil {
+			logging.Logger.Log.WithFields(log.Fields{
+				"Namespace": namespace,
+				"Secret":    secret,
+				"Error":     err.Error(),
+			}).Error("Error building JSON.")
 			return false, util.NewUserError(codes.InvalidArgument, "Error building JSON.")
 		}
 	}
 	err = r.kubeClient.AddSecretKeyValue(namespace, secret.Name, payload)
 	if err != nil {
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Secret":    secret,
+			"Error":     err.Error(),
+		}).Error("Error adding key and value to Secret.")
 		return false, util.NewUserError(codes.Unknown, "Error adding key and value to Secret.")
 	}
 	return true, nil
@@ -215,6 +296,11 @@ func (r *ResourceManager) UpdateSecretKeyValue(namespace string, secret *model.S
 	//Check if the secret has the key to update
 	secretFound, err := r.GetSecret(namespace, secret.Name)
 	if err != nil {
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Secret":    secret,
+			"Error":     err.Error(),
+		}).Error("Unable to find secret.")
 		return false, util.NewUserError(codes.NotFound, "Unable to find secret.")
 	}
 	secretDataKeyExists := false
@@ -243,6 +329,11 @@ func (r *ResourceManager) UpdateSecretKeyValue(namespace string, secret *model.S
 	payloadBytes, _ := json.Marshal(payload)
 	err = r.kubeClient.UpdateSecretKeyValue(namespace, secret.Name, payloadBytes)
 	if err != nil {
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Secret":    secret,
+			"Error":     err.Error(),
+		}).Error("Unable to update secret key value.")
 		return false, util.NewUserError(codes.Unknown, "Unable to update secret key value.")
 	}
 	return true, nil
