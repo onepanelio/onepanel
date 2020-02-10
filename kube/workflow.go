@@ -30,7 +30,7 @@ type PodGCStrategy = wfv1.PodGCStrategy
 
 type WorkflowOptions struct {
 	Name           string
-	GeneratedName  string
+	GenerateName   string
 	Entrypoint     string
 	Parameters     []WorkflowParameter
 	ServiceAccount string
@@ -81,8 +81,8 @@ func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (
 	if opts.Name != "" {
 		wf.ObjectMeta.Name = opts.Name
 	}
-	if opts.GeneratedName != "" {
-		wf.ObjectMeta.GenerateName = opts.GeneratedName
+	if opts.GenerateName != "" {
+		wf.ObjectMeta.GenerateName = opts.GenerateName
 	}
 	if opts.Entrypoint != "" {
 		wf.Spec.Entrypoint = opts.Entrypoint
