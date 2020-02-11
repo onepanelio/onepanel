@@ -17,10 +17,12 @@ import (
 	"github.com/onepanelio/core/model"
 	"github.com/onepanelio/core/s3"
 	"github.com/onepanelio/core/util"
+	"github.com/onepanelio/core/util/env"
 	"google.golang.org/grpc/codes"
 )
 
 var (
+	readEndOffset                   = env.GetEnv("ARTIFACT_RERPOSITORY_OBJECT_RANGE", "-102400")
 	workflowTemplateUIDLabelKey     = labelKeyPrefix + "workflow-template-uid"
 	workflowTemplateVersionLabelKey = labelKeyPrefix + "workflow-template-version"
 )
@@ -202,9 +204,10 @@ func (r *ResourceManager) GetWorkflowLogs(namespace, name, podName, containerNam
 	}
 
 	var (
-		stream   io.ReadCloser
-		s3Client *s3.Client
-		config   map[string]string
+		stream    io.ReadCloser
+		s3Client  *s3.Client
+		config    map[string]string
+		endOffset int
 	)
 
 	if wf.Status.Nodes[podName].Completed() {
@@ -232,7 +235,13 @@ func (r *ResourceManager) GetWorkflowLogs(namespace, name, podName, containerNam
 			return nil, util.NewUserError(codes.PermissionDenied, "Can't connect to S3 storage.")
 		}
 
-		stream, err = s3Client.GetObject(config[artifactRepositoryBucketKey], "artifacts/"+namespace+"/"+name+"/"+podName+"/"+containerName+".log")
+		opts := s3.GetObjectOptions{}
+		endOffset, err = strconv.Atoi(readEndOffset)
+		if err != nil {
+			return nil, util.NewUserError(codes.InvalidArgument, "Invaild range.")
+		}
+		opts.SetRange(0, int64(endOffset))
+		stream, err = s3Client.GetObject(config[artifactRepositoryBucketKey], "artifacts/"+namespace+"/"+name+"/"+podName+"/"+containerName+".log", opts)
 	} else {
 		stream, err = r.kubeClient.GetPodLogs(namespace, podName, containerName)
 	}
