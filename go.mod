@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/Azure/go-autorest/autorest v0.9.2 // indirect
 	github.com/Azure/go-autorest/autorest/adal v0.8.0 // indirect
+	github.com/DATA-DOG/go-sqlmock v1.4.1
 	github.com/Masterminds/squirrel v1.1.0
 	github.com/argoproj/argo v2.4.2+incompatible
 	github.com/argoproj/pkg v0.0.0-20191031223000-02a6aac40ac4
