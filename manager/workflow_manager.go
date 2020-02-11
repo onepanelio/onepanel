@@ -297,21 +297,45 @@ func (r *ResourceManager) GetWorkflowMetrics(namespace, name, podName string) (m
 
 	config, err = r.getNamespaceConfig(namespace)
 	if err != nil {
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"PodName":   podName,
+			"Error":     err.Error(),
+		}).Error("Can't get configuration.")
 		return nil, util.NewUserError(codes.PermissionDenied, "Can't get configuration.")
 	}
 
 	s3Client, err = r.getS3Client(namespace, config)
 	if err != nil {
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"PodName":   podName,
+			"Error":     err.Error(),
+		}).Error("Can't connect to S3 storage.")
 		return nil, util.NewUserError(codes.PermissionDenied, "Can't connect to S3 storage.")
 	}
 
 	opts := s3.GetObjectOptions{}
 	stream, err = s3Client.GetObject(config[artifactRepositoryBucketKey], "artifacts/"+namespace+"/"+name+"/"+podName+"/metrics.json", opts)
 	if err != nil {
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"PodName":   podName,
+			"Error":     err.Error(),
+		}).Error("Metrics do not exist.")
 		return nil, util.NewUserError(codes.NotFound, "Metrics do not exist.")
 	}
 	content, err := ioutil.ReadAll(stream)
 	if err != nil {
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"PodName":   podName,
+			"Error":     err.Error(),
+		}).Error("Unknown.")
 		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
 	}
 
