@@ -589,7 +589,7 @@
         "name": {
           "type": "string"
         },
-        "status": {
+        "manifest": {
           "type": "string"
         },
         "parameters": {

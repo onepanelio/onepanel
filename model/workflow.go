@@ -9,7 +9,7 @@ type Workflow struct {
 	Name             string
 	GenerateName     string
 	Parameters       []Parameter
-	Status           string
+	Manifest         string
 	WorkflowTemplate *WorkflowTemplate
 }
 
