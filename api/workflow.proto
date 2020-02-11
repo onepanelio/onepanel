@@ -39,6 +39,12 @@ service WorkflowService {
         };
     }
 
+    rpc GetWorkflowMetrics (GetWorkflowMetricsRequest) returns (GetWorkflowMetricsResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflows/{name}/pods/{podName}/metrics"
+        };
+    }
+
     rpc ResubmitWorkflow (ResubmitWorkflowRequest) returns (Workflow) {
         option (google.api.http) = {
             put: "/apis/v1beta1/{namespace}/workflows/{name}/resubmit"
@@ -130,6 +136,16 @@ message GetWorkflowLogsRequest {
     string name = 2;
     string podName = 3;
     string containerName = 4;
+}
+
+message GetWorkflowMetricsRequest {
+    string namespace = 1;
+    string name = 2;
+    string podName = 3;
+}
+
+message GetWorkflowMetricsResponse {
+    string metrics = 1;
 }
 
 message ListWorkflowsRequest {
