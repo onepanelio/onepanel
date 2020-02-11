@@ -141,6 +141,15 @@ func (s *WorkflowServer) GetWorkflowLogs(req *api.GetWorkflowLogsRequest, stream
 	return nil
 }
 
+func (s *WorkflowServer) GetWorkflowMetrics(ctx context.Context, req *api.GetWorkflowMetricsRequest) (*api.GetWorkflowMetricsResponse, error) {
+	metrics, err := s.resourceManager.GetWorkflowMetrics(req.Namespace, req.Name, req.PodName)
+	if errors.As(err, &userError) {
+		return nil, userError.GRPCError()
+	}
+
+	return &api.GetWorkflowMetricsResponse{Metrics: *metrics}, nil
+}
+
 func (s *WorkflowServer) ListWorkflows(ctx context.Context, req *api.ListWorkflowsRequest) (*api.ListWorkflowsResponse, error) {
 	workflows, err := s.resourceManager.ListWorkflows(req.Namespace, req.WorkflowTemplateUid, req.WorkflowTemplateVersion)
 	if errors.As(err, &userError) {

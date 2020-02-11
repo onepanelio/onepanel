@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"sort"
 	"strconv"
 	"strings"
@@ -18,6 +19,7 @@ import (
 	"github.com/onepanelio/core/s3"
 	"github.com/onepanelio/core/util"
 	"github.com/onepanelio/core/util/env"
+	"github.com/onepanelio/core/util/ptr"
 	"google.golang.org/grpc/codes"
 )
 
@@ -279,6 +281,43 @@ func (r *ResourceManager) GetWorkflowLogs(namespace, name, podName, containerNam
 	}()
 
 	return logWatcher, err
+}
+
+func (r *ResourceManager) GetWorkflowMetrics(namespace, name, podName string) (metrics *string, err error) {
+	_, err = r.kubeClient.GetWorkflow(namespace, name)
+	if err != nil {
+		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
+	}
+
+	var (
+		stream   io.ReadCloser
+		s3Client *s3.Client
+		config   map[string]string
+	)
+
+	config, err = r.getNamespaceConfig(namespace)
+	if err != nil {
+		return nil, util.NewUserError(codes.PermissionDenied, "Can't get configuration.")
+	}
+
+	s3Client, err = r.getS3Client(namespace, config)
+	if err != nil {
+		return nil, util.NewUserError(codes.PermissionDenied, "Can't connect to S3 storage.")
+	}
+
+	opts := s3.GetObjectOptions{}
+	stream, err = s3Client.GetObject(config[artifactRepositoryBucketKey], "artifacts/"+namespace+"/"+name+"/"+podName+"/metrics.json", opts)
+	if err != nil {
+		return nil, util.NewUserError(codes.NotFound, "Metrics do not exist.")
+	}
+	content, err := ioutil.ReadAll(stream)
+	if err != nil {
+		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
+	}
+
+	metrics = ptr.String(string(content))
+
+	return
 }
 
 func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID, workflowTemplateVersion string) (workflows []*model.Workflow, err error) {

@@ -421,6 +421,42 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/workflows/{name}/pods/{podName}/metrics": {
+      "get": {
+        "operationId": "GetWorkflowMetrics",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiGetWorkflowMetricsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "podName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workflows/{name}/resubmit": {
       "put": {
         "operationId": "ResubmitWorkflow",
@@ -518,6 +554,14 @@
       "properties": {
         "workflowTemplate": {
           "$ref": "#/definitions/apiWorkflowTemplate"
+        }
+      }
+    },
+    "apiGetWorkflowMetricsResponse": {
+      "type": "object",
+      "properties": {
+        "metrics": {
+          "type": "string"
         }
       }
     },
