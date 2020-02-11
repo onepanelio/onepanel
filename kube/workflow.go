@@ -146,10 +146,12 @@ func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (
 			continue
 		}
 
-		wf.Spec.Templates[i].Outputs.Parameters = append(template.Outputs.Parameters, wfv1.Parameter{
-			Name: "metrics",
-			ValueFrom: &wfv1.ValueFrom{
-				Path: "/tmp/metrics.json",
+		wf.Spec.Templates[i].Outputs.Artifacts = append(template.Outputs.Artifacts, wfv1.Artifact{
+			Name:     "metrics",
+			Path:     "/tmp/metrics.json",
+			Optional: true,
+			Archive: &wfv1.ArchiveStrategy{
+				None: &wfv1.NoneStrategy{},
 			},
 		})
 
