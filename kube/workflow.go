@@ -40,7 +40,7 @@ type WorkflowOptions struct {
 }
 
 func modelWorkflow(wf *wfv1.Workflow) (workflow *model.Workflow) {
-	status, err := json.Marshal(wf.Status)
+	manifest, err := json.Marshal(wf)
 	if err != nil {
 		return
 	}
@@ -48,7 +48,7 @@ func modelWorkflow(wf *wfv1.Workflow) (workflow *model.Workflow) {
 		UID:       string(wf.UID),
 		CreatedAt: wf.CreationTimestamp.UTC(),
 		Name:      wf.Name,
-		Status:    string(status),
+		Manifest:  string(manifest),
 	}
 
 	return
@@ -126,12 +126,10 @@ func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (
 		}
 	}
 
-	secretName := "onepanel-default-env"
-	var secret *corev1.Secret
-	var statusError *k8serrors.StatusError
 	addSecretValsToTemplate := true
-	secret, err = c.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
+	secret, err := c.GetSecret(namespace, "onepanel-default-env")
 	if err != nil {
+		var statusError *k8serrors.StatusError
 		if errors.As(err, &statusError) {
 			if statusError.ErrStatus.Reason == "NotFound" {
 				addSecretValsToTemplate = false
@@ -143,32 +141,39 @@ func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (
 		}
 	}
 
-	if addSecretValsToTemplate {
+	for i, template := range wf.Spec.Templates {
+		if template.Container == nil {
+			continue
+		}
+
+		wf.Spec.Templates[i].Outputs.Parameters = append(template.Outputs.Parameters, wfv1.Parameter{
+			Name: "metrics",
+			ValueFrom: &wfv1.ValueFrom{
+				Path: "/tmp/metrics.json",
+			},
+		})
+
+		if !addSecretValsToTemplate {
+			continue
+		}
+
 		//Generate ENV vars from secret, if there is a container present in the workflow
-		for _, template := range wf.Spec.Templates {
-			if template.Container == nil {
-				continue
-			}
-			//Get template ENV vars, avoid over-writing them with secret values
-			templateEnvs := template.Container.Env
-			toAddEnvsToTemplate := template.Container.Env
-			for key, value := range secret.Data {
-				//Flag to prevent over-writing user's envs
-				addSecretAsEnv := true
-				for _, templateEnv := range templateEnvs {
-					if templateEnv.Name == key {
-						addSecretAsEnv = false
-						break
-					}
-				}
-				if addSecretAsEnv {
-					toAddEnvsToTemplate = append(toAddEnvsToTemplate, corev1.EnvVar{
-						Name:  key,
-						Value: string(value),
-					})
+		//Get template ENV vars, avoid over-writing them with secret values
+		for key, value := range secret.Data {
+			//Flag to prevent over-writing user's envs
+			addSecretAsEnv := true
+			for _, templateEnv := range template.Container.Env {
+				if templateEnv.Name == key {
+					addSecretAsEnv = false
+					break
 				}
 			}
-			template.Container.Env = toAddEnvsToTemplate
+			if addSecretAsEnv {
+				template.Container.Env = append(template.Container.Env, corev1.EnvVar{
+					Name:  key,
+					Value: string(value),
+				})
+			}
 		}
 	}
 

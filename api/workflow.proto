@@ -152,7 +152,7 @@ message Workflow {
     string createdAt = 1;
     string uid = 2;
     string name = 3;
-    string status = 4;
+    string manifest = 4;
 
     repeated WorkflowParameter parameters = 5;
 

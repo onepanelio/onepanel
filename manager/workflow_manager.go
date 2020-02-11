@@ -4,13 +4,14 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/onepanelio/core/util/logging"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/onepanelio/core/util/logging"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/onepanelio/core/kube"
 	"github.com/onepanelio/core/model"
@@ -105,7 +106,7 @@ func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.W
 	}
 
 	// TODO: Do we need to parse parameters into workflow.Parameters?
-	status, err := json.Marshal(wf.Status)
+	manifest, err := json.Marshal(wf)
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -118,7 +119,7 @@ func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.W
 		UID:              string(wf.UID),
 		CreatedAt:        workflowTemplate.CreatedAt,
 		Name:             wf.Name,
-		Status:           string(status),
+		Manifest:         string(manifest),
 		WorkflowTemplate: workflowTemplate,
 	}
 
@@ -126,14 +127,14 @@ func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.W
 }
 
 func (r *ResourceManager) WatchWorkflow(namespace, name string) (<-chan *model.Workflow, error) {
-	wf, err := r.GetWorkflow(namespace, name)
+	_, err := r.GetWorkflow(namespace, name)
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"Error":     err.Error(),
 		}).Error("Workflow template not found.")
-		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
+		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
 	}
 
 	watcher, err := r.kubeClient.WatchWorkflow(namespace, name)
@@ -160,7 +161,7 @@ func (r *ResourceManager) WatchWorkflow(namespace, name string) (<-chan *model.W
 			if workflow == nil {
 				continue
 			}
-			status, err := json.Marshal(workflow.Status)
+			manifest, err := json.Marshal(workflow)
 			if err != nil {
 				logging.Logger.Log.WithFields(log.Fields{
 					"Namespace": namespace,
@@ -171,10 +172,9 @@ func (r *ResourceManager) WatchWorkflow(namespace, name string) (<-chan *model.W
 				continue
 			}
 			workflowWatcher <- &model.Workflow{
-				UID:              string(workflow.UID),
-				Name:             workflow.Name,
-				Status:           string(status),
-				WorkflowTemplate: wf.WorkflowTemplate,
+				UID:      string(workflow.UID),
+				Name:     workflow.Name,
+				Manifest: string(manifest),
 			}
 
 			if !workflow.Status.FinishedAt.IsZero() {

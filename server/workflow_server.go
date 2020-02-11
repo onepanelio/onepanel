@@ -25,7 +25,7 @@ func apiWorkflow(wf *model.Workflow) (workflow *api.Workflow) {
 		CreatedAt: wf.CreatedAt.UTC().Format(time.RFC3339),
 		Name:      wf.Name,
 		Uid:       wf.UID,
-		Status:    wf.Status,
+		Manifest:  wf.Manifest,
 	}
 
 	if wf.WorkflowTemplate != nil {
