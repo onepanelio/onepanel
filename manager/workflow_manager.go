@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -42,7 +43,8 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 
 	// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
 	opts := &kube.WorkflowOptions{}
-	opts.GenerateName = workflowTemplate.Name + "-"
+	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,63}`)
+	opts.GenerateName = strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`)) + "-"
 	for _, param := range workflow.Parameters {
 		opts.Parameters = append(opts.Parameters, kube.WorkflowParameter{
 			Name:  param.Name,
