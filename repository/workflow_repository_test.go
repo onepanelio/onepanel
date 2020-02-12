@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"database/sql"
 	"github.com/DATA-DOG/go-sqlmock"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
@@ -20,12 +21,7 @@ func TestWorkflowRepository_GetWorkflowTemplate(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer db.Close()
-	dbRepo := DB{
-		DB: &sqlx.DB{
-			DB:     db,
-			Mapper: reflectx.NewMapperFunc("db", strings.ToLower),
-		},
-	}
+	dbRepo := getDBRepo(db)
 	defer dbRepo.Close()
 
 	row := sqlmock.NewRows([]string{"id", "created_at", "uid", "name", "is_archived", "version", "is_latest", "manifest"}).
@@ -106,4 +102,13 @@ func TestWorkflowRepositoryCreateWorkflowTemplate(t *testing.T) {
 		return
 	}
 	t.Log(sql, args)
+}
+
+func getDBRepo(db *sql.DB) DB {
+	return DB{
+		DB: &sqlx.DB{
+			DB:     db,
+			Mapper: reflectx.NewMapperFunc("db", strings.ToLower),
+		},
+	}
 }
