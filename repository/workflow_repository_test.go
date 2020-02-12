@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func InsertWorkflowTemplateVersion(t *testing.T) {
+func TestInsertWorkflowTemplateVersion(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
 	if err != nil {
