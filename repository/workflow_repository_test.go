@@ -12,6 +12,38 @@ import (
 	"time"
 )
 
+func TestWorkflowRepository_GetWorkflowTemplate(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	//defer db.Close()
+	dbRepo := DB{
+		DB: &sqlx.DB{
+			DB:     db,
+			Mapper: &reflectx.Mapper{},
+		},
+	}
+	//defer dbRepo.Close()
+
+	row := sqlmock.NewRows([]string{"ID", "CreatedAt", "UID", "Name", "IsArchived", "Version", "IsLatest", "Manifest"}).
+		AddRow("1", string(time.Time{}.Unix()), "uid", "name", "false", "0", "false", "")
+	mock.ExpectQuery("^SELECT wt.id, wt.created_at, wt.uid, wt.name, wt.is_archived, wtv.version, wtv.is_latest, wtv.manifest" +
+		" FROM workflow_template_versions wtv JOIN workflow_templates wt ON wt.id = wtv.workflow_template_id " +
+		"WHERE (.+)").WillReturnRows(row)
+
+	workflowRepo := NewWorkflowRepository(&dbRepo)
+	workflowGet, err := workflowRepo.GetWorkflowTemplate("default", "1", 1)
+	if err != nil {
+		t.Errorf("Unexpected err: %s", err)
+	}
+	print(workflowGet)
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+}
+
 func TestInsertWorkflowTemplateVersion(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
