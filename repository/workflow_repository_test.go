@@ -41,18 +41,17 @@ func TestWorkflowRepository_GetWorkflowTemplate(t *testing.T) {
 	}
 }
 
-func TestInsertWorkflowTemplateVersion(t *testing.T) {
+/**
+This relies on int32(time.Now().Unix()), to execute fast enough that
+there won't be a time difference. This should be reviewed.
+*/
+func TestWorkflowRepository_InsertWorkflowTemplateVersion(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	dbRepo := DB{
-		DB: &sqlx.DB{
-			DB:     db,
-			Mapper: &reflectx.Mapper{},
-		},
-	}
+	dbRepo := getDBRepo(db)
 	namespace := "default"
 	workflowModel := model.WorkflowTemplate{
 		ID:         1,
@@ -64,19 +63,17 @@ func TestInsertWorkflowTemplateVersion(t *testing.T) {
 		IsLatest:   true,
 		IsArchived: false,
 	}
+
+	defer db.Close()
+	mock.ExpectQuery("INSERT INTO workflow_template_versions \\(is_latest,manifest,version,workflow_template_id\\) VALUES \\(\\$1,\\$2,\\$3,\\$4\\) RETURNING version").
+		WithArgs(workflowModel.IsLatest, workflowModel.Manifest, int32(time.Now().Unix()), workflowModel.ID).
+		WillReturnRows(sqlmock.NewRows([]string{"version"}).AddRow(workflowModel.Version))
+
 	workflowRepo := NewWorkflowRepository(&dbRepo)
 	_, err2 := workflowRepo.CreateWorkflowTemplateVersion(namespace, &workflowModel)
 	if err2 != nil {
 		t.Fatalf("an error '%s' was not expected", err2)
 	}
-	defer db.Close()
-	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT id, name FROM workflow_templates WHERE namespace = $1 AND uid = $2").WithArgs(namespace, workflowModel.UID)
-	mock.ExpectQuery("INSERT INTO workflow_template_versions ('workflow_template_id','manifest','version','is_latest')"+
-		"VALUES ($1,$2,$3,$4) RETURNING version").WithArgs(workflowModel.ID, workflowModel.Manifest, workflowModel.Version, workflowModel.IsLatest).WillReturnRows(
-		sqlmock.NewRows([]string{"version"}).AddRow(workflowModel.Version))
-	mock.ExpectCommit()
-
 	// we make sure that all expectations were met
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
