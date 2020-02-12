@@ -5,7 +5,6 @@ import (
 	"flag"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -20,6 +19,7 @@ import (
 	"github.com/onepanelio/core/repository"
 	"github.com/onepanelio/core/server"
 	"github.com/pressly/goose"
+	log "github.com/sirupsen/logrus"
 	"github.com/tmc/grpc-websocket-proxy/wsproxy"
 	"google.golang.org/grpc"
 )
@@ -113,12 +113,18 @@ func registerHandler(register registerFunc, ctx context.Context, mux *runtime.Se
 }
 
 func loggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-	log.Printf("%v handler started", info.FullMethod)
+	log.WithFields(log.Fields{
+		"fullMethod": info.FullMethod,
+	}).Info("handler started")
 	resp, err = handler(ctx, req)
 	if err != nil {
-		log.Printf("%s call failed", info.FullMethod)
+		log.WithFields(log.Fields{
+			"fullMethod": info.FullMethod,
+		}).Warning("call failed")
 		return
 	}
-	log.Printf("%v handler finished", info.FullMethod)
+	log.WithFields(log.Fields{
+		"fullMethod": info.FullMethod,
+	}).Info("handler finished")
 	return
 }

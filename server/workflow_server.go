@@ -71,7 +71,9 @@ func (s *WorkflowServer) CreateWorkflow(ctx context.Context, req *api.CreateWork
 
 	wf, err := s.resourceManager.CreateWorkflow(req.Namespace, workflow)
 	if err != nil {
-		return nil, err
+		if errors.As(err, &userError) {
+			return nil, userError.GRPCError()
+		}
 	}
 
 	return apiWorkflow(wf), nil

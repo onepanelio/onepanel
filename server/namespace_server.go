@@ -2,13 +2,12 @@ package server
 
 import (
 	"context"
+	"errors"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/manager"
 	"github.com/onepanelio/core/model"
-	"github.com/onepanelio/core/util"
-	"google.golang.org/grpc/codes"
 )
 
 type NamespaceServer struct {
@@ -30,7 +29,9 @@ func apiNamespace(ns *model.Namespace) (namespace *api.Namespace) {
 func (s *NamespaceServer) ListNamespaces(ctx context.Context, empty *empty.Empty) (*api.ListNamespacesResponse, error) {
 	namespaces, err := s.resourceManager.ListNamespaces()
 	if err != nil {
-		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
+		if errors.As(err, &userError) {
+			return nil, userError.GRPCError()
+		}
 	}
 
 	apiNamespaces := []*api.Namespace{}

@@ -1,6 +1,8 @@
 package manager
 
 import (
+	"github.com/onepanelio/core/util/logging"
+	log "github.com/sirupsen/logrus"
 	"strconv"
 
 	"github.com/onepanelio/core/kube"
@@ -30,12 +32,20 @@ const (
 func (r *ResourceManager) getNamespaceConfig(namespace string) (config map[string]string, err error) {
 	configMap, err := r.kubeClient.GetConfigMap(namespace, "onepanel")
 	if err != nil {
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Error":     err.Error(),
+		}).Error("getNamespaceConfig failed getting config map.")
 		return
 	}
 	config = configMap.Data
 
 	secret, err := r.kubeClient.GetSecret(namespace, "onepanel")
 	if err != nil {
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Error":     err.Error(),
+		}).Error("getNamespaceConfig failed getting secret.")
 		return
 	}
 	config[artifactRepositoryAccessKeyValueKey] = secret.Data[artifactRepositoryAccessKeyValueKey]
@@ -47,6 +57,11 @@ func (r *ResourceManager) getNamespaceConfig(namespace string) (config map[strin
 func (r *ResourceManager) getS3Client(namespace string, config map[string]string) (s3Client *s3.Client, err error) {
 	insecure, err := strconv.ParseBool(config[artifactRepositoryInSecureKey])
 	if err != nil {
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"ConfigMap": config,
+			"Error":     err.Error(),
+		}).Error("getS3Client failed when parsing bool.")
 		return
 	}
 	s3Client, err = s3.NewClient(s3.Config{
@@ -57,6 +72,11 @@ func (r *ResourceManager) getS3Client(namespace string, config map[string]string
 		InSecure:  insecure,
 	})
 	if err != nil {
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"ConfigMap": config,
+			"Error":     err.Error(),
+		}).Error("getS3Client failed when initializing a new S3 client.")
 		return
 	}
 
