@@ -73,7 +73,7 @@ func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []Workflow, err error)
 	return
 }
 
-func (c *Client) autoInjectFields(namespace string, wf *Workflow, opts *WorkflowOptions) (err error) {
+func (c *Client) injectAutomatedFields(namespace string, wf *Workflow, opts *WorkflowOptions) (err error) {
 	if opts.PodGCStrategy == nil {
 		if wf.Spec.PodGC == nil {
 			//TODO - Load this data from onepanel config-map or secret
@@ -183,7 +183,7 @@ func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (
 		wf.ObjectMeta.Labels = *opts.Labels
 	}
 
-	if err = c.autoInjectFields(namespace, wf, opts); err != nil {
+	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
 		return nil, err
 	}
 
@@ -203,7 +203,7 @@ func (c *Client) ValidateWorkflow(namespace string, manifest []byte) (err error)
 
 	wftmplGetter := templateresolution.WrapWorkflowTemplateInterface(c.ArgoprojV1alpha1().WorkflowTemplates(namespace))
 	for _, wf := range workflows {
-		c.autoInjectFields(namespace, &wf, &WorkflowOptions{})
+		c.injectAutomatedFields(namespace, &wf, &WorkflowOptions{})
 		err = validate.ValidateWorkflow(wftmplGetter, &wf, validate.ValidateOpts{})
 		if err != nil {
 			return
