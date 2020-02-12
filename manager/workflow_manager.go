@@ -4,22 +4,28 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/onepanelio/core/util/logging"
-	log "github.com/sirupsen/logrus"
 	"io"
+	"io/ioutil"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/onepanelio/core/util/logging"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/onepanelio/core/kube"
 	"github.com/onepanelio/core/model"
 	"github.com/onepanelio/core/s3"
 	"github.com/onepanelio/core/util"
+	"github.com/onepanelio/core/util/env"
+	"github.com/onepanelio/core/util/ptr"
 	"google.golang.org/grpc/codes"
 )
 
 var (
+	readEndOffset                   = env.GetEnv("ARTIFACT_RERPOSITORY_OBJECT_RANGE", "-102400")
 	workflowTemplateUIDLabelKey     = labelKeyPrefix + "workflow-template-uid"
 	workflowTemplateVersionLabelKey = labelKeyPrefix + "workflow-template-version"
 )
@@ -37,6 +43,8 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 
 	// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
 	opts := &kube.WorkflowOptions{}
+	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
+	opts.GenerateName = strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`)) + "-"
 	for _, param := range workflow.Parameters {
 		opts.Parameters = append(opts.Parameters, kube.WorkflowParameter{
 			Name:  param.Name,
@@ -104,7 +112,7 @@ func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.W
 	}
 
 	// TODO: Do we need to parse parameters into workflow.Parameters?
-	status, err := json.Marshal(wf.Status)
+	manifest, err := json.Marshal(wf)
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -117,7 +125,7 @@ func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.W
 		UID:              string(wf.UID),
 		CreatedAt:        workflowTemplate.CreatedAt,
 		Name:             wf.Name,
-		Status:           string(status),
+		Manifest:         string(manifest),
 		WorkflowTemplate: workflowTemplate,
 	}
 
@@ -125,14 +133,14 @@ func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.W
 }
 
 func (r *ResourceManager) WatchWorkflow(namespace, name string) (<-chan *model.Workflow, error) {
-	wf, err := r.GetWorkflow(namespace, name)
+	_, err := r.GetWorkflow(namespace, name)
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"Error":     err.Error(),
 		}).Error("Workflow template not found.")
-		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
+		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
 	}
 
 	watcher, err := r.kubeClient.WatchWorkflow(namespace, name)
@@ -159,7 +167,7 @@ func (r *ResourceManager) WatchWorkflow(namespace, name string) (<-chan *model.W
 			if workflow == nil {
 				continue
 			}
-			status, err := json.Marshal(workflow.Status)
+			manifest, err := json.Marshal(workflow)
 			if err != nil {
 				logging.Logger.Log.WithFields(log.Fields{
 					"Namespace": namespace,
@@ -170,10 +178,9 @@ func (r *ResourceManager) WatchWorkflow(namespace, name string) (<-chan *model.W
 				continue
 			}
 			workflowWatcher <- &model.Workflow{
-				UID:              string(workflow.UID),
-				Name:             workflow.Name,
-				Status:           string(status),
-				WorkflowTemplate: wf.WorkflowTemplate,
+				UID:      string(workflow.UID),
+				Name:     workflow.Name,
+				Manifest: string(manifest),
 			}
 
 			if !workflow.Status.FinishedAt.IsZero() {
@@ -201,9 +208,10 @@ func (r *ResourceManager) GetWorkflowLogs(namespace, name, podName, containerNam
 	}
 
 	var (
-		stream   io.ReadCloser
-		s3Client *s3.Client
-		config   map[string]string
+		stream    io.ReadCloser
+		s3Client  *s3.Client
+		config    map[string]string
+		endOffset int
 	)
 
 	if wf.Status.Nodes[podName].Completed() {
@@ -231,7 +239,13 @@ func (r *ResourceManager) GetWorkflowLogs(namespace, name, podName, containerNam
 			return nil, util.NewUserError(codes.PermissionDenied, "Can't connect to S3 storage.")
 		}
 
-		stream, err = s3Client.GetObject(config[artifactRepositoryBucketKey], "artifacts/"+namespace+"/"+name+"/"+podName+"/"+containerName+".log")
+		opts := s3.GetObjectOptions{}
+		endOffset, err = strconv.Atoi(readEndOffset)
+		if err != nil {
+			return nil, util.NewUserError(codes.InvalidArgument, "Invaild range.")
+		}
+		opts.SetRange(0, int64(endOffset))
+		stream, err = s3Client.GetObject(config[artifactRepositoryBucketKey], "artifacts/"+namespace+"/"+name+"/"+podName+"/"+containerName+".log", opts)
 	} else {
 		stream, err = r.kubeClient.GetPodLogs(namespace, podName, containerName)
 	}
@@ -269,6 +283,67 @@ func (r *ResourceManager) GetWorkflowLogs(namespace, name, podName, containerNam
 	}()
 
 	return logWatcher, err
+}
+
+func (r *ResourceManager) GetWorkflowMetrics(namespace, name, podName string) (metrics *string, err error) {
+	_, err = r.kubeClient.GetWorkflow(namespace, name)
+	if err != nil {
+		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
+	}
+
+	var (
+		stream   io.ReadCloser
+		s3Client *s3.Client
+		config   map[string]string
+	)
+
+	config, err = r.getNamespaceConfig(namespace)
+	if err != nil {
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"PodName":   podName,
+			"Error":     err.Error(),
+		}).Error("Can't get configuration.")
+		return nil, util.NewUserError(codes.PermissionDenied, "Can't get configuration.")
+	}
+
+	s3Client, err = r.getS3Client(namespace, config)
+	if err != nil {
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"PodName":   podName,
+			"Error":     err.Error(),
+		}).Error("Can't connect to S3 storage.")
+		return nil, util.NewUserError(codes.PermissionDenied, "Can't connect to S3 storage.")
+	}
+
+	opts := s3.GetObjectOptions{}
+	stream, err = s3Client.GetObject(config[artifactRepositoryBucketKey], "artifacts/"+namespace+"/"+name+"/"+podName+"/metrics.json", opts)
+	if err != nil {
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"PodName":   podName,
+			"Error":     err.Error(),
+		}).Error("Metrics do not exist.")
+		return nil, util.NewUserError(codes.NotFound, "Metrics do not exist.")
+	}
+	content, err := ioutil.ReadAll(stream)
+	if err != nil {
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"PodName":   podName,
+			"Error":     err.Error(),
+		}).Error("Unknown.")
+		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
+	}
+
+	metrics = ptr.String(string(content))
+
+	return
 }
 
 func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID, workflowTemplateVersion string) (workflows []*model.Workflow, err error) {
@@ -312,6 +387,15 @@ func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID, workflow
 	return
 }
 
+func (r *ResourceManager) ResubmitWorkflow(namespace, name string) (workflow *model.Workflow, err error) {
+	workflow, err = r.kubeClient.ResubmitWorkflow(namespace, name, false)
+	if err != nil {
+		return nil, util.NewUserError(codes.Unknown, "Could not resubmit workflow.")
+	}
+
+	return
+}
+
 func (r *ResourceManager) TerminateWorkflow(namespace, name string) (err error) {
 	if err = r.kubeClient.TerminateWorkflow(namespace, name); err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
@@ -340,13 +424,13 @@ func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTempl
 	}
 
 	// validate workflow template
-	if err := r.kubeClient.ValidateWorkflow(workflowTemplate.GetManifestBytes()); err != nil {
+	if err := r.kubeClient.ValidateWorkflow(namespace, workflowTemplate.GetManifestBytes()); err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
 			"Error":            err.Error(),
 		}).Error("Workflow could not be validated.")
-		return nil, util.NewUserError(codes.InvalidArgument, "Workflow Template is invalid.")
+		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
 	}
 
 	workflowTemplate, err = r.workflowRepository.CreateWorkflowTemplate(namespace, workflowTemplate)
@@ -377,7 +461,7 @@ func (r *ResourceManager) CreateWorkflowTemplateVersion(namespace string, workfl
 	}
 
 	// validate workflow template
-	if err := r.kubeClient.ValidateWorkflow(workflowTemplate.GetManifestBytes()); err != nil {
+	if err := r.kubeClient.ValidateWorkflow(namespace, workflowTemplate.GetManifestBytes()); err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
@@ -426,7 +510,7 @@ func (r *ResourceManager) UpdateWorkflowTemplateVersion(namespace string, workfl
 	}
 
 	// validate workflow template
-	if err := r.kubeClient.ValidateWorkflow(workflowTemplate.GetManifestBytes()); err != nil {
+	if err := r.kubeClient.ValidateWorkflow(namespace, workflowTemplate.GetManifestBytes()); err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,

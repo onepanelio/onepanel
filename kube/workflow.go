@@ -4,15 +4,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/argoproj/argo/workflow/common"
+	"github.com/argoproj/argo/workflow/templateresolution"
+	"github.com/argoproj/argo/workflow/util"
+	"github.com/argoproj/argo/workflow/validate"
 	argojson "github.com/argoproj/pkg/json"
+	"github.com/onepanelio/core/model"
 	"github.com/onepanelio/core/util/env"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
@@ -27,13 +31,28 @@ type PodGCStrategy = wfv1.PodGCStrategy
 
 type WorkflowOptions struct {
 	Name           string
-	GeneratedName  string
+	GenerateName   string
 	Entrypoint     string
 	Parameters     []WorkflowParameter
 	ServiceAccount string
 	Labels         *map[string]string
 	ListOptions    *ListOptions
 	PodGCStrategy  *PodGCStrategy
+}
+
+func modelWorkflow(wf *wfv1.Workflow) (workflow *model.Workflow) {
+	manifest, err := json.Marshal(wf)
+	if err != nil {
+		return
+	}
+	workflow = &model.Workflow{
+		UID:       string(wf.UID),
+		CreatedAt: wf.CreationTimestamp.UTC(),
+		Name:      wf.Name,
+		Manifest:  string(manifest),
+	}
+
+	return
 }
 
 func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []Workflow, err error) {
@@ -54,8 +73,79 @@ func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []Workflow, err error)
 	return
 }
 
-func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (createdWorkflow *Workflow, err error) {
+func (c *Client) injectAutomatedFields(namespace string, wf *Workflow, opts *WorkflowOptions) (err error) {
+	if opts.PodGCStrategy == nil {
+		if wf.Spec.PodGC == nil {
+			//TODO - Load this data from onepanel config-map or secret
+			podGCStrategy := env.GetEnv("ARGO_POD_GC_STRATEGY", "OnPodCompletion")
+			strategy := PodGCStrategy(podGCStrategy)
+			wf.Spec.PodGC = &wfv1.PodGC{
+				Strategy: strategy,
+			}
+		}
+	} else {
+		wf.Spec.PodGC = &wfv1.PodGC{
+			Strategy: *opts.PodGCStrategy,
+		}
+	}
 
+	addSecretValsToTemplate := true
+	secret, err := c.GetSecret(namespace, "onepanel-default-env")
+	if err != nil {
+		var statusError *k8serrors.StatusError
+		if errors.As(err, &statusError) {
+			if statusError.ErrStatus.Reason == "NotFound" {
+				addSecretValsToTemplate = false
+			} else {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	for i, template := range wf.Spec.Templates {
+		if template.Container == nil {
+			continue
+		}
+
+		wf.Spec.Templates[i].Outputs.Artifacts = append(template.Outputs.Artifacts, wfv1.Artifact{
+			Name:     "metrics",
+			Path:     "/tmp/metrics.json",
+			Optional: true,
+			Archive: &wfv1.ArchiveStrategy{
+				None: &wfv1.NoneStrategy{},
+			},
+		})
+
+		if !addSecretValsToTemplate {
+			continue
+		}
+
+		//Generate ENV vars from secret, if there is a container present in the workflow
+		//Get template ENV vars, avoid over-writing them with secret values
+		for key, value := range secret.Data {
+			//Flag to prevent over-writing user's envs
+			addSecretAsEnv := true
+			for _, templateEnv := range template.Container.Env {
+				if templateEnv.Name == key {
+					addSecretAsEnv = false
+					break
+				}
+			}
+			if addSecretAsEnv {
+				template.Container.Env = append(template.Container.Env, corev1.EnvVar{
+					Name:  key,
+					Value: string(value),
+				})
+			}
+		}
+	}
+
+	return
+}
+
+func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (createdWorkflow *Workflow, err error) {
 	if opts == nil {
 		opts = &WorkflowOptions{}
 	}
@@ -63,8 +153,8 @@ func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (
 	if opts.Name != "" {
 		wf.ObjectMeta.Name = opts.Name
 	}
-	if opts.GeneratedName != "" {
-		wf.ObjectMeta.GenerateName = opts.GeneratedName
+	if opts.GenerateName != "" {
+		wf.ObjectMeta.GenerateName = opts.GenerateName
 	}
 	if opts.Entrypoint != "" {
 		wf.Spec.Entrypoint = opts.Entrypoint
@@ -93,65 +183,8 @@ func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (
 		wf.ObjectMeta.Labels = *opts.Labels
 	}
 
-	if opts.PodGCStrategy == nil {
-		if wf.Spec.PodGC == nil {
-			//TODO - Load this data from onepanel config-map or secret
-			podGCStrategy := env.GetEnv("ARGO_POD_GC_STRATEGY", "OnPodCompletion")
-			strategy := PodGCStrategy(podGCStrategy)
-			wf.Spec.PodGC = &wfv1.PodGC{
-				Strategy: strategy,
-			}
-		}
-	} else {
-		wf.Spec.PodGC = &wfv1.PodGC{
-			Strategy: *opts.PodGCStrategy,
-		}
-	}
-
-	secretName := "onepanel-default-env"
-	var secret *corev1.Secret
-	var statusError *k8serrors.StatusError
-	addSecretValsToTemplate := true
-	secret, err = c.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
-	if err != nil {
-		if errors.As(err, &statusError) {
-			if statusError.ErrStatus.Reason == "NotFound" {
-				addSecretValsToTemplate = false
-			} else {
-				return nil, err
-			}
-		} else {
-			return nil, err
-		}
-	}
-
-	if addSecretValsToTemplate {
-		//Generate ENV vars from secret, if there is a container present in the workflow
-		for _, template := range wf.Spec.Templates {
-			if template.Container == nil {
-				continue
-			}
-			//Get template ENV vars, avoid over-writing them with secret values
-			templateEnvs := template.Container.Env
-			toAddEnvsToTemplate := template.Container.Env
-			for key, value := range secret.Data {
-				//Flag to prevent over-writing user's envs
-				addSecretAsEnv := true
-				for _, templateEnv := range templateEnvs {
-					if templateEnv.Name == key {
-						addSecretAsEnv = false
-						break
-					}
-				}
-				if addSecretAsEnv {
-					toAddEnvsToTemplate = append(toAddEnvsToTemplate, corev1.EnvVar{
-						Name:  key,
-						Value: string(value),
-					})
-				}
-			}
-			template.Container.Env = toAddEnvsToTemplate
-		}
+	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
+		return nil, err
 	}
 
 	createdWorkflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
@@ -162,8 +195,20 @@ func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (
 	return
 }
 
-func (c *Client) ValidateWorkflow(manifest []byte) (err error) {
-	_, err = unmarshalWorkflows(manifest, true)
+func (c *Client) ValidateWorkflow(namespace string, manifest []byte) (err error) {
+	workflows, err := unmarshalWorkflows(manifest, true)
+	if err != nil {
+		return
+	}
+
+	wftmplGetter := templateresolution.WrapWorkflowTemplateInterface(c.ArgoprojV1alpha1().WorkflowTemplates(namespace))
+	for _, wf := range workflows {
+		c.injectAutomatedFields(namespace, &wf, &WorkflowOptions{})
+		err = validate.ValidateWorkflow(wftmplGetter, &wf, validate.ValidateOpts{})
+		if err != nil {
+			return
+		}
+	}
 
 	return
 }
@@ -218,20 +263,57 @@ func (c *Client) WatchWorkflow(namespace, name string) (watcher watch.Interface,
 	return
 }
 
+func (c *Client) RetryWorkflow(namespace, name string) (workflow *Workflow, err error) {
+	workflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		return
+	}
+
+	workflow, err = util.RetryWorkflow(c, c.ArgoprojV1alpha1().Workflows(namespace), workflow)
+
+	return
+}
+
+func (c *Client) ResubmitWorkflow(namespace, name string, memoized bool) (workflow *model.Workflow, err error) {
+	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		return
+	}
+
+	wf, err = util.FormulateResubmitWorkflow(wf, memoized)
+	if err != nil {
+		return
+	}
+
+	wf, err = util.SubmitWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), c, namespace, wf, &util.SubmitOpts{})
+	if err != nil {
+		return
+	}
+
+	workflow = modelWorkflow(wf)
+
+	return
+}
+
+func (c *Client) ResumeWorkflow(namespace, name string) (workflow *Workflow, err error) {
+	err = util.ResumeWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), name)
+	if err != nil {
+		return
+	}
+
+	workflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
+
+	return
+}
+
+func (c *Client) SuspendWorkflow(namespace, name string) (err error) {
+	err = util.SuspendWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), name)
+
+	return
+}
+
 func (c *Client) TerminateWorkflow(namespace, name string) (err error) {
-	obj := map[string]interface{}{
-		"spec": map[string]interface{}{
-			"activeDeadlineSeconds": 0,
-		},
-	}
-	patch, err := json.Marshal(obj)
-	if err != nil {
-		return
-	}
-	_, err = c.ArgoprojV1alpha1().Workflows(namespace).Patch(name, types.MergePatchType, patch)
-	if err != nil {
-		return
-	}
+	err = util.TerminateWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), name)
 
 	return
 }

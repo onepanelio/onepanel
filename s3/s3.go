@@ -2,17 +2,15 @@ package s3
 
 import (
 	"io"
-	"strconv"
 
 	minio "github.com/minio/minio-go/v6"
-	"github.com/onepanelio/core/util/env"
 )
-
-var objectRange = env.GetEnv("ARTIFACT_RERPOSITORY_OBJECT_RANGE", "-102400")
 
 type Client struct {
 	*minio.Client
 }
+
+type GetObjectOptions = minio.GetObjectOptions
 
 type Config struct {
 	AccessKey string
@@ -35,13 +33,7 @@ func NewClient(config Config) (s3Client *Client, err error) {
 	return &Client{Client: minioClient}, nil
 }
 
-func (c *Client) GetObject(bucket, key string) (stream io.ReadCloser, err error) {
-	opts := minio.GetObjectOptions{}
-	end, err := strconv.Atoi(objectRange)
-	if err != nil {
-		return
-	}
-	opts.SetRange(0, int64(end))
+func (c *Client) GetObject(bucket, key string, opts GetObjectOptions) (stream io.ReadCloser, err error) {
 	stream, err = c.Client.GetObject(bucket, key, opts)
 	if err != nil {
 		return

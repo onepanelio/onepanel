@@ -25,7 +25,7 @@ func apiWorkflow(wf *model.Workflow) (workflow *api.Workflow) {
 		CreatedAt: wf.CreatedAt.UTC().Format(time.RFC3339),
 		Name:      wf.Name,
 		Uid:       wf.UID,
-		Status:    wf.Status,
+		Manifest:  wf.Manifest,
 	}
 
 	if wf.WorkflowTemplate != nil {
@@ -141,6 +141,15 @@ func (s *WorkflowServer) GetWorkflowLogs(req *api.GetWorkflowLogsRequest, stream
 	return nil
 }
 
+func (s *WorkflowServer) GetWorkflowMetrics(ctx context.Context, req *api.GetWorkflowMetricsRequest) (*api.GetWorkflowMetricsResponse, error) {
+	metrics, err := s.resourceManager.GetWorkflowMetrics(req.Namespace, req.Name, req.PodName)
+	if errors.As(err, &userError) {
+		return nil, userError.GRPCError()
+	}
+
+	return &api.GetWorkflowMetricsResponse{Metrics: *metrics}, nil
+}
+
 func (s *WorkflowServer) ListWorkflows(ctx context.Context, req *api.ListWorkflowsRequest) (*api.ListWorkflowsResponse, error) {
 	workflows, err := s.resourceManager.ListWorkflows(req.Namespace, req.WorkflowTemplateUid, req.WorkflowTemplateVersion)
 	if errors.As(err, &userError) {
@@ -156,6 +165,15 @@ func (s *WorkflowServer) ListWorkflows(ctx context.Context, req *api.ListWorkflo
 		Count:     int32(len(apiWorkflows)),
 		Workflows: apiWorkflows,
 	}, nil
+}
+
+func (s *WorkflowServer) ResubmitWorkflow(ctx context.Context, req *api.ResubmitWorkflowRequest) (*api.Workflow, error) {
+	wf, err := s.resourceManager.ResubmitWorkflow(req.Namespace, req.Name)
+	if errors.As(err, &userError) {
+		return nil, userError.GRPCError()
+	}
+
+	return apiWorkflow(wf), nil
 }
 
 func (s *WorkflowServer) TerminateWorkflow(ctx context.Context, req *api.TerminateWorkflowRequest) (*empty.Empty, error) {

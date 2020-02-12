@@ -39,6 +39,18 @@ service WorkflowService {
         };
     }
 
+    rpc GetWorkflowMetrics (GetWorkflowMetricsRequest) returns (GetWorkflowMetricsResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflows/{name}/pods/{podName}/metrics"
+        };
+    }
+
+    rpc ResubmitWorkflow (ResubmitWorkflowRequest) returns (Workflow) {
+        option (google.api.http) = {
+            put: "/apis/v1beta1/{namespace}/workflows/{name}/resubmit"
+        };
+    }
+
     rpc TerminateWorkflow (TerminateWorkflowRequest) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             put: "/apis/v1beta1/{namespace}/workflows/{name}/terminate"
@@ -109,6 +121,11 @@ message WatchWorkflowRequest {
     string name = 2;
 }
 
+message ResubmitWorkflowRequest {
+    string namespace = 1;
+    string name = 2;
+}
+
 message TerminateWorkflowRequest {
     string namespace = 1;
     string name = 2;
@@ -119,6 +136,16 @@ message GetWorkflowLogsRequest {
     string name = 2;
     string podName = 3;
     string containerName = 4;
+}
+
+message GetWorkflowMetricsRequest {
+    string namespace = 1;
+    string name = 2;
+    string podName = 3;
+}
+
+message GetWorkflowMetricsResponse {
+    string metrics = 1;
 }
 
 message ListWorkflowsRequest {
@@ -141,7 +168,7 @@ message Workflow {
     string createdAt = 1;
     string uid = 2;
     string name = 3;
-    string status = 4;
+    string manifest = 4;
 
     repeated WorkflowParameter parameters = 5;
 
