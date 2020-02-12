@@ -30,27 +30,17 @@ func (r *ResourceManager) SecretExists(namespace string, name string) (exists bo
 
 	foundSecret, err = r.kubeClient.SecretExists(namespace, name)
 	if err != nil {
-		if goerrors.As(err, &statusError) {
-			if statusError.ErrStatus.Reason == "NotFound" {
-				logging.Logger.Log.WithFields(log.Fields{
-					"Namespace": namespace,
-					"Name":      name,
-					"Error":     err.Error(),
-				}).Warning("Secret not found.")
-				return false, util.NewUserError(codes.NotFound, "Secret Not Found.")
-			}
-			logging.Logger.Log.WithFields(log.Fields{
-				"Namespace": namespace,
-				"Name":      name,
-				"Error":     err.Error(),
-			}).Error("Checking existence of secret.")
-			return false, util.NewUserError(codes.Unknown, "Error when checking existence of secret.")
-		}
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"Error":     err.Error(),
-		}).Error("Checking existence of secret.")
+		}).Error("Secret Exists error.")
+		if goerrors.As(err, &statusError) {
+			if statusError.ErrStatus.Reason == "NotFound" {
+				return false, util.NewUserError(codes.NotFound, "Secret Not Found.")
+			}
+			return false, util.NewUserError(codes.Unknown, "Error when checking existence of secret.")
+		}
 		return false, util.NewUserError(codes.Unknown, "Error when checking existence of secret.")
 	}
 	if foundSecret.Name == "" {
@@ -63,27 +53,17 @@ func (r *ResourceManager) GetSecret(namespace, name string) (secret *model.Secre
 	secret, err = r.kubeClient.GetSecret(namespace, name)
 	var statusError *errors.StatusError
 	if err != nil {
-		if goerrors.As(err, &statusError) {
-			if statusError.ErrStatus.Reason == "NotFound" {
-				logging.Logger.Log.WithFields(log.Fields{
-					"Namespace": namespace,
-					"Name":      name,
-					"Error":     err.Error(),
-				}).Error("Secret not found error.")
-				return secret, util.NewUserError(codes.NotFound, "Secret Not Found.")
-			}
-			logging.Logger.Log.WithFields(log.Fields{
-				"Namespace": namespace,
-				"Name":      name,
-				"Error":     err.Error(),
-			}).Error("Error getting secret.")
-			return secret, util.NewUserError(codes.Unknown, "Error when getting secret.")
-		}
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"Error":     err.Error(),
-		}).Error("Error getting secret.")
+		}).Error("Secret not found error.")
+		if goerrors.As(err, &statusError) {
+			if statusError.ErrStatus.Reason == "NotFound" {
+				return secret, util.NewUserError(codes.NotFound, "Secret Not Found.")
+			}
+			return secret, util.NewUserError(codes.Unknown, "Error when getting secret.")
+		}
 		return secret, util.NewUserError(codes.Unknown, "Error when getting secret.")
 	}
 	if secret == nil {
