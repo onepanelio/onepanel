@@ -430,7 +430,7 @@ func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTempl
 			"WorkflowTemplate": workflowTemplate,
 			"Error":            err.Error(),
 		}).Error("Workflow could not be validated.")
-		return nil, util.NewUserError(codes.InvalidArgument, "Workflow Template is invalid.")
+		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
 	}
 
 	workflowTemplate, err = r.workflowRepository.CreateWorkflowTemplate(namespace, workflowTemplate)
