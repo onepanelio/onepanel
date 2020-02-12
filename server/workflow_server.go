@@ -22,10 +22,13 @@ func NewWorkflowServer(resourceManager *manager.ResourceManager) *WorkflowServer
 
 func apiWorkflow(wf *model.Workflow) (workflow *api.Workflow) {
 	workflow = &api.Workflow{
-		CreatedAt: wf.CreatedAt.UTC().Format(time.RFC3339),
-		Name:      wf.Name,
-		Uid:       wf.UID,
-		Manifest:  wf.Manifest,
+		CreatedAt:  wf.CreatedAt.Format(time.RFC3339),
+		Name:       wf.Name,
+		Uid:        wf.UID,
+		Phase:      string(wf.Phase),
+		StartedAt:  wf.CreatedAt.Format(time.RFC3339),
+		FinishedAt: wf.FinishedAt.Format(time.RFC3339),
+		Manifest:   wf.Manifest,
 	}
 
 	if wf.WorkflowTemplate != nil {

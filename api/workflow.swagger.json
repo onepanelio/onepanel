@@ -633,6 +633,15 @@
         "name": {
           "type": "string"
         },
+        "phase": {
+          "type": "string"
+        },
+        "startedAt": {
+          "type": "string"
+        },
+        "finishedAt": {
+          "type": "string"
+        },
         "manifest": {
           "type": "string"
         },

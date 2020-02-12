@@ -168,11 +168,14 @@ message Workflow {
     string createdAt = 1;
     string uid = 2;
     string name = 3;
-    string manifest = 4;
+    string phase = 4;
+    string startedAt = 5;
+    string finishedAt = 6;
+    string manifest = 7;
 
-    repeated WorkflowParameter parameters = 5;
+    repeated WorkflowParameter parameters = 8;
 
-    WorkflowTemplate workflowTemplate = 6;
+    WorkflowTemplate workflowTemplate = 9;
 }
 
 message WorkflowParameter {
