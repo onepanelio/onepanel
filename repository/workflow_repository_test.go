@@ -8,6 +8,7 @@ import (
 	"github.com/jmoiron/sqlx/reflectx"
 	"github.com/onepanelio/core/model"
 	"github.com/stretchr/testify/assert"
+	"strings"
 	"testing"
 	"time"
 )
@@ -18,14 +19,14 @@ func TestWorkflowRepository_GetWorkflowTemplate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	//defer db.Close()
+	defer db.Close()
 	dbRepo := DB{
 		DB: &sqlx.DB{
 			DB:     db,
-			Mapper: &reflectx.Mapper{},
+			Mapper: reflectx.NewMapperFunc("db", strings.ToLower),
 		},
 	}
-	//defer dbRepo.Close()
+	defer dbRepo.Close()
 
 	row := sqlmock.NewRows([]string{"ID", "CreatedAt", "UID", "Name", "IsArchived", "Version", "IsLatest", "Manifest"}).
 		AddRow("1", string(time.Time{}.Unix()), "uid", "name", "false", "0", "false", "")
