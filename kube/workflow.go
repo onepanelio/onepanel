@@ -7,8 +7,9 @@ import (
 
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/argoproj/argo/workflow/common"
+	"github.com/argoproj/argo/workflow/templateresolution"
 	"github.com/argoproj/argo/workflow/util"
-	argoutil "github.com/argoproj/argo/workflow/util"
+	"github.com/argoproj/argo/workflow/validate"
 	argojson "github.com/argoproj/pkg/json"
 	"github.com/onepanelio/core/model"
 	"github.com/onepanelio/core/util/env"
@@ -72,45 +73,7 @@ func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []Workflow, err error)
 	return
 }
 
-func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (createdWorkflow *Workflow, err error) {
-
-	if opts == nil {
-		opts = &WorkflowOptions{}
-	}
-
-	if opts.Name != "" {
-		wf.ObjectMeta.Name = opts.Name
-	}
-	if opts.GenerateName != "" {
-		wf.ObjectMeta.GenerateName = opts.GenerateName
-	}
-	if opts.Entrypoint != "" {
-		wf.Spec.Entrypoint = opts.Entrypoint
-	}
-	if opts.ServiceAccount != "" {
-		wf.Spec.ServiceAccountName = opts.ServiceAccount
-	}
-	if len(opts.Parameters) > 0 {
-		newParams := make([]wfv1.Parameter, 0)
-		passedParams := make(map[string]bool)
-		for _, param := range opts.Parameters {
-			newParams = append(newParams, param)
-			passedParams[param.Name] = true
-		}
-
-		for _, param := range wf.Spec.Arguments.Parameters {
-			if _, ok := passedParams[param.Name]; ok {
-				// this parameter was overridden via command line
-				continue
-			}
-			newParams = append(newParams, param)
-		}
-		wf.Spec.Arguments.Parameters = newParams
-	}
-	if opts.Labels != nil {
-		wf.ObjectMeta.Labels = *opts.Labels
-	}
-
+func (c *Client) autoInjectFields(namespace string, wf *Workflow, opts *WorkflowOptions) (err error) {
 	if opts.PodGCStrategy == nil {
 		if wf.Spec.PodGC == nil {
 			//TODO - Load this data from onepanel config-map or secret
@@ -134,10 +97,10 @@ func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (
 			if statusError.ErrStatus.Reason == "NotFound" {
 				addSecretValsToTemplate = false
 			} else {
-				return nil, err
+				return err
 			}
 		} else {
-			return nil, err
+			return err
 		}
 	}
 
@@ -179,6 +142,51 @@ func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (
 		}
 	}
 
+	return
+}
+
+func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (createdWorkflow *Workflow, err error) {
+	if opts == nil {
+		opts = &WorkflowOptions{}
+	}
+
+	if opts.Name != "" {
+		wf.ObjectMeta.Name = opts.Name
+	}
+	if opts.GenerateName != "" {
+		wf.ObjectMeta.GenerateName = opts.GenerateName
+	}
+	if opts.Entrypoint != "" {
+		wf.Spec.Entrypoint = opts.Entrypoint
+	}
+	if opts.ServiceAccount != "" {
+		wf.Spec.ServiceAccountName = opts.ServiceAccount
+	}
+	if len(opts.Parameters) > 0 {
+		newParams := make([]wfv1.Parameter, 0)
+		passedParams := make(map[string]bool)
+		for _, param := range opts.Parameters {
+			newParams = append(newParams, param)
+			passedParams[param.Name] = true
+		}
+
+		for _, param := range wf.Spec.Arguments.Parameters {
+			if _, ok := passedParams[param.Name]; ok {
+				// this parameter was overridden via command line
+				continue
+			}
+			newParams = append(newParams, param)
+		}
+		wf.Spec.Arguments.Parameters = newParams
+	}
+	if opts.Labels != nil {
+		wf.ObjectMeta.Labels = *opts.Labels
+	}
+
+	if err = c.autoInjectFields(namespace, wf, opts); err != nil {
+		return nil, err
+	}
+
 	createdWorkflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
 	if err != nil {
 		return nil, err
@@ -187,8 +195,20 @@ func (c *Client) create(namespace string, wf *Workflow, opts *WorkflowOptions) (
 	return
 }
 
-func (c *Client) ValidateWorkflow(manifest []byte) (err error) {
-	_, err = unmarshalWorkflows(manifest, true)
+func (c *Client) ValidateWorkflow(namespace string, manifest []byte) (err error) {
+	workflows, err := unmarshalWorkflows(manifest, true)
+	if err != nil {
+		return
+	}
+
+	wftmplGetter := templateresolution.WrapWorkflowTemplateInterface(c.ArgoprojV1alpha1().WorkflowTemplates(namespace))
+	for _, wf := range workflows {
+		c.autoInjectFields(namespace, &wf, &WorkflowOptions{})
+		err = validate.ValidateWorkflow(wftmplGetter, &wf, validate.ValidateOpts{})
+		if err != nil {
+			return
+		}
+	}
 
 	return
 }
@@ -293,7 +313,7 @@ func (c *Client) SuspendWorkflow(namespace, name string) (err error) {
 }
 
 func (c *Client) TerminateWorkflow(namespace, name string) (err error) {
-	err = argoutil.TerminateWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), name)
+	err = util.TerminateWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), name)
 
 	return
 }

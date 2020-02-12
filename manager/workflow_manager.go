@@ -424,7 +424,7 @@ func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTempl
 	}
 
 	// validate workflow template
-	if err := r.kubeClient.ValidateWorkflow(workflowTemplate.GetManifestBytes()); err != nil {
+	if err := r.kubeClient.ValidateWorkflow(namespace, workflowTemplate.GetManifestBytes()); err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
@@ -461,7 +461,7 @@ func (r *ResourceManager) CreateWorkflowTemplateVersion(namespace string, workfl
 	}
 
 	// validate workflow template
-	if err := r.kubeClient.ValidateWorkflow(workflowTemplate.GetManifestBytes()); err != nil {
+	if err := r.kubeClient.ValidateWorkflow(namespace, workflowTemplate.GetManifestBytes()); err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
@@ -510,7 +510,7 @@ func (r *ResourceManager) UpdateWorkflowTemplateVersion(namespace string, workfl
 	}
 
 	// validate workflow template
-	if err := r.kubeClient.ValidateWorkflow(workflowTemplate.GetManifestBytes()); err != nil {
+	if err := r.kubeClient.ValidateWorkflow(namespace, workflowTemplate.GetManifestBytes()); err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
