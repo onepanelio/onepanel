@@ -28,9 +28,9 @@ func TestWorkflowRepository_GetWorkflowTemplate(t *testing.T) {
 	}
 	defer dbRepo.Close()
 
-	row := sqlmock.NewRows([]string{"ID", "CreatedAt", "UID", "Name", "IsArchived", "Version", "IsLatest", "Manifest"}).
-		AddRow("1", string(time.Time{}.Unix()), "uid", "name", "false", "0", "false", "")
-	mock.ExpectQuery("^SELECT wt.id, wt.created_at, wt.uid, wt.name, wt.is_archived, wtv.version, wtv.is_latest, wtv.manifest" +
+	row := sqlmock.NewRows([]string{"id", "created_at", "uid", "name", "is_archived", "version", "is_latest", "manifest"}).
+		AddRow(1, time.Time{}.UTC(), "1", "name", false, 1, false, "")
+	mock.ExpectQuery("SELECT wt.id, wt.created_at, wt.uid, wt.name, wt.is_archived, wtv.version, wtv.is_latest, wtv.manifest" +
 		" FROM workflow_template_versions wtv JOIN workflow_templates wt ON wt.id = wtv.workflow_template_id " +
 		"WHERE (.+)").WillReturnRows(row)
 
