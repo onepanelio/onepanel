@@ -575,7 +575,10 @@
       "type": "object",
       "properties": {
         "metrics": {
-          "type": "string"
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apiMetric"
+          }
         }
       }
     },
@@ -643,6 +646,21 @@
           "type": "string"
         },
         "content": {
+          "type": "string"
+        }
+      }
+    },
+    "apiMetric": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "number",
+          "format": "double"
+        },
+        "format": {
           "type": "string"
         }
       }

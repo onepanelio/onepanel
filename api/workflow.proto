@@ -5,6 +5,7 @@ package api;
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "workflow_template.proto";
+import "metric.proto";
 
 service WorkflowService {
     // Creates a Workflow
@@ -145,7 +146,7 @@ message GetWorkflowMetricsRequest {
 }
 
 message GetWorkflowMetricsResponse {
-    string metrics = 1;
+    repeated Metric metrics = 1;
 }
 
 message ListWorkflowsRequest {
