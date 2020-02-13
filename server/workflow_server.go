@@ -151,7 +151,16 @@ func (s *WorkflowServer) GetWorkflowMetrics(ctx context.Context, req *api.GetWor
 		return nil, userError.GRPCError()
 	}
 
-	return &api.GetWorkflowMetricsResponse{Metrics: *metrics}, nil
+	var apiMetrics []*api.Metric
+	for _, m := range metrics {
+		apiMetrics = append(apiMetrics, &api.Metric{
+			Name:   m.Name,
+			Value:  m.Value,
+			Format: m.Format,
+		})
+	}
+
+	return &api.GetWorkflowMetricsResponse{Metrics: apiMetrics}, nil
 }
 
 func (s *WorkflowServer) ListWorkflows(ctx context.Context, req *api.ListWorkflowsRequest) (*api.ListWorkflowsResponse, error) {

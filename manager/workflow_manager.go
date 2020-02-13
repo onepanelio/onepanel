@@ -20,7 +20,6 @@ import (
 	"github.com/onepanelio/core/s3"
 	"github.com/onepanelio/core/util"
 	"github.com/onepanelio/core/util/env"
-	"github.com/onepanelio/core/util/ptr"
 	"google.golang.org/grpc/codes"
 )
 
@@ -288,7 +287,7 @@ func (r *ResourceManager) GetWorkflowLogs(namespace, name, podName, containerNam
 	return logWatcher, err
 }
 
-func (r *ResourceManager) GetWorkflowMetrics(namespace, name, podName string) (metrics *string, err error) {
+func (r *ResourceManager) GetWorkflowMetrics(namespace, name, podName string) (metrics []*model.Metric, err error) {
 	_, err = r.kubeClient.GetWorkflow(namespace, name)
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
@@ -344,7 +343,15 @@ func (r *ResourceManager) GetWorkflowMetrics(namespace, name, podName string) (m
 		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
 	}
 
-	metrics = ptr.String(string(content))
+	if err = json.Unmarshal(content, &metrics); err != nil {
+		logging.Logger.Log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"PodName":   podName,
+			"Error":     err.Error(),
+		}).Error("Error parsing metrics.")
+		return nil, util.NewUserError(codes.InvalidArgument, "Error parsing metrics.")
+	}
 
 	return
 }
