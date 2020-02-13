@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"math"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -22,10 +23,13 @@ func NewWorkflowServer(resourceManager *manager.ResourceManager) *WorkflowServer
 
 func apiWorkflow(wf *model.Workflow) (workflow *api.Workflow) {
 	workflow = &api.Workflow{
-		CreatedAt: wf.CreatedAt.UTC().Format(time.RFC3339),
-		Name:      wf.Name,
-		Uid:       wf.UID,
-		Manifest:  wf.Manifest,
+		CreatedAt:  wf.CreatedAt.Format(time.RFC3339),
+		Name:       wf.Name,
+		Uid:        wf.UID,
+		Phase:      string(wf.Phase),
+		StartedAt:  wf.CreatedAt.Format(time.RFC3339),
+		FinishedAt: wf.FinishedAt.Format(time.RFC3339),
+		Manifest:   wf.Manifest,
 	}
 
 	if wf.WorkflowTemplate != nil {
@@ -151,19 +155,41 @@ func (s *WorkflowServer) GetWorkflowMetrics(ctx context.Context, req *api.GetWor
 }
 
 func (s *WorkflowServer) ListWorkflows(ctx context.Context, req *api.ListWorkflowsRequest) (*api.ListWorkflowsResponse, error) {
+	if req.PageSize <= 0 {
+		req.PageSize = 15
+	}
+
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+
 	workflows, err := s.resourceManager.ListWorkflows(req.Namespace, req.WorkflowTemplateUid, req.WorkflowTemplateVersion)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
 	}
 
-	apiWorkflows := []*api.Workflow{}
+	var apiWorkflows []*api.Workflow
 	for _, wf := range workflows {
 		apiWorkflows = append(apiWorkflows, apiWorkflow(wf))
 	}
 
+	pages := int32(math.Ceil(float64(len(apiWorkflows)) / float64(req.PageSize)))
+	if req.Page > pages {
+		req.Page = pages
+	}
+
+	start := (req.Page - 1) * req.PageSize
+	end := start + req.PageSize
+	if end >= int32(len(apiWorkflows)) {
+		end = int32(len(apiWorkflows)) - 1
+	}
+
 	return &api.ListWorkflowsResponse{
-		Count:     int32(len(apiWorkflows)),
-		Workflows: apiWorkflows,
+		Count:      end - start,
+		Workflows:  apiWorkflows[start:end],
+		Page:       req.Page,
+		Pages:      pages,
+		TotalCount: int32(len(apiWorkflows)),
 	}, nil
 }
 

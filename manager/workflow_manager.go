@@ -123,8 +123,11 @@ func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.W
 	}
 	workflow = &model.Workflow{
 		UID:              string(wf.UID),
-		CreatedAt:        workflowTemplate.CreatedAt,
+		CreatedAt:        wf.CreationTimestamp.UTC(),
 		Name:             wf.Name,
+		Phase:            model.WorkflowPhase(wf.Status.Phase),
+		StartedAt:        wf.Status.StartedAt.UTC(),
+		FinishedAt:       wf.Status.FinishedAt.UTC(),
 		Manifest:         string(manifest),
 		WorkflowTemplate: workflowTemplate,
 	}
@@ -378,9 +381,12 @@ func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID, workflow
 
 	for _, wf := range wfs {
 		workflows = append(workflows, &model.Workflow{
-			Name:      wf.ObjectMeta.Name,
-			UID:       string(wf.ObjectMeta.UID),
-			CreatedAt: wf.CreationTimestamp.UTC(),
+			Name:       wf.ObjectMeta.Name,
+			UID:        string(wf.ObjectMeta.UID),
+			Phase:      model.WorkflowPhase(wf.Status.Phase),
+			StartedAt:  wf.Status.StartedAt.UTC(),
+			FinishedAt: wf.Status.FinishedAt.UTC(),
+			CreatedAt:  wf.CreationTimestamp.UTC(),
 		})
 	}
 
