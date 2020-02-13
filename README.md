@@ -58,3 +58,10 @@ protoc -I/usr/local/include \
   --grpc-gateway_out=logtostderr=true:api \
   --swagger_out=logtostderr=true:api
 ```
+
+## Python Client
+Build the proto files for Python
+```bash
+python -m grpc_tools.protoc -I/usr/local/include  -Iapi/third_party/googleapis  -Iapi/ api/third_party/googleapis/google/api/*.proto api/third_party/googleapis/google/rpc/*.proto api/*.proto --python_out=. --grpc_python_out=.
+```
+Run main.go, then run main.py to test the request.
