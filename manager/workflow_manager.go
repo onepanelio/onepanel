@@ -343,7 +343,6 @@ func (r *ResourceManager) GetWorkflowMetrics(namespace, name, podName string) (m
 		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
 	}
 
-	metrics = []*model.Metric{}
 	if err = json.Unmarshal(content, &metrics); err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,

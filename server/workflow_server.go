@@ -151,7 +151,7 @@ func (s *WorkflowServer) GetWorkflowMetrics(ctx context.Context, req *api.GetWor
 		return nil, userError.GRPCError()
 	}
 
-	apiMetrics := []*api.Metric{}
+	var apiMetrics []*api.Metric
 	for _, m := range metrics {
 		apiMetrics = append(apiMetrics, &api.Metric{
 			Name:   m.Name,
