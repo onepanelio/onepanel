@@ -152,11 +152,16 @@ message ListWorkflowsRequest {
     string namespace = 1;
     string workflowTemplateUid = 2;
     string workflowTemplateVersion = 3;
+    int32 pageSize = 4;
+    int32 page = 5;
 }
 
 message ListWorkflowsResponse {
     int32 count = 1;
     repeated Workflow workflows = 2;
+    int32 page = 3;
+    int32 pages = 4;
+    int32 totalCount = 5;
 }
 
 message LogEntry {
