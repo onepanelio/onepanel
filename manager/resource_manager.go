@@ -1,9 +1,10 @@
 package manager
 
 import (
+	"strconv"
+
 	"github.com/onepanelio/core/util/logging"
 	log "github.com/sirupsen/logrus"
-	"strconv"
 
 	"github.com/onepanelio/core/kube"
 	"github.com/onepanelio/core/repository"
@@ -88,4 +89,8 @@ func NewResourceManager(db *repository.DB, kubeClient *kube.Client) *ResourceMan
 		kubeClient:         kubeClient,
 		workflowRepository: repository.NewWorkflowRepository(db),
 	}
+}
+
+func (r *ResourceManager) GetClient(token string) (*kube.Client, error) {
+	return kube.GetClient(token)
 }

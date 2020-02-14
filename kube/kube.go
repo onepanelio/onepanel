@@ -33,3 +33,30 @@ func NewClient(configPath ...string) (client *Client) {
 
 	return &Client{Interface: kubernetes.NewForConfigOrDie(config), argoprojV1alpha1: argoprojv1alpha1.NewForConfigOrDie(config)}
 }
+
+func GetClient(token string) (client *Client, err error) {
+	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+		clientcmd.NewDefaultClientConfigLoadingRules(), &clientcmd.ConfigOverrides{}).ClientConfig()
+	if err != nil {
+		return
+	}
+	config.BearerToken = ""
+	config.BearerTokenFile = ""
+	config.Username = ""
+	config.Password = ""
+	if token != "" {
+		config.BearerToken = token
+	}
+
+	kubeConfig, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return
+	}
+
+	argoConfig, err := argoprojv1alpha1.NewForConfig(config)
+	if err != nil {
+		return
+	}
+
+	return &Client{Interface: kubeConfig, argoprojV1alpha1: argoConfig}, nil
+}
