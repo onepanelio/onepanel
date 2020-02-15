@@ -3,15 +3,16 @@ package main
 import (
 	"context"
 	"flag"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"net"
 	"net/http"
 	"os"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/gorilla/handlers"
-	"github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-middleware/recovery"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/kube"
@@ -38,14 +39,14 @@ func main() {
 		log.Fatalf("goose up: %v", err)
 	}
 
-	kubeClient := kube.NewClient(os.Getenv("KUBECONFIG"))
+	kubeConfig := kube.NewConfig()
 
-	go startRPCServer(db, kubeClient)
+	go startRPCServer(db, kubeConfig)
 	startHTTPProxy()
 }
 
-func startRPCServer(db *repository.DB, kubeClient *kube.Client) {
-	resourceManager := manager.NewResourceManager(db, kubeClient)
+func startRPCServer(db *repository.DB, kubeConfig *kube.Config) {
+	resourceManager := manager.NewResourceManager(db, kubeConfig)
 
 	log.Printf("Starting RPC server on port %v", *rpcPort)
 	lis, err := net.Listen("tcp", *rpcPort)

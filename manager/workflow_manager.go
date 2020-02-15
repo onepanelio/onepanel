@@ -55,7 +55,7 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 	}
 	(*opts.Labels)[workflowTemplateUIDLabelKey] = workflowTemplate.UID
 	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
-	createdWorkflows, err := r.kubeClient.CreateWorkflow(namespace, workflowTemplate.GetManifestBytes(), opts)
+	createdWorkflows, err := r.NewKubeClient().CreateWorkflow(namespace, workflowTemplate.GetManifestBytes(), opts)
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -76,7 +76,7 @@ func (r *ResourceManager) CreateWorkflow(namespace string, workflow *model.Workf
 }
 
 func (r *ResourceManager) GetWorkflow(namespace, name string) (workflow *model.Workflow, err error) {
-	wf, err := r.kubeClient.GetWorkflow(namespace, name)
+	wf, err := r.NewKubeClient().GetWorkflow(namespace, name)
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -145,7 +145,7 @@ func (r *ResourceManager) WatchWorkflow(namespace, name string) (<-chan *model.W
 		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
 	}
 
-	watcher, err := r.kubeClient.WatchWorkflow(namespace, name)
+	watcher, err := r.NewKubeClient().WatchWorkflow(namespace, name)
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -197,7 +197,7 @@ func (r *ResourceManager) WatchWorkflow(namespace, name string) (<-chan *model.W
 }
 
 func (r *ResourceManager) GetWorkflowLogs(namespace, name, podName, containerName string) (<-chan *model.LogEntry, error) {
-	wf, err := r.kubeClient.GetWorkflow(namespace, name)
+	wf, err := r.NewKubeClient().GetWorkflow(namespace, name)
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace":     namespace,
@@ -249,7 +249,7 @@ func (r *ResourceManager) GetWorkflowLogs(namespace, name, podName, containerNam
 		opts.SetRange(0, int64(endOffset))
 		stream, err = s3Client.GetObject(config[artifactRepositoryBucketKey], "artifacts/"+namespace+"/"+name+"/"+podName+"/"+containerName+".log", opts)
 	} else {
-		stream, err = r.kubeClient.GetPodLogs(namespace, podName, containerName)
+		stream, err = r.NewKubeClient().GetPodLogs(namespace, podName, containerName)
 	}
 	// TODO: Catch exact kubernetes error
 	//Todo: Can above todo be removed with the logging error?
@@ -288,7 +288,7 @@ func (r *ResourceManager) GetWorkflowLogs(namespace, name, podName, containerNam
 }
 
 func (r *ResourceManager) GetWorkflowMetrics(namespace, name, podName string) (metrics []*model.Metric, err error) {
-	_, err = r.kubeClient.GetWorkflow(namespace, name)
+	_, err = r.NewKubeClient().GetWorkflow(namespace, name)
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
 	}
@@ -369,7 +369,7 @@ func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID, workflow
 			LabelSelector: labelSelect,
 		}
 	}
-	wfs, err := r.kubeClient.ListWorkflows(namespace, opts)
+	wfs, err := r.NewKubeClient().ListWorkflows(namespace, opts)
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace":               namespace,
@@ -401,7 +401,7 @@ func (r *ResourceManager) ListWorkflows(namespace, workflowTemplateUID, workflow
 }
 
 func (r *ResourceManager) ResubmitWorkflow(namespace, name string) (workflow *model.Workflow, err error) {
-	workflow, err = r.kubeClient.ResubmitWorkflow(namespace, name, false)
+	workflow, err = r.NewKubeClient().ResubmitWorkflow(namespace, name, false)
 	if err != nil {
 		return nil, util.NewUserError(codes.Unknown, "Could not resubmit workflow.")
 	}
@@ -410,7 +410,7 @@ func (r *ResourceManager) ResubmitWorkflow(namespace, name string) (workflow *mo
 }
 
 func (r *ResourceManager) TerminateWorkflow(namespace, name string) (err error) {
-	if err = r.kubeClient.TerminateWorkflow(namespace, name); err != nil {
+	if err = r.NewKubeClient().TerminateWorkflow(namespace, name); err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
@@ -423,7 +423,7 @@ func (r *ResourceManager) TerminateWorkflow(namespace, name string) (err error) 
 }
 
 func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTemplate *model.WorkflowTemplate) (*model.WorkflowTemplate, error) {
-	allowed, err := r.kubeClient.IsAuthorized(namespace, "create", "argoproj.io", "workflow", "")
+	allowed, err := r.NewKubeClient().IsAuthorized(namespace, "create", "argoproj.io", "workflow", "")
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace":        namespace,
@@ -437,7 +437,7 @@ func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTempl
 	}
 
 	// validate workflow template
-	if err := r.kubeClient.ValidateWorkflow(namespace, workflowTemplate.GetManifestBytes()); err != nil {
+	if err := r.NewKubeClient().ValidateWorkflow(namespace, workflowTemplate.GetManifestBytes()); err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
@@ -460,7 +460,7 @@ func (r *ResourceManager) CreateWorkflowTemplate(namespace string, workflowTempl
 }
 
 func (r *ResourceManager) CreateWorkflowTemplateVersion(namespace string, workflowTemplate *model.WorkflowTemplate) (*model.WorkflowTemplate, error) {
-	allowed, err := r.kubeClient.IsAuthorized(namespace, "create", "argoproj.io", "workflow", "")
+	allowed, err := r.NewKubeClient().IsAuthorized(namespace, "create", "argoproj.io", "workflow", "")
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace":        namespace,
@@ -474,7 +474,7 @@ func (r *ResourceManager) CreateWorkflowTemplateVersion(namespace string, workfl
 	}
 
 	// validate workflow template
-	if err := r.kubeClient.ValidateWorkflow(namespace, workflowTemplate.GetManifestBytes()); err != nil {
+	if err := r.NewKubeClient().ValidateWorkflow(namespace, workflowTemplate.GetManifestBytes()); err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
@@ -509,7 +509,7 @@ func (r *ResourceManager) CreateWorkflowTemplateVersion(namespace string, workfl
 }
 
 func (r *ResourceManager) UpdateWorkflowTemplateVersion(namespace string, workflowTemplate *model.WorkflowTemplate) (*model.WorkflowTemplate, error) {
-	allowed, err := r.kubeClient.IsAuthorized(namespace, "update", "argoproj.io", "workflow", "")
+	allowed, err := r.NewKubeClient().IsAuthorized(namespace, "update", "argoproj.io", "workflow", "")
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace":        namespace,
@@ -523,7 +523,7 @@ func (r *ResourceManager) UpdateWorkflowTemplateVersion(namespace string, workfl
 	}
 
 	// validate workflow template
-	if err := r.kubeClient.ValidateWorkflow(namespace, workflowTemplate.GetManifestBytes()); err != nil {
+	if err := r.NewKubeClient().ValidateWorkflow(namespace, workflowTemplate.GetManifestBytes()); err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
@@ -560,7 +560,7 @@ func (r *ResourceManager) UpdateWorkflowTemplateVersion(namespace string, workfl
 }
 
 func (r *ResourceManager) GetWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *model.WorkflowTemplate, err error) {
-	allowed, err := r.kubeClient.IsAuthorized(namespace, "get", "argoproj.io", "workflow", "")
+	allowed, err := r.NewKubeClient().IsAuthorized(namespace, "get", "argoproj.io", "workflow", "")
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace":        namespace,
@@ -590,7 +590,7 @@ func (r *ResourceManager) GetWorkflowTemplate(namespace, uid string, version int
 }
 
 func (r *ResourceManager) ListWorkflowTemplateVersions(namespace, uid string) (workflowTemplateVersions []*model.WorkflowTemplate, err error) {
-	allowed, err := r.kubeClient.IsAuthorized(namespace, "list", "argoproj.io", "workflow", "")
+	allowed, err := r.NewKubeClient().IsAuthorized(namespace, "list", "argoproj.io", "workflow", "")
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -617,7 +617,7 @@ func (r *ResourceManager) ListWorkflowTemplateVersions(namespace, uid string) (w
 }
 
 func (r *ResourceManager) ListWorkflowTemplates(namespace string) (workflowTemplateVersions []*model.WorkflowTemplate, err error) {
-	allowed, err := r.kubeClient.IsAuthorized(namespace, "list", "argoproj.io", "workflow", "")
+	allowed, err := r.NewKubeClient().IsAuthorized(namespace, "list", "argoproj.io", "workflow", "")
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -642,7 +642,7 @@ func (r *ResourceManager) ListWorkflowTemplates(namespace string) (workflowTempl
 }
 
 func (r *ResourceManager) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, err error) {
-	allowed, err := r.kubeClient.IsAuthorized(namespace, "delete", "argoproj.io", "workflow", "")
+	allowed, err := r.NewKubeClient().IsAuthorized(namespace, "delete", "argoproj.io", "workflow", "")
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,

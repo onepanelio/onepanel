@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	goerrors "errors"
+
 	"github.com/onepanelio/core/model"
 	"github.com/onepanelio/core/util"
 	"github.com/onepanelio/core/util/logging"
@@ -13,7 +14,7 @@ import (
 )
 
 func (r *ResourceManager) CreateSecret(namespace string, secret *model.Secret) (err error) {
-	if err = r.kubeClient.CreateSecret(namespace, secret); err != nil {
+	if err = r.NewKubeClient().CreateSecret(namespace, secret); err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Secret":    secret,
@@ -28,7 +29,7 @@ func (r *ResourceManager) SecretExists(namespace string, name string) (exists bo
 	var foundSecret *model.Secret
 	var statusError *errors.StatusError
 
-	foundSecret, err = r.kubeClient.SecretExists(namespace, name)
+	foundSecret, err = r.NewKubeClient().SecretExists(namespace, name)
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -50,7 +51,7 @@ func (r *ResourceManager) SecretExists(namespace string, name string) (exists bo
 }
 
 func (r *ResourceManager) GetSecret(namespace, name string) (secret *model.Secret, err error) {
-	secret, err = r.kubeClient.GetSecret(namespace, name)
+	secret, err = r.NewKubeClient().GetSecret(namespace, name)
 	var statusError *errors.StatusError
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
@@ -78,7 +79,7 @@ func (r *ResourceManager) GetSecret(namespace, name string) (secret *model.Secre
 }
 
 func (r *ResourceManager) ListSecrets(namespace string) (secrets []*model.Secret, err error) {
-	secrets, err = r.kubeClient.ListSecrets(namespace)
+	secrets, err = r.NewKubeClient().ListSecrets(namespace)
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -91,7 +92,7 @@ func (r *ResourceManager) ListSecrets(namespace string) (secrets []*model.Secret
 }
 
 func (r *ResourceManager) DeleteSecret(namespace string, name string) (deleted bool, err error) {
-	err = r.kubeClient.DeleteSecret(namespace, name)
+	err = r.NewKubeClient().DeleteSecret(namespace, name)
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -143,7 +144,7 @@ func (r *ResourceManager) DeleteSecretKey(namespace string, secret *model.Secret
 			Path: "/data/" + key,
 		}}
 		payloadBytes, _ := json.Marshal(payload)
-		err = r.kubeClient.DeleteSecretKey(namespace, secret.Name, payloadBytes)
+		err = r.NewKubeClient().DeleteSecretKey(namespace, secret.Name, payloadBytes)
 		if err != nil {
 			logging.Logger.Log.WithFields(log.Fields{
 				"Namespace": namespace,
@@ -248,7 +249,7 @@ func (r *ResourceManager) AddSecretKeyValue(namespace string, secret *model.Secr
 			return false, util.NewUserError(codes.InvalidArgument, "Error building JSON.")
 		}
 	}
-	err = r.kubeClient.AddSecretKeyValue(namespace, secret.Name, payload)
+	err = r.NewKubeClient().AddSecretKeyValue(namespace, secret.Name, payload)
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -307,7 +308,7 @@ func (r *ResourceManager) UpdateSecretKeyValue(namespace string, secret *model.S
 		Value: valueEnc,
 	}}
 	payloadBytes, _ := json.Marshal(payload)
-	err = r.kubeClient.UpdateSecretKeyValue(namespace, secret.Name, payloadBytes)
+	err = r.NewKubeClient().UpdateSecretKeyValue(namespace, secret.Name, payloadBytes)
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,

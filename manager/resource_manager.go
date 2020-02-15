@@ -17,7 +17,8 @@ var (
 )
 
 type ResourceManager struct {
-	kubeClient         *kube.Client
+	Token              string
+	kubeConfig         *kube.Config
 	workflowRepository *repository.WorkflowRepository
 }
 
@@ -31,7 +32,7 @@ const (
 )
 
 func (r *ResourceManager) getNamespaceConfig(namespace string) (config map[string]string, err error) {
-	configMap, err := r.kubeClient.GetConfigMap(namespace, "onepanel")
+	configMap, err := r.NewKubeClient().GetConfigMap(namespace, "onepanel")
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -41,7 +42,7 @@ func (r *ResourceManager) getNamespaceConfig(namespace string) (config map[strin
 	}
 	config = configMap.Data
 
-	secret, err := r.kubeClient.GetSecret(namespace, "onepanel")
+	secret, err := r.NewKubeClient().GetSecret(namespace, "onepanel")
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -84,13 +85,15 @@ func (r *ResourceManager) getS3Client(namespace string, config map[string]string
 	return
 }
 
-func NewResourceManager(db *repository.DB, kubeClient *kube.Client) *ResourceManager {
+func NewResourceManager(db *repository.DB, kubeConfig *kube.Config) *ResourceManager {
 	return &ResourceManager{
-		kubeClient:         kubeClient,
+		kubeConfig:         kubeConfig,
 		workflowRepository: repository.NewWorkflowRepository(db),
 	}
 }
 
-func (r *ResourceManager) GetClient(token string) (*kube.Client, error) {
-	return kube.GetClient(token)
+func (r *ResourceManager) NewKubeClient() (client *kube.Client) {
+	client, _ = kube.NewClient(r.kubeConfig, r.Token)
+
+	return
 }

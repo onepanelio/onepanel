@@ -2,6 +2,7 @@ package manager
 
 import (
 	"fmt"
+
 	"github.com/onepanelio/core/util"
 	"github.com/onepanelio/core/util/logging"
 	log "github.com/sirupsen/logrus"
@@ -13,7 +14,7 @@ import (
 var onepanelEnabledLabelKey = labelKeyPrefix + "enabled"
 
 func (r *ResourceManager) ListNamespaces() (namespaces []*model.Namespace, err error) {
-	namespaces, err = r.kubeClient.ListNamespaces(model.ListOptions{
+	namespaces, err = r.NewKubeClient().ListNamespaces(model.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", onepanelEnabledLabelKey, "true"),
 	})
 	if err != nil {

@@ -7,6 +7,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+type Config = rest.Config
+
 type Client struct {
 	kubernetes.Interface
 	argoprojV1alpha1 argoprojv1alpha1.ArgoprojV1alpha1Interface
@@ -16,34 +18,23 @@ func (c *Client) ArgoprojV1alpha1() argoprojv1alpha1.ArgoprojV1alpha1Interface {
 	return c.argoprojV1alpha1
 }
 
-func NewClient(configPath ...string) (client *Client) {
-	var (
-		err    error
-		config *rest.Config
-	)
-
-	if len(configPath) == 0 {
-		config, err = rest.InClusterConfig()
-	} else {
-		config, err = clientcmd.BuildConfigFromFlags("", configPath[0])
-	}
+func NewConfig() (config *Config) {
+	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+		clientcmd.NewDefaultClientConfigLoadingRules(), &clientcmd.ConfigOverrides{}).ClientConfig()
 	if err != nil {
 		panic(err)
 	}
 
-	return &Client{Interface: kubernetes.NewForConfigOrDie(config), argoprojV1alpha1: argoprojv1alpha1.NewForConfigOrDie(config)}
+	return
 }
 
-func GetClient(token string) (client *Client, err error) {
-	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
-		clientcmd.NewDefaultClientConfigLoadingRules(), &clientcmd.ConfigOverrides{}).ClientConfig()
-	if err != nil {
-		return
-	}
+func NewClient(config *Config, token string) (client *Client, err error) {
 	config.BearerToken = ""
 	config.BearerTokenFile = ""
 	config.Username = ""
 	config.Password = ""
+	config.CertData = nil
+	config.CertFile = ""
 	if token != "" {
 		config.BearerToken = token
 	}
