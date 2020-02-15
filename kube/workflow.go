@@ -105,10 +105,17 @@ func (c *Client) injectAutomatedFields(namespace string, wf *Workflow, opts *Wor
 	}
 
 	for i, template := range wf.Spec.Templates {
+		// Do not inject Istio sidecars in workflows
+		if template.Metadata.Annotations == nil {
+			wf.Spec.Templates[i].Metadata.Annotations = make(map[string]string)
+		}
+		wf.Spec.Templates[i].Metadata.Annotations["sidecar.istio.io/inject"] = "false"
+
 		if template.Container == nil {
 			continue
 		}
 
+		// Always add output artifacts for metrics but make them optional
 		wf.Spec.Templates[i].Outputs.Artifacts = append(template.Outputs.Artifacts, wfv1.Artifact{
 			Name:     "metrics",
 			Path:     "/tmp/metrics.json",
