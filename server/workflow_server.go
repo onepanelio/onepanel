@@ -168,7 +168,7 @@ func (s *WorkflowServer) ListWorkflows(ctx context.Context, req *api.ListWorkflo
 		return nil, userError.GRPCError()
 	}
 
-	apiWorkflows := make([]*api.Workflow, 0)
+	var apiWorkflows []*api.Workflow
 	for _, wf := range workflows {
 		apiWorkflows = append(apiWorkflows, apiWorkflow(wf))
 	}
@@ -181,7 +181,7 @@ func (s *WorkflowServer) ListWorkflows(ctx context.Context, req *api.ListWorkflo
 	start := (req.Page - 1) * req.PageSize
 	end := start + req.PageSize
 	if end >= int32(len(apiWorkflows)) {
-		end = int32(len(apiWorkflows)) - 1
+		end = int32(len(apiWorkflows))
 	}
 
 	return &api.ListWorkflowsResponse{
