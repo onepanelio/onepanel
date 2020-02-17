@@ -133,8 +133,8 @@ func (c *Client) injectAutomatedFields(namespace string, wf *Workflow, opts *Wor
 
 		// Always add output artifacts for metrics but make them optional
 		wf.Spec.Templates[i].Outputs.Artifacts = append(template.Outputs.Artifacts, wfv1.Artifact{
-			Name:     "metrics",
-			Path:     "/tmp/metrics.json",
+			Name:     "sys-metrics",
+			Path:     "/tmp/sys-metrics.json",
 			Optional: true,
 			Archive: &wfv1.ArchiveStrategy{
 				None: &wfv1.NoneStrategy{},
