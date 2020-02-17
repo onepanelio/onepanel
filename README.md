@@ -59,9 +59,26 @@ protoc -I/usr/local/include \
   --swagger_out=logtostderr=true:api
 ```
 
+If you want the Swagger files to have their definitions separated by '.' instead of one big word, use the
+following:
+```bash
+protoc -I/usr/local/include   -Iapi/third_party/googleapis   -Iapi/   api/*.proto   --go_out=plugins=grpc:api   --grpc-gateway_out=logtostderr=true:api   --swagger_out=fqn_for_swagger_name=true,logtostderr=true:api
+```
+So instead of `apiListSecretsResponse`, it would become `api.ListSecretsResponse`
+
 ## Python Client
+
+Install protoc tool for python.
+
 Build the proto files for Python
 ```bash
 python -m grpc_tools.protoc -I/usr/local/include  -Iapi/third_party/googleapis  -Iapi/ api/third_party/googleapis/google/api/*.proto api/third_party/googleapis/google/rpc/*.proto api/*.proto --python_out=. --grpc_python_out=.
 ```
 Run main.go, then run main.py to test the request.
+
+OpenAPI, go to their github for reference.
+To generate the python client:
+```bash
+java -jar openapi-generator-cli.jar generate -i api/secret.swagger.json -g python -o ./pythonopenapi_client/
+```
+
