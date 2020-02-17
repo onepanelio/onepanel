@@ -1,6 +1,7 @@
 package kube
 
 import (
+	"encoding/base64"
 	"github.com/onepanelio/core/model"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -82,7 +83,7 @@ func (c *Client) UpdateSecretKeyValue(namespace string, name string, payload []b
 func convertSecretToMap(foundSecret *corev1.Secret) (modelData map[string]string) {
 	modelData = make(map[string]string)
 	for secretKey, secretData := range foundSecret.Data {
-		modelData[secretKey] = string(secretData)
+		modelData[secretKey] = base64.StdEncoding.EncodeToString(secretData)
 	}
 	return modelData
 }
