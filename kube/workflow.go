@@ -104,6 +104,16 @@ func (c *Client) injectAutomatedFields(namespace string, wf *Workflow, opts *Wor
 		}
 	}
 
+	// Create dev/shm volume
+	wf.Spec.Volumes = append(wf.Spec.Volumes, corev1.Volume{
+		Name: "sys-dshm",
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{
+				Medium: corev1.StorageMediumMemory,
+			},
+		},
+	})
+
 	for i, template := range wf.Spec.Templates {
 		// Do not inject Istio sidecars in workflows
 		if template.Metadata.Annotations == nil {
@@ -115,10 +125,16 @@ func (c *Client) injectAutomatedFields(namespace string, wf *Workflow, opts *Wor
 			continue
 		}
 
+		// Mount dev/shm
+		wf.Spec.Templates[i].Container.VolumeMounts = append(template.Container.VolumeMounts, corev1.VolumeMount{
+			Name:      "sys-dshm",
+			MountPath: "/dev/shm",
+		})
+
 		// Always add output artifacts for metrics but make them optional
 		wf.Spec.Templates[i].Outputs.Artifacts = append(template.Outputs.Artifacts, wfv1.Artifact{
-			Name:     "metrics",
-			Path:     "/tmp/metrics.json",
+			Name:     "sys-metrics",
+			Path:     "/tmp/sys-metrics.json",
 			Optional: true,
 			Archive: &wfv1.ArchiveStrategy{
 				None: &wfv1.NoneStrategy{},
