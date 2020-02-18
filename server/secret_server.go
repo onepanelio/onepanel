@@ -6,19 +6,20 @@ import (
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
-	"github.com/onepanelio/core/manager"
-	"github.com/onepanelio/core/model"
+	v1 "github.com/onepanelio/core/pkg"
+	"github.com/onepanelio/core/util"
+	"google.golang.org/grpc/codes"
 )
 
 type SecretServer struct {
-	resourceManager *manager.ResourceManager
+	kubeConfig *v1.Config
 }
 
-func NewSecretServer(resourceManager *manager.ResourceManager) *SecretServer {
-	return &SecretServer{resourceManager: resourceManager}
+func NewSecretServer(kubeConfig *v1.Config) *NamespaceServer {
+	return &NamespaceServer{kubeConfig: kubeConfig}
 }
 
-func apiSecret(s *model.Secret) *api.Secret {
+func apiSecret(s *v1.Secret) *api.Secret {
 	return &api.Secret{
 		Name: s.Name,
 		Data: s.Data,
@@ -26,7 +27,12 @@ func apiSecret(s *model.Secret) *api.Secret {
 }
 
 func (s *SecretServer) CreateSecret(ctx context.Context, req *api.CreateSecretRequest) (*empty.Empty, error) {
-	err := s.resourceManager.CreateSecret(req.Namespace, &model.Secret{
+	client, err := v1.NewClient(s.kubeConfig, "")
+	if err != nil {
+		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
+	}
+
+	err := client.CreateSecret(req.Namespace, &v1.Secret{
 		Name: req.Secret.Name,
 		Data: req.Secret.Data,
 	})
@@ -37,8 +43,12 @@ func (s *SecretServer) CreateSecret(ctx context.Context, req *api.CreateSecretRe
 }
 
 func (s *SecretServer) SecretExists(ctx context.Context, req *api.SecretExistsRequest) (secretExists *api.SecretExistsResponse, err error) {
-	var secretExistsBool bool
-	secretExistsBool, err = s.resourceManager.SecretExists(req.Namespace, req.Name)
+	client, err := v1.NewClient(s.kubeConfig, "")
+	if err != nil {
+		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
+	}
+
+	secretExistsBool, err := client.SecretExists(req.Namespace, req.Name)
 	if errors.As(err, &userError) {
 		return &api.SecretExistsResponse{
 			Exists: false,
@@ -50,7 +60,12 @@ func (s *SecretServer) SecretExists(ctx context.Context, req *api.SecretExistsRe
 }
 
 func (s *SecretServer) GetSecret(ctx context.Context, req *api.GetSecretRequest) (*api.Secret, error) {
-	secret, err := s.resourceManager.GetSecret(req.Namespace, req.Name)
+	client, err := v1.NewClient(s.kubeConfig, "")
+	if err != nil {
+		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
+	}
+
+	secret, err := client.GetSecret(req.Namespace, req.Name)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
 	}
@@ -58,7 +73,12 @@ func (s *SecretServer) GetSecret(ctx context.Context, req *api.GetSecretRequest)
 }
 
 func (s *SecretServer) ListSecrets(ctx context.Context, req *api.ListSecretsRequest) (*api.ListSecretsResponse, error) {
-	secrets, err := s.resourceManager.ListSecrets(req.Namespace)
+	client, err := v1.NewClient(s.kubeConfig, "")
+	if err != nil {
+		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
+	}
+
+	secrets, err := client.ListSecrets(req.Namespace)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
 	}
@@ -75,8 +95,12 @@ func (s *SecretServer) ListSecrets(ctx context.Context, req *api.ListSecretsRequ
 }
 
 func (s *SecretServer) DeleteSecret(ctx context.Context, req *api.DeleteSecretRequest) (deleted *api.DeleteSecretResponse, err error) {
-	var isDeleted bool
-	isDeleted, err = s.resourceManager.DeleteSecret(req.Namespace, req.Name)
+	client, err := v1.NewClient(s.kubeConfig, "")
+	if err != nil {
+		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
+	}
+
+	isDeleted, err := client.DeleteSecret(req.Namespace, req.Name)
 	if errors.As(err, &userError) {
 		return &api.DeleteSecretResponse{
 			Deleted: false,
@@ -88,14 +112,18 @@ func (s *SecretServer) DeleteSecret(ctx context.Context, req *api.DeleteSecretRe
 }
 
 func (s *SecretServer) DeleteSecretKey(ctx context.Context, req *api.DeleteSecretKeyRequest) (deleted *api.DeleteSecretKeyResponse, err error) {
-	var isDeleted bool
-	secret := model.Secret{
-		Name: req.SecretName,
+	client, err := v1.NewClient(s.kubeConfig, "")
+	if err != nil {
+		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
+	}
+
+	secret := v1.Secret{
+		Name: req.Secret.Name,
 		Data: map[string]string{
-			req.Key:"",
+			req.Key: "",
 		},
 	}
-	isDeleted, err = s.resourceManager.DeleteSecretKey(req.Namespace, &secret)
+	isDeleted, err := client.DeleteSecretKey(req.Namespace, &secret)
 	if err != nil {
 		if errors.As(err, &userError) {
 			return &api.DeleteSecretKeyResponse{
@@ -109,12 +137,16 @@ func (s *SecretServer) DeleteSecretKey(ctx context.Context, req *api.DeleteSecre
 }
 
 func (s *SecretServer) AddSecretKeyValue(ctx context.Context, req *api.AddSecretKeyValueRequest) (updated *api.AddSecretKeyValueResponse, err error) {
-	var isAdded bool
-	secret := &model.Secret{
+	client, err := v1.NewClient(s.kubeConfig, "")
+	if err != nil {
+		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
+	}
+
+	secret := &v1.Secret{
 		Name: req.Secret.Name,
 		Data: req.Secret.Data,
 	}
-	isAdded, err = s.resourceManager.AddSecretKeyValue(req.Namespace, secret)
+	isAdded, err := client.AddSecretKeyValue(req.Namespace, secret)
 	if err != nil {
 		if errors.As(err, &userError) {
 			return &api.AddSecretKeyValueResponse{
@@ -128,12 +160,16 @@ func (s *SecretServer) AddSecretKeyValue(ctx context.Context, req *api.AddSecret
 }
 
 func (s *SecretServer) UpdateSecretKeyValue(ctx context.Context, req *api.UpdateSecretKeyValueRequest) (updated *api.UpdateSecretKeyValueResponse, err error) {
-	var isUpdated bool
-	secret := model.Secret{
+	client, err := v1.NewClient(s.kubeConfig, "")
+	if err != nil {
+		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
+	}
+
+	secret := v1.Secret{
 		Name: req.Secret.Name,
 		Data: req.Secret.Data,
 	}
-	isUpdated, err = s.resourceManager.UpdateSecretKeyValue(req.Namespace, &secret)
+	isUpdated, err := client.UpdateSecretKeyValue(req.Namespace, &secret)
 	if errors.As(err, &userError) {
 		return &api.UpdateSecretKeyValueResponse{
 			Updated: false,

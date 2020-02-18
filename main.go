@@ -63,8 +63,8 @@ func startRPCServer(db *repository.DB, kubeConfig *kube.Config) {
 		grpc_middleware.ChainUnaryServer(loggingInterceptor,
 			grpc_recovery.UnaryServerInterceptor(opts...))))
 	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer(resourceManager))
-	api.RegisterSecretServiceServer(s, server.NewSecretServer(resourceManager))
-	api.RegisterNamespaceServiceServer(s, server.NewNamespaceServer(resourceManager))
+	api.RegisterSecretServiceServer(s, server.NewSecretServer(kubeConfig))
+	api.RegisterNamespaceServiceServer(s, server.NewNamespaceServer(kubeConfig))
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve RPC server: %v", err)
@@ -121,7 +121,7 @@ func loggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnarySe
 	if err != nil {
 		log.WithFields(log.Fields{
 			"fullMethod": info.FullMethod,
-		}).Warning("call failed")
+		}).Warning(err)
 		return
 	}
 	log.WithFields(log.Fields{
