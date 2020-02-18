@@ -322,7 +322,7 @@ func (r *ResourceManager) GetWorkflowMetrics(namespace, name, podName string) (m
 	}
 
 	opts := s3.GetObjectOptions{}
-	stream, err = s3Client.GetObject(config[artifactRepositoryBucketKey], "artifacts/"+namespace+"/"+name+"/"+podName+"/metrics.json", opts)
+	stream, err = s3Client.GetObject(config[artifactRepositoryBucketKey], "artifacts/"+namespace+"/"+name+"/"+podName+"/sys-metrics.json", opts)
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,

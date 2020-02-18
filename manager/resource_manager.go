@@ -1,9 +1,11 @@
 package manager
 
 import (
+	"encoding/base64"
+	"strconv"
+
 	"github.com/onepanelio/core/util/logging"
 	log "github.com/sirupsen/logrus"
-	"strconv"
 
 	"github.com/onepanelio/core/kube"
 	"github.com/onepanelio/core/repository"
@@ -48,8 +50,10 @@ func (r *ResourceManager) getNamespaceConfig(namespace string) (config map[strin
 		}).Error("getNamespaceConfig failed getting secret.")
 		return
 	}
-	config[artifactRepositoryAccessKeyValueKey] = secret.Data[artifactRepositoryAccessKeyValueKey]
-	config[artifactRepositorySecretKeyValueKey] = secret.Data[artifactRepositorySecretKeyValueKey]
+	accessKey, _ := base64.StdEncoding.DecodeString(secret.Data[artifactRepositoryAccessKeyValueKey])
+	config[artifactRepositoryAccessKeyValueKey] = string(accessKey)
+	secretKey, _ := base64.StdEncoding.DecodeString(secret.Data[artifactRepositorySecretKeyValueKey])
+	config[artifactRepositorySecretKeyValueKey] = string(secretKey)
 
 	return
 }
