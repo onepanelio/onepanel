@@ -20,12 +20,6 @@
             "schema": {
               "$ref": "#/definitions/apiListWorkflowTemplatesResponse"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
           }
         },
         "parameters": [
@@ -47,12 +41,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiWorkflowTemplate"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
             }
           }
         },
@@ -85,12 +73,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiWorkflowTemplate"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
             }
           }
         },
@@ -129,12 +111,6 @@
             "schema": {
               "$ref": "#/definitions/apiArchiveWorkflowTemplateResponse"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
           }
         },
         "parameters": [
@@ -165,12 +141,6 @@
             "schema": {
               "$ref": "#/definitions/apiListWorkflowTemplateVersionsResponse"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
           }
         },
         "parameters": [
@@ -200,12 +170,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiWorkflowTemplate"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
             }
           }
         },
@@ -244,12 +208,6 @@
             "schema": {
               "$ref": "#/definitions/apiWorkflowTemplate"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
           }
         },
         "parameters": [
@@ -287,12 +245,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiWorkflowTemplate"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
             }
           }
         },
@@ -338,12 +290,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiListWorkflowsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
             }
           }
         },
@@ -394,12 +340,6 @@
             "schema": {
               "$ref": "#/definitions/apiWorkflow"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
           }
         },
         "parameters": [
@@ -432,12 +372,6 @@
             "schema": {
               "$ref": "#/definitions/apiWorkflow"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
           }
         },
         "parameters": [
@@ -466,22 +400,7 @@
           "200": {
             "description": "A successful response.(streaming responses)",
             "schema": {
-              "type": "object",
-              "properties": {
-                "result": {
-                  "$ref": "#/definitions/apiLogEntry"
-                },
-                "error": {
-                  "$ref": "#/definitions/runtimeStreamError"
-                }
-              },
-              "title": "Stream result of apiLogEntry"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/x-stream-definitions/apiLogEntry"
             }
           }
         },
@@ -525,12 +444,6 @@
             "schema": {
               "$ref": "#/definitions/apiGetWorkflowMetricsResponse"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
           }
         },
         "parameters": [
@@ -567,12 +480,6 @@
             "schema": {
               "$ref": "#/definitions/apiWorkflow"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
           }
         },
         "parameters": [
@@ -603,12 +510,6 @@
             "schema": {
               "properties": {}
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
           }
         },
         "parameters": [
@@ -637,22 +538,7 @@
           "200": {
             "description": "A successful response.(streaming responses)",
             "schema": {
-              "type": "object",
-              "properties": {
-                "result": {
-                  "$ref": "#/definitions/apiWorkflow"
-                },
-                "error": {
-                  "$ref": "#/definitions/runtimeStreamError"
-                }
-              },
-              "title": "Stream result of apiWorkflow"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/x-stream-definitions/apiWorkflow"
             }
           }
         },
@@ -866,27 +752,6 @@
         }
       }
     },
-    "runtimeError": {
-      "type": "object",
-      "properties": {
-        "error": {
-          "type": "string"
-        },
-        "code": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "message": {
-          "type": "string"
-        },
-        "details": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/protobufAny"
-          }
-        }
-      }
-    },
     "runtimeStreamError": {
       "type": "object",
       "properties": {
@@ -911,6 +776,32 @@
           }
         }
       }
+    }
+  },
+  "x-stream-definitions": {
+    "apiLogEntry": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/apiLogEntry"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of apiLogEntry"
+    },
+    "apiWorkflow": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/apiWorkflow"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of apiWorkflow"
     }
   }
 }
