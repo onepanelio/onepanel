@@ -7,16 +7,12 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
-	"github.com/onepanelio/core/util"
-	"google.golang.org/grpc/codes"
 )
 
-type SecretServer struct {
-	kubeConfig *v1.Config
-}
+type SecretServer struct{}
 
-func NewSecretServer(kubeConfig *v1.Config) *NamespaceServer {
-	return &NamespaceServer{kubeConfig: kubeConfig}
+func NewSecretServer() *SecretServer {
+	return &SecretServer{}
 }
 
 func apiSecret(s *v1.Secret) *api.Secret {
@@ -27,11 +23,7 @@ func apiSecret(s *v1.Secret) *api.Secret {
 }
 
 func (s *SecretServer) CreateSecret(ctx context.Context, req *api.CreateSecretRequest) (*empty.Empty, error) {
-	client, err := v1.NewClient(s.kubeConfig, "")
-	if err != nil {
-		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
-	}
-
+	client := ctx.Value("kubeClient").(*v1.Client)
 	err := client.CreateSecret(req.Namespace, &v1.Secret{
 		Name: req.Secret.Name,
 		Data: req.Secret.Data,
@@ -43,11 +35,7 @@ func (s *SecretServer) CreateSecret(ctx context.Context, req *api.CreateSecretRe
 }
 
 func (s *SecretServer) SecretExists(ctx context.Context, req *api.SecretExistsRequest) (secretExists *api.SecretExistsResponse, err error) {
-	client, err := v1.NewClient(s.kubeConfig, "")
-	if err != nil {
-		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
-	}
-
+	client := ctx.Value("kubeClient").(*v1.Client)
 	secretExistsBool, err := client.SecretExists(req.Namespace, req.Name)
 	if errors.As(err, &userError) {
 		return &api.SecretExistsResponse{
@@ -60,11 +48,7 @@ func (s *SecretServer) SecretExists(ctx context.Context, req *api.SecretExistsRe
 }
 
 func (s *SecretServer) GetSecret(ctx context.Context, req *api.GetSecretRequest) (*api.Secret, error) {
-	client, err := v1.NewClient(s.kubeConfig, "")
-	if err != nil {
-		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
-	}
-
+	client := ctx.Value("kubeClient").(*v1.Client)
 	secret, err := client.GetSecret(req.Namespace, req.Name)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
@@ -73,11 +57,7 @@ func (s *SecretServer) GetSecret(ctx context.Context, req *api.GetSecretRequest)
 }
 
 func (s *SecretServer) ListSecrets(ctx context.Context, req *api.ListSecretsRequest) (*api.ListSecretsResponse, error) {
-	client, err := v1.NewClient(s.kubeConfig, "")
-	if err != nil {
-		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
-	}
-
+	client := ctx.Value("kubeClient").(*v1.Client)
 	secrets, err := client.ListSecrets(req.Namespace)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
@@ -95,11 +75,7 @@ func (s *SecretServer) ListSecrets(ctx context.Context, req *api.ListSecretsRequ
 }
 
 func (s *SecretServer) DeleteSecret(ctx context.Context, req *api.DeleteSecretRequest) (deleted *api.DeleteSecretResponse, err error) {
-	client, err := v1.NewClient(s.kubeConfig, "")
-	if err != nil {
-		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
-	}
-
+	client := ctx.Value("kubeClient").(*v1.Client)
 	isDeleted, err := client.DeleteSecret(req.Namespace, req.Name)
 	if errors.As(err, &userError) {
 		return &api.DeleteSecretResponse{
@@ -112,11 +88,7 @@ func (s *SecretServer) DeleteSecret(ctx context.Context, req *api.DeleteSecretRe
 }
 
 func (s *SecretServer) DeleteSecretKey(ctx context.Context, req *api.DeleteSecretKeyRequest) (deleted *api.DeleteSecretKeyResponse, err error) {
-	client, err := v1.NewClient(s.kubeConfig, "")
-	if err != nil {
-		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
-	}
-
+	client := ctx.Value("kubeClient").(*v1.Client)
 	secret := v1.Secret{
 		Name: req.Secret.Name,
 		Data: map[string]string{
@@ -137,11 +109,7 @@ func (s *SecretServer) DeleteSecretKey(ctx context.Context, req *api.DeleteSecre
 }
 
 func (s *SecretServer) AddSecretKeyValue(ctx context.Context, req *api.AddSecretKeyValueRequest) (updated *api.AddSecretKeyValueResponse, err error) {
-	client, err := v1.NewClient(s.kubeConfig, "")
-	if err != nil {
-		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
-	}
-
+	client := ctx.Value("kubeClient").(*v1.Client)
 	secret := &v1.Secret{
 		Name: req.Secret.Name,
 		Data: req.Secret.Data,
@@ -160,11 +128,7 @@ func (s *SecretServer) AddSecretKeyValue(ctx context.Context, req *api.AddSecret
 }
 
 func (s *SecretServer) UpdateSecretKeyValue(ctx context.Context, req *api.UpdateSecretKeyValueRequest) (updated *api.UpdateSecretKeyValueResponse, err error) {
-	client, err := v1.NewClient(s.kubeConfig, "")
-	if err != nil {
-		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
-	}
-
+	client := ctx.Value("kubeClient").(*v1.Client)
 	secret := v1.Secret{
 		Name: req.Secret.Name,
 		Data: req.Secret.Data,

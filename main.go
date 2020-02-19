@@ -14,10 +14,9 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/jmoiron/sqlx"
 	"github.com/onepanelio/core/api"
-	"github.com/onepanelio/core/kube"
-	"github.com/onepanelio/core/manager"
-	"github.com/onepanelio/core/repository"
+	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/server"
 	"github.com/pressly/goose"
 	log "github.com/sirupsen/logrus"
@@ -34,20 +33,18 @@ var (
 func main() {
 	flag.Parse()
 
-	db := repository.NewDB(os.Getenv("DB_DRIVER_NAME"), os.Getenv("DB_DATASOURCE_NAME"))
-	if err := goose.Run("up", db.Base(), "db"); err != nil {
+	db := sqlx.MustConnect(os.Getenv("DB_DRIVER_NAME"), os.Getenv("DB_DATASOURCE_NAME"))
+	if err := goose.Run("up", db.DB, "db"); err != nil {
 		log.Fatalf("goose up: %v", err)
 	}
 
-	kubeConfig := kube.NewConfig()
+	kubeConfig := v1.NewConfig()
 
 	go startRPCServer(db, kubeConfig)
 	startHTTPProxy()
 }
 
-func startRPCServer(db *repository.DB, kubeConfig *kube.Config) {
-	resourceManager := manager.NewResourceManager(db, kubeConfig)
-
+func startRPCServer(db *v1.DB, kubeConfig *v1.Config) {
 	log.Printf("Starting RPC server on port %v", *rpcPort)
 	lis, err := net.Listen("tcp", *rpcPort)
 	if err != nil {
@@ -60,11 +57,13 @@ func startRPCServer(db *repository.DB, kubeConfig *kube.Config) {
 		grpc_recovery.WithRecoveryHandler(recoveryFunc),
 	}
 	s := grpc.NewServer(grpc.UnaryInterceptor(
-		grpc_middleware.ChainUnaryServer(loggingInterceptor,
-			grpc_recovery.UnaryServerInterceptor(opts...))))
-	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer(resourceManager))
-	api.RegisterSecretServiceServer(s, server.NewSecretServer(kubeConfig))
-	api.RegisterNamespaceServiceServer(s, server.NewNamespaceServer(kubeConfig))
+		grpc_middleware.ChainUnaryServer(authInterceptor(kubeConfig, db),
+			loggingInterceptor,
+			grpc_recovery.UnaryServerInterceptor(opts...)),
+	))
+	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer())
+	api.RegisterSecretServiceServer(s, server.NewSecretServer())
+	api.RegisterNamespaceServiceServer(s, server.NewNamespaceServer())
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve RPC server: %v", err)
@@ -128,4 +127,16 @@ func loggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnarySe
 		"fullMethod": info.FullMethod,
 	}).Info("handler finished")
 	return
+}
+
+func authInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		kubeConfig.BearerToken = ""
+		client, err := v1.NewClient(kubeConfig, db)
+		if err != nil {
+			return
+		}
+
+		return handler(context.WithValue(ctx, "kubeClient", client), req)
+	}
 }

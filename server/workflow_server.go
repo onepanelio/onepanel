@@ -8,20 +8,17 @@ import (
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
-	"github.com/onepanelio/core/manager"
-	"github.com/onepanelio/core/model"
+	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/util/ptr"
 )
 
-type WorkflowServer struct {
-	resourceManager *manager.ResourceManager
+type WorkflowServer struct{}
+
+func NewWorkflowServer() *WorkflowServer {
+	return &WorkflowServer{}
 }
 
-func NewWorkflowServer(resourceManager *manager.ResourceManager) *WorkflowServer {
-	return &WorkflowServer{resourceManager: resourceManager}
-}
-
-func apiWorkflow(wf *model.Workflow) (workflow *api.Workflow) {
+func apiWorkflow(wf *v1.Workflow) (workflow *api.Workflow) {
 	workflow = &api.Workflow{
 		CreatedAt:  wf.CreatedAt.Format(time.RFC3339),
 		Name:       wf.Name,
@@ -47,7 +44,7 @@ func apiWorkflow(wf *model.Workflow) (workflow *api.Workflow) {
 	return
 }
 
-func apiWorkflowTemplate(wft *model.WorkflowTemplate) *api.WorkflowTemplate {
+func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 	return &api.WorkflowTemplate{
 		Uid:        wft.UID,
 		CreatedAt:  wft.CreatedAt.UTC().Format(time.RFC3339),
@@ -60,20 +57,21 @@ func apiWorkflowTemplate(wft *model.WorkflowTemplate) *api.WorkflowTemplate {
 }
 
 func (s *WorkflowServer) CreateWorkflow(ctx context.Context, req *api.CreateWorkflowRequest) (*api.Workflow, error) {
-	workflow := &model.Workflow{
-		WorkflowTemplate: &model.WorkflowTemplate{
+	workflow := &v1.Workflow{
+		WorkflowTemplate: &v1.WorkflowTemplate{
 			UID:     req.Workflow.WorkflowTemplate.Uid,
 			Version: req.Workflow.WorkflowTemplate.Version,
 		},
 	}
 	for _, param := range req.Workflow.Parameters {
-		workflow.Parameters = append(workflow.Parameters, model.Parameter{
+		workflow.Parameters = append(workflow.Parameters, v1.WorkflowParameter{
 			Name:  param.Name,
 			Value: ptr.String(param.Value),
 		})
 	}
 
-	wf, err := s.resourceManager.CreateWorkflow(req.Namespace, workflow)
+	client := ctx.Value("kubeClient").(*v1.Client)
+	wf, err := client.CreateWorkflow(req.Namespace, workflow)
 	if err != nil {
 		if errors.As(err, &userError) {
 			return nil, userError.GRPCError()
@@ -84,7 +82,8 @@ func (s *WorkflowServer) CreateWorkflow(ctx context.Context, req *api.CreateWork
 }
 
 func (s *WorkflowServer) GetWorkflow(ctx context.Context, req *api.GetWorkflowRequest) (*api.Workflow, error) {
-	wf, err := s.resourceManager.GetWorkflow(req.Namespace, req.Name)
+	client := ctx.Value("kubeClient").(*v1.Client)
+	wf, err := client.GetWorkflow(req.Namespace, req.Name)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
 	}
@@ -93,12 +92,13 @@ func (s *WorkflowServer) GetWorkflow(ctx context.Context, req *api.GetWorkflowRe
 }
 
 func (s *WorkflowServer) WatchWorkflow(req *api.WatchWorkflowRequest, stream api.WorkflowService_WatchWorkflowServer) error {
-	watcher, err := s.resourceManager.WatchWorkflow(req.Namespace, req.Name)
+	client := stream.Context().Value("kubeClient").(*v1.Client)
+	watcher, err := client.WatchWorkflow(req.Namespace, req.Name)
 	if errors.As(err, &userError) {
 		return userError.GRPCError()
 	}
 
-	wf := &model.Workflow{}
+	wf := &v1.Workflow{}
 	ticker := time.NewTicker(time.Second)
 	for {
 		select {
@@ -118,12 +118,13 @@ func (s *WorkflowServer) WatchWorkflow(req *api.WatchWorkflowRequest, stream api
 }
 
 func (s *WorkflowServer) GetWorkflowLogs(req *api.GetWorkflowLogsRequest, stream api.WorkflowService_GetWorkflowLogsServer) error {
-	watcher, err := s.resourceManager.GetWorkflowLogs(req.Namespace, req.Name, req.PodName, req.ContainerName)
+	client := stream.Context().Value("kubeClient").(*v1.Client)
+	watcher, err := client.GetWorkflowLogs(req.Namespace, req.Name, req.PodName, req.ContainerName)
 	if errors.As(err, &userError) {
 		return userError.GRPCError()
 	}
 
-	le := &model.LogEntry{}
+	le := &v1.LogEntry{}
 	ticker := time.NewTicker(time.Second)
 	for {
 		select {
@@ -146,7 +147,8 @@ func (s *WorkflowServer) GetWorkflowLogs(req *api.GetWorkflowLogsRequest, stream
 }
 
 func (s *WorkflowServer) GetWorkflowMetrics(ctx context.Context, req *api.GetWorkflowMetricsRequest) (*api.GetWorkflowMetricsResponse, error) {
-	metrics, err := s.resourceManager.GetWorkflowMetrics(req.Namespace, req.Name, req.PodName)
+	client := ctx.Value("kubeClient").(*v1.Client)
+	metrics, err := client.GetWorkflowMetrics(req.Namespace, req.Name, req.PodName)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
 	}
@@ -164,6 +166,7 @@ func (s *WorkflowServer) GetWorkflowMetrics(ctx context.Context, req *api.GetWor
 }
 
 func (s *WorkflowServer) ListWorkflows(ctx context.Context, req *api.ListWorkflowsRequest) (*api.ListWorkflowsResponse, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
 	if req.PageSize <= 0 {
 		req.PageSize = 15
 	}
@@ -172,7 +175,7 @@ func (s *WorkflowServer) ListWorkflows(ctx context.Context, req *api.ListWorkflo
 		req.Page = 1
 	}
 
-	workflows, err := s.resourceManager.ListWorkflows(req.Namespace, req.WorkflowTemplateUid, req.WorkflowTemplateVersion)
+	workflows, err := client.ListWorkflows(req.Namespace, req.WorkflowTemplateUid, req.WorkflowTemplateVersion)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
 	}
@@ -203,7 +206,8 @@ func (s *WorkflowServer) ListWorkflows(ctx context.Context, req *api.ListWorkflo
 }
 
 func (s *WorkflowServer) ResubmitWorkflow(ctx context.Context, req *api.ResubmitWorkflowRequest) (*api.Workflow, error) {
-	wf, err := s.resourceManager.ResubmitWorkflow(req.Namespace, req.Name)
+	client := ctx.Value("kubeClient").(*v1.Client)
+	wf, err := client.ResubmitWorkflow(req.Namespace, req.Name)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
 	}
@@ -212,7 +216,8 @@ func (s *WorkflowServer) ResubmitWorkflow(ctx context.Context, req *api.Resubmit
 }
 
 func (s *WorkflowServer) TerminateWorkflow(ctx context.Context, req *api.TerminateWorkflowRequest) (*empty.Empty, error) {
-	err := s.resourceManager.TerminateWorkflow(req.Namespace, req.Name)
+	client := ctx.Value("kubeClient").(*v1.Client)
+	err := client.TerminateWorkflow(req.Namespace, req.Name)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
 	}
@@ -221,11 +226,12 @@ func (s *WorkflowServer) TerminateWorkflow(ctx context.Context, req *api.Termina
 }
 
 func (s *WorkflowServer) CreateWorkflowTemplate(ctx context.Context, req *api.CreateWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
-	workflowTemplate := &model.WorkflowTemplate{
+	workflowTemplate := &v1.WorkflowTemplate{
 		Name:     req.WorkflowTemplate.Name,
 		Manifest: req.WorkflowTemplate.Manifest,
 	}
-	workflowTemplate, err := s.resourceManager.CreateWorkflowTemplate(req.Namespace, workflowTemplate)
+	client := ctx.Value("kubeClient").(*v1.Client)
+	workflowTemplate, err := client.CreateWorkflowTemplate(req.Namespace, workflowTemplate)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
 	}
@@ -236,12 +242,14 @@ func (s *WorkflowServer) CreateWorkflowTemplate(ctx context.Context, req *api.Cr
 }
 
 func (s *WorkflowServer) CreateWorkflowTemplateVersion(ctx context.Context, req *api.CreateWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
-	workflowTemplate := &model.WorkflowTemplate{
+	workflowTemplate := &v1.WorkflowTemplate{
 		UID:      req.WorkflowTemplate.Uid,
 		Name:     req.WorkflowTemplate.Name,
 		Manifest: req.WorkflowTemplate.Manifest,
 	}
-	workflowTemplate, err := s.resourceManager.CreateWorkflowTemplateVersion(req.Namespace, workflowTemplate)
+
+	client := ctx.Value("kubeClient").(*v1.Client)
+	workflowTemplate, err := client.CreateWorkflowTemplateVersion(req.Namespace, workflowTemplate)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
 	}
@@ -253,14 +261,14 @@ func (s *WorkflowServer) CreateWorkflowTemplateVersion(ctx context.Context, req 
 }
 
 func (s *WorkflowServer) UpdateWorkflowTemplateVersion(ctx context.Context, req *api.UpdateWorkflowTemplateVersionRequest) (*api.WorkflowTemplate, error) {
-	workflowTemplate := &model.WorkflowTemplate{
+	workflowTemplate := &v1.WorkflowTemplate{
 		UID:      req.WorkflowTemplate.Uid,
 		Name:     req.WorkflowTemplate.Name,
 		Manifest: req.WorkflowTemplate.Manifest,
 		Version:  req.WorkflowTemplate.Version,
 	}
-
-	workflowTemplate, err := s.resourceManager.UpdateWorkflowTemplateVersion(req.Namespace, workflowTemplate)
+	client := ctx.Value("kubeClient").(*v1.Client)
+	workflowTemplate, err := client.UpdateWorkflowTemplateVersion(req.Namespace, workflowTemplate)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
 	}
@@ -272,7 +280,8 @@ func (s *WorkflowServer) UpdateWorkflowTemplateVersion(ctx context.Context, req 
 }
 
 func (s *WorkflowServer) GetWorkflowTemplate(ctx context.Context, req *api.GetWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
-	workflowTemplate, err := s.resourceManager.GetWorkflowTemplate(req.Namespace, req.Uid, req.Version)
+	client := ctx.Value("kubeClient").(*v1.Client)
+	workflowTemplate, err := client.GetWorkflowTemplate(req.Namespace, req.Uid, req.Version)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
 	}
@@ -281,7 +290,8 @@ func (s *WorkflowServer) GetWorkflowTemplate(ctx context.Context, req *api.GetWo
 }
 
 func (s *WorkflowServer) ListWorkflowTemplateVersions(ctx context.Context, req *api.ListWorkflowTemplateVersionsRequest) (*api.ListWorkflowTemplateVersionsResponse, error) {
-	workflowTemplateVersions, err := s.resourceManager.ListWorkflowTemplateVersions(req.Namespace, req.Uid)
+	client := ctx.Value("kubeClient").(*v1.Client)
+	workflowTemplateVersions, err := client.ListWorkflowTemplateVersions(req.Namespace, req.Uid)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
 	}
@@ -298,7 +308,8 @@ func (s *WorkflowServer) ListWorkflowTemplateVersions(ctx context.Context, req *
 }
 
 func (s *WorkflowServer) ListWorkflowTemplates(ctx context.Context, req *api.ListWorkflowTemplatesRequest) (*api.ListWorkflowTemplatesResponse, error) {
-	workflowTemplates, err := s.resourceManager.ListWorkflowTemplates(req.Namespace)
+	client := ctx.Value("kubeClient").(*v1.Client)
+	workflowTemplates, err := client.ListWorkflowTemplates(req.Namespace)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
 	}
@@ -315,7 +326,8 @@ func (s *WorkflowServer) ListWorkflowTemplates(ctx context.Context, req *api.Lis
 }
 
 func (s *WorkflowServer) ArchiveWorkflowTemplate(ctx context.Context, req *api.ArchiveWorkflowTemplateRequest) (*api.ArchiveWorkflowTemplateResponse, error) {
-	archived, err := s.resourceManager.ArchiveWorkflowTemplate(req.Namespace, req.Uid)
+	client := ctx.Value("kubeClient").(*v1.Client)
+	archived, err := client.ArchiveWorkflowTemplate(req.Namespace, req.Uid)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
 	}
