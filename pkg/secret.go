@@ -57,6 +57,14 @@ func (c *Client) SecretExists(namespace string, name string) (exists bool, err e
 	return true, nil
 }
 
+func encodeSecretData(secretData map[string][]byte) (encodedData map[string][]byte) {
+	encodedData = make(map[string][]byte)
+	for key, value := range secretData {
+		encodedData[key] = []byte(base64.StdEncoding.EncodeToString(value))
+	}
+	return encodedData
+}
+
 func (c *Client) GetSecret(namespace, name string) (secret *Secret, err error) {
 	s, err := c.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
@@ -86,7 +94,7 @@ func (c *Client) GetSecret(namespace, name string) (secret *Secret, err error) {
 
 	secret = &Secret{
 		Name: s.Name,
-		Data: s.Data,
+		Data: encodeSecretData(s.Data),
 	}
 	return
 }
@@ -104,7 +112,6 @@ func (c *Client) ListSecrets(namespace string) (secrets []*Secret, err error) {
 	for _, s := range secretsList.Items {
 		secret := Secret{
 			Name: s.Name,
-			Data: s.Data,
 		}
 		secrets = append(secrets, &secret)
 	}
