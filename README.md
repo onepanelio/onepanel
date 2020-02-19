@@ -88,3 +88,12 @@ Replace "api."
 cat api/apidocs.swagger.json | jq 'walk( if type == "object" then with_entries( .key |= sub( "api\\."; "") ) else . end )' | jq 'walk( if type == "string" then gsub( "api."; "") else . end )' > apidocsjq.swagger.json
 ```
 
+OpenAPI
+To generate the python client:
+```shell script
+java -jar openapi-generator-cli.jar generate -i apidocsjq.swagger.json -g python -o ./pythonopenapi_client/
+```
+Example of how to change the default "openapi-client"
+```shell script
+java -jar openapi-generator-cli.jar generate -p packageName=core.api,projectName=core.api -i apidocsjq.swagger.json -g python -o ./pythonopenapi_client/
+```
