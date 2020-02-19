@@ -57,10 +57,10 @@ func startRPCServer(db *v1.DB, kubeConfig *v1.Config) {
 		grpc_recovery.WithRecoveryHandler(recoveryFunc),
 	}
 	s := grpc.NewServer(grpc.UnaryInterceptor(
-		grpc_middleware.ChainUnaryServer(authInterceptor(kubeConfig, db),
+		grpc_middleware.ChainUnaryServer(authUnaryInterceptor(kubeConfig, db),
 			loggingInterceptor,
 			grpc_recovery.UnaryServerInterceptor(opts...)),
-	))
+	), grpc.StreamInterceptor(authStreamingInterceptor(kubeConfig, db)))
 	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer())
 	api.RegisterSecretServiceServer(s, server.NewSecretServer())
 	api.RegisterNamespaceServiceServer(s, server.NewNamespaceServer())
@@ -129,7 +129,7 @@ func loggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnarySe
 	return
 }
 
-func authInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerInterceptor {
+func authUnaryInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		kubeConfig.BearerToken = ""
 		client, err := v1.NewClient(kubeConfig, db)
@@ -138,5 +138,19 @@ func authInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerIntercept
 		}
 
 		return handler(context.WithValue(ctx, "kubeClient", client), req)
+	}
+}
+
+func authStreamingInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.StreamServerInterceptor {
+	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
+		kubeConfig.BearerToken = ""
+		client, err := v1.NewClient(kubeConfig, db)
+		if err != nil {
+			return
+		}
+		wrapped := grpc_middleware.WrapServerStream(ss)
+		wrapped.WrappedContext = context.WithValue(ss.Context(), "kubeClient", client)
+
+		return handler(srv, wrapped)
 	}
 }
