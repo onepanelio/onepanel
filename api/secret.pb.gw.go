@@ -573,13 +573,17 @@ func local_request_SecretService_AddSecretKeyValue_0(ctx context.Context, marsha
 
 }
 
-var (
-	filter_SecretService_UpdateSecretKeyValue_0 = &utilities.DoubleArray{Encoding: map[string]int{"namespace": 0, "secret": 1, "name": 2}, Base: []int{1, 1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 3, 2, 4}}
-)
-
 func request_SecretService_UpdateSecretKeyValue_0(ctx context.Context, marshaler runtime.Marshaler, client SecretServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq UpdateSecretKeyValueRequest
 	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Secret); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
 
 	var (
 		val string
@@ -608,13 +612,6 @@ func request_SecretService_UpdateSecretKeyValue_0(ctx context.Context, marshaler
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "secret.name", err)
-	}
-
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_SecretService_UpdateSecretKeyValue_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := client.UpdateSecretKeyValue(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -626,6 +623,14 @@ func local_request_SecretService_UpdateSecretKeyValue_0(ctx context.Context, mar
 	var protoReq UpdateSecretKeyValueRequest
 	var metadata runtime.ServerMetadata
 
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Secret); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
 	var (
 		val string
 		ok  bool
@@ -653,10 +658,6 @@ func local_request_SecretService_UpdateSecretKeyValue_0(ctx context.Context, mar
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "secret.name", err)
-	}
-
-	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_SecretService_UpdateSecretKeyValue_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := server.UpdateSecretKeyValue(ctx, &protoReq)
