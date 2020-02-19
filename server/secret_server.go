@@ -90,7 +90,7 @@ func (s *SecretServer) DeleteSecret(ctx context.Context, req *api.DeleteSecretRe
 func (s *SecretServer) DeleteSecretKey(ctx context.Context, req *api.DeleteSecretKeyRequest) (deleted *api.DeleteSecretKeyResponse, err error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
 	secret := v1.Secret{
-		Name: req.Secret.Name,
+		Name: req.SecretName,
 		Data: map[string]string{
 			req.Key: "",
 		},
