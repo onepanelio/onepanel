@@ -2,6 +2,7 @@ package v1
 
 import (
 	"bufio"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -155,9 +156,10 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 				}
 			}
 			if addSecretAsEnv {
+				decodedValue, _ := base64.StdEncoding.DecodeString(string(value))
 				template.Container.Env = append(template.Container.Env, corev1.EnvVar{
 					Name:  key,
-					Value: string(value),
+					Value: string(decodedValue),
 				})
 			}
 		}
