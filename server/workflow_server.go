@@ -168,10 +168,6 @@ func (s *WorkflowServer) ListWorkflows(ctx context.Context, req *api.ListWorkflo
 		req.PageSize = 15
 	}
 
-	if req.Page <= 0 {
-		req.Page = 1
-	}
-
 	workflows, err := s.resourceManager.ListWorkflows(req.Namespace, req.WorkflowTemplateUid, req.WorkflowTemplateVersion)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
@@ -185,6 +181,10 @@ func (s *WorkflowServer) ListWorkflows(ctx context.Context, req *api.ListWorkflo
 	pages := int32(math.Ceil(float64(len(apiWorkflows)) / float64(req.PageSize)))
 	if req.Page > pages {
 		req.Page = pages
+	}
+
+	if req.Page <= 0 {
+		req.Page = 1
 	}
 
 	start := (req.Page - 1) * req.PageSize
