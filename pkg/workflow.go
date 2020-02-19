@@ -264,7 +264,7 @@ func (c *Client) CreateWorkflow(namespace string, workflow *Workflow) (*Workflow
 	}
 	(*opts.Labels)[workflowTemplateUIDLabelKey] = workflowTemplate.UID
 	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
-	workflows, err := unmarshalWorkflows([]byte(workflow.Manifest), true)
+	workflows, err := unmarshalWorkflows([]byte(workflowTemplate.Manifest), true)
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
 			"Namespace": namespace,
