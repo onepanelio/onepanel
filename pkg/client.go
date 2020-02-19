@@ -6,7 +6,7 @@ import (
 
 	argoprojv1alpha1 "github.com/argoproj/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
 	"github.com/jmoiron/sqlx"
-	"github.com/onepanelio/core/s3"
+	"github.com/onepanelio/core/pkg/util/s3"
 	"github.com/onepanelio/core/util/logging"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"

@@ -19,7 +19,7 @@ import (
 	argoutil "github.com/argoproj/argo/workflow/util"
 	"github.com/argoproj/argo/workflow/validate"
 	argojson "github.com/argoproj/pkg/json"
-	"github.com/onepanelio/core/s3"
+	"github.com/onepanelio/core/pkg/util/s3"
 	"github.com/onepanelio/core/util"
 	"github.com/onepanelio/core/util/env"
 	"github.com/onepanelio/core/util/logging"
