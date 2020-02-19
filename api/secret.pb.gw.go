@@ -383,10 +383,6 @@ func local_request_SecretService_DeleteSecret_0(ctx context.Context, marshaler r
 
 }
 
-var (
-	filter_SecretService_DeleteSecretKey_0 = &utilities.DoubleArray{Encoding: map[string]int{"namespace": 0, "secret": 1, "name": 2}, Base: []int{1, 1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 3, 2, 4}}
-)
-
 func request_SecretService_DeleteSecretKey_0(ctx context.Context, marshaler runtime.Marshaler, client SecretServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq DeleteSecretKeyRequest
 	var metadata runtime.ServerMetadata
@@ -409,22 +405,26 @@ func request_SecretService_DeleteSecretKey_0(ctx context.Context, marshaler runt
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "namespace", err)
 	}
 
-	val, ok = pathParams["secret.name"]
+	val, ok = pathParams["secretName"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "secret.name")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "secretName")
 	}
 
-	err = runtime.PopulateFieldFromPath(&protoReq, "secret.name", val)
+	protoReq.SecretName, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "secret.name", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "secretName", err)
 	}
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	val, ok = pathParams["key"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "key")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_SecretService_DeleteSecretKey_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Key, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "key", err)
 	}
 
 	msg, err := client.DeleteSecretKey(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -454,19 +454,26 @@ func local_request_SecretService_DeleteSecretKey_0(ctx context.Context, marshale
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "namespace", err)
 	}
 
-	val, ok = pathParams["secret.name"]
+	val, ok = pathParams["secretName"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "secret.name")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "secretName")
 	}
 
-	err = runtime.PopulateFieldFromPath(&protoReq, "secret.name", val)
+	protoReq.SecretName, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "secret.name", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "secretName", err)
 	}
 
-	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_SecretService_DeleteSecretKey_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	val, ok = pathParams["key"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "key")
+	}
+
+	protoReq.Key, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "key", err)
 	}
 
 	msg, err := server.DeleteSecretKey(ctx, &protoReq)
@@ -1037,7 +1044,7 @@ var (
 
 	pattern_SecretService_DeleteSecret_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"apis", "v1beta1", "namespace", "secrets", "name"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_SecretService_DeleteSecretKey_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"apis", "v1beta1", "namespace", "secrets", "secret.name"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_SecretService_DeleteSecretKey_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5, 1, 0, 4, 1, 5, 6}, []string{"apis", "v1beta1", "namespace", "secrets", "secretName", "keys", "key"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_SecretService_AddSecretKeyValue_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"apis", "v1beta1", "namespace", "secrets", "secret.name"}, "", runtime.AssumeColonVerbOpt(true)))
 

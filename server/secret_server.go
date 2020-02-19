@@ -90,8 +90,10 @@ func (s *SecretServer) DeleteSecret(ctx context.Context, req *api.DeleteSecretRe
 func (s *SecretServer) DeleteSecretKey(ctx context.Context, req *api.DeleteSecretKeyRequest) (deleted *api.DeleteSecretKeyResponse, err error) {
 	var isDeleted bool
 	secret := model.Secret{
-		Name: req.Secret.Name,
-		Data: req.Secret.Data,
+		Name: req.SecretName,
+		Data: map[string]string{
+			req.Key:"",
+		},
 	}
 	isDeleted, err = s.resourceManager.DeleteSecretKey(req.Namespace, &secret)
 	if err != nil {
