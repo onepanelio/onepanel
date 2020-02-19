@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"encoding/base64"
 	"strconv"
 
 	argoprojv1alpha1 "github.com/argoproj/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
@@ -86,10 +85,9 @@ func (c *Client) getNamespaceConfig(namespace string) (config map[string]string,
 		}).Error("getNamespaceConfig failed getting secret.")
 		return
 	}
-	accessKey, _ := base64.StdEncoding.DecodeString(string(secret.Data[artifactRepositoryAccessKeyValueKey]))
-	config[artifactRepositoryAccessKeyValueKey] = string(accessKey)
-	secretKey, _ := base64.StdEncoding.DecodeString(string(secret.Data[artifactRepositorySecretKeyValueKey]))
-	config[artifactRepositorySecretKeyValueKey] = string(secretKey)
+
+	config[artifactRepositoryAccessKeyValueKey] = string(secret.Data[artifactRepositoryAccessKeyValueKey])
+	config[artifactRepositorySecretKeyValueKey] = string(secret.Data[artifactRepositorySecretKeyValueKey])
 
 	return
 }
