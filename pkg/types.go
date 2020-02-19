@@ -15,7 +15,7 @@ type Namespace struct {
 
 type Secret struct {
 	Name string
-	Data map[string][]byte
+	Data map[string]string
 }
 
 type ConfigMap struct {

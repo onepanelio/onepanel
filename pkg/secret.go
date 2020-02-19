@@ -20,7 +20,7 @@ func (c *Client) CreateSecret(namespace string, secret *Secret) (err error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: secret.Name,
 		},
-		Data: secret.Data,
+		StringData: secret.Data,
 	})
 	if err != nil {
 		logging.Logger.Log.WithFields(log.Fields{
@@ -57,10 +57,10 @@ func (c *Client) SecretExists(namespace string, name string) (exists bool, err e
 	return true, nil
 }
 
-func encodeSecretData(secretData map[string][]byte) (encodedData map[string][]byte) {
-	encodedData = make(map[string][]byte)
+func encodeSecretData(secretData map[string][]byte) (encodedData map[string]string) {
+	encodedData = make(map[string]string)
 	for key, value := range secretData {
-		encodedData[key] = []byte(base64.StdEncoding.EncodeToString(value))
+		encodedData[key] = base64.StdEncoding.EncodeToString([]byte(value))
 	}
 	return encodedData
 }
@@ -199,7 +199,7 @@ func (c *Client) AddSecretKeyValue(namespace string, secret *Secret) (inserted b
 	)
 	for dataKey, dataValue := range secret.Data {
 		key = dataKey
-		value = dataValue
+		value = []byte(dataValue)
 		break
 	}
 
@@ -303,7 +303,7 @@ func (c *Client) UpdateSecretKeyValue(namespace string, secret *Secret) (updated
 	)
 	for dataKey, dataValue := range secret.Data {
 		key = dataKey
-		value = dataValue
+		value = []byte(dataValue)
 		break
 	}
 

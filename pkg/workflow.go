@@ -156,7 +156,7 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 				}
 			}
 			if addSecretAsEnv {
-				decodedValue, _ := base64.StdEncoding.DecodeString(string(value))
+				decodedValue, _ := base64.StdEncoding.DecodeString(value)
 				template.Container.Env = append(template.Container.Env, corev1.EnvVar{
 					Name:  key,
 					Value: string(decodedValue),
