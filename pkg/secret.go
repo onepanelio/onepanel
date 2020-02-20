@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	goerrors "errors"
 
-	"github.com/onepanelio/core/util"
+	"github.com/onepanelio/core/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	corev1 "k8s.io/api/core/v1"

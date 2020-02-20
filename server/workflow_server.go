@@ -9,7 +9,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
-	"github.com/onepanelio/core/util/ptr"
+	"github.com/onepanelio/core/pkg/util/ptr"
 )
 
 type WorkflowServer struct{}
