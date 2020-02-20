@@ -2,14 +2,41 @@ package interceptor
 
 import (
 	"context"
+	"strings"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	v1 "github.com/onepanelio/core/pkg"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
+func getBearerToken(ctx context.Context) (*string, bool) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, false
+	}
+
+	prefix := "Bearer "
+	for _, t := range md.Get("authorization") {
+		if !strings.HasPrefix(t, prefix) {
+			return nil, false
+		}
+		t = strings.ReplaceAll(t, prefix, "")
+		return &t, true
+	}
+
+	return nil, false
+}
+
 func getClient(ctx context.Context, kubeConfig *v1.Config, db *v1.DB) (context.Context, error) {
-	kubeConfig.BearerToken = ""
+	bearerToken, ok := getBearerToken(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, `Missing or invalid "authorization" header.`)
+	}
+
+	kubeConfig.BearerToken = *bearerToken
 	client, err := v1.NewClient(kubeConfig, db)
 	if err != nil {
 		return nil, err
