@@ -12,6 +12,7 @@ import (
 
 	"github.com/gorilla/handlers"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/jmoiron/sqlx"
@@ -19,6 +20,7 @@ import (
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/server"
 	"github.com/onepanelio/core/server/interceptor"
+	"github.com/onepanelio/core/util/env"
 	"github.com/pressly/goose"
 	log "github.com/sirupsen/logrus"
 	"github.com/tmc/grpc-websocket-proxy/wsproxy"
@@ -51,22 +53,33 @@ func startRPCServer(db *v1.DB, kubeConfig *v1.Config) {
 	if err != nil {
 		log.Fatalf("Failed to start RPC listener: %v", err)
 	}
+
+	// Recovery settings
 	recoveryFunc = func(p interface{}) (err error) {
 		return status.Errorf(codes.Unknown, "panic triggered: %v", p)
 	}
-	opts := []grpc_recovery.Option{
+	recoveryOpts := []grpc_recovery.Option{
 		grpc_recovery.WithRecoveryHandler(recoveryFunc),
 	}
+
+	// Logger settings
+	stdLogger := log.StandardLogger()
+	reportCaller := env.GetEnv("LOGGING_ENABLE_CALLER_TRACE", "false")
+	if reportCaller == "true" {
+		stdLogger.SetReportCaller(true)
+	}
+	logEntry := log.NewEntry(stdLogger)
+
 	s := grpc.NewServer(grpc.UnaryInterceptor(
 		grpc_middleware.ChainUnaryServer(
-			interceptor.AuthUnaryInterceptor(kubeConfig, db),
-			interceptor.LoggingUnaryInterceptor,
-			grpc_recovery.UnaryServerInterceptor(opts...)),
+			grpc_logrus.UnaryServerInterceptor(logEntry),
+			grpc_recovery.UnaryServerInterceptor(recoveryOpts...),
+			interceptor.AuthUnaryInterceptor(kubeConfig, db)),
 	), grpc.StreamInterceptor(
 		grpc_middleware.ChainStreamServer(
-			interceptor.AuthStreamingInterceptor(kubeConfig, db),
-			grpc_recovery.StreamServerInterceptor(opts...))),
-	)
+			grpc_recovery.StreamServerInterceptor(recoveryOpts...),
+			interceptor.AuthStreamingInterceptor(kubeConfig, db)),
+	))
 	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer())
 	api.RegisterSecretServiceServer(s, server.NewSecretServer())
 	api.RegisterNamespaceServiceServer(s, server.NewNamespaceServer())

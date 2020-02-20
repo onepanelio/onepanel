@@ -6,7 +6,6 @@ import (
 	goerrors "errors"
 
 	"github.com/onepanelio/core/util"
-	"github.com/onepanelio/core/util/logging"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	corev1 "k8s.io/api/core/v1"
@@ -23,7 +22,7 @@ func (c *Client) CreateSecret(namespace string, secret *Secret) (err error) {
 		StringData: secret.Data,
 	})
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Secret":    secret,
 			"Error":     err.Error(),
@@ -36,7 +35,7 @@ func (c *Client) CreateSecret(namespace string, secret *Secret) (err error) {
 func (c *Client) SecretExists(namespace string, name string) (exists bool, err error) {
 	foundSecret, err := c.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"Error":     err.Error(),
@@ -68,7 +67,7 @@ func encodeSecretData(secretData map[string][]byte) (encodedData map[string]stri
 func (c *Client) GetSecret(namespace, name string) (secret *Secret, err error) {
 	s, err := c.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"Error":     err.Error(),
@@ -84,7 +83,7 @@ func (c *Client) GetSecret(namespace, name string) (secret *Secret, err error) {
 		return nil, util.NewUserError(codes.Unknown, "Error when getting secret.")
 	}
 	if s == nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"Error":     "Secret is nil.",
@@ -102,7 +101,7 @@ func (c *Client) GetSecret(namespace, name string) (secret *Secret, err error) {
 func (c *Client) ListSecrets(namespace string) (secrets []*Secret, err error) {
 	secretsList, err := c.CoreV1().Secrets(namespace).List(metav1.ListOptions{})
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Error":     err.Error(),
 		}).Error("No secrets were found.")
@@ -122,7 +121,7 @@ func (c *Client) ListSecrets(namespace string) (secrets []*Secret, err error) {
 func (c *Client) DeleteSecret(namespace string, name string) (deleted bool, err error) {
 	err = c.CoreV1().Secrets(namespace).Delete(name, &metav1.DeleteOptions{})
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"Error":     err.Error(),
@@ -145,7 +144,7 @@ func (c *Client) DeleteSecretKey(namespace string, secret *Secret) (deleted bool
 	//Check if the secret has the key to delete
 	secretFound, err := c.GetSecret(namespace, secret.Name)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Secret":    secret,
 			"Error":     err.Error(),
@@ -174,7 +173,7 @@ func (c *Client) DeleteSecretKey(namespace string, secret *Secret) (deleted bool
 		payloadBytes, _ := json.Marshal(payload)
 		_, err = c.CoreV1().Secrets(namespace).Patch(secret.Name, types.JSONPatchType, payloadBytes)
 		if err != nil {
-			logging.Logger.Log.WithFields(log.Fields{
+			log.WithFields(log.Fields{
 				"Namespace": namespace,
 				"Secret":    secret,
 				"Error":     err.Error(),
@@ -205,7 +204,7 @@ func (c *Client) AddSecretKeyValue(namespace string, secret *Secret) (inserted b
 
 	secretFound, err := c.GetSecret(namespace, secret.Name)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Secret":    secret,
 			"Error":     err.Error(),
@@ -250,7 +249,7 @@ func (c *Client) AddSecretKeyValue(namespace string, secret *Secret) (inserted b
 		}}
 		payload, err = json.Marshal(payloadAddNode)
 		if err != nil {
-			logging.Logger.Log.WithFields(log.Fields{
+			log.WithFields(log.Fields{
 				"Namespace": namespace,
 				"Secret":    secret,
 				"Error":     err.Error(),
@@ -272,7 +271,7 @@ func (c *Client) AddSecretKeyValue(namespace string, secret *Secret) (inserted b
 		}}
 		payload, err = json.Marshal(payloadAddData)
 		if err != nil {
-			logging.Logger.Log.WithFields(log.Fields{
+			log.WithFields(log.Fields{
 				"Namespace": namespace,
 				"Secret":    secret,
 				"Error":     err.Error(),
@@ -282,7 +281,7 @@ func (c *Client) AddSecretKeyValue(namespace string, secret *Secret) (inserted b
 	}
 	_, err = c.CoreV1().Secrets(namespace).Patch(secret.Name, types.JSONPatchType, payload)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Secret":    secret,
 			"Error":     err.Error(),
@@ -310,7 +309,7 @@ func (c *Client) UpdateSecretKeyValue(namespace string, secret *Secret) (updated
 	//Check if the secret has the key to update
 	secretFound, err := c.GetSecret(namespace, secret.Name)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Secret":    secret,
 			"Error":     err.Error(),
@@ -343,7 +342,7 @@ func (c *Client) UpdateSecretKeyValue(namespace string, secret *Secret) (updated
 	payloadBytes, _ := json.Marshal(payload)
 	_, err = c.CoreV1().Secrets(namespace).Patch(secret.Name, types.JSONPatchType, payloadBytes)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Secret":    secret,
 			"Error":     err.Error(),

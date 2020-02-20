@@ -6,7 +6,6 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/onepanelio/core/util"
-	"github.com/onepanelio/core/util/logging"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 )
@@ -216,7 +215,7 @@ func (c *Client) archiveWorkflowTemplate(namespace, uid string) (bool, error) {
 func (c *Client) CreateWorkflowTemplate(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
 	allowed, err := c.IsAuthorized(namespace, "create", "argoproj.io", "workflow", "")
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
 			"Error":            err.Error(),
@@ -229,7 +228,7 @@ func (c *Client) CreateWorkflowTemplate(namespace string, workflowTemplate *Work
 
 	// validate workflow template
 	if err := c.ValidateWorkflow(namespace, workflowTemplate.GetManifestBytes()); err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
 			"Error":            err.Error(),
@@ -239,7 +238,7 @@ func (c *Client) CreateWorkflowTemplate(namespace string, workflowTemplate *Work
 
 	workflowTemplate, err = c.createWorkflowTemplate(namespace, workflowTemplate)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
 			"Error":            err.Error(),
@@ -253,7 +252,7 @@ func (c *Client) CreateWorkflowTemplate(namespace string, workflowTemplate *Work
 func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
 	allowed, err := c.IsAuthorized(namespace, "create", "argoproj.io", "workflow", "")
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
 			"Error":            err.Error(),
@@ -266,7 +265,7 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 
 	// validate workflow template
 	if err := c.ValidateWorkflow(namespace, workflowTemplate.GetManifestBytes()); err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
 			"Error":            err.Error(),
@@ -275,7 +274,7 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 	}
 
 	if err := c.removeIsLatestFromWorkflowTemplateVersions(workflowTemplate); err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
 			"Error":            err.Error(),
@@ -285,7 +284,7 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 
 	workflowTemplate, err = c.createWorkflowTemplateVersion(namespace, workflowTemplate)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
 			"Error":            err.Error(),
@@ -302,7 +301,7 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 func (c *Client) UpdateWorkflowTemplateVersion(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
 	allowed, err := c.IsAuthorized(namespace, "update", "argoproj.io", "workflow", "")
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
 			"Error":            err.Error(),
@@ -315,7 +314,7 @@ func (c *Client) UpdateWorkflowTemplateVersion(namespace string, workflowTemplat
 
 	// validate workflow template
 	if err := c.ValidateWorkflow(namespace, workflowTemplate.GetManifestBytes()); err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
 			"Error":            err.Error(),
@@ -325,7 +324,7 @@ func (c *Client) UpdateWorkflowTemplateVersion(namespace string, workflowTemplat
 
 	originalWorkflowTemplate, err := c.getWorkflowTemplate(namespace, workflowTemplate.UID, workflowTemplate.Version)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
 			"Error":            err.Error(),
@@ -336,7 +335,7 @@ func (c *Client) UpdateWorkflowTemplateVersion(namespace string, workflowTemplat
 	workflowTemplate.ID = originalWorkflowTemplate.ID
 	workflowTemplate, err = c.updateWorkflowTemplateVersion(workflowTemplate)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
 			"Error":            err.Error(),
@@ -353,7 +352,7 @@ func (c *Client) UpdateWorkflowTemplateVersion(namespace string, workflowTemplat
 func (c *Client) GetWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *WorkflowTemplate, err error) {
 	allowed, err := c.IsAuthorized(namespace, "get", "argoproj.io", "workflow", "")
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
 			"Error":            err.Error(),
@@ -366,7 +365,7 @@ func (c *Client) GetWorkflowTemplate(namespace, uid string, version int32) (work
 
 	workflowTemplate, err = c.getWorkflowTemplate(namespace, uid, version)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
 			"Error":            err.Error(),
@@ -383,7 +382,7 @@ func (c *Client) GetWorkflowTemplate(namespace, uid string, version int32) (work
 func (c *Client) ListWorkflowTemplateVersions(namespace, uid string) (workflowTemplateVersions []*WorkflowTemplate, err error) {
 	allowed, err := c.IsAuthorized(namespace, "list", "argoproj.io", "workflow", "")
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"UID":       uid,
 			"Error":     err.Error(),
@@ -396,7 +395,7 @@ func (c *Client) ListWorkflowTemplateVersions(namespace, uid string) (workflowTe
 
 	workflowTemplateVersions, err = c.listWorkflowTemplateVersions(namespace, uid)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"UID":       uid,
 			"Error":     err.Error(),
@@ -410,7 +409,7 @@ func (c *Client) ListWorkflowTemplateVersions(namespace, uid string) (workflowTe
 func (c *Client) ListWorkflowTemplates(namespace string) (workflowTemplateVersions []*WorkflowTemplate, err error) {
 	allowed, err := c.IsAuthorized(namespace, "list", "argoproj.io", "workflow", "")
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Error":     err.Error(),
 		}).Error("IsAuthorized failed.")
@@ -422,7 +421,7 @@ func (c *Client) ListWorkflowTemplates(namespace string) (workflowTemplateVersio
 
 	workflowTemplateVersions, err = c.listWorkflowTemplates(namespace)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Error":     err.Error(),
 		}).Error("Workflow templates not found.")
@@ -435,7 +434,7 @@ func (c *Client) ListWorkflowTemplates(namespace string) (workflowTemplateVersio
 func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, err error) {
 	allowed, err := c.IsAuthorized(namespace, "delete", "argoproj.io", "workflow", "")
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"UID":       uid,
 			"Error":     err.Error(),
@@ -448,7 +447,7 @@ func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, 
 
 	workflowTemplate, err := c.getWorkflowTemplate(namespace, uid, 0)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"UID":       uid,
 			"Error":     err.Error(),
@@ -462,7 +461,7 @@ func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, 
 	archived, err = c.archiveWorkflowTemplate(namespace, uid)
 	if !archived || err != nil {
 		if err != nil {
-			logging.Logger.Log.WithFields(log.Fields{
+			log.WithFields(log.Fields{
 				"Namespace": namespace,
 				"UID":       uid,
 				"Error":     err.Error(),

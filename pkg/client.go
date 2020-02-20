@@ -7,7 +7,6 @@ import (
 	argoprojv1alpha1 "github.com/argoproj/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
 	"github.com/jmoiron/sqlx"
 	"github.com/onepanelio/core/pkg/util/s3"
-	"github.com/onepanelio/core/util/logging"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -70,7 +69,7 @@ func NewClient(config *Config, db *sqlx.DB) (client *Client, err error) {
 func (c *Client) getNamespaceConfig(namespace string) (config map[string]string, err error) {
 	configMap, err := c.GetConfigMap(namespace, "onepanel")
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Error":     err.Error(),
 		}).Error("getNamespaceConfig failed getting config map.")
@@ -80,7 +79,7 @@ func (c *Client) getNamespaceConfig(namespace string) (config map[string]string,
 
 	secret, err := c.GetSecret(namespace, "onepanel")
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Error":     err.Error(),
 		}).Error("getNamespaceConfig failed getting secret.")
@@ -97,7 +96,7 @@ func (c *Client) getNamespaceConfig(namespace string) (config map[string]string,
 func (c *Client) getS3Client(namespace string, config map[string]string) (s3Client *s3.Client, err error) {
 	insecure, err := strconv.ParseBool(config[artifactRepositoryInSecureKey])
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"ConfigMap": config,
 			"Error":     err.Error(),
@@ -112,7 +111,7 @@ func (c *Client) getS3Client(namespace string, config map[string]string) (s3Clie
 		InSecure:  insecure,
 	})
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"ConfigMap": config,
 			"Error":     err.Error(),

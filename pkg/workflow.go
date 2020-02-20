@@ -23,7 +23,6 @@ import (
 	"github.com/onepanelio/core/pkg/util/s3"
 	"github.com/onepanelio/core/util"
 	"github.com/onepanelio/core/util/env"
-	"github.com/onepanelio/core/util/logging"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	corev1 "k8s.io/api/core/v1"
@@ -242,7 +241,7 @@ func (c *Client) ValidateWorkflow(namespace string, manifest []byte) (err error)
 func (c *Client) CreateWorkflow(namespace string, workflow *Workflow) (*Workflow, error) {
 	workflowTemplate, err := c.GetWorkflowTemplate(namespace, workflow.WorkflowTemplate.UID, workflow.WorkflowTemplate.Version)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Workflow":  workflow,
 			"Error":     err.Error(),
@@ -268,7 +267,7 @@ func (c *Client) CreateWorkflow(namespace string, workflow *Workflow) (*Workflow
 	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
 	workflows, err := unmarshalWorkflows([]byte(workflowTemplate.Manifest), true)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Workflow":  workflow,
 			"Error":     err.Error(),
@@ -280,7 +279,7 @@ func (c *Client) CreateWorkflow(namespace string, workflow *Workflow) (*Workflow
 	for _, wf := range workflows {
 		createdWorkflow, err := c.create(namespace, &wf, opts)
 		if err != nil {
-			logging.Logger.Log.WithFields(log.Fields{
+			log.WithFields(log.Fields{
 				"Namespace": namespace,
 				"Workflow":  workflow,
 				"Error":     err.Error(),
@@ -303,7 +302,7 @@ func (c *Client) CreateWorkflow(namespace string, workflow *Workflow) (*Workflow
 func (c *Client) GetWorkflow(namespace, name string) (workflow *Workflow, err error) {
 	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"Error":     err.Error(),
@@ -318,7 +317,7 @@ func (c *Client) GetWorkflow(namespace, name string) (workflow *Workflow, err er
 		32,
 	)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"Error":     err.Error(),
@@ -327,7 +326,7 @@ func (c *Client) GetWorkflow(namespace, name string) (workflow *Workflow, err er
 	}
 	workflowTemplate, err := c.GetWorkflowTemplate(namespace, uid, int32(version))
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"Error":     err.Error(),
@@ -338,7 +337,7 @@ func (c *Client) GetWorkflow(namespace, name string) (workflow *Workflow, err er
 	// TODO: Do we need to parse parameters into workflow.Parameters?
 	manifest, err := json.Marshal(wf)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"Error":     err.Error(),
@@ -374,7 +373,7 @@ func (c *Client) ListWorkflows(namespace, workflowTemplateUID, workflowTemplateV
 	}
 	workflowList, err := c.ArgoprojV1alpha1().Workflows(namespace).List(*opts.ListOptions)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace":               namespace,
 			"WorkflowTemplateUID":     workflowTemplateUID,
 			"WorkflowTemplateVersion": workflowTemplateVersion,
@@ -408,7 +407,7 @@ func (c *Client) ListWorkflows(namespace, workflowTemplateUID, workflowTemplateV
 func (c *Client) WatchWorkflow(namespace, name string) (<-chan *Workflow, error) {
 	_, err := c.GetWorkflow(namespace, name)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"Error":     err.Error(),
@@ -421,7 +420,7 @@ func (c *Client) WatchWorkflow(namespace, name string) (<-chan *Workflow, error)
 		FieldSelector: fieldSelector.String(),
 	})
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"Error":     err.Error(),
@@ -445,7 +444,7 @@ func (c *Client) WatchWorkflow(namespace, name string) (<-chan *Workflow, error)
 			}
 			manifest, err := json.Marshal(workflow)
 			if err != nil {
-				logging.Logger.Log.WithFields(log.Fields{
+				log.WithFields(log.Fields{
 					"Namespace": namespace,
 					"Name":      name,
 					"Workflow":  workflow,
@@ -473,7 +472,7 @@ func (c *Client) WatchWorkflow(namespace, name string) (<-chan *Workflow, error)
 func (c *Client) GetWorkflowLogs(namespace, name, podName, containerName string) (<-chan *LogEntry, error) {
 	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace":     namespace,
 			"Name":          name,
 			"PodName":       podName,
@@ -493,7 +492,7 @@ func (c *Client) GetWorkflowLogs(namespace, name, podName, containerName string)
 	if wf.Status.Nodes[podName].Completed() {
 		config, err = c.getNamespaceConfig(namespace)
 		if err != nil {
-			logging.Logger.Log.WithFields(log.Fields{
+			log.WithFields(log.Fields{
 				"Namespace":     namespace,
 				"Name":          name,
 				"PodName":       podName,
@@ -505,7 +504,7 @@ func (c *Client) GetWorkflowLogs(namespace, name, podName, containerName string)
 
 		s3Client, err = c.getS3Client(namespace, config)
 		if err != nil {
-			logging.Logger.Log.WithFields(log.Fields{
+			log.WithFields(log.Fields{
 				"Namespace":     namespace,
 				"Name":          name,
 				"PodName":       podName,
@@ -532,7 +531,7 @@ func (c *Client) GetWorkflowLogs(namespace, name, podName, containerName string)
 	// TODO: Catch exact kubernetes error
 	//Todo: Can above todo be removed with the logging error?
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace":     namespace,
 			"Name":          name,
 			"PodName":       podName,
@@ -579,7 +578,7 @@ func (c *Client) GetWorkflowMetrics(namespace, name, podName string) (metrics []
 
 	config, err = c.getNamespaceConfig(namespace)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"PodName":   podName,
@@ -590,7 +589,7 @@ func (c *Client) GetWorkflowMetrics(namespace, name, podName string) (metrics []
 
 	s3Client, err = c.getS3Client(namespace, config)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"PodName":   podName,
@@ -602,7 +601,7 @@ func (c *Client) GetWorkflowMetrics(namespace, name, podName string) (metrics []
 	opts := s3.GetObjectOptions{}
 	stream, err = s3Client.GetObject(config[artifactRepositoryBucketKey], "artifacts/"+namespace+"/"+name+"/"+podName+"/sys-metrics.json", opts)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"PodName":   podName,
@@ -612,7 +611,7 @@ func (c *Client) GetWorkflowMetrics(namespace, name, podName string) (metrics []
 	}
 	content, err := ioutil.ReadAll(stream)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"PodName":   podName,
@@ -622,7 +621,7 @@ func (c *Client) GetWorkflowMetrics(namespace, name, podName string) (metrics []
 	}
 
 	if err = json.Unmarshal(content, &metrics); err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"PodName":   podName,
