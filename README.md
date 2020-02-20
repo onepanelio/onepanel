@@ -73,27 +73,17 @@ protoc -I/usr/local/include  \
 So instead of `apiListSecretsResponse`, it would become `api.ListSecretsResponse`
 
 ## Python Client
-
-Install protoc tool for python.
-
-Build the proto files for Python
-```shell script
-python -m grpc_tools.protoc -I/usr/local/include  -Iapi/third_party/googleapis  -Iapi/ api/third_party/googleapis/google/api/*.proto api/third_party/googleapis/google/rpc/*.proto api/*.proto --python_out=. --grpc_python_out=.
-```
-Run main.go, then run main.py to test the request.
-
-
 Replace "api."
 ```shell script
 cat api/apidocs.swagger.json | jq 'walk( if type == "object" then with_entries( .key |= sub( "api\\."; "") ) else . end )' | jq 'walk( if type == "string" then gsub( "api."; "") else . end )' > apidocsjq.swagger.json
 ```
 
 OpenAPI
+Download the jar:
+- https://github.com/OpenAPITools/openapi-generator#13---download-jar
+
 To generate the python client:
-```shell script
-java -jar openapi-generator-cli.jar generate -i apidocsjq.swagger.json -g python -o ./pythonopenapi_client/
-```
-Example of how to change the default "openapi-client"
 ```shell script
 java -jar openapi-generator-cli.jar generate -p packageName=core.api,projectName=core.api -i apidocsjq.swagger.json -g python -o ./pythonopenapi_client/
 ```
+packageName impacts import statements. So this can be changed to "onepanel.api" for example.
