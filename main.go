@@ -18,6 +18,7 @@ import (
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/server"
+	"github.com/onepanelio/core/server/interceptor"
 	"github.com/pressly/goose"
 	log "github.com/sirupsen/logrus"
 	"github.com/tmc/grpc-websocket-proxy/wsproxy"
@@ -57,10 +58,15 @@ func startRPCServer(db *v1.DB, kubeConfig *v1.Config) {
 		grpc_recovery.WithRecoveryHandler(recoveryFunc),
 	}
 	s := grpc.NewServer(grpc.UnaryInterceptor(
-		grpc_middleware.ChainUnaryServer(authUnaryInterceptor(kubeConfig, db),
-			loggingInterceptor,
+		grpc_middleware.ChainUnaryServer(
+			interceptor.AuthUnaryInterceptor(kubeConfig, db),
+			interceptor.LoggingUnaryInterceptor,
 			grpc_recovery.UnaryServerInterceptor(opts...)),
-	), grpc.StreamInterceptor(authStreamingInterceptor(kubeConfig, db)))
+	), grpc.StreamInterceptor(
+		grpc_middleware.ChainStreamServer(
+			interceptor.AuthStreamingInterceptor(kubeConfig, db),
+			grpc_recovery.StreamServerInterceptor(opts...))),
+	)
 	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer())
 	api.RegisterSecretServiceServer(s, server.NewSecretServer())
 	api.RegisterNamespaceServiceServer(s, server.NewNamespaceServer())
@@ -109,48 +115,5 @@ func registerHandler(register registerFunc, ctx context.Context, mux *runtime.Se
 	err := register(ctx, mux, endpoint, opts)
 	if err != nil {
 		log.Fatalf("Failed to register handler: %v", err)
-	}
-}
-
-func loggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-	log.WithFields(log.Fields{
-		"fullMethod": info.FullMethod,
-	}).Info("handler started")
-	resp, err = handler(ctx, req)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"fullMethod": info.FullMethod,
-		}).Warning(err)
-		return
-	}
-	log.WithFields(log.Fields{
-		"fullMethod": info.FullMethod,
-	}).Info("handler finished")
-	return
-}
-
-func authUnaryInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		kubeConfig.BearerToken = ""
-		client, err := v1.NewClient(kubeConfig, db)
-		if err != nil {
-			return
-		}
-
-		return handler(context.WithValue(ctx, "kubeClient", client), req)
-	}
-}
-
-func authStreamingInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.StreamServerInterceptor {
-	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
-		kubeConfig.BearerToken = ""
-		client, err := v1.NewClient(kubeConfig, db)
-		if err != nil {
-			return
-		}
-		wrapped := grpc_middleware.WrapServerStream(ss)
-		wrapped.WrappedContext = context.WithValue(ss.Context(), "kubeClient", client)
-
-		return handler(srv, wrapped)
 	}
 }
