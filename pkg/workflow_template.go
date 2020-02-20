@@ -213,19 +213,6 @@ func (c *Client) archiveWorkflowTemplate(namespace, uid string) (bool, error) {
 }
 
 func (c *Client) CreateWorkflowTemplate(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
-	allowed, err := c.IsAuthorized(namespace, "create", "argoproj.io", "workflow", "")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace":        namespace,
-			"WorkflowTemplate": workflowTemplate,
-			"Error":            err.Error(),
-		}).Error("IsAuthorized failed.")
-		return nil, util.NewUserError(codes.Unknown, "Could not create workflow template.")
-	}
-	if !allowed {
-		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
-	}
-
 	// validate workflow template
 	if err := c.ValidateWorkflow(namespace, workflowTemplate.GetManifestBytes()); err != nil {
 		log.WithFields(log.Fields{
@@ -236,7 +223,7 @@ func (c *Client) CreateWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
 	}
 
-	workflowTemplate, err = c.createWorkflowTemplate(namespace, workflowTemplate)
+	workflowTemplate, err := c.createWorkflowTemplate(namespace, workflowTemplate)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":        namespace,
@@ -250,19 +237,6 @@ func (c *Client) CreateWorkflowTemplate(namespace string, workflowTemplate *Work
 }
 
 func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
-	allowed, err := c.IsAuthorized(namespace, "create", "argoproj.io", "workflow", "")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace":        namespace,
-			"WorkflowTemplate": workflowTemplate,
-			"Error":            err.Error(),
-		}).Error("IsAuthorized failed.")
-		return nil, util.NewUserError(codes.Unknown, "Could not create template version.")
-	}
-	if !allowed {
-		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
-	}
-
 	// validate workflow template
 	if err := c.ValidateWorkflow(namespace, workflowTemplate.GetManifestBytes()); err != nil {
 		log.WithFields(log.Fields{
@@ -282,7 +256,7 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 		return nil, util.NewUserError(codes.Unknown, "Unable to Create Workflow Template Version.")
 	}
 
-	workflowTemplate, err = c.createWorkflowTemplateVersion(namespace, workflowTemplate)
+	workflowTemplate, err := c.createWorkflowTemplateVersion(namespace, workflowTemplate)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":        namespace,
@@ -299,19 +273,6 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 }
 
 func (c *Client) UpdateWorkflowTemplateVersion(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
-	allowed, err := c.IsAuthorized(namespace, "update", "argoproj.io", "workflow", "")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace":        namespace,
-			"WorkflowTemplate": workflowTemplate,
-			"Error":            err.Error(),
-		}).Error("IsAuthorized failed.")
-		return nil, util.NewUserError(codes.Unknown, "Could not update workflow template version.")
-	}
-	if !allowed {
-		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
-	}
-
 	// validate workflow template
 	if err := c.ValidateWorkflow(namespace, workflowTemplate.GetManifestBytes()); err != nil {
 		log.WithFields(log.Fields{
@@ -350,19 +311,6 @@ func (c *Client) UpdateWorkflowTemplateVersion(namespace string, workflowTemplat
 }
 
 func (c *Client) GetWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *WorkflowTemplate, err error) {
-	allowed, err := c.IsAuthorized(namespace, "get", "argoproj.io", "workflow", "")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace":        namespace,
-			"WorkflowTemplate": workflowTemplate,
-			"Error":            err.Error(),
-		}).Error("IsAuthorized failed.")
-		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
-	}
-	if !allowed {
-		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
-	}
-
 	workflowTemplate, err = c.getWorkflowTemplate(namespace, uid, version)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -380,19 +328,6 @@ func (c *Client) GetWorkflowTemplate(namespace, uid string, version int32) (work
 }
 
 func (c *Client) ListWorkflowTemplateVersions(namespace, uid string) (workflowTemplateVersions []*WorkflowTemplate, err error) {
-	allowed, err := c.IsAuthorized(namespace, "list", "argoproj.io", "workflow", "")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"UID":       uid,
-			"Error":     err.Error(),
-		}).Error("IsAuthorized failed.")
-		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
-	}
-	if !allowed {
-		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
-	}
-
 	workflowTemplateVersions, err = c.listWorkflowTemplateVersions(namespace, uid)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -407,18 +342,6 @@ func (c *Client) ListWorkflowTemplateVersions(namespace, uid string) (workflowTe
 }
 
 func (c *Client) ListWorkflowTemplates(namespace string) (workflowTemplateVersions []*WorkflowTemplate, err error) {
-	allowed, err := c.IsAuthorized(namespace, "list", "argoproj.io", "workflow", "")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"Error":     err.Error(),
-		}).Error("IsAuthorized failed.")
-		return nil, util.NewUserError(codes.Unknown, "Unable to list workflow templates.")
-	}
-	if !allowed {
-		return nil, util.NewUserError(codes.PermissionDenied, "Permission denied.")
-	}
-
 	workflowTemplateVersions, err = c.listWorkflowTemplates(namespace)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -432,19 +355,6 @@ func (c *Client) ListWorkflowTemplates(namespace string) (workflowTemplateVersio
 }
 
 func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, err error) {
-	allowed, err := c.IsAuthorized(namespace, "delete", "argoproj.io", "workflow", "")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"UID":       uid,
-			"Error":     err.Error(),
-		}).Error("IsAuthorized failed.")
-		return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
-	}
-	if !allowed {
-		return false, util.NewUserError(codes.PermissionDenied, "Permission denied.")
-	}
-
 	workflowTemplate, err := c.getWorkflowTemplate(namespace, uid, 0)
 	if err != nil {
 		log.WithFields(log.Fields{

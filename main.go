@@ -20,7 +20,7 @@ import (
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util/env"
 	"github.com/onepanelio/core/server"
-	"github.com/onepanelio/core/server/interceptor"
+	"github.com/onepanelio/core/server/auth"
 	"github.com/pressly/goose"
 	log "github.com/sirupsen/logrus"
 	"github.com/tmc/grpc-websocket-proxy/wsproxy"
@@ -74,11 +74,11 @@ func startRPCServer(db *v1.DB, kubeConfig *v1.Config) {
 		grpc_middleware.ChainUnaryServer(
 			grpc_logrus.UnaryServerInterceptor(logEntry),
 			grpc_recovery.UnaryServerInterceptor(recoveryOpts...),
-			interceptor.AuthUnaryInterceptor(kubeConfig, db)),
+			auth.AuthUnaryInterceptor(kubeConfig, db)),
 	), grpc.StreamInterceptor(
 		grpc_middleware.ChainStreamServer(
 			grpc_recovery.StreamServerInterceptor(recoveryOpts...),
-			interceptor.AuthStreamingInterceptor(kubeConfig, db)),
+			auth.AuthStreamingInterceptor(kubeConfig, db)),
 	))
 	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer())
 	api.RegisterSecretServiceServer(s, server.NewSecretServer())

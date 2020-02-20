@@ -7,6 +7,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
+	"github.com/onepanelio/core/server/auth"
 )
 
 type NamespaceServer struct{}
@@ -25,6 +26,11 @@ func apiNamespace(ns *v1.Namespace) (namespace *api.Namespace) {
 
 func (s *NamespaceServer) ListNamespaces(ctx context.Context, empty *empty.Empty) (*api.ListNamespacesResponse, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, "", "list", "", "namespaces", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
 	namespaces, err := client.ListNamespaces()
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
