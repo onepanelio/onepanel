@@ -99,7 +99,7 @@ func startHTTPProxy() {
 	}
 
 	// Allow Content-Type for JSON
-	allowedHeaders := handlers.AllowedHeaders([]string{"Content-Type"})
+	allowedHeaders := handlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
 
 	// Allow PUT. Have to include all others as it clears them out.
 	allowedMethods := handlers.AllowedMethods([]string{"HEAD", "GET", "POST", "PUT", "DELETE", "PATCH"})
