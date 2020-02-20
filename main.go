@@ -104,7 +104,11 @@ func startHTTPProxy() {
 	// Allow PUT. Have to include all others as it clears them out.
 	allowedMethods := handlers.AllowedMethods([]string{"HEAD", "GET", "POST", "PUT", "DELETE", "PATCH"})
 
-	if err := http.ListenAndServe(*httpPort, wsproxy.WebsocketProxy(handlers.CORS(handlers.AllowedOriginValidator(ogValidator), allowedHeaders, allowedMethods)(mux))); err != nil {
+	if err := http.ListenAndServe(*httpPort, wsproxy.WebsocketProxy(
+		handlers.CORS(
+			handlers.AllowedOriginValidator(ogValidator), allowedHeaders, allowedMethods)(mux),
+		wsproxy.WithTokenCookieName("auth-token"),
+	)); err != nil {
 		log.Fatalf("Failed to serve HTTP listener: %v", err)
 	}
 }

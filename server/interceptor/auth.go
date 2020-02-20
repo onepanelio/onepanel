@@ -2,6 +2,7 @@ package interceptor
 
 import (
 	"context"
+	"net/http"
 	"strings"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -25,6 +26,18 @@ func getBearerToken(ctx context.Context) (*string, bool) {
 		}
 		t = strings.ReplaceAll(t, prefix, "")
 		return &t, true
+	}
+
+	for _, c := range md.Get("grpcgateway-cookie") {
+		header := http.Header{}
+		header.Add("Cookie", c)
+		req := &http.Request{
+			Header: header,
+		}
+		t, _ := req.Cookie("auth-token")
+		if t != nil {
+			return &t.Value, true
+		}
 	}
 
 	return nil, false
