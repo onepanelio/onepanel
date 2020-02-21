@@ -10,6 +10,7 @@ import (
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util/ptr"
+	"github.com/onepanelio/core/server/auth"
 )
 
 type WorkflowServer struct{}
@@ -57,6 +58,12 @@ func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 }
 
 func (s *WorkflowServer) CreateWorkflow(ctx context.Context, req *api.CreateWorkflowRequest) (*api.Workflow, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
 	workflow := &v1.Workflow{
 		WorkflowTemplate: &v1.WorkflowTemplate{
 			UID:     req.Workflow.WorkflowTemplate.Uid,
@@ -70,7 +77,6 @@ func (s *WorkflowServer) CreateWorkflow(ctx context.Context, req *api.CreateWork
 		})
 	}
 
-	client := ctx.Value("kubeClient").(*v1.Client)
 	wf, err := client.CreateWorkflow(req.Namespace, workflow)
 	if err != nil {
 		if errors.As(err, &userError) {
@@ -83,6 +89,11 @@ func (s *WorkflowServer) CreateWorkflow(ctx context.Context, req *api.CreateWork
 
 func (s *WorkflowServer) GetWorkflow(ctx context.Context, req *api.GetWorkflowRequest) (*api.Workflow, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Name)
+	if err != nil || !allowed {
+		return nil, err
+	}
+
 	wf, err := client.GetWorkflow(req.Namespace, req.Name)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
@@ -93,6 +104,11 @@ func (s *WorkflowServer) GetWorkflow(ctx context.Context, req *api.GetWorkflowRe
 
 func (s *WorkflowServer) WatchWorkflow(req *api.WatchWorkflowRequest, stream api.WorkflowService_WatchWorkflowServer) error {
 	client := stream.Context().Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Name)
+	if err != nil || !allowed {
+		return err
+	}
+
 	watcher, err := client.WatchWorkflow(req.Namespace, req.Name)
 	if errors.As(err, &userError) {
 		return userError.GRPCError()
@@ -119,6 +135,11 @@ func (s *WorkflowServer) WatchWorkflow(req *api.WatchWorkflowRequest, stream api
 
 func (s *WorkflowServer) GetWorkflowLogs(req *api.GetWorkflowLogsRequest, stream api.WorkflowService_GetWorkflowLogsServer) error {
 	client := stream.Context().Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Name)
+	if err != nil || !allowed {
+		return err
+	}
+
 	watcher, err := client.GetWorkflowLogs(req.Namespace, req.Name, req.PodName, req.ContainerName)
 	if errors.As(err, &userError) {
 		return userError.GRPCError()
@@ -148,6 +169,11 @@ func (s *WorkflowServer) GetWorkflowLogs(req *api.GetWorkflowLogsRequest, stream
 
 func (s *WorkflowServer) GetWorkflowMetrics(ctx context.Context, req *api.GetWorkflowMetricsRequest) (*api.GetWorkflowMetricsResponse, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Name)
+	if err != nil || !allowed {
+		return nil, err
+	}
+
 	metrics, err := client.GetWorkflowMetrics(req.Namespace, req.Name, req.PodName)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
@@ -167,6 +193,11 @@ func (s *WorkflowServer) GetWorkflowMetrics(ctx context.Context, req *api.GetWor
 
 func (s *WorkflowServer) ListWorkflows(ctx context.Context, req *api.ListWorkflowsRequest) (*api.ListWorkflowsResponse, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "workflows", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
 	if req.PageSize <= 0 {
 		req.PageSize = 15
 	}
@@ -207,6 +238,11 @@ func (s *WorkflowServer) ListWorkflows(ctx context.Context, req *api.ListWorkflo
 
 func (s *WorkflowServer) ResubmitWorkflow(ctx context.Context, req *api.ResubmitWorkflowRequest) (*api.Workflow, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", req.Name)
+	if err != nil || !allowed {
+		return nil, err
+	}
+
 	wf, err := client.ResubmitWorkflow(req.Namespace, req.Name)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
@@ -217,7 +253,12 @@ func (s *WorkflowServer) ResubmitWorkflow(ctx context.Context, req *api.Resubmit
 
 func (s *WorkflowServer) TerminateWorkflow(ctx context.Context, req *api.TerminateWorkflowRequest) (*empty.Empty, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
-	err := client.TerminateWorkflow(req.Namespace, req.Name)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "workflows", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	err = client.TerminateWorkflow(req.Namespace, req.Name)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
 	}
@@ -226,12 +267,17 @@ func (s *WorkflowServer) TerminateWorkflow(ctx context.Context, req *api.Termina
 }
 
 func (s *WorkflowServer) CreateWorkflowTemplate(ctx context.Context, req *api.CreateWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
 	workflowTemplate := &v1.WorkflowTemplate{
 		Name:     req.WorkflowTemplate.Name,
 		Manifest: req.WorkflowTemplate.Manifest,
 	}
-	client := ctx.Value("kubeClient").(*v1.Client)
-	workflowTemplate, err := client.CreateWorkflowTemplate(req.Namespace, workflowTemplate)
+	workflowTemplate, err = client.CreateWorkflowTemplate(req.Namespace, workflowTemplate)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
 	}
@@ -242,14 +288,19 @@ func (s *WorkflowServer) CreateWorkflowTemplate(ctx context.Context, req *api.Cr
 }
 
 func (s *WorkflowServer) CreateWorkflowTemplateVersion(ctx context.Context, req *api.CreateWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", req.WorkflowTemplate.Name)
+	if err != nil || !allowed {
+		return nil, err
+	}
+
 	workflowTemplate := &v1.WorkflowTemplate{
 		UID:      req.WorkflowTemplate.Uid,
 		Name:     req.WorkflowTemplate.Name,
 		Manifest: req.WorkflowTemplate.Manifest,
 	}
 
-	client := ctx.Value("kubeClient").(*v1.Client)
-	workflowTemplate, err := client.CreateWorkflowTemplateVersion(req.Namespace, workflowTemplate)
+	workflowTemplate, err = client.CreateWorkflowTemplateVersion(req.Namespace, workflowTemplate)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
 	}
@@ -261,14 +312,19 @@ func (s *WorkflowServer) CreateWorkflowTemplateVersion(ctx context.Context, req 
 }
 
 func (s *WorkflowServer) UpdateWorkflowTemplateVersion(ctx context.Context, req *api.UpdateWorkflowTemplateVersionRequest) (*api.WorkflowTemplate, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "workflows", req.WorkflowTemplate.Name)
+	if err != nil || !allowed {
+		return nil, err
+	}
+
 	workflowTemplate := &v1.WorkflowTemplate{
 		UID:      req.WorkflowTemplate.Uid,
 		Name:     req.WorkflowTemplate.Name,
 		Manifest: req.WorkflowTemplate.Manifest,
 		Version:  req.WorkflowTemplate.Version,
 	}
-	client := ctx.Value("kubeClient").(*v1.Client)
-	workflowTemplate, err := client.UpdateWorkflowTemplateVersion(req.Namespace, workflowTemplate)
+	workflowTemplate, err = client.UpdateWorkflowTemplateVersion(req.Namespace, workflowTemplate)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
 	}
@@ -281,6 +337,11 @@ func (s *WorkflowServer) UpdateWorkflowTemplateVersion(ctx context.Context, req 
 
 func (s *WorkflowServer) GetWorkflowTemplate(ctx context.Context, req *api.GetWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
 	workflowTemplate, err := client.GetWorkflowTemplate(req.Namespace, req.Uid, req.Version)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
@@ -291,6 +352,11 @@ func (s *WorkflowServer) GetWorkflowTemplate(ctx context.Context, req *api.GetWo
 
 func (s *WorkflowServer) ListWorkflowTemplateVersions(ctx context.Context, req *api.ListWorkflowTemplateVersionsRequest) (*api.ListWorkflowTemplateVersionsResponse, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "workflows", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
 	workflowTemplateVersions, err := client.ListWorkflowTemplateVersions(req.Namespace, req.Uid)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
@@ -309,6 +375,11 @@ func (s *WorkflowServer) ListWorkflowTemplateVersions(ctx context.Context, req *
 
 func (s *WorkflowServer) ListWorkflowTemplates(ctx context.Context, req *api.ListWorkflowTemplatesRequest) (*api.ListWorkflowTemplatesResponse, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "workflows", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
 	workflowTemplates, err := client.ListWorkflowTemplates(req.Namespace)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
@@ -327,6 +398,11 @@ func (s *WorkflowServer) ListWorkflowTemplates(ctx context.Context, req *api.Lis
 
 func (s *WorkflowServer) ArchiveWorkflowTemplate(ctx context.Context, req *api.ArchiveWorkflowTemplateRequest) (*api.ArchiveWorkflowTemplateResponse, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "argoproj.io", "workflows", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
 	archived, err := client.ArchiveWorkflowTemplate(req.Namespace, req.Uid)
 	if errors.As(err, &userError) {
 		return nil, userError.GRPCError()
