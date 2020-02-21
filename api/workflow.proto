@@ -24,7 +24,7 @@ service WorkflowService {
 
     rpc ListWorkflowExecutions (ListWorkflowExecutionsRequest) returns (ListWorkflowExecutionsResponse) {
         option (google.api.http) = {
-            get: "/apis/v1beta1/{namespace}/workflows"
+            get: "/apis/v1beta1/{namespace}/workflow_executions"
         };
     }
 
