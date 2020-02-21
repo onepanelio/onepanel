@@ -6,12 +6,12 @@ jq:
 	&& rm api/apidocs.swagger.json
 
 protoc:
-	protoc -I/usr/local/include  \
- 		-Iapi/third_party/googleapis  \
- 		-Iapi/  \
- 		api/*.proto  \
- 		--go_out=plugins=grpc:api  \
- 		--grpc-gateway_out=logtostderr=true,allow_delete_body=true:api  \
+	protoc -I/usr/local/include \
+ 		-Iapi/third_party/googleapis \
+ 		-Iapi/ \
+ 		api/*.proto \
+ 		--go_out=plugins=grpc:api \
+ 		--grpc-gateway_out=logtostderr=true,allow_delete_body=true:api \
  		--swagger_out=allow_merge=true,fqn_for_swagger_name=true,allow_delete_body=true,logtostderr=true:api
 
 openapi-generator:
