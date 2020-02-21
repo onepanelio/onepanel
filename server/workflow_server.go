@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"errors"
 	"math"
 	"time"
 
@@ -79,8 +78,8 @@ func (s *WorkflowServer) CreateWorkflowExecution(ctx context.Context, req *api.C
 
 	wf, err := client.CreateWorkflowExecution(req.Namespace, workflow)
 	if err != nil {
-		if errors.As(err, &userError) {
-			return nil, userError.GRPCError()
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -95,8 +94,8 @@ func (s *WorkflowServer) GetWorkflowExecution(ctx context.Context, req *api.GetW
 	}
 
 	wf, err := client.GetWorkflowExecution(req.Namespace, req.Name)
-	if errors.As(err, &userError) {
-		return nil, userError.GRPCError()
+	if err != nil {
+		return nil, err
 	}
 
 	return apiWorkflowExecution(wf), nil
@@ -110,8 +109,8 @@ func (s *WorkflowServer) WatchWorkflowExecution(req *api.WatchWorkflowExecutionR
 	}
 
 	watcher, err := client.WatchWorkflowExecution(req.Namespace, req.Name)
-	if errors.As(err, &userError) {
-		return userError.GRPCError()
+	if err != nil {
+		return err
 	}
 
 	wf := &v1.WorkflowExecution{}
@@ -141,8 +140,8 @@ func (s *WorkflowServer) GetWorkflowExecutionLogs(req *api.GetWorkflowExecutionL
 	}
 
 	watcher, err := client.GetWorkflowExecutionLogs(req.Namespace, req.Name, req.PodName, req.ContainerName)
-	if errors.As(err, &userError) {
-		return userError.GRPCError()
+	if err != nil {
+		return err
 	}
 
 	le := &v1.LogEntry{}
@@ -175,8 +174,8 @@ func (s *WorkflowServer) GetWorkflowExecutionMetrics(ctx context.Context, req *a
 	}
 
 	metrics, err := client.GetWorkflowExecutionMetrics(req.Namespace, req.Name, req.PodName)
-	if errors.As(err, &userError) {
-		return nil, userError.GRPCError()
+	if err != nil {
+		return nil, err
 	}
 
 	var apiMetrics []*api.Metric
@@ -203,8 +202,8 @@ func (s *WorkflowServer) ListWorkflowExecutions(ctx context.Context, req *api.Li
 	}
 
 	workflows, err := client.ListWorkflowExecutions(req.Namespace, req.WorkflowTemplateUid, req.WorkflowTemplateVersion)
-	if errors.As(err, &userError) {
-		return nil, userError.GRPCError()
+	if err != nil {
+		return nil, err
 	}
 
 	var apiWorkflowExecutions []*api.WorkflowExecution
@@ -244,8 +243,8 @@ func (s *WorkflowServer) ResubmitWorkflowExecution(ctx context.Context, req *api
 	}
 
 	wf, err := client.ResubmitWorkflowExecution(req.Namespace, req.Name)
-	if errors.As(err, &userError) {
-		return nil, userError.GRPCError()
+	if err != nil {
+		return nil, err
 	}
 
 	return apiWorkflowExecution(wf), nil
@@ -259,8 +258,8 @@ func (s *WorkflowServer) TerminateWorkflowExecution(ctx context.Context, req *ap
 	}
 
 	err = client.TerminateWorkflowExecution(req.Namespace, req.Name)
-	if errors.As(err, &userError) {
-		return nil, userError.GRPCError()
+	if err != nil {
+		return nil, err
 	}
 
 	return &empty.Empty{}, nil
@@ -278,8 +277,8 @@ func (s *WorkflowServer) CreateWorkflowTemplate(ctx context.Context, req *api.Cr
 		Manifest: req.WorkflowTemplate.Manifest,
 	}
 	workflowTemplate, err = client.CreateWorkflowTemplate(req.Namespace, workflowTemplate)
-	if errors.As(err, &userError) {
-		return nil, userError.GRPCError()
+	if err != nil {
+		return nil, err
 	}
 	req.WorkflowTemplate.Uid = workflowTemplate.UID
 	req.WorkflowTemplate.Version = workflowTemplate.Version
@@ -301,8 +300,8 @@ func (s *WorkflowServer) CreateWorkflowTemplateVersion(ctx context.Context, req 
 	}
 
 	workflowTemplate, err = client.CreateWorkflowTemplateVersion(req.Namespace, workflowTemplate)
-	if errors.As(err, &userError) {
-		return nil, userError.GRPCError()
+	if err != nil {
+		return nil, err
 	}
 	req.WorkflowTemplate.Uid = workflowTemplate.UID
 	req.WorkflowTemplate.Name = workflowTemplate.Name
@@ -325,8 +324,8 @@ func (s *WorkflowServer) UpdateWorkflowTemplateVersion(ctx context.Context, req 
 		Version:  req.WorkflowTemplate.Version,
 	}
 	workflowTemplate, err = client.UpdateWorkflowTemplateVersion(req.Namespace, workflowTemplate)
-	if errors.As(err, &userError) {
-		return nil, userError.GRPCError()
+	if err != nil {
+		return nil, err
 	}
 	req.WorkflowTemplate.Uid = workflowTemplate.UID
 	req.WorkflowTemplate.Name = workflowTemplate.Name
@@ -343,8 +342,8 @@ func (s *WorkflowServer) GetWorkflowTemplate(ctx context.Context, req *api.GetWo
 	}
 
 	workflowTemplate, err := client.GetWorkflowTemplate(req.Namespace, req.Uid, req.Version)
-	if errors.As(err, &userError) {
-		return nil, userError.GRPCError()
+	if err != nil {
+		return nil, err
 	}
 
 	return apiWorkflowTemplate(workflowTemplate), nil
@@ -358,8 +357,8 @@ func (s *WorkflowServer) ListWorkflowTemplateVersions(ctx context.Context, req *
 	}
 
 	workflowTemplateVersions, err := client.ListWorkflowTemplateVersions(req.Namespace, req.Uid)
-	if errors.As(err, &userError) {
-		return nil, userError.GRPCError()
+	if err != nil {
+		return nil, err
 	}
 
 	workflowTemplates := []*api.WorkflowTemplate{}
@@ -381,8 +380,8 @@ func (s *WorkflowServer) ListWorkflowTemplates(ctx context.Context, req *api.Lis
 	}
 
 	workflowTemplates, err := client.ListWorkflowTemplates(req.Namespace)
-	if errors.As(err, &userError) {
-		return nil, userError.GRPCError()
+	if err != nil {
+		return nil, err
 	}
 
 	apiWorkflowTemplates := []*api.WorkflowTemplate{}
@@ -404,8 +403,8 @@ func (s *WorkflowServer) ArchiveWorkflowTemplate(ctx context.Context, req *api.A
 	}
 
 	archived, err := client.ArchiveWorkflowTemplate(req.Namespace, req.Uid)
-	if errors.As(err, &userError) {
-		return nil, userError.GRPCError()
+	if err != nil {
+		return nil, err
 	}
 
 	return &api.ArchiveWorkflowTemplateResponse{

@@ -9,16 +9,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type UserError struct {
-	code    codes.Code
-	message string
-}
-
-func NewUserError(code codes.Code, message string) *UserError {
-	return &UserError{
-		code:    code,
-		message: message,
-	}
+func NewUserError(code codes.Code, message string) error {
+	return status.Errorf(code, message)
 }
 
 func pqError(err *pq.Error) (code codes.Code) {
@@ -31,7 +23,7 @@ func pqError(err *pq.Error) (code codes.Code) {
 	return
 }
 
-func NewUserErrorWrap(err error, entity string) *UserError {
+func NewUserErrorWrap(err error, entity string) error {
 	var (
 		code    codes.Code
 		message string
@@ -45,16 +37,5 @@ func NewUserErrorWrap(err error, entity string) *UserError {
 		message = "Unknown error."
 	}
 
-	return &UserError{
-		code:    code,
-		message: message,
-	}
-}
-
-func (e *UserError) Error() string {
-	return e.message
-}
-
-func (e *UserError) GRPCError() error {
-	return status.Errorf(e.code, e.Error())
+	return NewUserError(code, message)
 }
