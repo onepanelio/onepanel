@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"errors"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
@@ -34,8 +33,8 @@ func (s *SecretServer) CreateSecret(ctx context.Context, req *api.CreateSecretRe
 		Name: req.Secret.Name,
 		Data: req.Secret.Data,
 	})
-	if errors.As(err, &userError) {
-		return nil, userError.GRPCError()
+	if err != nil {
+		return nil, err
 	}
 	return &empty.Empty{}, nil
 }
@@ -48,10 +47,10 @@ func (s *SecretServer) SecretExists(ctx context.Context, req *api.SecretExistsRe
 	}
 
 	secretExistsBool, err := client.SecretExists(req.Namespace, req.Name)
-	if errors.As(err, &userError) {
+	if err != nil {
 		return &api.SecretExistsResponse{
 			Exists: false,
-		}, userError.GRPCError()
+		}, err
 	}
 	return &api.SecretExistsResponse{
 		Exists: secretExistsBool,
@@ -66,8 +65,8 @@ func (s *SecretServer) GetSecret(ctx context.Context, req *api.GetSecretRequest)
 	}
 
 	secret, err := client.GetSecret(req.Namespace, req.Name)
-	if errors.As(err, &userError) {
-		return nil, userError.GRPCError()
+	if err != nil {
+		return nil, err
 	}
 	return apiSecret(secret), nil
 }
@@ -80,8 +79,8 @@ func (s *SecretServer) ListSecrets(ctx context.Context, req *api.ListSecretsRequ
 	}
 
 	secrets, err := client.ListSecrets(req.Namespace)
-	if errors.As(err, &userError) {
-		return nil, userError.GRPCError()
+	if err != nil {
+		return nil, err
 	}
 
 	var apiSecrets []*api.Secret
@@ -103,10 +102,10 @@ func (s *SecretServer) DeleteSecret(ctx context.Context, req *api.DeleteSecretRe
 	}
 
 	isDeleted, err := client.DeleteSecret(req.Namespace, req.Name)
-	if errors.As(err, &userError) {
+	if err != nil {
 		return &api.DeleteSecretResponse{
 			Deleted: false,
-		}, userError.GRPCError()
+		}, err
 	}
 	return &api.DeleteSecretResponse{
 		Deleted: isDeleted,
@@ -128,10 +127,10 @@ func (s *SecretServer) DeleteSecretKey(ctx context.Context, req *api.DeleteSecre
 	}
 	isDeleted, err := client.DeleteSecretKey(req.Namespace, &secret)
 	if err != nil {
-		if errors.As(err, &userError) {
+		if err != nil {
 			return &api.DeleteSecretKeyResponse{
 				Deleted: false,
-			}, userError.GRPCError()
+			}, err
 		}
 	}
 	return &api.DeleteSecretKeyResponse{
@@ -152,10 +151,10 @@ func (s *SecretServer) AddSecretKeyValue(ctx context.Context, req *api.AddSecret
 	}
 	isAdded, err := client.AddSecretKeyValue(req.Namespace, secret)
 	if err != nil {
-		if errors.As(err, &userError) {
+		if err != nil {
 			return &api.AddSecretKeyValueResponse{
 				Inserted: false,
-			}, userError.GRPCError()
+			}, err
 		}
 	}
 	return &api.AddSecretKeyValueResponse{
@@ -175,10 +174,10 @@ func (s *SecretServer) UpdateSecretKeyValue(ctx context.Context, req *api.Update
 		Data: req.Secret.Data,
 	}
 	isUpdated, err := client.UpdateSecretKeyValue(req.Namespace, &secret)
-	if errors.As(err, &userError) {
+	if err != nil {
 		return &api.UpdateSecretKeyValueResponse{
 			Updated: false,
-		}, userError.GRPCError()
+		}, err
 	}
 	return &api.UpdateSecretKeyValueResponse{
 		Updated: isUpdated,

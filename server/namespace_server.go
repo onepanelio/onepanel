@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"errors"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
@@ -32,8 +31,8 @@ func (s *NamespaceServer) ListNamespaces(ctx context.Context, empty *empty.Empty
 	}
 
 	namespaces, err := client.ListNamespaces()
-	if errors.As(err, &userError) {
-		return nil, userError.GRPCError()
+	if err != nil {
+		return nil, err
 	}
 
 	apiNamespaces := []*api.Namespace{}
