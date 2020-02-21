@@ -1,0 +1,1172 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "metric.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/apis/v1beta1/namespaces": {
+      "get": {
+        "operationId": "ListNamespaces",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListNamespacesResponse"
+            }
+          }
+        },
+        "tags": [
+          "NamespaceService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/secrets": {
+      "get": {
+        "operationId": "ListSecrets",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListSecretsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SecretService"
+        ]
+      },
+      "post": {
+        "operationId": "CreateSecret",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Secret"
+            }
+          }
+        ],
+        "tags": [
+          "SecretService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/secrets/{name}": {
+      "get": {
+        "operationId": "GetSecret",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/Secret"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SecretService"
+        ]
+      },
+      "delete": {
+        "operationId": "DeleteSecret",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/DeleteSecretResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SecretService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/secrets/{name}/exists": {
+      "get": {
+        "operationId": "SecretExists",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/SecretExistsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SecretService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/secrets/{secret.name}": {
+      "post": {
+        "operationId": "AddSecretKeyValue",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/AddSecretKeyValueResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "secret.name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Secret"
+            }
+          }
+        ],
+        "tags": [
+          "SecretService"
+        ]
+      },
+      "patch": {
+        "operationId": "UpdateSecretKeyValue",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/UpdateSecretKeyValueResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "secret.name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Secret"
+            }
+          }
+        ],
+        "tags": [
+          "SecretService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/secrets/{secretName}/keys/{key}": {
+      "delete": {
+        "operationId": "DeleteSecretKey",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/DeleteSecretKeyResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "secretName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SecretService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_executions": {
+      "get": {
+        "operationId": "ListWorkflowExecutions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListWorkflowExecutionsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "workflowTemplateUid",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "workflowTemplateVersion",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      },
+      "post": {
+        "summary": "Creates a Workflow",
+        "operationId": "CreateWorkflowExecution",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkflowExecution"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WorkflowExecution"
+            }
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}": {
+      "get": {
+        "operationId": "GetWorkflowExecution",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkflowExecution"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}/pods/{podName}/containers/{containerName}/logs": {
+      "get": {
+        "operationId": "GetWorkflowExecutionLogs",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "$ref": "#/x-stream-definitions/LogEntry"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "podName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "containerName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}/pods/{podName}/metrics": {
+      "get": {
+        "operationId": "GetWorkflowExecutionMetrics",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetWorkflowExecutionMetricsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "podName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}/resubmit": {
+      "put": {
+        "operationId": "ResubmitWorkflowExecution",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkflowExecution"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}/terminate": {
+      "put": {
+        "operationId": "TerminateWorkflowExecution",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}/watch": {
+      "get": {
+        "operationId": "WatchWorkflowExecution",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "$ref": "#/x-stream-definitions/WorkflowExecution"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_templates": {
+      "get": {
+        "operationId": "ListWorkflowTemplates",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListWorkflowTemplatesResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      },
+      "post": {
+        "operationId": "CreateWorkflowTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkflowTemplate"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WorkflowTemplate"
+            }
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_templates/{uid}": {
+      "get": {
+        "operationId": "GetWorkflowTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkflowTemplate"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_templates/{uid}/archive": {
+      "put": {
+        "operationId": "ArchiveWorkflowTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ArchiveWorkflowTemplateResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_templates/{uid}/versions": {
+      "get": {
+        "operationId": "ListWorkflowTemplateVersions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListWorkflowTemplateVersionsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_templates/{uid}/versions/{version}": {
+      "get": {
+        "operationId": "GetWorkflowTemplate2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkflowTemplate"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_templates/{workflowTemplate.uid}/versions": {
+      "post": {
+        "operationId": "CreateWorkflowTemplateVersion",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkflowTemplate"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "workflowTemplate.uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WorkflowTemplate"
+            }
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_templates/{workflowTemplate.uid}/versions/{workflowTemplate.version}": {
+      "put": {
+        "operationId": "UpdateWorkflowTemplateVersion",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkflowTemplate"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "workflowTemplate.uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "workflowTemplate.version",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WorkflowTemplate"
+            }
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "AddSecretKeyValueResponse": {
+      "type": "object",
+      "properties": {
+        "inserted": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
+    "ArchiveWorkflowTemplateResponse": {
+      "type": "object",
+      "properties": {
+        "workflowTemplate": {
+          "$ref": "#/definitions/WorkflowTemplate"
+        }
+      }
+    },
+    "DeleteSecretKeyResponse": {
+      "type": "object",
+      "properties": {
+        "deleted": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
+    "DeleteSecretResponse": {
+      "type": "object",
+      "properties": {
+        "deleted": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
+    "GetWorkflowExecutionMetricsResponse": {
+      "type": "object",
+      "properties": {
+        "metrics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Metric"
+          }
+        }
+      }
+    },
+    "ListNamespacesResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "namespaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Namespace"
+          }
+        }
+      }
+    },
+    "ListSecretsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "secrets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Secret"
+          }
+        }
+      }
+    },
+    "ListWorkflowExecutionsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "workflowExecutions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WorkflowExecution"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pages": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "ListWorkflowTemplateVersionsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "workflowTemplates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WorkflowTemplate"
+          }
+        }
+      }
+    },
+    "ListWorkflowTemplatesResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "workflowTemplates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WorkflowTemplate"
+          }
+        }
+      }
+    },
+    "LogEntry": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string"
+        }
+      }
+    },
+    "Metric": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "number",
+          "format": "double"
+        },
+        "format": {
+          "type": "string"
+        }
+      }
+    },
+    "Namespace": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "Secret": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "SecretExistsResponse": {
+      "type": "object",
+      "properties": {
+        "exists": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
+    "UpdateSecretKeyValueResponse": {
+      "type": "object",
+      "properties": {
+        "updated": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
+    "WorkflowExecution": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string"
+        },
+        "uid": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "phase": {
+          "type": "string"
+        },
+        "startedAt": {
+          "type": "string"
+        },
+        "finishedAt": {
+          "type": "string"
+        },
+        "manifest": {
+          "type": "string"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WorkflowExecutionParameter"
+          }
+        },
+        "workflowTemplate": {
+          "$ref": "#/definitions/WorkflowTemplate"
+        }
+      }
+    },
+    "WorkflowExecutionParameter": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "WorkflowTemplate": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string"
+        },
+        "uid": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "manifest": {
+          "type": "string"
+        },
+        "isLatest": {
+          "type": "boolean",
+          "format": "boolean"
+        },
+        "isArchived": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
+    "google.protobuf.Any": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "grpc.gateway.runtime.StreamError": {
+      "type": "object",
+      "properties": {
+        "grpc_code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "http_code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "http_status": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/google.protobuf.Any"
+          }
+        }
+      }
+    }
+  },
+  "x-stream-definitions": {
+    "LogEntry": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/LogEntry"
+        },
+        "error": {
+          "$ref": "#/definitions/grpc.gateway.runtime.StreamError"
+        }
+      },
+      "title": "Stream result of LogEntry"
+    },
+    "WorkflowExecution": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/WorkflowExecution"
+        },
+        "error": {
+          "$ref": "#/definitions/grpc.gateway.runtime.StreamError"
+        }
+      },
+      "title": "Stream result of WorkflowExecution"
+    }
+  }
+}
