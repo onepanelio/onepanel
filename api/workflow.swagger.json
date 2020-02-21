@@ -11,6 +11,237 @@
     "application/json"
   ],
   "paths": {
+    "/apis/v1beta1/{namespace}/workflow_executions": {
+      "post": {
+        "summary": "Creates a Workflow",
+        "operationId": "CreateWorkflowExecution",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiWorkflowExecution"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiWorkflowExecution"
+            }
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}": {
+      "get": {
+        "operationId": "GetWorkflowExecution",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiWorkflowExecution"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}/pods/{podName}/containers/{containerName}/logs": {
+      "get": {
+        "operationId": "GetWorkflowExecutionLogs",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "$ref": "#/x-stream-definitions/apiLogEntry"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "podName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "containerName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}/pods/{podName}/metrics": {
+      "get": {
+        "operationId": "GetWorkflowExecutionMetrics",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiGetWorkflowExecutionMetricsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "podName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}/resubmit": {
+      "put": {
+        "operationId": "ResubmitWorkflowExecution",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiWorkflowExecution"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}/terminate": {
+      "put": {
+        "operationId": "TerminateWorkflowExecution",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}/watch": {
+      "get": {
+        "operationId": "WatchWorkflowExecution",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "$ref": "#/x-stream-definitions/apiWorkflowExecution"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workflow_templates": {
       "get": {
         "operationId": "ListWorkflowTemplates",
@@ -284,12 +515,12 @@
     },
     "/apis/v1beta1/{namespace}/workflows": {
       "get": {
-        "operationId": "ListWorkflows",
+        "operationId": "ListWorkflowExecutions",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiListWorkflowsResponse"
+              "$ref": "#/definitions/apiListWorkflowExecutionsResponse"
             }
           }
         },
@@ -330,235 +561,6 @@
         "tags": [
           "WorkflowService"
         ]
-      },
-      "post": {
-        "summary": "Creates a Workflow",
-        "operationId": "CreateWorkflow",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiWorkflow"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiWorkflow"
-            }
-          }
-        ],
-        "tags": [
-          "WorkflowService"
-        ]
-      }
-    },
-    "/apis/v1beta1/{namespace}/workflows/{name}": {
-      "get": {
-        "operationId": "GetWorkflow",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiWorkflow"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "WorkflowService"
-        ]
-      }
-    },
-    "/apis/v1beta1/{namespace}/workflows/{name}/pods/{podName}/containers/{containerName}/logs": {
-      "get": {
-        "operationId": "GetWorkflowLogs",
-        "responses": {
-          "200": {
-            "description": "A successful response.(streaming responses)",
-            "schema": {
-              "$ref": "#/x-stream-definitions/apiLogEntry"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "podName",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "containerName",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "WorkflowService"
-        ]
-      }
-    },
-    "/apis/v1beta1/{namespace}/workflows/{name}/pods/{podName}/metrics": {
-      "get": {
-        "operationId": "GetWorkflowMetrics",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiGetWorkflowMetricsResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "podName",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "WorkflowService"
-        ]
-      }
-    },
-    "/apis/v1beta1/{namespace}/workflows/{name}/resubmit": {
-      "put": {
-        "operationId": "ResubmitWorkflow",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiWorkflow"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "WorkflowService"
-        ]
-      }
-    },
-    "/apis/v1beta1/{namespace}/workflows/{name}/terminate": {
-      "put": {
-        "operationId": "TerminateWorkflow",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "properties": {}
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "WorkflowService"
-        ]
-      }
-    },
-    "/apis/v1beta1/{namespace}/workflows/{name}/watch": {
-      "get": {
-        "operationId": "WatchWorkflow",
-        "responses": {
-          "200": {
-            "description": "A successful response.(streaming responses)",
-            "schema": {
-              "$ref": "#/x-stream-definitions/apiWorkflow"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "WorkflowService"
-        ]
       }
     }
   },
@@ -571,7 +573,7 @@
         }
       }
     },
-    "apiGetWorkflowMetricsResponse": {
+    "apiGetWorkflowExecutionMetricsResponse": {
       "type": "object",
       "properties": {
         "metrics": {
@@ -579,6 +581,33 @@
           "items": {
             "$ref": "#/definitions/apiMetric"
           }
+        }
+      }
+    },
+    "apiListWorkflowExecutionsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "workflowExecutions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apiWorkflowExecution"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pages": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -612,33 +641,6 @@
         }
       }
     },
-    "apiListWorkflowsResponse": {
-      "type": "object",
-      "properties": {
-        "count": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "workflows": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/apiWorkflow"
-          }
-        },
-        "page": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "pages": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "totalCount": {
-          "type": "integer",
-          "format": "int32"
-        }
-      }
-    },
     "apiLogEntry": {
       "type": "object",
       "properties": {
@@ -665,7 +667,7 @@
         }
       }
     },
-    "apiWorkflow": {
+    "apiWorkflowExecution": {
       "type": "object",
       "properties": {
         "createdAt": {
@@ -692,7 +694,7 @@
         "parameters": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/apiWorkflowParameter"
+            "$ref": "#/definitions/apiWorkflowExecutionParameter"
           }
         },
         "workflowTemplate": {
@@ -700,7 +702,7 @@
         }
       }
     },
-    "apiWorkflowParameter": {
+    "apiWorkflowExecutionParameter": {
       "type": "object",
       "properties": {
         "name": {
@@ -791,17 +793,17 @@
       },
       "title": "Stream result of apiLogEntry"
     },
-    "apiWorkflow": {
+    "apiWorkflowExecution": {
       "type": "object",
       "properties": {
         "result": {
-          "$ref": "#/definitions/apiWorkflow"
+          "$ref": "#/definitions/apiWorkflowExecution"
         },
         "error": {
           "$ref": "#/definitions/runtimeStreamError"
         }
       },
-      "title": "Stream result of apiWorkflow"
+      "title": "Stream result of apiWorkflowExecution"
     }
   }
 }

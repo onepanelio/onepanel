@@ -214,7 +214,7 @@ func (c *Client) archiveWorkflowTemplate(namespace, uid string) (bool, error) {
 
 func (c *Client) CreateWorkflowTemplate(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
 	// validate workflow template
-	if err := c.ValidateWorkflow(namespace, workflowTemplate.GetManifestBytes()); err != nil {
+	if err := c.ValidateWorkflowExecution(namespace, workflowTemplate.GetManifestBytes()); err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
@@ -238,7 +238,7 @@ func (c *Client) CreateWorkflowTemplate(namespace string, workflowTemplate *Work
 
 func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
 	// validate workflow template
-	if err := c.ValidateWorkflow(namespace, workflowTemplate.GetManifestBytes()); err != nil {
+	if err := c.ValidateWorkflowExecution(namespace, workflowTemplate.GetManifestBytes()); err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
@@ -274,7 +274,7 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 
 func (c *Client) UpdateWorkflowTemplateVersion(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
 	// validate workflow template
-	if err := c.ValidateWorkflow(namespace, workflowTemplate.GetManifestBytes()); err != nil {
+	if err := c.ValidateWorkflowExecution(namespace, workflowTemplate.GetManifestBytes()); err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,

@@ -38,12 +38,12 @@ var (
 	workflowTemplateVersionLabelKey = "onepanel.io/workflow-template-version"
 )
 
-func typeWorkflow(wf *wfv1.Workflow) (workflow *Workflow) {
+func typeWorkflow(wf *wfv1.Workflow) (workflow *WorkflowExecution) {
 	manifest, err := json.Marshal(wf)
 	if err != nil {
 		return
 	}
-	workflow = &Workflow{
+	workflow = &WorkflowExecution{
 		UID:       string(wf.UID),
 		CreatedAt: wf.CreationTimestamp.UTC(),
 		Name:      wf.Name,
@@ -71,7 +71,7 @@ func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []wfv1.Workflow, err e
 	return
 }
 
-func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts *WorkflowOptions) (err error) {
+func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (err error) {
 	if opts.PodGCStrategy == nil {
 		if wf.Spec.PodGC == nil {
 			//TODO - Load this data from onepanel config-map or secret
@@ -167,9 +167,9 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 	return
 }
 
-func (c *Client) create(namespace string, wf *wfv1.Workflow, opts *WorkflowOptions) (createdWorkflow *wfv1.Workflow, err error) {
+func (c *Client) create(namespace string, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (createdWorkflow *wfv1.Workflow, err error) {
 	if opts == nil {
-		opts = &WorkflowOptions{}
+		opts = &WorkflowExecutionOptions{}
 	}
 
 	if opts.Name != "" {
@@ -220,7 +220,7 @@ func (c *Client) create(namespace string, wf *wfv1.Workflow, opts *WorkflowOptio
 	return
 }
 
-func (c *Client) ValidateWorkflow(namespace string, manifest []byte) (err error) {
+func (c *Client) ValidateWorkflowExecution(namespace string, manifest []byte) (err error) {
 	workflows, err := unmarshalWorkflows(manifest, true)
 	if err != nil {
 		return
@@ -228,7 +228,7 @@ func (c *Client) ValidateWorkflow(namespace string, manifest []byte) (err error)
 
 	wftmplGetter := templateresolution.WrapWorkflowTemplateInterface(c.ArgoprojV1alpha1().WorkflowTemplates(namespace))
 	for _, wf := range workflows {
-		c.injectAutomatedFields(namespace, &wf, &WorkflowOptions{})
+		c.injectAutomatedFields(namespace, &wf, &WorkflowExecutionOptions{})
 		err = validate.ValidateWorkflow(wftmplGetter, &wf, validate.ValidateOpts{})
 		if err != nil {
 			return
@@ -238,7 +238,7 @@ func (c *Client) ValidateWorkflow(namespace string, manifest []byte) (err error)
 	return
 }
 
-func (c *Client) CreateWorkflow(namespace string, workflow *Workflow) (*Workflow, error) {
+func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExecution) (*WorkflowExecution, error) {
 	workflowTemplate, err := c.GetWorkflowTemplate(namespace, workflow.WorkflowTemplate.UID, workflow.WorkflowTemplate.Version)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -250,11 +250,11 @@ func (c *Client) CreateWorkflow(namespace string, workflow *Workflow) (*Workflow
 	}
 
 	// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
-	opts := &WorkflowOptions{}
+	opts := &WorkflowExecutionOptions{}
 	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
 	opts.GenerateName = strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`)) + "-"
 	for _, param := range workflow.Parameters {
-		opts.Parameters = append(opts.Parameters, WorkflowParameter{
+		opts.Parameters = append(opts.Parameters, WorkflowExecutionParameter{
 			Name:  param.Name,
 			Value: param.Value,
 		})
@@ -299,7 +299,7 @@ func (c *Client) CreateWorkflow(namespace string, workflow *Workflow) (*Workflow
 	return workflow, nil
 }
 
-func (c *Client) GetWorkflow(namespace, name string) (workflow *Workflow, err error) {
+func (c *Client) GetWorkflowExecution(namespace, name string) (workflow *WorkflowExecution, err error) {
 	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -344,11 +344,11 @@ func (c *Client) GetWorkflow(namespace, name string) (workflow *Workflow, err er
 		}).Error("Invalid status.")
 		return nil, util.NewUserError(codes.InvalidArgument, "Invalid status.")
 	}
-	workflow = &Workflow{
+	workflow = &WorkflowExecution{
 		UID:              string(wf.UID),
 		CreatedAt:        wf.CreationTimestamp.UTC(),
 		Name:             wf.Name,
-		Phase:            WorkflowPhase(wf.Status.Phase),
+		Phase:            WorkflowExecutionPhase(wf.Status.Phase),
 		StartedAt:        wf.Status.StartedAt.UTC(),
 		FinishedAt:       wf.Status.FinishedAt.UTC(),
 		Manifest:         string(manifest),
@@ -358,8 +358,8 @@ func (c *Client) GetWorkflow(namespace, name string) (workflow *Workflow, err er
 	return
 }
 
-func (c *Client) ListWorkflows(namespace, workflowTemplateUID, workflowTemplateVersion string) (workflows []*Workflow, err error) {
-	opts := &WorkflowOptions{}
+func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflowTemplateVersion string) (workflows []*WorkflowExecution, err error) {
+	opts := &WorkflowExecutionOptions{}
 	if workflowTemplateUID != "" {
 		labelSelect := fmt.Sprintf("%s=%s", workflowTemplateUIDLabelKey, workflowTemplateUID)
 
@@ -391,10 +391,10 @@ func (c *Client) ListWorkflows(namespace, workflowTemplateUID, workflowTemplateV
 	})
 
 	for _, wf := range wfs {
-		workflows = append(workflows, &Workflow{
+		workflows = append(workflows, &WorkflowExecution{
 			Name:       wf.ObjectMeta.Name,
 			UID:        string(wf.ObjectMeta.UID),
-			Phase:      WorkflowPhase(wf.Status.Phase),
+			Phase:      WorkflowExecutionPhase(wf.Status.Phase),
 			StartedAt:  wf.Status.StartedAt.UTC(),
 			FinishedAt: wf.Status.FinishedAt.UTC(),
 			CreatedAt:  wf.CreationTimestamp.UTC(),
@@ -404,8 +404,8 @@ func (c *Client) ListWorkflows(namespace, workflowTemplateUID, workflowTemplateV
 	return
 }
 
-func (c *Client) WatchWorkflow(namespace, name string) (<-chan *Workflow, error) {
-	_, err := c.GetWorkflow(namespace, name)
+func (c *Client) WatchWorkflowExecution(namespace, name string) (<-chan *WorkflowExecution, error) {
+	_, err := c.GetWorkflowExecution(namespace, name)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -429,7 +429,7 @@ func (c *Client) WatchWorkflow(namespace, name string) (<-chan *Workflow, error)
 	}
 
 	var workflow *wfv1.Workflow
-	workflowWatcher := make(chan *Workflow)
+	workflowWatcher := make(chan *WorkflowExecution)
 	ticker := time.NewTicker(time.Second)
 	go func() {
 		for {
@@ -452,7 +452,7 @@ func (c *Client) WatchWorkflow(namespace, name string) (<-chan *Workflow, error)
 				}).Error("Error with trying to JSON Marshal workflow.Status.")
 				continue
 			}
-			workflowWatcher <- &Workflow{
+			workflowWatcher <- &WorkflowExecution{
 				UID:      string(workflow.UID),
 				Name:     workflow.Name,
 				Manifest: string(manifest),
@@ -469,7 +469,7 @@ func (c *Client) WatchWorkflow(namespace, name string) (<-chan *Workflow, error)
 	return workflowWatcher, nil
 }
 
-func (c *Client) GetWorkflowLogs(namespace, name, podName, containerName string) (<-chan *LogEntry, error) {
+func (c *Client) GetWorkflowExecutionLogs(namespace, name, podName, containerName string) (<-chan *LogEntry, error) {
 	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -564,8 +564,8 @@ func (c *Client) GetWorkflowLogs(namespace, name, podName, containerName string)
 	return logWatcher, err
 }
 
-func (c *Client) GetWorkflowMetrics(namespace, name, podName string) (metrics []*Metric, err error) {
-	_, err = c.GetWorkflow(namespace, name)
+func (c *Client) GetWorkflowExecutionMetrics(namespace, name, podName string) (metrics []*Metric, err error) {
+	_, err = c.GetWorkflowExecution(namespace, name)
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
 	}
@@ -633,7 +633,7 @@ func (c *Client) GetWorkflowMetrics(namespace, name, podName string) (metrics []
 	return
 }
 
-func (c *Client) RetryWorkflow(namespace, name string) (workflow *Workflow, err error) {
+func (c *Client) RetryWorkflowExecution(namespace, name string) (workflow *WorkflowExecution, err error) {
 	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return
@@ -646,7 +646,7 @@ func (c *Client) RetryWorkflow(namespace, name string) (workflow *Workflow, err 
 	return
 }
 
-func (c *Client) ResubmitWorkflow(namespace, name string) (workflow *Workflow, err error) {
+func (c *Client) ResubmitWorkflowExecution(namespace, name string) (workflow *WorkflowExecution, err error) {
 	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return
@@ -667,7 +667,7 @@ func (c *Client) ResubmitWorkflow(namespace, name string) (workflow *Workflow, e
 	return
 }
 
-func (c *Client) ResumeWorkflow(namespace, name string) (workflow *Workflow, err error) {
+func (c *Client) ResumeWorkflowExecution(namespace, name string) (workflow *WorkflowExecution, err error) {
 	err = argoutil.ResumeWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), name)
 	if err != nil {
 		return
@@ -680,13 +680,13 @@ func (c *Client) ResumeWorkflow(namespace, name string) (workflow *Workflow, err
 	return
 }
 
-func (c *Client) SuspendWorkflow(namespace, name string) (err error) {
+func (c *Client) SuspendWorkflowExecution(namespace, name string) (err error) {
 	err = argoutil.SuspendWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), name)
 
 	return
 }
 
-func (c *Client) TerminateWorkflow(namespace, name string) (err error) {
+func (c *Client) TerminateWorkflowExecution(namespace, name string) (err error) {
 	err = argoutil.TerminateWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), name)
 
 	return
