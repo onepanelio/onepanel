@@ -3,21 +3,24 @@ package main
 import (
 	"context"
 	"flag"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"net"
 	"net/http"
 	"os"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/gorilla/handlers"
-	"github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-middleware/recovery"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
+	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/jmoiron/sqlx"
 	"github.com/onepanelio/core/api"
-	"github.com/onepanelio/core/kube"
-	"github.com/onepanelio/core/manager"
-	"github.com/onepanelio/core/repository"
+	v1 "github.com/onepanelio/core/pkg"
+	"github.com/onepanelio/core/pkg/util/env"
 	"github.com/onepanelio/core/server"
+	"github.com/onepanelio/core/server/auth"
 	"github.com/pressly/goose"
 	log "github.com/sirupsen/logrus"
 	"github.com/tmc/grpc-websocket-proxy/wsproxy"
@@ -33,37 +36,53 @@ var (
 func main() {
 	flag.Parse()
 
-	db := repository.NewDB(os.Getenv("DB_DRIVER_NAME"), os.Getenv("DB_DATASOURCE_NAME"))
-	if err := goose.Run("up", db.Base(), "db"); err != nil {
+	db := sqlx.MustConnect(os.Getenv("DB_DRIVER_NAME"), os.Getenv("DB_DATASOURCE_NAME"))
+	if err := goose.Run("up", db.DB, "db"); err != nil {
 		log.Fatalf("goose up: %v", err)
 	}
 
-	kubeClient := kube.NewClient(os.Getenv("KUBECONFIG"))
+	kubeConfig := v1.NewConfig()
 
-	go startRPCServer(db, kubeClient)
+	go startRPCServer(db, kubeConfig)
 	startHTTPProxy()
 }
 
-func startRPCServer(db *repository.DB, kubeClient *kube.Client) {
-	resourceManager := manager.NewResourceManager(db, kubeClient)
-
+func startRPCServer(db *v1.DB, kubeConfig *v1.Config) {
 	log.Printf("Starting RPC server on port %v", *rpcPort)
 	lis, err := net.Listen("tcp", *rpcPort)
 	if err != nil {
 		log.Fatalf("Failed to start RPC listener: %v", err)
 	}
+
+	// Recovery settings
 	recoveryFunc = func(p interface{}) (err error) {
 		return status.Errorf(codes.Unknown, "panic triggered: %v", p)
 	}
-	opts := []grpc_recovery.Option{
+	recoveryOpts := []grpc_recovery.Option{
 		grpc_recovery.WithRecoveryHandler(recoveryFunc),
 	}
+
+	// Logger settings
+	stdLogger := log.StandardLogger()
+	reportCaller := env.GetEnv("LOGGING_ENABLE_CALLER_TRACE", "false")
+	if reportCaller == "true" {
+		stdLogger.SetReportCaller(true)
+	}
+	logEntry := log.NewEntry(stdLogger)
+
 	s := grpc.NewServer(grpc.UnaryInterceptor(
-		grpc_middleware.ChainUnaryServer(loggingInterceptor,
-			grpc_recovery.UnaryServerInterceptor(opts...))))
-	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer(resourceManager))
-	api.RegisterSecretServiceServer(s, server.NewSecretServer(resourceManager))
-	api.RegisterNamespaceServiceServer(s, server.NewNamespaceServer(resourceManager))
+		grpc_middleware.ChainUnaryServer(
+			grpc_logrus.UnaryServerInterceptor(logEntry),
+			grpc_recovery.UnaryServerInterceptor(recoveryOpts...),
+			auth.AuthUnaryInterceptor(kubeConfig, db)),
+	), grpc.StreamInterceptor(
+		grpc_middleware.ChainStreamServer(
+			grpc_recovery.StreamServerInterceptor(recoveryOpts...),
+			auth.AuthStreamingInterceptor(kubeConfig, db)),
+	))
+	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer())
+	api.RegisterSecretServiceServer(s, server.NewSecretServer())
+	api.RegisterNamespaceServiceServer(s, server.NewNamespaceServer())
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve RPC server: %v", err)
@@ -93,12 +112,16 @@ func startHTTPProxy() {
 	}
 
 	// Allow Content-Type for JSON
-	allowedHeaders := handlers.AllowedHeaders([]string{"Content-Type"})
+	allowedHeaders := handlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
 
 	// Allow PUT. Have to include all others as it clears them out.
 	allowedMethods := handlers.AllowedMethods([]string{"HEAD", "GET", "POST", "PUT", "DELETE", "PATCH"})
 
-	if err := http.ListenAndServe(*httpPort, wsproxy.WebsocketProxy(handlers.CORS(handlers.AllowedOriginValidator(ogValidator), allowedHeaders, allowedMethods)(mux))); err != nil {
+	if err := http.ListenAndServe(*httpPort, wsproxy.WebsocketProxy(
+		handlers.CORS(
+			handlers.AllowedOriginValidator(ogValidator), allowedHeaders, allowedMethods)(mux),
+		wsproxy.WithTokenCookieName("auth-token"),
+	)); err != nil {
 		log.Fatalf("Failed to serve HTTP listener: %v", err)
 	}
 }
@@ -110,21 +133,4 @@ func registerHandler(register registerFunc, ctx context.Context, mux *runtime.Se
 	if err != nil {
 		log.Fatalf("Failed to register handler: %v", err)
 	}
-}
-
-func loggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-	log.WithFields(log.Fields{
-		"fullMethod": info.FullMethod,
-	}).Info("handler started")
-	resp, err = handler(ctx, req)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"fullMethod": info.FullMethod,
-		}).Warning("call failed")
-		return
-	}
-	log.WithFields(log.Fields{
-		"fullMethod": info.FullMethod,
-	}).Info("handler finished")
-	return
 }

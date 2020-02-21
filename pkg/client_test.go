@@ -1,4 +1,4 @@
-package kube
+package v1
 
 import "k8s.io/client-go/kubernetes/fake"
 

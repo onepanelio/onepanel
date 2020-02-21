@@ -1,10 +1,9 @@
-package kube
+package v1
 
 import (
 	"strconv"
 	"testing"
 
-	"github.com/onepanelio/core/model"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,7 +15,7 @@ func testCreateNamespace(c *Client) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "namespace-" + strconv.Itoa(i),
 				Labels: map[string]string{
-					"label": "label-" + strconv.Itoa(i),
+					"onepanel.io/enabled": "true",
 				},
 			},
 		})
@@ -27,19 +26,8 @@ func TestListNamespace(t *testing.T) {
 
 	testCreateNamespace(c)
 
-	n, err := c.ListNamespaces(model.ListOptions{})
+	n, err := c.ListNamespaces()
 	assert.Nil(t, err)
 	assert.NotEmpty(t, n)
 	assert.Equal(t, len(n), 5)
-}
-
-func TestListNamespaceByLabel(t *testing.T) {
-	c := NewTestClient()
-
-	testCreateNamespace(c)
-
-	n, err := c.ListNamespaces(model.ListOptions{LabelSelector: "label=label-0"})
-	assert.Nil(t, err)
-	assert.NotEmpty(t, n)
-	assert.Equal(t, n[0].Name, "namespace-0")
 }

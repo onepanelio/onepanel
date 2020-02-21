@@ -2,23 +2,20 @@ package server
 
 import (
 	"context"
-	"errors"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
-	"github.com/onepanelio/core/manager"
-	"github.com/onepanelio/core/model"
+	v1 "github.com/onepanelio/core/pkg"
+	"github.com/onepanelio/core/server/auth"
 )
 
-type NamespaceServer struct {
-	resourceManager *manager.ResourceManager
+type NamespaceServer struct{}
+
+func NewNamespaceServer() *NamespaceServer {
+	return &NamespaceServer{}
 }
 
-func NewNamespaceServer(resourceManager *manager.ResourceManager) *NamespaceServer {
-	return &NamespaceServer{resourceManager: resourceManager}
-}
-
-func apiNamespace(ns *model.Namespace) (namespace *api.Namespace) {
+func apiNamespace(ns *v1.Namespace) (namespace *api.Namespace) {
 	namespace = &api.Namespace{
 		Name: ns.Name,
 	}
@@ -27,11 +24,15 @@ func apiNamespace(ns *model.Namespace) (namespace *api.Namespace) {
 }
 
 func (s *NamespaceServer) ListNamespaces(ctx context.Context, empty *empty.Empty) (*api.ListNamespacesResponse, error) {
-	namespaces, err := s.resourceManager.ListNamespaces()
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, "", "list", "", "namespaces", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	namespaces, err := client.ListNamespaces()
 	if err != nil {
-		if errors.As(err, &userError) {
-			return nil, userError.GRPCError()
-		}
+		return nil, err
 	}
 
 	apiNamespaces := []*api.Namespace{}

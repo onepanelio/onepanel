@@ -1,20 +1,28 @@
-package manager
+package v1
 
 import (
 	"encoding/base64"
 	"encoding/json"
 	goerrors "errors"
-	"github.com/onepanelio/core/model"
-	"github.com/onepanelio/core/util"
-	"github.com/onepanelio/core/util/logging"
+
+	"github.com/onepanelio/core/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
-func (r *ResourceManager) CreateSecret(namespace string, secret *model.Secret) (err error) {
-	if err = r.kubeClient.CreateSecret(namespace, secret); err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+func (c *Client) CreateSecret(namespace string, secret *Secret) (err error) {
+	_, err = c.CoreV1().Secrets(namespace).Create(&corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: secret.Name,
+		},
+		StringData: secret.Data,
+	})
+	if err != nil {
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Secret":    secret,
 			"Error":     err.Error(),
@@ -24,17 +32,16 @@ func (r *ResourceManager) CreateSecret(namespace string, secret *model.Secret) (
 	return
 }
 
-func (r *ResourceManager) SecretExists(namespace string, name string) (exists bool, err error) {
-	var foundSecret *model.Secret
-	var statusError *errors.StatusError
-
-	foundSecret, err = r.kubeClient.SecretExists(namespace, name)
+func (c *Client) SecretExists(namespace string, name string) (exists bool, err error) {
+	foundSecret, err := c.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"Error":     err.Error(),
 		}).Error("Secret Exists error.")
+
+		var statusError *errors.StatusError
 		if goerrors.As(err, &statusError) {
 			if statusError.ErrStatus.Reason == "NotFound" {
 				return false, util.NewUserError(codes.NotFound, "Secret Not Found.")
@@ -49,51 +56,72 @@ func (r *ResourceManager) SecretExists(namespace string, name string) (exists bo
 	return true, nil
 }
 
-func (r *ResourceManager) GetSecret(namespace, name string) (secret *model.Secret, err error) {
-	secret, err = r.kubeClient.GetSecret(namespace, name)
-	var statusError *errors.StatusError
+func encodeSecretData(secretData map[string][]byte) (encodedData map[string]string) {
+	encodedData = make(map[string]string)
+	for key, value := range secretData {
+		encodedData[key] = base64.StdEncoding.EncodeToString([]byte(value))
+	}
+	return encodedData
+}
+
+func (c *Client) GetSecret(namespace, name string) (secret *Secret, err error) {
+	s, err := c.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"Error":     err.Error(),
 		}).Error("Secret not found error.")
+
+		var statusError *errors.StatusError
 		if goerrors.As(err, &statusError) {
 			if statusError.ErrStatus.Reason == "NotFound" {
-				return secret, util.NewUserError(codes.NotFound, "Secret Not Found.")
+				return nil, util.NewUserError(codes.NotFound, "Secret Not Found.")
 			}
-			return secret, util.NewUserError(codes.Unknown, "Error when getting secret.")
+			return nil, util.NewUserError(codes.Unknown, "Error when getting secret.")
 		}
-		return secret, util.NewUserError(codes.Unknown, "Error when getting secret.")
+		return nil, util.NewUserError(codes.Unknown, "Error when getting secret.")
 	}
-	if secret == nil {
-		logging.Logger.Log.WithFields(log.Fields{
+	if s == nil {
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"Error":     "Secret is nil.",
 		}).Error("Error getting secret.")
 		return nil, util.NewUserError(codes.Unknown, "Error when getting secret.")
 	}
+
+	secret = &Secret{
+		Name: s.Name,
+		Data: encodeSecretData(s.Data),
+	}
 	return
 }
 
-func (r *ResourceManager) ListSecrets(namespace string) (secrets []*model.Secret, err error) {
-	secrets, err = r.kubeClient.ListSecrets(namespace)
+func (c *Client) ListSecrets(namespace string) (secrets []*Secret, err error) {
+	secretsList, err := c.CoreV1().Secrets(namespace).List(metav1.ListOptions{})
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Error":     err.Error(),
 		}).Error("No secrets were found.")
 		return nil, util.NewUserError(codes.NotFound, "No secrets were found.")
 	}
 
+	for _, s := range secretsList.Items {
+		secret := Secret{
+			Name: s.Name,
+		}
+		secrets = append(secrets, &secret)
+	}
+
 	return
 }
 
-func (r *ResourceManager) DeleteSecret(namespace string, name string) (deleted bool, err error) {
-	err = r.kubeClient.DeleteSecret(namespace, name)
+func (c *Client) DeleteSecret(namespace string, name string) (deleted bool, err error) {
+	err = c.CoreV1().Secrets(namespace).Delete(name, &metav1.DeleteOptions{})
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Name":      name,
 			"Error":     err.Error(),
@@ -103,7 +131,7 @@ func (r *ResourceManager) DeleteSecret(namespace string, name string) (deleted b
 	return true, nil
 }
 
-func (r *ResourceManager) DeleteSecretKey(namespace string, secret *model.Secret) (deleted bool, err error) {
+func (c *Client) DeleteSecretKey(namespace string, secret *Secret) (deleted bool, err error) {
 	if len(secret.Data) == 0 {
 		return false, util.NewUserError(codes.InvalidArgument, "Data cannot be empty")
 	}
@@ -114,9 +142,9 @@ func (r *ResourceManager) DeleteSecretKey(namespace string, secret *model.Secret
 		break
 	}
 	//Check if the secret has the key to delete
-	secretFound, err := r.GetSecret(namespace, secret.Name)
+	secretFound, err := c.GetSecret(namespace, secret.Name)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Secret":    secret,
 			"Error":     err.Error(),
@@ -143,9 +171,9 @@ func (r *ResourceManager) DeleteSecretKey(namespace string, secret *model.Secret
 			Path: "/data/" + key,
 		}}
 		payloadBytes, _ := json.Marshal(payload)
-		err = r.kubeClient.DeleteSecretKey(namespace, secret.Name, payloadBytes)
+		_, err = c.CoreV1().Secrets(namespace).Patch(secret.Name, types.JSONPatchType, payloadBytes)
 		if err != nil {
-			logging.Logger.Log.WithFields(log.Fields{
+			log.WithFields(log.Fields{
 				"Namespace": namespace,
 				"Secret":    secret,
 				"Error":     err.Error(),
@@ -158,22 +186,25 @@ func (r *ResourceManager) DeleteSecretKey(namespace string, secret *model.Secret
 	return false, util.NewUserError(codes.NotFound, "Key not found in Secret.")
 }
 
-func (r *ResourceManager) AddSecretKeyValue(namespace string, secret *model.Secret) (inserted bool, err error) {
+func (c *Client) AddSecretKeyValue(namespace string, secret *Secret) (inserted bool, err error) {
 	if len(secret.Data) == 0 {
 		return false, util.NewUserError(codes.InvalidArgument, "Data cannot be empty")
 	}
 	//Currently, support for 1 key only
-	key := ""
-	value := ""
+
+	var (
+		key   string
+		value []byte
+	)
 	for dataKey, dataValue := range secret.Data {
 		key = dataKey
-		value = dataValue
+		value = []byte(dataValue)
 		break
 	}
 
-	secretFound, err := r.GetSecret(namespace, secret.Name)
+	secretFound, err := c.GetSecret(namespace, secret.Name)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Secret":    secret,
 			"Error":     err.Error(),
@@ -218,7 +249,7 @@ func (r *ResourceManager) AddSecretKeyValue(namespace string, secret *model.Secr
 		}}
 		payload, err = json.Marshal(payloadAddNode)
 		if err != nil {
-			logging.Logger.Log.WithFields(log.Fields{
+			log.WithFields(log.Fields{
 				"Namespace": namespace,
 				"Secret":    secret,
 				"Error":     err.Error(),
@@ -240,7 +271,7 @@ func (r *ResourceManager) AddSecretKeyValue(namespace string, secret *model.Secr
 		}}
 		payload, err = json.Marshal(payloadAddData)
 		if err != nil {
-			logging.Logger.Log.WithFields(log.Fields{
+			log.WithFields(log.Fields{
 				"Namespace": namespace,
 				"Secret":    secret,
 				"Error":     err.Error(),
@@ -248,9 +279,9 @@ func (r *ResourceManager) AddSecretKeyValue(namespace string, secret *model.Secr
 			return false, util.NewUserError(codes.InvalidArgument, "Error building JSON.")
 		}
 	}
-	err = r.kubeClient.AddSecretKeyValue(namespace, secret.Name, payload)
+	_, err = c.CoreV1().Secrets(namespace).Patch(secret.Name, types.JSONPatchType, payload)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Secret":    secret,
 			"Error":     err.Error(),
@@ -260,23 +291,25 @@ func (r *ResourceManager) AddSecretKeyValue(namespace string, secret *model.Secr
 	return true, nil
 }
 
-func (r *ResourceManager) UpdateSecretKeyValue(namespace string, secret *model.Secret) (updated bool, err error) {
+func (c *Client) UpdateSecretKeyValue(namespace string, secret *Secret) (updated bool, err error) {
 	if len(secret.Data) == 0 {
 		return false, util.NewUserError(codes.InvalidArgument, "data cannot be empty.")
 	}
 	//Currently, support for 1 key only
-	key := ""
-	value := ""
+	var (
+		key   string
+		value []byte
+	)
 	for dataKey, dataValue := range secret.Data {
 		key = dataKey
-		value = dataValue
+		value = []byte(dataValue)
 		break
 	}
 
 	//Check if the secret has the key to update
-	secretFound, err := r.GetSecret(namespace, secret.Name)
+	secretFound, err := c.GetSecret(namespace, secret.Name)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Secret":    secret,
 			"Error":     err.Error(),
@@ -307,9 +340,9 @@ func (r *ResourceManager) UpdateSecretKeyValue(namespace string, secret *model.S
 		Value: valueEnc,
 	}}
 	payloadBytes, _ := json.Marshal(payload)
-	err = r.kubeClient.UpdateSecretKeyValue(namespace, secret.Name, payloadBytes)
+	_, err = c.CoreV1().Secrets(namespace).Patch(secret.Name, types.JSONPatchType, payloadBytes)
 	if err != nil {
-		logging.Logger.Log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Secret":    secret,
 			"Error":     err.Error(),
