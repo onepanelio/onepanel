@@ -11,6 +11,39 @@
     "application/json"
   ],
   "paths": {
+    "/apis/v1beta1/{namespace}/workflow_executions": {
+      "post": {
+        "summary": "Creates a Workflow",
+        "operationId": "CreateWorkflowExecution",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiWorkflowExecution"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiWorkflowExecution"
+            }
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workflow_executions/{name}": {
       "get": {
         "operationId": "GetWorkflowExecution",
@@ -202,39 +235,6 @@
             "in": "path",
             "required": true,
             "type": "string"
-          }
-        ],
-        "tags": [
-          "WorkflowService"
-        ]
-      }
-    },
-    "/apis/v1beta1/{namespace}/workflow_exeuctions": {
-      "post": {
-        "summary": "Creates a Workflow",
-        "operationId": "CreateWorkflowExecution",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiWorkflowExecution"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiWorkflowExecution"
-            }
           }
         ],
         "tags": [

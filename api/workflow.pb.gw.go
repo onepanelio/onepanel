@@ -1945,7 +1945,7 @@ func RegisterWorkflowServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 }
 
 var (
-	pattern_WorkflowService_CreateWorkflowExecution_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"apis", "v1beta1", "namespace", "workflow_exeuctions"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_WorkflowService_CreateWorkflowExecution_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"apis", "v1beta1", "namespace", "workflow_executions"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_WorkflowService_GetWorkflowExecution_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"apis", "v1beta1", "namespace", "workflow_executions", "name"}, "", runtime.AssumeColonVerbOpt(true)))
 

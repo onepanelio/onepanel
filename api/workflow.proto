@@ -11,7 +11,7 @@ service WorkflowService {
     // Creates a Workflow
     rpc CreateWorkflowExecution (CreateWorkflowExecutionRequest) returns (WorkflowExecution) {
         option (google.api.http) = {
-            post: "/apis/v1beta1/{namespace}/workflow_exeuctions"
+            post: "/apis/v1beta1/{namespace}/workflow_executions"
             body: "workflowExecution"
         };
     }
