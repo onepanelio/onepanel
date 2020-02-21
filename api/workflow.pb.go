@@ -26,54 +26,54 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-type CreateWorkflowRequest struct {
-	Namespace            string    `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	Workflow             *Workflow `protobuf:"bytes,2,opt,name=workflow,proto3" json:"workflow,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
-	XXX_unrecognized     []byte    `json:"-"`
-	XXX_sizecache        int32     `json:"-"`
+type CreateWorkflowExecutionRequest struct {
+	Namespace            string             `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	WorkflowExecution    *WorkflowExecution `protobuf:"bytes,2,opt,name=workflowExecution,proto3" json:"workflowExecution,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
 }
 
-func (m *CreateWorkflowRequest) Reset()         { *m = CreateWorkflowRequest{} }
-func (m *CreateWorkflowRequest) String() string { return proto.CompactTextString(m) }
-func (*CreateWorkflowRequest) ProtoMessage()    {}
-func (*CreateWorkflowRequest) Descriptor() ([]byte, []int) {
+func (m *CreateWorkflowExecutionRequest) Reset()         { *m = CreateWorkflowExecutionRequest{} }
+func (m *CreateWorkflowExecutionRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateWorkflowExecutionRequest) ProtoMessage()    {}
+func (*CreateWorkflowExecutionRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_892c7f566756b0be, []int{0}
 }
 
-func (m *CreateWorkflowRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_CreateWorkflowRequest.Unmarshal(m, b)
+func (m *CreateWorkflowExecutionRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateWorkflowExecutionRequest.Unmarshal(m, b)
 }
-func (m *CreateWorkflowRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_CreateWorkflowRequest.Marshal(b, m, deterministic)
+func (m *CreateWorkflowExecutionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateWorkflowExecutionRequest.Marshal(b, m, deterministic)
 }
-func (m *CreateWorkflowRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CreateWorkflowRequest.Merge(m, src)
+func (m *CreateWorkflowExecutionRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateWorkflowExecutionRequest.Merge(m, src)
 }
-func (m *CreateWorkflowRequest) XXX_Size() int {
-	return xxx_messageInfo_CreateWorkflowRequest.Size(m)
+func (m *CreateWorkflowExecutionRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateWorkflowExecutionRequest.Size(m)
 }
-func (m *CreateWorkflowRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_CreateWorkflowRequest.DiscardUnknown(m)
+func (m *CreateWorkflowExecutionRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateWorkflowExecutionRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_CreateWorkflowRequest proto.InternalMessageInfo
+var xxx_messageInfo_CreateWorkflowExecutionRequest proto.InternalMessageInfo
 
-func (m *CreateWorkflowRequest) GetNamespace() string {
+func (m *CreateWorkflowExecutionRequest) GetNamespace() string {
 	if m != nil {
 		return m.Namespace
 	}
 	return ""
 }
 
-func (m *CreateWorkflowRequest) GetWorkflow() *Workflow {
+func (m *CreateWorkflowExecutionRequest) GetWorkflowExecution() *WorkflowExecution {
 	if m != nil {
-		return m.Workflow
+		return m.WorkflowExecution
 	}
 	return nil
 }
 
-type GetWorkflowRequest struct {
+type GetWorkflowExecutionRequest struct {
 	Namespace            string   `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -81,46 +81,46 @@ type GetWorkflowRequest struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetWorkflowRequest) Reset()         { *m = GetWorkflowRequest{} }
-func (m *GetWorkflowRequest) String() string { return proto.CompactTextString(m) }
-func (*GetWorkflowRequest) ProtoMessage()    {}
-func (*GetWorkflowRequest) Descriptor() ([]byte, []int) {
+func (m *GetWorkflowExecutionRequest) Reset()         { *m = GetWorkflowExecutionRequest{} }
+func (m *GetWorkflowExecutionRequest) String() string { return proto.CompactTextString(m) }
+func (*GetWorkflowExecutionRequest) ProtoMessage()    {}
+func (*GetWorkflowExecutionRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_892c7f566756b0be, []int{1}
 }
 
-func (m *GetWorkflowRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetWorkflowRequest.Unmarshal(m, b)
+func (m *GetWorkflowExecutionRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetWorkflowExecutionRequest.Unmarshal(m, b)
 }
-func (m *GetWorkflowRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetWorkflowRequest.Marshal(b, m, deterministic)
+func (m *GetWorkflowExecutionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetWorkflowExecutionRequest.Marshal(b, m, deterministic)
 }
-func (m *GetWorkflowRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetWorkflowRequest.Merge(m, src)
+func (m *GetWorkflowExecutionRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetWorkflowExecutionRequest.Merge(m, src)
 }
-func (m *GetWorkflowRequest) XXX_Size() int {
-	return xxx_messageInfo_GetWorkflowRequest.Size(m)
+func (m *GetWorkflowExecutionRequest) XXX_Size() int {
+	return xxx_messageInfo_GetWorkflowExecutionRequest.Size(m)
 }
-func (m *GetWorkflowRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetWorkflowRequest.DiscardUnknown(m)
+func (m *GetWorkflowExecutionRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetWorkflowExecutionRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetWorkflowRequest proto.InternalMessageInfo
+var xxx_messageInfo_GetWorkflowExecutionRequest proto.InternalMessageInfo
 
-func (m *GetWorkflowRequest) GetNamespace() string {
+func (m *GetWorkflowExecutionRequest) GetNamespace() string {
 	if m != nil {
 		return m.Namespace
 	}
 	return ""
 }
 
-func (m *GetWorkflowRequest) GetName() string {
+func (m *GetWorkflowExecutionRequest) GetName() string {
 	if m != nil {
 		return m.Name
 	}
 	return ""
 }
 
-type WatchWorkflowRequest struct {
+type WatchWorkflowExecutionRequest struct {
 	Namespace            string   `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -128,46 +128,46 @@ type WatchWorkflowRequest struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *WatchWorkflowRequest) Reset()         { *m = WatchWorkflowRequest{} }
-func (m *WatchWorkflowRequest) String() string { return proto.CompactTextString(m) }
-func (*WatchWorkflowRequest) ProtoMessage()    {}
-func (*WatchWorkflowRequest) Descriptor() ([]byte, []int) {
+func (m *WatchWorkflowExecutionRequest) Reset()         { *m = WatchWorkflowExecutionRequest{} }
+func (m *WatchWorkflowExecutionRequest) String() string { return proto.CompactTextString(m) }
+func (*WatchWorkflowExecutionRequest) ProtoMessage()    {}
+func (*WatchWorkflowExecutionRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_892c7f566756b0be, []int{2}
 }
 
-func (m *WatchWorkflowRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_WatchWorkflowRequest.Unmarshal(m, b)
+func (m *WatchWorkflowExecutionRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_WatchWorkflowExecutionRequest.Unmarshal(m, b)
 }
-func (m *WatchWorkflowRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_WatchWorkflowRequest.Marshal(b, m, deterministic)
+func (m *WatchWorkflowExecutionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_WatchWorkflowExecutionRequest.Marshal(b, m, deterministic)
 }
-func (m *WatchWorkflowRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_WatchWorkflowRequest.Merge(m, src)
+func (m *WatchWorkflowExecutionRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WatchWorkflowExecutionRequest.Merge(m, src)
 }
-func (m *WatchWorkflowRequest) XXX_Size() int {
-	return xxx_messageInfo_WatchWorkflowRequest.Size(m)
+func (m *WatchWorkflowExecutionRequest) XXX_Size() int {
+	return xxx_messageInfo_WatchWorkflowExecutionRequest.Size(m)
 }
-func (m *WatchWorkflowRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_WatchWorkflowRequest.DiscardUnknown(m)
+func (m *WatchWorkflowExecutionRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_WatchWorkflowExecutionRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_WatchWorkflowRequest proto.InternalMessageInfo
+var xxx_messageInfo_WatchWorkflowExecutionRequest proto.InternalMessageInfo
 
-func (m *WatchWorkflowRequest) GetNamespace() string {
+func (m *WatchWorkflowExecutionRequest) GetNamespace() string {
 	if m != nil {
 		return m.Namespace
 	}
 	return ""
 }
 
-func (m *WatchWorkflowRequest) GetName() string {
+func (m *WatchWorkflowExecutionRequest) GetName() string {
 	if m != nil {
 		return m.Name
 	}
 	return ""
 }
 
-type ResubmitWorkflowRequest struct {
+type ResubmitWorkflowExecutionRequest struct {
 	Namespace            string   `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -175,46 +175,46 @@ type ResubmitWorkflowRequest struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ResubmitWorkflowRequest) Reset()         { *m = ResubmitWorkflowRequest{} }
-func (m *ResubmitWorkflowRequest) String() string { return proto.CompactTextString(m) }
-func (*ResubmitWorkflowRequest) ProtoMessage()    {}
-func (*ResubmitWorkflowRequest) Descriptor() ([]byte, []int) {
+func (m *ResubmitWorkflowExecutionRequest) Reset()         { *m = ResubmitWorkflowExecutionRequest{} }
+func (m *ResubmitWorkflowExecutionRequest) String() string { return proto.CompactTextString(m) }
+func (*ResubmitWorkflowExecutionRequest) ProtoMessage()    {}
+func (*ResubmitWorkflowExecutionRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_892c7f566756b0be, []int{3}
 }
 
-func (m *ResubmitWorkflowRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ResubmitWorkflowRequest.Unmarshal(m, b)
+func (m *ResubmitWorkflowExecutionRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ResubmitWorkflowExecutionRequest.Unmarshal(m, b)
 }
-func (m *ResubmitWorkflowRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ResubmitWorkflowRequest.Marshal(b, m, deterministic)
+func (m *ResubmitWorkflowExecutionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ResubmitWorkflowExecutionRequest.Marshal(b, m, deterministic)
 }
-func (m *ResubmitWorkflowRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ResubmitWorkflowRequest.Merge(m, src)
+func (m *ResubmitWorkflowExecutionRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ResubmitWorkflowExecutionRequest.Merge(m, src)
 }
-func (m *ResubmitWorkflowRequest) XXX_Size() int {
-	return xxx_messageInfo_ResubmitWorkflowRequest.Size(m)
+func (m *ResubmitWorkflowExecutionRequest) XXX_Size() int {
+	return xxx_messageInfo_ResubmitWorkflowExecutionRequest.Size(m)
 }
-func (m *ResubmitWorkflowRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_ResubmitWorkflowRequest.DiscardUnknown(m)
+func (m *ResubmitWorkflowExecutionRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ResubmitWorkflowExecutionRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ResubmitWorkflowRequest proto.InternalMessageInfo
+var xxx_messageInfo_ResubmitWorkflowExecutionRequest proto.InternalMessageInfo
 
-func (m *ResubmitWorkflowRequest) GetNamespace() string {
+func (m *ResubmitWorkflowExecutionRequest) GetNamespace() string {
 	if m != nil {
 		return m.Namespace
 	}
 	return ""
 }
 
-func (m *ResubmitWorkflowRequest) GetName() string {
+func (m *ResubmitWorkflowExecutionRequest) GetName() string {
 	if m != nil {
 		return m.Name
 	}
 	return ""
 }
 
-type TerminateWorkflowRequest struct {
+type TerminateWorkflowExecutionRequest struct {
 	Namespace            string   `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -222,46 +222,46 @@ type TerminateWorkflowRequest struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *TerminateWorkflowRequest) Reset()         { *m = TerminateWorkflowRequest{} }
-func (m *TerminateWorkflowRequest) String() string { return proto.CompactTextString(m) }
-func (*TerminateWorkflowRequest) ProtoMessage()    {}
-func (*TerminateWorkflowRequest) Descriptor() ([]byte, []int) {
+func (m *TerminateWorkflowExecutionRequest) Reset()         { *m = TerminateWorkflowExecutionRequest{} }
+func (m *TerminateWorkflowExecutionRequest) String() string { return proto.CompactTextString(m) }
+func (*TerminateWorkflowExecutionRequest) ProtoMessage()    {}
+func (*TerminateWorkflowExecutionRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_892c7f566756b0be, []int{4}
 }
 
-func (m *TerminateWorkflowRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_TerminateWorkflowRequest.Unmarshal(m, b)
+func (m *TerminateWorkflowExecutionRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TerminateWorkflowExecutionRequest.Unmarshal(m, b)
 }
-func (m *TerminateWorkflowRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_TerminateWorkflowRequest.Marshal(b, m, deterministic)
+func (m *TerminateWorkflowExecutionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TerminateWorkflowExecutionRequest.Marshal(b, m, deterministic)
 }
-func (m *TerminateWorkflowRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TerminateWorkflowRequest.Merge(m, src)
+func (m *TerminateWorkflowExecutionRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TerminateWorkflowExecutionRequest.Merge(m, src)
 }
-func (m *TerminateWorkflowRequest) XXX_Size() int {
-	return xxx_messageInfo_TerminateWorkflowRequest.Size(m)
+func (m *TerminateWorkflowExecutionRequest) XXX_Size() int {
+	return xxx_messageInfo_TerminateWorkflowExecutionRequest.Size(m)
 }
-func (m *TerminateWorkflowRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_TerminateWorkflowRequest.DiscardUnknown(m)
+func (m *TerminateWorkflowExecutionRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_TerminateWorkflowExecutionRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_TerminateWorkflowRequest proto.InternalMessageInfo
+var xxx_messageInfo_TerminateWorkflowExecutionRequest proto.InternalMessageInfo
 
-func (m *TerminateWorkflowRequest) GetNamespace() string {
+func (m *TerminateWorkflowExecutionRequest) GetNamespace() string {
 	if m != nil {
 		return m.Namespace
 	}
 	return ""
 }
 
-func (m *TerminateWorkflowRequest) GetName() string {
+func (m *TerminateWorkflowExecutionRequest) GetName() string {
 	if m != nil {
 		return m.Name
 	}
 	return ""
 }
 
-type GetWorkflowLogsRequest struct {
+type GetWorkflowExecutionLogsRequest struct {
 	Namespace            string   `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	PodName              string   `protobuf:"bytes,3,opt,name=podName,proto3" json:"podName,omitempty"`
@@ -271,60 +271,60 @@ type GetWorkflowLogsRequest struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetWorkflowLogsRequest) Reset()         { *m = GetWorkflowLogsRequest{} }
-func (m *GetWorkflowLogsRequest) String() string { return proto.CompactTextString(m) }
-func (*GetWorkflowLogsRequest) ProtoMessage()    {}
-func (*GetWorkflowLogsRequest) Descriptor() ([]byte, []int) {
+func (m *GetWorkflowExecutionLogsRequest) Reset()         { *m = GetWorkflowExecutionLogsRequest{} }
+func (m *GetWorkflowExecutionLogsRequest) String() string { return proto.CompactTextString(m) }
+func (*GetWorkflowExecutionLogsRequest) ProtoMessage()    {}
+func (*GetWorkflowExecutionLogsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_892c7f566756b0be, []int{5}
 }
 
-func (m *GetWorkflowLogsRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetWorkflowLogsRequest.Unmarshal(m, b)
+func (m *GetWorkflowExecutionLogsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetWorkflowExecutionLogsRequest.Unmarshal(m, b)
 }
-func (m *GetWorkflowLogsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetWorkflowLogsRequest.Marshal(b, m, deterministic)
+func (m *GetWorkflowExecutionLogsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetWorkflowExecutionLogsRequest.Marshal(b, m, deterministic)
 }
-func (m *GetWorkflowLogsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetWorkflowLogsRequest.Merge(m, src)
+func (m *GetWorkflowExecutionLogsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetWorkflowExecutionLogsRequest.Merge(m, src)
 }
-func (m *GetWorkflowLogsRequest) XXX_Size() int {
-	return xxx_messageInfo_GetWorkflowLogsRequest.Size(m)
+func (m *GetWorkflowExecutionLogsRequest) XXX_Size() int {
+	return xxx_messageInfo_GetWorkflowExecutionLogsRequest.Size(m)
 }
-func (m *GetWorkflowLogsRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetWorkflowLogsRequest.DiscardUnknown(m)
+func (m *GetWorkflowExecutionLogsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetWorkflowExecutionLogsRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetWorkflowLogsRequest proto.InternalMessageInfo
+var xxx_messageInfo_GetWorkflowExecutionLogsRequest proto.InternalMessageInfo
 
-func (m *GetWorkflowLogsRequest) GetNamespace() string {
+func (m *GetWorkflowExecutionLogsRequest) GetNamespace() string {
 	if m != nil {
 		return m.Namespace
 	}
 	return ""
 }
 
-func (m *GetWorkflowLogsRequest) GetName() string {
+func (m *GetWorkflowExecutionLogsRequest) GetName() string {
 	if m != nil {
 		return m.Name
 	}
 	return ""
 }
 
-func (m *GetWorkflowLogsRequest) GetPodName() string {
+func (m *GetWorkflowExecutionLogsRequest) GetPodName() string {
 	if m != nil {
 		return m.PodName
 	}
 	return ""
 }
 
-func (m *GetWorkflowLogsRequest) GetContainerName() string {
+func (m *GetWorkflowExecutionLogsRequest) GetContainerName() string {
 	if m != nil {
 		return m.ContainerName
 	}
 	return ""
 }
 
-type GetWorkflowMetricsRequest struct {
+type GetWorkflowExecutionMetricsRequest struct {
 	Namespace            string   `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	PodName              string   `protobuf:"bytes,3,opt,name=podName,proto3" json:"podName,omitempty"`
@@ -333,92 +333,92 @@ type GetWorkflowMetricsRequest struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetWorkflowMetricsRequest) Reset()         { *m = GetWorkflowMetricsRequest{} }
-func (m *GetWorkflowMetricsRequest) String() string { return proto.CompactTextString(m) }
-func (*GetWorkflowMetricsRequest) ProtoMessage()    {}
-func (*GetWorkflowMetricsRequest) Descriptor() ([]byte, []int) {
+func (m *GetWorkflowExecutionMetricsRequest) Reset()         { *m = GetWorkflowExecutionMetricsRequest{} }
+func (m *GetWorkflowExecutionMetricsRequest) String() string { return proto.CompactTextString(m) }
+func (*GetWorkflowExecutionMetricsRequest) ProtoMessage()    {}
+func (*GetWorkflowExecutionMetricsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_892c7f566756b0be, []int{6}
 }
 
-func (m *GetWorkflowMetricsRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetWorkflowMetricsRequest.Unmarshal(m, b)
+func (m *GetWorkflowExecutionMetricsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetWorkflowExecutionMetricsRequest.Unmarshal(m, b)
 }
-func (m *GetWorkflowMetricsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetWorkflowMetricsRequest.Marshal(b, m, deterministic)
+func (m *GetWorkflowExecutionMetricsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetWorkflowExecutionMetricsRequest.Marshal(b, m, deterministic)
 }
-func (m *GetWorkflowMetricsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetWorkflowMetricsRequest.Merge(m, src)
+func (m *GetWorkflowExecutionMetricsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetWorkflowExecutionMetricsRequest.Merge(m, src)
 }
-func (m *GetWorkflowMetricsRequest) XXX_Size() int {
-	return xxx_messageInfo_GetWorkflowMetricsRequest.Size(m)
+func (m *GetWorkflowExecutionMetricsRequest) XXX_Size() int {
+	return xxx_messageInfo_GetWorkflowExecutionMetricsRequest.Size(m)
 }
-func (m *GetWorkflowMetricsRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetWorkflowMetricsRequest.DiscardUnknown(m)
+func (m *GetWorkflowExecutionMetricsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetWorkflowExecutionMetricsRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetWorkflowMetricsRequest proto.InternalMessageInfo
+var xxx_messageInfo_GetWorkflowExecutionMetricsRequest proto.InternalMessageInfo
 
-func (m *GetWorkflowMetricsRequest) GetNamespace() string {
+func (m *GetWorkflowExecutionMetricsRequest) GetNamespace() string {
 	if m != nil {
 		return m.Namespace
 	}
 	return ""
 }
 
-func (m *GetWorkflowMetricsRequest) GetName() string {
+func (m *GetWorkflowExecutionMetricsRequest) GetName() string {
 	if m != nil {
 		return m.Name
 	}
 	return ""
 }
 
-func (m *GetWorkflowMetricsRequest) GetPodName() string {
+func (m *GetWorkflowExecutionMetricsRequest) GetPodName() string {
 	if m != nil {
 		return m.PodName
 	}
 	return ""
 }
 
-type GetWorkflowMetricsResponse struct {
+type GetWorkflowExecutionMetricsResponse struct {
 	Metrics              []*Metric `protobuf:"bytes,1,rep,name=metrics,proto3" json:"metrics,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
 	XXX_unrecognized     []byte    `json:"-"`
 	XXX_sizecache        int32     `json:"-"`
 }
 
-func (m *GetWorkflowMetricsResponse) Reset()         { *m = GetWorkflowMetricsResponse{} }
-func (m *GetWorkflowMetricsResponse) String() string { return proto.CompactTextString(m) }
-func (*GetWorkflowMetricsResponse) ProtoMessage()    {}
-func (*GetWorkflowMetricsResponse) Descriptor() ([]byte, []int) {
+func (m *GetWorkflowExecutionMetricsResponse) Reset()         { *m = GetWorkflowExecutionMetricsResponse{} }
+func (m *GetWorkflowExecutionMetricsResponse) String() string { return proto.CompactTextString(m) }
+func (*GetWorkflowExecutionMetricsResponse) ProtoMessage()    {}
+func (*GetWorkflowExecutionMetricsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_892c7f566756b0be, []int{7}
 }
 
-func (m *GetWorkflowMetricsResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetWorkflowMetricsResponse.Unmarshal(m, b)
+func (m *GetWorkflowExecutionMetricsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetWorkflowExecutionMetricsResponse.Unmarshal(m, b)
 }
-func (m *GetWorkflowMetricsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetWorkflowMetricsResponse.Marshal(b, m, deterministic)
+func (m *GetWorkflowExecutionMetricsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetWorkflowExecutionMetricsResponse.Marshal(b, m, deterministic)
 }
-func (m *GetWorkflowMetricsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetWorkflowMetricsResponse.Merge(m, src)
+func (m *GetWorkflowExecutionMetricsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetWorkflowExecutionMetricsResponse.Merge(m, src)
 }
-func (m *GetWorkflowMetricsResponse) XXX_Size() int {
-	return xxx_messageInfo_GetWorkflowMetricsResponse.Size(m)
+func (m *GetWorkflowExecutionMetricsResponse) XXX_Size() int {
+	return xxx_messageInfo_GetWorkflowExecutionMetricsResponse.Size(m)
 }
-func (m *GetWorkflowMetricsResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetWorkflowMetricsResponse.DiscardUnknown(m)
+func (m *GetWorkflowExecutionMetricsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetWorkflowExecutionMetricsResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetWorkflowMetricsResponse proto.InternalMessageInfo
+var xxx_messageInfo_GetWorkflowExecutionMetricsResponse proto.InternalMessageInfo
 
-func (m *GetWorkflowMetricsResponse) GetMetrics() []*Metric {
+func (m *GetWorkflowExecutionMetricsResponse) GetMetrics() []*Metric {
 	if m != nil {
 		return m.Metrics
 	}
 	return nil
 }
 
-type ListWorkflowsRequest struct {
+type ListWorkflowExecutionsRequest struct {
 	Namespace               string   `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	WorkflowTemplateUid     string   `protobuf:"bytes,2,opt,name=workflowTemplateUid,proto3" json:"workflowTemplateUid,omitempty"`
 	WorkflowTemplateVersion string   `protobuf:"bytes,3,opt,name=workflowTemplateVersion,proto3" json:"workflowTemplateVersion,omitempty"`
@@ -429,131 +429,131 @@ type ListWorkflowsRequest struct {
 	XXX_sizecache           int32    `json:"-"`
 }
 
-func (m *ListWorkflowsRequest) Reset()         { *m = ListWorkflowsRequest{} }
-func (m *ListWorkflowsRequest) String() string { return proto.CompactTextString(m) }
-func (*ListWorkflowsRequest) ProtoMessage()    {}
-func (*ListWorkflowsRequest) Descriptor() ([]byte, []int) {
+func (m *ListWorkflowExecutionsRequest) Reset()         { *m = ListWorkflowExecutionsRequest{} }
+func (m *ListWorkflowExecutionsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListWorkflowExecutionsRequest) ProtoMessage()    {}
+func (*ListWorkflowExecutionsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_892c7f566756b0be, []int{8}
 }
 
-func (m *ListWorkflowsRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ListWorkflowsRequest.Unmarshal(m, b)
+func (m *ListWorkflowExecutionsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListWorkflowExecutionsRequest.Unmarshal(m, b)
 }
-func (m *ListWorkflowsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ListWorkflowsRequest.Marshal(b, m, deterministic)
+func (m *ListWorkflowExecutionsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListWorkflowExecutionsRequest.Marshal(b, m, deterministic)
 }
-func (m *ListWorkflowsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListWorkflowsRequest.Merge(m, src)
+func (m *ListWorkflowExecutionsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListWorkflowExecutionsRequest.Merge(m, src)
 }
-func (m *ListWorkflowsRequest) XXX_Size() int {
-	return xxx_messageInfo_ListWorkflowsRequest.Size(m)
+func (m *ListWorkflowExecutionsRequest) XXX_Size() int {
+	return xxx_messageInfo_ListWorkflowExecutionsRequest.Size(m)
 }
-func (m *ListWorkflowsRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_ListWorkflowsRequest.DiscardUnknown(m)
+func (m *ListWorkflowExecutionsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListWorkflowExecutionsRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ListWorkflowsRequest proto.InternalMessageInfo
+var xxx_messageInfo_ListWorkflowExecutionsRequest proto.InternalMessageInfo
 
-func (m *ListWorkflowsRequest) GetNamespace() string {
+func (m *ListWorkflowExecutionsRequest) GetNamespace() string {
 	if m != nil {
 		return m.Namespace
 	}
 	return ""
 }
 
-func (m *ListWorkflowsRequest) GetWorkflowTemplateUid() string {
+func (m *ListWorkflowExecutionsRequest) GetWorkflowTemplateUid() string {
 	if m != nil {
 		return m.WorkflowTemplateUid
 	}
 	return ""
 }
 
-func (m *ListWorkflowsRequest) GetWorkflowTemplateVersion() string {
+func (m *ListWorkflowExecutionsRequest) GetWorkflowTemplateVersion() string {
 	if m != nil {
 		return m.WorkflowTemplateVersion
 	}
 	return ""
 }
 
-func (m *ListWorkflowsRequest) GetPageSize() int32 {
+func (m *ListWorkflowExecutionsRequest) GetPageSize() int32 {
 	if m != nil {
 		return m.PageSize
 	}
 	return 0
 }
 
-func (m *ListWorkflowsRequest) GetPage() int32 {
+func (m *ListWorkflowExecutionsRequest) GetPage() int32 {
 	if m != nil {
 		return m.Page
 	}
 	return 0
 }
 
-type ListWorkflowsResponse struct {
-	Count                int32       `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
-	Workflows            []*Workflow `protobuf:"bytes,2,rep,name=workflows,proto3" json:"workflows,omitempty"`
-	Page                 int32       `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
-	Pages                int32       `protobuf:"varint,4,opt,name=pages,proto3" json:"pages,omitempty"`
-	TotalCount           int32       `protobuf:"varint,5,opt,name=totalCount,proto3" json:"totalCount,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
-	XXX_unrecognized     []byte      `json:"-"`
-	XXX_sizecache        int32       `json:"-"`
+type ListWorkflowExecutionsResponse struct {
+	Count                int32                `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	WorkflowExecutions   []*WorkflowExecution `protobuf:"bytes,2,rep,name=workflowExecutions,proto3" json:"workflowExecutions,omitempty"`
+	Page                 int32                `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	Pages                int32                `protobuf:"varint,4,opt,name=pages,proto3" json:"pages,omitempty"`
+	TotalCount           int32                `protobuf:"varint,5,opt,name=totalCount,proto3" json:"totalCount,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
-func (m *ListWorkflowsResponse) Reset()         { *m = ListWorkflowsResponse{} }
-func (m *ListWorkflowsResponse) String() string { return proto.CompactTextString(m) }
-func (*ListWorkflowsResponse) ProtoMessage()    {}
-func (*ListWorkflowsResponse) Descriptor() ([]byte, []int) {
+func (m *ListWorkflowExecutionsResponse) Reset()         { *m = ListWorkflowExecutionsResponse{} }
+func (m *ListWorkflowExecutionsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListWorkflowExecutionsResponse) ProtoMessage()    {}
+func (*ListWorkflowExecutionsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_892c7f566756b0be, []int{9}
 }
 
-func (m *ListWorkflowsResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ListWorkflowsResponse.Unmarshal(m, b)
+func (m *ListWorkflowExecutionsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListWorkflowExecutionsResponse.Unmarshal(m, b)
 }
-func (m *ListWorkflowsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ListWorkflowsResponse.Marshal(b, m, deterministic)
+func (m *ListWorkflowExecutionsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListWorkflowExecutionsResponse.Marshal(b, m, deterministic)
 }
-func (m *ListWorkflowsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListWorkflowsResponse.Merge(m, src)
+func (m *ListWorkflowExecutionsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListWorkflowExecutionsResponse.Merge(m, src)
 }
-func (m *ListWorkflowsResponse) XXX_Size() int {
-	return xxx_messageInfo_ListWorkflowsResponse.Size(m)
+func (m *ListWorkflowExecutionsResponse) XXX_Size() int {
+	return xxx_messageInfo_ListWorkflowExecutionsResponse.Size(m)
 }
-func (m *ListWorkflowsResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_ListWorkflowsResponse.DiscardUnknown(m)
+func (m *ListWorkflowExecutionsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListWorkflowExecutionsResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ListWorkflowsResponse proto.InternalMessageInfo
+var xxx_messageInfo_ListWorkflowExecutionsResponse proto.InternalMessageInfo
 
-func (m *ListWorkflowsResponse) GetCount() int32 {
+func (m *ListWorkflowExecutionsResponse) GetCount() int32 {
 	if m != nil {
 		return m.Count
 	}
 	return 0
 }
 
-func (m *ListWorkflowsResponse) GetWorkflows() []*Workflow {
+func (m *ListWorkflowExecutionsResponse) GetWorkflowExecutions() []*WorkflowExecution {
 	if m != nil {
-		return m.Workflows
+		return m.WorkflowExecutions
 	}
 	return nil
 }
 
-func (m *ListWorkflowsResponse) GetPage() int32 {
+func (m *ListWorkflowExecutionsResponse) GetPage() int32 {
 	if m != nil {
 		return m.Page
 	}
 	return 0
 }
 
-func (m *ListWorkflowsResponse) GetPages() int32 {
+func (m *ListWorkflowExecutionsResponse) GetPages() int32 {
 	if m != nil {
 		return m.Pages
 	}
 	return 0
 }
 
-func (m *ListWorkflowsResponse) GetTotalCount() int32 {
+func (m *ListWorkflowExecutionsResponse) GetTotalCount() int32 {
 	if m != nil {
 		return m.TotalCount
 	}
@@ -607,110 +607,110 @@ func (m *LogEntry) GetContent() string {
 	return ""
 }
 
-type Workflow struct {
-	CreatedAt            string               `protobuf:"bytes,1,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
-	Uid                  string               `protobuf:"bytes,2,opt,name=uid,proto3" json:"uid,omitempty"`
-	Name                 string               `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	Phase                string               `protobuf:"bytes,4,opt,name=phase,proto3" json:"phase,omitempty"`
-	StartedAt            string               `protobuf:"bytes,5,opt,name=startedAt,proto3" json:"startedAt,omitempty"`
-	FinishedAt           string               `protobuf:"bytes,6,opt,name=finishedAt,proto3" json:"finishedAt,omitempty"`
-	Manifest             string               `protobuf:"bytes,7,opt,name=manifest,proto3" json:"manifest,omitempty"`
-	Parameters           []*WorkflowParameter `protobuf:"bytes,8,rep,name=parameters,proto3" json:"parameters,omitempty"`
-	WorkflowTemplate     *WorkflowTemplate    `protobuf:"bytes,9,opt,name=workflowTemplate,proto3" json:"workflowTemplate,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
-	XXX_unrecognized     []byte               `json:"-"`
-	XXX_sizecache        int32                `json:"-"`
+type WorkflowExecution struct {
+	CreatedAt            string                        `protobuf:"bytes,1,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	Uid                  string                        `protobuf:"bytes,2,opt,name=uid,proto3" json:"uid,omitempty"`
+	Name                 string                        `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Phase                string                        `protobuf:"bytes,4,opt,name=phase,proto3" json:"phase,omitempty"`
+	StartedAt            string                        `protobuf:"bytes,5,opt,name=startedAt,proto3" json:"startedAt,omitempty"`
+	FinishedAt           string                        `protobuf:"bytes,6,opt,name=finishedAt,proto3" json:"finishedAt,omitempty"`
+	Manifest             string                        `protobuf:"bytes,7,opt,name=manifest,proto3" json:"manifest,omitempty"`
+	Parameters           []*WorkflowExecutionParameter `protobuf:"bytes,8,rep,name=parameters,proto3" json:"parameters,omitempty"`
+	WorkflowTemplate     *WorkflowTemplate             `protobuf:"bytes,9,opt,name=workflowTemplate,proto3" json:"workflowTemplate,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
+	XXX_unrecognized     []byte                        `json:"-"`
+	XXX_sizecache        int32                         `json:"-"`
 }
 
-func (m *Workflow) Reset()         { *m = Workflow{} }
-func (m *Workflow) String() string { return proto.CompactTextString(m) }
-func (*Workflow) ProtoMessage()    {}
-func (*Workflow) Descriptor() ([]byte, []int) {
+func (m *WorkflowExecution) Reset()         { *m = WorkflowExecution{} }
+func (m *WorkflowExecution) String() string { return proto.CompactTextString(m) }
+func (*WorkflowExecution) ProtoMessage()    {}
+func (*WorkflowExecution) Descriptor() ([]byte, []int) {
 	return fileDescriptor_892c7f566756b0be, []int{11}
 }
 
-func (m *Workflow) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Workflow.Unmarshal(m, b)
+func (m *WorkflowExecution) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_WorkflowExecution.Unmarshal(m, b)
 }
-func (m *Workflow) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Workflow.Marshal(b, m, deterministic)
+func (m *WorkflowExecution) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_WorkflowExecution.Marshal(b, m, deterministic)
 }
-func (m *Workflow) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Workflow.Merge(m, src)
+func (m *WorkflowExecution) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WorkflowExecution.Merge(m, src)
 }
-func (m *Workflow) XXX_Size() int {
-	return xxx_messageInfo_Workflow.Size(m)
+func (m *WorkflowExecution) XXX_Size() int {
+	return xxx_messageInfo_WorkflowExecution.Size(m)
 }
-func (m *Workflow) XXX_DiscardUnknown() {
-	xxx_messageInfo_Workflow.DiscardUnknown(m)
+func (m *WorkflowExecution) XXX_DiscardUnknown() {
+	xxx_messageInfo_WorkflowExecution.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Workflow proto.InternalMessageInfo
+var xxx_messageInfo_WorkflowExecution proto.InternalMessageInfo
 
-func (m *Workflow) GetCreatedAt() string {
+func (m *WorkflowExecution) GetCreatedAt() string {
 	if m != nil {
 		return m.CreatedAt
 	}
 	return ""
 }
 
-func (m *Workflow) GetUid() string {
+func (m *WorkflowExecution) GetUid() string {
 	if m != nil {
 		return m.Uid
 	}
 	return ""
 }
 
-func (m *Workflow) GetName() string {
+func (m *WorkflowExecution) GetName() string {
 	if m != nil {
 		return m.Name
 	}
 	return ""
 }
 
-func (m *Workflow) GetPhase() string {
+func (m *WorkflowExecution) GetPhase() string {
 	if m != nil {
 		return m.Phase
 	}
 	return ""
 }
 
-func (m *Workflow) GetStartedAt() string {
+func (m *WorkflowExecution) GetStartedAt() string {
 	if m != nil {
 		return m.StartedAt
 	}
 	return ""
 }
 
-func (m *Workflow) GetFinishedAt() string {
+func (m *WorkflowExecution) GetFinishedAt() string {
 	if m != nil {
 		return m.FinishedAt
 	}
 	return ""
 }
 
-func (m *Workflow) GetManifest() string {
+func (m *WorkflowExecution) GetManifest() string {
 	if m != nil {
 		return m.Manifest
 	}
 	return ""
 }
 
-func (m *Workflow) GetParameters() []*WorkflowParameter {
+func (m *WorkflowExecution) GetParameters() []*WorkflowExecutionParameter {
 	if m != nil {
 		return m.Parameters
 	}
 	return nil
 }
 
-func (m *Workflow) GetWorkflowTemplate() *WorkflowTemplate {
+func (m *WorkflowExecution) GetWorkflowTemplate() *WorkflowTemplate {
 	if m != nil {
 		return m.WorkflowTemplate
 	}
 	return nil
 }
 
-type WorkflowParameter struct {
+type WorkflowExecutionParameter struct {
 	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Value                string   `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -718,39 +718,39 @@ type WorkflowParameter struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *WorkflowParameter) Reset()         { *m = WorkflowParameter{} }
-func (m *WorkflowParameter) String() string { return proto.CompactTextString(m) }
-func (*WorkflowParameter) ProtoMessage()    {}
-func (*WorkflowParameter) Descriptor() ([]byte, []int) {
+func (m *WorkflowExecutionParameter) Reset()         { *m = WorkflowExecutionParameter{} }
+func (m *WorkflowExecutionParameter) String() string { return proto.CompactTextString(m) }
+func (*WorkflowExecutionParameter) ProtoMessage()    {}
+func (*WorkflowExecutionParameter) Descriptor() ([]byte, []int) {
 	return fileDescriptor_892c7f566756b0be, []int{12}
 }
 
-func (m *WorkflowParameter) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_WorkflowParameter.Unmarshal(m, b)
+func (m *WorkflowExecutionParameter) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_WorkflowExecutionParameter.Unmarshal(m, b)
 }
-func (m *WorkflowParameter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_WorkflowParameter.Marshal(b, m, deterministic)
+func (m *WorkflowExecutionParameter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_WorkflowExecutionParameter.Marshal(b, m, deterministic)
 }
-func (m *WorkflowParameter) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_WorkflowParameter.Merge(m, src)
+func (m *WorkflowExecutionParameter) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WorkflowExecutionParameter.Merge(m, src)
 }
-func (m *WorkflowParameter) XXX_Size() int {
-	return xxx_messageInfo_WorkflowParameter.Size(m)
+func (m *WorkflowExecutionParameter) XXX_Size() int {
+	return xxx_messageInfo_WorkflowExecutionParameter.Size(m)
 }
-func (m *WorkflowParameter) XXX_DiscardUnknown() {
-	xxx_messageInfo_WorkflowParameter.DiscardUnknown(m)
+func (m *WorkflowExecutionParameter) XXX_DiscardUnknown() {
+	xxx_messageInfo_WorkflowExecutionParameter.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_WorkflowParameter proto.InternalMessageInfo
+var xxx_messageInfo_WorkflowExecutionParameter proto.InternalMessageInfo
 
-func (m *WorkflowParameter) GetName() string {
+func (m *WorkflowExecutionParameter) GetName() string {
 	if m != nil {
 		return m.Name
 	}
 	return ""
 }
 
-func (m *WorkflowParameter) GetValue() string {
+func (m *WorkflowExecutionParameter) GetValue() string {
 	if m != nil {
 		return m.Value
 	}
@@ -758,97 +758,99 @@ func (m *WorkflowParameter) GetValue() string {
 }
 
 func init() {
-	proto.RegisterType((*CreateWorkflowRequest)(nil), "api.CreateWorkflowRequest")
-	proto.RegisterType((*GetWorkflowRequest)(nil), "api.GetWorkflowRequest")
-	proto.RegisterType((*WatchWorkflowRequest)(nil), "api.WatchWorkflowRequest")
-	proto.RegisterType((*ResubmitWorkflowRequest)(nil), "api.ResubmitWorkflowRequest")
-	proto.RegisterType((*TerminateWorkflowRequest)(nil), "api.TerminateWorkflowRequest")
-	proto.RegisterType((*GetWorkflowLogsRequest)(nil), "api.GetWorkflowLogsRequest")
-	proto.RegisterType((*GetWorkflowMetricsRequest)(nil), "api.GetWorkflowMetricsRequest")
-	proto.RegisterType((*GetWorkflowMetricsResponse)(nil), "api.GetWorkflowMetricsResponse")
-	proto.RegisterType((*ListWorkflowsRequest)(nil), "api.ListWorkflowsRequest")
-	proto.RegisterType((*ListWorkflowsResponse)(nil), "api.ListWorkflowsResponse")
+	proto.RegisterType((*CreateWorkflowExecutionRequest)(nil), "api.CreateWorkflowExecutionRequest")
+	proto.RegisterType((*GetWorkflowExecutionRequest)(nil), "api.GetWorkflowExecutionRequest")
+	proto.RegisterType((*WatchWorkflowExecutionRequest)(nil), "api.WatchWorkflowExecutionRequest")
+	proto.RegisterType((*ResubmitWorkflowExecutionRequest)(nil), "api.ResubmitWorkflowExecutionRequest")
+	proto.RegisterType((*TerminateWorkflowExecutionRequest)(nil), "api.TerminateWorkflowExecutionRequest")
+	proto.RegisterType((*GetWorkflowExecutionLogsRequest)(nil), "api.GetWorkflowExecutionLogsRequest")
+	proto.RegisterType((*GetWorkflowExecutionMetricsRequest)(nil), "api.GetWorkflowExecutionMetricsRequest")
+	proto.RegisterType((*GetWorkflowExecutionMetricsResponse)(nil), "api.GetWorkflowExecutionMetricsResponse")
+	proto.RegisterType((*ListWorkflowExecutionsRequest)(nil), "api.ListWorkflowExecutionsRequest")
+	proto.RegisterType((*ListWorkflowExecutionsResponse)(nil), "api.ListWorkflowExecutionsResponse")
 	proto.RegisterType((*LogEntry)(nil), "api.LogEntry")
-	proto.RegisterType((*Workflow)(nil), "api.Workflow")
-	proto.RegisterType((*WorkflowParameter)(nil), "api.WorkflowParameter")
+	proto.RegisterType((*WorkflowExecution)(nil), "api.WorkflowExecution")
+	proto.RegisterType((*WorkflowExecutionParameter)(nil), "api.WorkflowExecutionParameter")
 }
 
 func init() { proto.RegisterFile("workflow.proto", fileDescriptor_892c7f566756b0be) }
 
 var fileDescriptor_892c7f566756b0be = []byte{
-	// 1149 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x56, 0x4f, 0x6f, 0x1b, 0x55,
-	0x10, 0xd7, 0xc6, 0x4d, 0x93, 0x4c, 0x48, 0x9b, 0x4e, 0xf3, 0xc7, 0xdd, 0x26, 0x25, 0x6c, 0x5b,
-	0x29, 0xa1, 0x95, 0x37, 0x75, 0xff, 0xa8, 0x4a, 0x5b, 0x89, 0x34, 0x4a, 0x0b, 0x22, 0x20, 0xe4,
-	0xb6, 0x54, 0xc0, 0x81, 0xbe, 0xd8, 0x2f, 0xce, 0x0a, 0xef, 0x1f, 0xf6, 0x3d, 0x27, 0x2a, 0xc6,
-	0x07, 0xe0, 0x82, 0xb8, 0xc2, 0x8d, 0x0b, 0x42, 0x1c, 0xf8, 0x08, 0x70, 0xe5, 0xca, 0x05, 0xa9,
-	0x5f, 0x01, 0xbe, 0x07, 0xda, 0xd9, 0xf7, 0x36, 0xbb, 0xeb, 0x75, 0x6a, 0x27, 0xed, 0xc9, 0x3b,
-	0x33, 0xcf, 0xf3, 0xfb, 0xcd, 0xbc, 0x79, 0x33, 0x03, 0xa7, 0xf6, 0xfd, 0xf0, 0x8b, 0x9d, 0x96,
-	0xbf, 0x5f, 0x09, 0x42, 0x5f, 0xfa, 0x58, 0x62, 0x81, 0x63, 0x2e, 0x34, 0x7d, 0xbf, 0xd9, 0xe2,
-	0x36, 0x0b, 0x1c, 0x9b, 0x79, 0x9e, 0x2f, 0x99, 0x74, 0x7c, 0x4f, 0xc4, 0x47, 0xcc, 0xf3, 0xca,
-	0x4a, 0xd2, 0x76, 0x7b, 0xc7, 0xe6, 0x6e, 0x20, 0x9f, 0x2b, 0xe3, 0xbc, 0xf6, 0xf7, 0xb9, 0xe4,
-	0x6e, 0xd0, 0x62, 0x92, 0x2b, 0xc3, 0x1b, 0x2e, 0x97, 0xa1, 0x53, 0x8f, 0x25, 0xeb, 0x19, 0xcc,
-	0x6e, 0x84, 0x9c, 0x49, 0xfe, 0x54, 0x1d, 0xaf, 0xf1, 0x2f, 0xdb, 0x5c, 0x48, 0x5c, 0x80, 0x09,
-	0x8f, 0xb9, 0x5c, 0x04, 0xac, 0xce, 0xcb, 0xc6, 0x92, 0xb1, 0x3c, 0x51, 0x3b, 0x50, 0xe0, 0x0a,
-	0x8c, 0x6b, 0xff, 0xe5, 0x91, 0x25, 0x63, 0x79, 0xb2, 0x3a, 0x55, 0x61, 0x81, 0x53, 0x49, 0xbc,
-	0x24, 0x66, 0xeb, 0x01, 0xe0, 0x43, 0x2e, 0x87, 0x73, 0x8f, 0x70, 0x22, 0x12, 0xc8, 0xf5, 0x44,
-	0x8d, 0xbe, 0xad, 0x77, 0x61, 0xe6, 0x29, 0x93, 0xf5, 0xdd, 0xe3, 0x7b, 0x7a, 0x1f, 0xe6, 0x6b,
-	0x5c, 0xb4, 0xb7, 0x5d, 0xe7, 0x15, 0xd0, 0xda, 0x82, 0xf2, 0x63, 0x1e, 0xba, 0x8e, 0x37, 0x74,
-	0x0e, 0x8b, 0xbc, 0xfd, 0x60, 0xc0, 0x5c, 0x2a, 0x5b, 0x5b, 0x7e, 0x53, 0x1c, 0xd9, 0x19, 0x96,
-	0x61, 0x2c, 0xf0, 0x1b, 0x1f, 0x46, 0xea, 0x12, 0xa9, 0xb5, 0x88, 0x97, 0x60, 0xaa, 0xee, 0x7b,
-	0x92, 0x39, 0x1e, 0x0f, 0xc9, 0x7e, 0x82, 0xec, 0x59, 0xa5, 0xd5, 0x84, 0x73, 0x29, 0x2e, 0x1f,
-	0x50, 0xd9, 0xbc, 0x0e, 0x3a, 0xd6, 0x06, 0x98, 0x45, 0x40, 0x22, 0xf0, 0x3d, 0xc1, 0xf1, 0x32,
-	0x8c, 0xc5, 0x25, 0x2b, 0xca, 0xc6, 0x52, 0x69, 0x79, 0xb2, 0x3a, 0x49, 0xa5, 0x16, 0x1f, 0xab,
-	0x69, 0x9b, 0xf5, 0x8f, 0x01, 0x33, 0x5b, 0x8e, 0x48, 0xdc, 0x0c, 0xc8, 0x74, 0x15, 0xce, 0xea,
-	0x52, 0x7d, 0xac, 0x1e, 0xca, 0x13, 0xa7, 0xa1, 0x88, 0x17, 0x99, 0xf0, 0x36, 0xcc, 0xe7, 0xd5,
-	0x1f, 0xf3, 0x50, 0x38, 0xbe, 0xa7, 0xe2, 0xea, 0x67, 0x46, 0x13, 0xc6, 0x03, 0xd6, 0xe4, 0x8f,
-	0x9c, 0xaf, 0xe2, 0x8c, 0x8f, 0xd6, 0x12, 0x39, 0xca, 0x58, 0xf4, 0x5d, 0x1e, 0x25, 0x3d, 0x7d,
-	0x5b, 0xbf, 0x19, 0x30, 0x9b, 0x0b, 0x49, 0xe5, 0x64, 0x06, 0x46, 0xeb, 0x7e, 0xdb, 0x93, 0x14,
-	0xcf, 0x68, 0x2d, 0x16, 0xf0, 0x0a, 0x4c, 0x68, 0x68, 0x51, 0x1e, 0xa1, 0x5c, 0xe5, 0x9e, 0xe5,
-	0x81, 0x3d, 0x01, 0x2c, 0x1d, 0x00, 0x46, 0x6e, 0xa3, 0x5f, 0xa1, 0xd8, 0xc5, 0x02, 0x5e, 0x00,
-	0x90, 0xbe, 0x64, 0xad, 0x0d, 0x42, 0x8c, 0x09, 0xa6, 0x34, 0xd6, 0x7d, 0x18, 0xdf, 0xf2, 0x9b,
-	0x9b, 0x9e, 0x0c, 0x9f, 0x47, 0xc9, 0x96, 0x8e, 0xcb, 0x85, 0x64, 0x6e, 0xa0, 0x93, 0x9d, 0x28,
-	0xa2, 0x12, 0x88, 0x4a, 0x8c, 0x7b, 0x52, 0x25, 0x58, 0x8b, 0xd6, 0x9f, 0x23, 0x30, 0xae, 0x59,
-	0x46, 0x4e, 0xea, 0xd4, 0x94, 0x1a, 0xeb, 0x52, 0x3b, 0x49, 0x14, 0x38, 0x0d, 0xa5, 0x76, 0x72,
-	0x43, 0xd1, 0x67, 0x52, 0x6d, 0xa5, 0x54, 0xb5, 0x45, 0xa1, 0xec, 0x32, 0xa1, 0x4b, 0x3b, 0x16,
-	0x22, 0xcf, 0x42, 0xb2, 0x30, 0xf6, 0x3c, 0x1a, 0x7b, 0x4e, 0x14, 0x51, 0xa0, 0x3b, 0x8e, 0xe7,
-	0x88, 0x5d, 0x32, 0x9f, 0x24, 0x73, 0x4a, 0x13, 0xdd, 0x9f, 0xcb, 0x3c, 0x67, 0x87, 0x0b, 0x59,
-	0x1e, 0x23, 0x6b, 0x22, 0xe3, 0x2d, 0x80, 0x80, 0x85, 0xcc, 0xe5, 0x92, 0x87, 0xa2, 0x3c, 0x4e,
-	0xc9, 0x9f, 0xcb, 0x24, 0xff, 0x23, 0x6d, 0xae, 0xa5, 0x4e, 0xe2, 0x3a, 0x4c, 0xe7, 0xcb, 0xa5,
-	0x3c, 0x41, 0x1d, 0x75, 0x36, 0xf3, 0x6f, 0x6d, 0xac, 0xf5, 0x1c, 0xb7, 0xee, 0xc1, 0x99, 0x1e,
-	0x8c, 0x24, 0x27, 0x46, 0x36, 0x27, 0x7b, 0xac, 0xd5, 0xd6, 0xcf, 0x32, 0x16, 0xaa, 0x7f, 0x23,
-	0x9c, 0xd6, 0xff, 0x7f, 0xc4, 0xc3, 0x3d, 0xa7, 0xce, 0x31, 0x84, 0x53, 0xd9, 0xb1, 0x80, 0x26,
-	0xb1, 0x29, 0x9c, 0x15, 0x66, 0xb6, 0xc8, 0xac, 0x9b, 0xdf, 0xbe, 0xf8, 0xf7, 0xc7, 0x11, 0xdb,
-	0xba, 0x18, 0xcd, 0x2d, 0x61, 0xef, 0x5d, 0xdb, 0xe6, 0x92, 0x5d, 0xb3, 0x3b, 0xc9, 0xa3, 0xeb,
-	0xda, 0x49, 0x19, 0xae, 0x25, 0x83, 0x02, 0x1d, 0x98, 0x4c, 0x75, 0x01, 0x9c, 0x27, 0xa7, 0xbd,
-	0xa3, 0x23, 0x8f, 0x56, 0x25, 0xb4, 0xab, 0xf8, 0xf6, 0x00, 0x68, 0xb1, 0xb6, 0x8b, 0x02, 0xa6,
-	0x32, 0xef, 0x0a, 0xcf, 0x91, 0xcf, 0xa2, 0xf6, 0x61, 0x9a, 0x45, 0xa6, 0xf8, 0x19, 0x5a, 0x57,
-	0x08, 0xfb, 0x32, 0x0e, 0x12, 0x29, 0xb6, 0x61, 0x2a, 0x33, 0xc0, 0x14, 0x68, 0xd1, 0x50, 0xcb,
-	0xc7, 0x78, 0x9b, 0x70, 0xaa, 0xb8, 0x3a, 0x78, 0x8c, 0xf6, 0x7e, 0xe4, 0x77, 0xd5, 0xc0, 0x5f,
-	0x0d, 0x38, 0x9d, 0x1b, 0x29, 0x78, 0x3e, 0x9f, 0xdb, 0xd4, 0xa0, 0x51, 0xd8, 0xfa, 0x45, 0x5b,
-	0x8c, 0xb0, 0x3f, 0xc3, 0x4f, 0x86, 0xc0, 0x0e, 0xfc, 0x86, 0xb0, 0x3b, 0xaa, 0xbd, 0x77, 0xed,
-	0x64, 0xac, 0x08, 0xbb, 0x93, 0x19, 0x31, 0x5d, 0xbb, 0xe5, 0x37, 0xc5, 0xaa, 0x81, 0xbf, 0x18,
-	0x99, 0x2d, 0x41, 0x8d, 0x00, 0xbc, 0x90, 0xe7, 0x99, 0x1d, 0x42, 0xe6, 0x9b, 0x7d, 0xed, 0xea,
-	0x82, 0xde, 0x23, 0xf2, 0x1b, 0xb8, 0x7e, 0x74, 0xf2, 0x6a, 0xbe, 0xe0, 0xd7, 0x30, 0x9d, 0xdf,
-	0x1a, 0x70, 0x81, 0xf0, 0xfb, 0x2c, 0x13, 0xf9, 0x4b, 0xbc, 0x43, 0x5c, 0x6e, 0x9a, 0xd7, 0x87,
-	0xe0, 0x12, 0x2a, 0xd7, 0xf8, 0xbd, 0x01, 0x67, 0x7a, 0xf6, 0x0c, 0x5c, 0x24, 0x84, 0x7e, 0xfb,
-	0x87, 0x39, 0x57, 0x89, 0x37, 0xc4, 0x8a, 0xde, 0x10, 0x2b, 0x9b, 0xd1, 0x86, 0x68, 0xdd, 0x25,
-	0x26, 0xb7, 0xcc, 0x1b, 0x43, 0x30, 0x91, 0x1a, 0x04, 0x7f, 0x36, 0x60, 0x2e, 0xdb, 0x07, 0x74,
-	0x27, 0x42, 0xab, 0xa0, 0x49, 0x24, 0x8d, 0x4b, 0x91, 0x2a, 0x6e, 0x6b, 0xd6, 0x03, 0xe2, 0xf4,
-	0x8e, 0x75, 0xf5, 0xe5, 0x9c, 0x92, 0x8d, 0x56, 0xac, 0xf5, 0x34, 0x43, 0xfc, 0xcf, 0x80, 0xc5,
-	0x27, 0x41, 0xa3, 0x80, 0x80, 0x9e, 0xc2, 0x2b, 0x44, 0xe0, 0xd0, 0x33, 0x2f, 0xe1, 0xfa, 0x8d,
-	0x41, 0x64, 0x3b, 0x66, 0x73, 0x18, 0xb2, 0x76, 0x27, 0x4f, 0xb6, 0xd2, 0x76, 0x1a, 0x5d, 0x7b,
-	0x2f, 0xc6, 0x2c, 0xb2, 0x2b, 0x53, 0xb7, 0x20, 0xce, 0xbf, 0x0c, 0x58, 0x2c, 0x4e, 0xb4, 0x8e,
-	0xf3, 0x18, 0x97, 0xb1, 0x43, 0xf1, 0x3d, 0xb3, 0xb6, 0x5e, 0x65, 0x7c, 0x05, 0x41, 0xbc, 0x30,
-	0xe0, 0x6c, 0xea, 0xf5, 0x26, 0xfa, 0x9e, 0x77, 0x3d, 0x20, 0xef, 0xef, 0xe2, 0x8b, 0xe9, 0x62,
-	0x75, 0x38, 0xe2, 0x11, 0xcf, 0x4f, 0x1f, 0xe2, 0xe6, 0xf0, 0xff, 0x4a, 0xdd, 0x9e, 0xbe, 0x2c,
-	0xfc, 0xc3, 0x80, 0x85, 0xf4, 0xbc, 0xc8, 0x5d, 0x8c, 0xc0, 0xe5, 0x9e, 0x91, 0x92, 0x3f, 0xa2,
-	0xe3, 0x5c, 0x19, 0xe0, 0xa4, 0x6a, 0x75, 0x1b, 0x14, 0xfa, 0x3d, 0xbc, 0x73, 0x8c, 0x20, 0xf0,
-	0xa7, 0xdc, 0xc6, 0xa9, 0xd1, 0x04, 0xbe, 0xd5, 0x97, 0x49, 0x42, 0xd6, 0x3a, 0xec, 0x88, 0x62,
-	0x79, 0x83, 0x58, 0x56, 0x70, 0xa8, 0x67, 0x8e, 0xbf, 0x1b, 0x30, 0xbf, 0x1e, 0xd6, 0x77, 0x9d,
-	0xbd, 0xde, 0x9e, 0x73, 0x91, 0x50, 0xfb, 0x58, 0x35, 0xb5, 0x4b, 0x87, 0x1f, 0x52, 0xe4, 0xee,
-	0x13, 0xb9, 0xbb, 0xe6, 0xda, 0x11, 0x52, 0xc8, 0x62, 0xdf, 0xdb, 0x27, 0xa9, 0xd7, 0x5e, 0xff,
-	0x3f, 0x00, 0x00, 0xff, 0xff, 0x4d, 0x24, 0xbb, 0x4e, 0xd0, 0x0f, 0x00, 0x00,
+	// 1176 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x57, 0x4b, 0x53, 0x1c, 0x55,
+	0x14, 0xae, 0xcb, 0x84, 0x24, 0x9c, 0x18, 0x4d, 0x4e, 0x08, 0x8c, 0x1d, 0x5e, 0x69, 0x40, 0x49,
+	0xa9, 0xd3, 0x04, 0x53, 0x96, 0x85, 0x89, 0x11, 0x10, 0x62, 0x95, 0xc4, 0xc7, 0x00, 0xa6, 0xca,
+	0x8d, 0x5e, 0x7a, 0x2e, 0x43, 0x57, 0x66, 0xba, 0xdb, 0xbe, 0x77, 0x20, 0x91, 0x9a, 0x85, 0x8f,
+	0xb5, 0x9b, 0xb8, 0xd2, 0x8d, 0x56, 0xb9, 0xf0, 0x27, 0xb8, 0x72, 0x61, 0x95, 0x55, 0x56, 0xb9,
+	0xcc, 0xca, 0xbd, 0xf9, 0x1f, 0xd6, 0x7d, 0x75, 0xe6, 0xd1, 0x3d, 0xc0, 0x04, 0x57, 0xcc, 0x79,
+	0xf4, 0x39, 0xdf, 0x79, 0x5f, 0xe0, 0xf9, 0xfd, 0x28, 0xb9, 0xbf, 0x53, 0x8b, 0xf6, 0x4b, 0x71,
+	0x12, 0x89, 0x08, 0x0b, 0x34, 0x0e, 0x9c, 0xb1, 0x6a, 0x14, 0x55, 0x6b, 0xcc, 0xa3, 0x71, 0xe0,
+	0xd1, 0x30, 0x8c, 0x04, 0x15, 0x41, 0x14, 0x72, 0xad, 0xe2, 0x5c, 0x31, 0x52, 0x45, 0x6d, 0x37,
+	0x76, 0x3c, 0x56, 0x8f, 0xc5, 0x43, 0x23, 0x1c, 0xb5, 0xf6, 0x3e, 0x13, 0xac, 0x1e, 0xd7, 0xa8,
+	0x60, 0x46, 0xf0, 0x5c, 0x9d, 0x89, 0x24, 0xf0, 0x35, 0xe5, 0x7e, 0x4b, 0x60, 0x62, 0x25, 0x61,
+	0x54, 0xb0, 0x7b, 0x46, 0x7f, 0xf5, 0x01, 0xf3, 0x1b, 0xd2, 0x4d, 0x99, 0x7d, 0xd1, 0x60, 0x5c,
+	0xe0, 0x18, 0x0c, 0x85, 0xb4, 0xce, 0x78, 0x4c, 0x7d, 0x56, 0x24, 0x53, 0x64, 0x6e, 0xa8, 0xfc,
+	0x94, 0x81, 0xef, 0xc2, 0xc5, 0xfd, 0xce, 0x2f, 0x8b, 0x03, 0x53, 0x64, 0xee, 0xdc, 0xc2, 0x48,
+	0x89, 0xc6, 0x41, 0xa9, 0xdb, 0x6e, 0xf7, 0x07, 0xee, 0x87, 0x70, 0xe5, 0x0e, 0x13, 0x7d, 0x42,
+	0x40, 0x38, 0x25, 0x09, 0xe5, 0x75, 0xa8, 0xac, 0x7e, 0xbb, 0x1f, 0xc3, 0xf8, 0x3d, 0x2a, 0xfc,
+	0xdd, 0x13, 0x34, 0xb9, 0x09, 0x53, 0x65, 0xc6, 0x1b, 0xdb, 0xf5, 0xe0, 0x24, 0x81, 0x6e, 0xc1,
+	0xd5, 0x4d, 0x96, 0xd4, 0x83, 0xb0, 0xff, 0x12, 0x64, 0x99, 0x7d, 0x44, 0x60, 0x32, 0x2b, 0xa3,
+	0xeb, 0x51, 0x95, 0xf7, 0x6d, 0x15, 0x8b, 0x70, 0x26, 0x8e, 0x2a, 0x1f, 0x48, 0x76, 0x41, 0xb1,
+	0x2d, 0x89, 0x33, 0x70, 0xde, 0x8f, 0x42, 0x41, 0x83, 0x90, 0x25, 0x4a, 0x7e, 0x4a, 0xc9, 0xdb,
+	0x99, 0x6e, 0x0c, 0x6e, 0x16, 0xa8, 0xbb, 0xaa, 0x23, 0xff, 0x0f, 0x5c, 0xee, 0x3a, 0x4c, 0xf7,
+	0xf4, 0xc8, 0xe3, 0x28, 0xe4, 0x0c, 0x67, 0xe1, 0x8c, 0x1e, 0x0b, 0x5e, 0x24, 0x53, 0x85, 0xb9,
+	0x73, 0x0b, 0xe7, 0x54, 0xef, 0x6a, 0xb5, 0xb2, 0x95, 0xb9, 0xff, 0x10, 0x18, 0x5f, 0x0f, 0x78,
+	0xb7, 0xbd, 0x23, 0x62, 0x9f, 0x87, 0x4b, 0xb6, 0xf7, 0x37, 0xcd, 0x54, 0x6e, 0x05, 0x15, 0x13,
+	0x4a, 0x96, 0x08, 0xdf, 0x84, 0xd1, 0x4e, 0xf6, 0x27, 0x2c, 0xe1, 0x72, 0xc8, 0x74, 0xa4, 0x79,
+	0x62, 0x74, 0xe0, 0x6c, 0x4c, 0xab, 0x6c, 0x23, 0xf8, 0x52, 0x17, 0x63, 0xb0, 0x9c, 0xd2, 0x32,
+	0x87, 0xf2, 0x77, 0x71, 0x50, 0xf1, 0xd5, 0x6f, 0xf7, 0x2f, 0x02, 0x13, 0x79, 0xb1, 0x99, 0x2c,
+	0x0d, 0xc3, 0xa0, 0x1f, 0x35, 0x42, 0xa1, 0x02, 0x1b, 0x2c, 0x6b, 0x02, 0xd7, 0x00, 0xbb, 0x06,
+	0x9a, 0x17, 0x07, 0x54, 0x1a, 0xf3, 0x56, 0x40, 0xc6, 0x17, 0x29, 0xa8, 0xc2, 0x53, 0x50, 0xd2,
+	0xa3, 0xfc, 0xcb, 0x4d, 0x04, 0x9a, 0xc0, 0x09, 0x00, 0x11, 0x09, 0x5a, 0x5b, 0x51, 0x60, 0x74,
+	0x10, 0x2d, 0x1c, 0x77, 0x19, 0xce, 0xae, 0x47, 0xd5, 0xd5, 0x50, 0x24, 0x0f, 0x65, 0x41, 0x44,
+	0x50, 0x67, 0x5c, 0xd0, 0x7a, 0x6c, 0x0b, 0x92, 0x32, 0x64, 0xe3, 0xc8, 0x0e, 0x65, 0xa1, 0x30,
+	0x45, 0xb0, 0xa4, 0xfb, 0xf7, 0x00, 0x5c, 0xec, 0xc2, 0x2d, 0xad, 0xf9, 0x6a, 0x5b, 0x56, 0x96,
+	0x84, 0xb5, 0x96, 0x32, 0xf0, 0x02, 0x14, 0x1a, 0x69, 0x39, 0xe5, 0xcf, 0xb4, 0x59, 0x0b, 0x2d,
+	0xcd, 0x2a, 0x63, 0xda, 0xa5, 0xdc, 0x8e, 0x88, 0x26, 0xa4, 0x65, 0x2e, 0x68, 0xa2, 0x2d, 0x0f,
+	0x6a, 0xcb, 0x29, 0x43, 0x46, 0xbc, 0x13, 0x84, 0x01, 0xdf, 0x55, 0xe2, 0xd3, 0x4a, 0xdc, 0xc2,
+	0x91, 0xc5, 0xae, 0xd3, 0x30, 0xd8, 0x61, 0x5c, 0x14, 0xcf, 0x28, 0x69, 0x4a, 0xe3, 0x6d, 0x80,
+	0x98, 0x26, 0xb4, 0xce, 0x04, 0x4b, 0x78, 0xf1, 0xac, 0xaa, 0xcb, 0x64, 0x76, 0x5d, 0x3e, 0xb2,
+	0x7a, 0xe5, 0x96, 0x4f, 0x70, 0x09, 0x2e, 0x74, 0x36, 0x59, 0x71, 0x48, 0x6d, 0xf8, 0xcb, 0x6d,
+	0x66, 0xac, 0xb0, 0xdc, 0xa5, 0xee, 0xae, 0x81, 0x93, 0xef, 0x2c, 0xcd, 0x12, 0x69, 0xcf, 0xd2,
+	0x1e, 0xad, 0x35, 0xec, 0x9c, 0x6b, 0x62, 0xe1, 0xc9, 0x30, 0xbc, 0x60, 0x0d, 0x6d, 0xb0, 0x64,
+	0x2f, 0xf0, 0x19, 0xfe, 0x44, 0x60, 0x34, 0xe7, 0x84, 0xe1, 0xb4, 0x02, 0xd8, 0xfb, 0xc0, 0x39,
+	0x39, 0x4d, 0xea, 0xbe, 0xf7, 0xf5, 0xe3, 0x7f, 0x1f, 0x0d, 0x2c, 0xbb, 0xaf, 0xc9, 0xfb, 0xcb,
+	0xbd, 0xbd, 0xeb, 0xdb, 0x4c, 0xd0, 0xeb, 0xde, 0x41, 0x3a, 0xcf, 0x4d, 0x2f, 0x3d, 0xb2, 0xec,
+	0x01, 0x6b, 0xf8, 0xaa, 0x8f, 0x17, 0xbb, 0xcf, 0x1b, 0x7e, 0x47, 0x60, 0x38, 0x6b, 0x0d, 0xe1,
+	0x94, 0x72, 0xdd, 0xe3, 0xf4, 0xe5, 0x82, 0xbb, 0xa9, 0xc0, 0xbd, 0x81, 0x37, 0x8e, 0x06, 0xce,
+	0x0c, 0x99, 0x96, 0x37, 0x25, 0xa0, 0x91, 0xec, 0x61, 0x47, 0x57, 0x39, 0xec, 0xb9, 0xe5, 0x9c,
+	0xe9, 0x9e, 0x3a, 0x7a, 0x5b, 0xb8, 0xaf, 0x28, 0x84, 0xb3, 0x38, 0x7d, 0x38, 0x42, 0x8e, 0x3f,
+	0x10, 0x18, 0xc9, 0x3e, 0xd8, 0x06, 0x50, 0xcf, 0x6b, 0x9e, 0x9b, 0xa5, 0x65, 0x85, 0xe1, 0x26,
+	0x2e, 0xf6, 0x93, 0x25, 0x6f, 0x5f, 0xfa, 0x9c, 0x27, 0xf8, 0x3b, 0x81, 0x62, 0xde, 0x31, 0xc5,
+	0x99, 0xdc, 0x12, 0xb6, 0xdc, 0x5a, 0xe7, 0xbc, 0xce, 0x98, 0xd9, 0x4a, 0xee, 0x7d, 0x85, 0x8b,
+	0xa1, 0xdf, 0x17, 0xae, 0x38, 0xaa, 0x70, 0xef, 0xc0, 0x9c, 0xb8, 0xa6, 0x97, 0xde, 0x58, 0xee,
+	0x1d, 0xb4, 0xdd, 0xdb, 0xa6, 0x57, 0x8b, 0xaa, 0x7c, 0x9e, 0xe0, 0x9f, 0x24, 0xfb, 0x7d, 0x65,
+	0xce, 0x20, 0xbe, 0x9c, 0x1b, 0x43, 0xfb, 0x69, 0x76, 0xe6, 0x0e, 0x57, 0x34, 0xd5, 0xdf, 0x50,
+	0x11, 0xde, 0xc5, 0xf7, 0x4f, 0x22, 0x42, 0x73, 0x7f, 0xf1, 0x67, 0x02, 0x2f, 0xe6, 0xbe, 0xc1,
+	0x70, 0x56, 0x81, 0x3b, 0xec, 0x8d, 0x96, 0xdb, 0x2b, 0xab, 0x0a, 0xf1, 0x6d, 0xe7, 0x56, 0x5f,
+	0x88, 0x13, 0xe3, 0x16, 0x7f, 0x21, 0xe0, 0xe4, 0xbf, 0xe8, 0xf0, 0x25, 0xe5, 0xfd, 0xd0, 0x27,
+	0x9f, 0x33, 0x52, 0xd2, 0xaf, 0xfb, 0x92, 0x7d, 0xdd, 0x97, 0x56, 0xe5, 0xeb, 0xde, 0x5d, 0x53,
+	0x28, 0xdf, 0x71, 0xde, 0xee, 0x0b, 0xa5, 0xb0, 0x7e, 0xf1, 0x47, 0x02, 0x23, 0xed, 0x7b, 0xd1,
+	0x2e, 0x6b, 0x33, 0x70, 0xd9, 0x42, 0x0b, 0x2f, 0x7b, 0xf3, 0x5b, 0x74, 0xee, 0xab, 0x47, 0x40,
+	0x67, 0xff, 0x2f, 0xe1, 0x8b, 0x5d, 0xf7, 0x02, 0x9f, 0x10, 0x18, 0xdf, 0x8a, 0x2b, 0x19, 0x00,
+	0xec, 0xf3, 0xe6, 0x9a, 0x02, 0xd0, 0x53, 0xe7, 0x10, 0xac, 0x5f, 0x11, 0x05, 0xf6, 0xc0, 0xa9,
+	0x1e, 0x07, 0xac, 0x77, 0xd0, 0x09, 0xb6, 0xd4, 0x08, 0x2a, 0x4d, 0x6f, 0x4f, 0xfb, 0xcc, 0x92,
+	0x1b, 0x51, 0x33, 0x23, 0xce, 0x3f, 0x08, 0x8c, 0x67, 0x27, 0xda, 0xc6, 0xf9, 0x0c, 0xc5, 0xd8,
+	0x51, 0xf1, 0x7d, 0xee, 0xae, 0x9f, 0x64, 0x7c, 0x19, 0x41, 0x3c, 0x26, 0x70, 0xa9, 0x65, 0x25,
+	0xa4, 0xfc, 0xc9, 0xce, 0x65, 0x71, 0x44, 0xdc, 0xdf, 0xe8, 0xc2, 0x34, 0x71, 0xe1, 0x78, 0xc0,
+	0x25, 0xce, 0x4f, 0xef, 0xe0, 0xea, 0xf1, 0xbf, 0x6a, 0xa9, 0x9e, 0x2d, 0x16, 0xfe, 0x46, 0x60,
+	0xac, 0xf5, 0xc2, 0x75, 0x14, 0x86, 0xe3, 0x5c, 0xd7, 0x11, 0xec, 0x54, 0xb1, 0x71, 0x5e, 0x3b,
+	0x82, 0xa6, 0x59, 0x9b, 0x2b, 0x2a, 0xf4, 0x5b, 0xf8, 0xd6, 0x33, 0x04, 0x81, 0xdf, 0x13, 0xb8,
+	0x9c, 0xe5, 0x8d, 0xe3, 0xd5, 0x5c, 0x24, 0x29, 0x58, 0xb7, 0x97, 0x8a, 0x41, 0x79, 0x43, 0xa1,
+	0x2c, 0xe1, 0xb1, 0xc6, 0x1c, 0x7f, 0x25, 0x30, 0xba, 0x94, 0xf8, 0xbb, 0xc1, 0x5e, 0xf7, 0xce,
+	0xd1, 0x2f, 0x8a, 0x1c, 0xa9, 0x85, 0x36, 0xd3, 0x5b, 0xc9, 0x80, 0x33, 0x37, 0xdf, 0x59, 0xec,
+	0x23, 0x85, 0x54, 0xdb, 0xde, 0x3e, 0xad, 0xb6, 0xee, 0xeb, 0xff, 0x05, 0x00, 0x00, 0xff, 0xff,
+	0x87, 0x1e, 0xf0, 0xd0, 0x96, 0x11, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -864,14 +866,14 @@ const _ = grpc.SupportPackageIsVersion4
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type WorkflowServiceClient interface {
 	// Creates a Workflow
-	CreateWorkflow(ctx context.Context, in *CreateWorkflowRequest, opts ...grpc.CallOption) (*Workflow, error)
-	GetWorkflow(ctx context.Context, in *GetWorkflowRequest, opts ...grpc.CallOption) (*Workflow, error)
-	ListWorkflows(ctx context.Context, in *ListWorkflowsRequest, opts ...grpc.CallOption) (*ListWorkflowsResponse, error)
-	WatchWorkflow(ctx context.Context, in *WatchWorkflowRequest, opts ...grpc.CallOption) (WorkflowService_WatchWorkflowClient, error)
-	GetWorkflowLogs(ctx context.Context, in *GetWorkflowLogsRequest, opts ...grpc.CallOption) (WorkflowService_GetWorkflowLogsClient, error)
-	GetWorkflowMetrics(ctx context.Context, in *GetWorkflowMetricsRequest, opts ...grpc.CallOption) (*GetWorkflowMetricsResponse, error)
-	ResubmitWorkflow(ctx context.Context, in *ResubmitWorkflowRequest, opts ...grpc.CallOption) (*Workflow, error)
-	TerminateWorkflow(ctx context.Context, in *TerminateWorkflowRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	CreateWorkflowExecution(ctx context.Context, in *CreateWorkflowExecutionRequest, opts ...grpc.CallOption) (*WorkflowExecution, error)
+	GetWorkflowExecution(ctx context.Context, in *GetWorkflowExecutionRequest, opts ...grpc.CallOption) (*WorkflowExecution, error)
+	ListWorkflowExecutions(ctx context.Context, in *ListWorkflowExecutionsRequest, opts ...grpc.CallOption) (*ListWorkflowExecutionsResponse, error)
+	WatchWorkflowExecution(ctx context.Context, in *WatchWorkflowExecutionRequest, opts ...grpc.CallOption) (WorkflowService_WatchWorkflowExecutionClient, error)
+	GetWorkflowExecutionLogs(ctx context.Context, in *GetWorkflowExecutionLogsRequest, opts ...grpc.CallOption) (WorkflowService_GetWorkflowExecutionLogsClient, error)
+	GetWorkflowExecutionMetrics(ctx context.Context, in *GetWorkflowExecutionMetricsRequest, opts ...grpc.CallOption) (*GetWorkflowExecutionMetricsResponse, error)
+	ResubmitWorkflowExecution(ctx context.Context, in *ResubmitWorkflowExecutionRequest, opts ...grpc.CallOption) (*WorkflowExecution, error)
+	TerminateWorkflowExecution(ctx context.Context, in *TerminateWorkflowExecutionRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	CreateWorkflowTemplate(ctx context.Context, in *CreateWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error)
 	UpdateWorkflowTemplateVersion(ctx context.Context, in *UpdateWorkflowTemplateVersionRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error)
 	CreateWorkflowTemplateVersion(ctx context.Context, in *CreateWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error)
@@ -889,39 +891,39 @@ func NewWorkflowServiceClient(cc *grpc.ClientConn) WorkflowServiceClient {
 	return &workflowServiceClient{cc}
 }
 
-func (c *workflowServiceClient) CreateWorkflow(ctx context.Context, in *CreateWorkflowRequest, opts ...grpc.CallOption) (*Workflow, error) {
-	out := new(Workflow)
-	err := c.cc.Invoke(ctx, "/api.WorkflowService/CreateWorkflow", in, out, opts...)
+func (c *workflowServiceClient) CreateWorkflowExecution(ctx context.Context, in *CreateWorkflowExecutionRequest, opts ...grpc.CallOption) (*WorkflowExecution, error) {
+	out := new(WorkflowExecution)
+	err := c.cc.Invoke(ctx, "/api.WorkflowService/CreateWorkflowExecution", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *workflowServiceClient) GetWorkflow(ctx context.Context, in *GetWorkflowRequest, opts ...grpc.CallOption) (*Workflow, error) {
-	out := new(Workflow)
-	err := c.cc.Invoke(ctx, "/api.WorkflowService/GetWorkflow", in, out, opts...)
+func (c *workflowServiceClient) GetWorkflowExecution(ctx context.Context, in *GetWorkflowExecutionRequest, opts ...grpc.CallOption) (*WorkflowExecution, error) {
+	out := new(WorkflowExecution)
+	err := c.cc.Invoke(ctx, "/api.WorkflowService/GetWorkflowExecution", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *workflowServiceClient) ListWorkflows(ctx context.Context, in *ListWorkflowsRequest, opts ...grpc.CallOption) (*ListWorkflowsResponse, error) {
-	out := new(ListWorkflowsResponse)
-	err := c.cc.Invoke(ctx, "/api.WorkflowService/ListWorkflows", in, out, opts...)
+func (c *workflowServiceClient) ListWorkflowExecutions(ctx context.Context, in *ListWorkflowExecutionsRequest, opts ...grpc.CallOption) (*ListWorkflowExecutionsResponse, error) {
+	out := new(ListWorkflowExecutionsResponse)
+	err := c.cc.Invoke(ctx, "/api.WorkflowService/ListWorkflowExecutions", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *workflowServiceClient) WatchWorkflow(ctx context.Context, in *WatchWorkflowRequest, opts ...grpc.CallOption) (WorkflowService_WatchWorkflowClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_WorkflowService_serviceDesc.Streams[0], "/api.WorkflowService/WatchWorkflow", opts...)
+func (c *workflowServiceClient) WatchWorkflowExecution(ctx context.Context, in *WatchWorkflowExecutionRequest, opts ...grpc.CallOption) (WorkflowService_WatchWorkflowExecutionClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_WorkflowService_serviceDesc.Streams[0], "/api.WorkflowService/WatchWorkflowExecution", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &workflowServiceWatchWorkflowClient{stream}
+	x := &workflowServiceWatchWorkflowExecutionClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -931,29 +933,29 @@ func (c *workflowServiceClient) WatchWorkflow(ctx context.Context, in *WatchWork
 	return x, nil
 }
 
-type WorkflowService_WatchWorkflowClient interface {
-	Recv() (*Workflow, error)
+type WorkflowService_WatchWorkflowExecutionClient interface {
+	Recv() (*WorkflowExecution, error)
 	grpc.ClientStream
 }
 
-type workflowServiceWatchWorkflowClient struct {
+type workflowServiceWatchWorkflowExecutionClient struct {
 	grpc.ClientStream
 }
 
-func (x *workflowServiceWatchWorkflowClient) Recv() (*Workflow, error) {
-	m := new(Workflow)
+func (x *workflowServiceWatchWorkflowExecutionClient) Recv() (*WorkflowExecution, error) {
+	m := new(WorkflowExecution)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (c *workflowServiceClient) GetWorkflowLogs(ctx context.Context, in *GetWorkflowLogsRequest, opts ...grpc.CallOption) (WorkflowService_GetWorkflowLogsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_WorkflowService_serviceDesc.Streams[1], "/api.WorkflowService/GetWorkflowLogs", opts...)
+func (c *workflowServiceClient) GetWorkflowExecutionLogs(ctx context.Context, in *GetWorkflowExecutionLogsRequest, opts ...grpc.CallOption) (WorkflowService_GetWorkflowExecutionLogsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_WorkflowService_serviceDesc.Streams[1], "/api.WorkflowService/GetWorkflowExecutionLogs", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &workflowServiceGetWorkflowLogsClient{stream}
+	x := &workflowServiceGetWorkflowExecutionLogsClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -963,16 +965,16 @@ func (c *workflowServiceClient) GetWorkflowLogs(ctx context.Context, in *GetWork
 	return x, nil
 }
 
-type WorkflowService_GetWorkflowLogsClient interface {
+type WorkflowService_GetWorkflowExecutionLogsClient interface {
 	Recv() (*LogEntry, error)
 	grpc.ClientStream
 }
 
-type workflowServiceGetWorkflowLogsClient struct {
+type workflowServiceGetWorkflowExecutionLogsClient struct {
 	grpc.ClientStream
 }
 
-func (x *workflowServiceGetWorkflowLogsClient) Recv() (*LogEntry, error) {
+func (x *workflowServiceGetWorkflowExecutionLogsClient) Recv() (*LogEntry, error) {
 	m := new(LogEntry)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -980,27 +982,27 @@ func (x *workflowServiceGetWorkflowLogsClient) Recv() (*LogEntry, error) {
 	return m, nil
 }
 
-func (c *workflowServiceClient) GetWorkflowMetrics(ctx context.Context, in *GetWorkflowMetricsRequest, opts ...grpc.CallOption) (*GetWorkflowMetricsResponse, error) {
-	out := new(GetWorkflowMetricsResponse)
-	err := c.cc.Invoke(ctx, "/api.WorkflowService/GetWorkflowMetrics", in, out, opts...)
+func (c *workflowServiceClient) GetWorkflowExecutionMetrics(ctx context.Context, in *GetWorkflowExecutionMetricsRequest, opts ...grpc.CallOption) (*GetWorkflowExecutionMetricsResponse, error) {
+	out := new(GetWorkflowExecutionMetricsResponse)
+	err := c.cc.Invoke(ctx, "/api.WorkflowService/GetWorkflowExecutionMetrics", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *workflowServiceClient) ResubmitWorkflow(ctx context.Context, in *ResubmitWorkflowRequest, opts ...grpc.CallOption) (*Workflow, error) {
-	out := new(Workflow)
-	err := c.cc.Invoke(ctx, "/api.WorkflowService/ResubmitWorkflow", in, out, opts...)
+func (c *workflowServiceClient) ResubmitWorkflowExecution(ctx context.Context, in *ResubmitWorkflowExecutionRequest, opts ...grpc.CallOption) (*WorkflowExecution, error) {
+	out := new(WorkflowExecution)
+	err := c.cc.Invoke(ctx, "/api.WorkflowService/ResubmitWorkflowExecution", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *workflowServiceClient) TerminateWorkflow(ctx context.Context, in *TerminateWorkflowRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *workflowServiceClient) TerminateWorkflowExecution(ctx context.Context, in *TerminateWorkflowExecutionRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/api.WorkflowService/TerminateWorkflow", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/api.WorkflowService/TerminateWorkflowExecution", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1073,14 +1075,14 @@ func (c *workflowServiceClient) ArchiveWorkflowTemplate(ctx context.Context, in 
 // WorkflowServiceServer is the server API for WorkflowService service.
 type WorkflowServiceServer interface {
 	// Creates a Workflow
-	CreateWorkflow(context.Context, *CreateWorkflowRequest) (*Workflow, error)
-	GetWorkflow(context.Context, *GetWorkflowRequest) (*Workflow, error)
-	ListWorkflows(context.Context, *ListWorkflowsRequest) (*ListWorkflowsResponse, error)
-	WatchWorkflow(*WatchWorkflowRequest, WorkflowService_WatchWorkflowServer) error
-	GetWorkflowLogs(*GetWorkflowLogsRequest, WorkflowService_GetWorkflowLogsServer) error
-	GetWorkflowMetrics(context.Context, *GetWorkflowMetricsRequest) (*GetWorkflowMetricsResponse, error)
-	ResubmitWorkflow(context.Context, *ResubmitWorkflowRequest) (*Workflow, error)
-	TerminateWorkflow(context.Context, *TerminateWorkflowRequest) (*empty.Empty, error)
+	CreateWorkflowExecution(context.Context, *CreateWorkflowExecutionRequest) (*WorkflowExecution, error)
+	GetWorkflowExecution(context.Context, *GetWorkflowExecutionRequest) (*WorkflowExecution, error)
+	ListWorkflowExecutions(context.Context, *ListWorkflowExecutionsRequest) (*ListWorkflowExecutionsResponse, error)
+	WatchWorkflowExecution(*WatchWorkflowExecutionRequest, WorkflowService_WatchWorkflowExecutionServer) error
+	GetWorkflowExecutionLogs(*GetWorkflowExecutionLogsRequest, WorkflowService_GetWorkflowExecutionLogsServer) error
+	GetWorkflowExecutionMetrics(context.Context, *GetWorkflowExecutionMetricsRequest) (*GetWorkflowExecutionMetricsResponse, error)
+	ResubmitWorkflowExecution(context.Context, *ResubmitWorkflowExecutionRequest) (*WorkflowExecution, error)
+	TerminateWorkflowExecution(context.Context, *TerminateWorkflowExecutionRequest) (*empty.Empty, error)
 	CreateWorkflowTemplate(context.Context, *CreateWorkflowTemplateRequest) (*WorkflowTemplate, error)
 	UpdateWorkflowTemplateVersion(context.Context, *UpdateWorkflowTemplateVersionRequest) (*WorkflowTemplate, error)
 	CreateWorkflowTemplateVersion(context.Context, *CreateWorkflowTemplateRequest) (*WorkflowTemplate, error)
@@ -1094,29 +1096,29 @@ type WorkflowServiceServer interface {
 type UnimplementedWorkflowServiceServer struct {
 }
 
-func (*UnimplementedWorkflowServiceServer) CreateWorkflow(ctx context.Context, req *CreateWorkflowRequest) (*Workflow, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateWorkflow not implemented")
+func (*UnimplementedWorkflowServiceServer) CreateWorkflowExecution(ctx context.Context, req *CreateWorkflowExecutionRequest) (*WorkflowExecution, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateWorkflowExecution not implemented")
 }
-func (*UnimplementedWorkflowServiceServer) GetWorkflow(ctx context.Context, req *GetWorkflowRequest) (*Workflow, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetWorkflow not implemented")
+func (*UnimplementedWorkflowServiceServer) GetWorkflowExecution(ctx context.Context, req *GetWorkflowExecutionRequest) (*WorkflowExecution, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetWorkflowExecution not implemented")
 }
-func (*UnimplementedWorkflowServiceServer) ListWorkflows(ctx context.Context, req *ListWorkflowsRequest) (*ListWorkflowsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListWorkflows not implemented")
+func (*UnimplementedWorkflowServiceServer) ListWorkflowExecutions(ctx context.Context, req *ListWorkflowExecutionsRequest) (*ListWorkflowExecutionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListWorkflowExecutions not implemented")
 }
-func (*UnimplementedWorkflowServiceServer) WatchWorkflow(req *WatchWorkflowRequest, srv WorkflowService_WatchWorkflowServer) error {
-	return status.Errorf(codes.Unimplemented, "method WatchWorkflow not implemented")
+func (*UnimplementedWorkflowServiceServer) WatchWorkflowExecution(req *WatchWorkflowExecutionRequest, srv WorkflowService_WatchWorkflowExecutionServer) error {
+	return status.Errorf(codes.Unimplemented, "method WatchWorkflowExecution not implemented")
 }
-func (*UnimplementedWorkflowServiceServer) GetWorkflowLogs(req *GetWorkflowLogsRequest, srv WorkflowService_GetWorkflowLogsServer) error {
-	return status.Errorf(codes.Unimplemented, "method GetWorkflowLogs not implemented")
+func (*UnimplementedWorkflowServiceServer) GetWorkflowExecutionLogs(req *GetWorkflowExecutionLogsRequest, srv WorkflowService_GetWorkflowExecutionLogsServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetWorkflowExecutionLogs not implemented")
 }
-func (*UnimplementedWorkflowServiceServer) GetWorkflowMetrics(ctx context.Context, req *GetWorkflowMetricsRequest) (*GetWorkflowMetricsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetWorkflowMetrics not implemented")
+func (*UnimplementedWorkflowServiceServer) GetWorkflowExecutionMetrics(ctx context.Context, req *GetWorkflowExecutionMetricsRequest) (*GetWorkflowExecutionMetricsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetWorkflowExecutionMetrics not implemented")
 }
-func (*UnimplementedWorkflowServiceServer) ResubmitWorkflow(ctx context.Context, req *ResubmitWorkflowRequest) (*Workflow, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ResubmitWorkflow not implemented")
+func (*UnimplementedWorkflowServiceServer) ResubmitWorkflowExecution(ctx context.Context, req *ResubmitWorkflowExecutionRequest) (*WorkflowExecution, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResubmitWorkflowExecution not implemented")
 }
-func (*UnimplementedWorkflowServiceServer) TerminateWorkflow(ctx context.Context, req *TerminateWorkflowRequest) (*empty.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method TerminateWorkflow not implemented")
+func (*UnimplementedWorkflowServiceServer) TerminateWorkflowExecution(ctx context.Context, req *TerminateWorkflowExecutionRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TerminateWorkflowExecution not implemented")
 }
 func (*UnimplementedWorkflowServiceServer) CreateWorkflowTemplate(ctx context.Context, req *CreateWorkflowTemplateRequest) (*WorkflowTemplate, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateWorkflowTemplate not implemented")
@@ -1144,152 +1146,152 @@ func RegisterWorkflowServiceServer(s *grpc.Server, srv WorkflowServiceServer) {
 	s.RegisterService(&_WorkflowService_serviceDesc, srv)
 }
 
-func _WorkflowService_CreateWorkflow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateWorkflowRequest)
+func _WorkflowService_CreateWorkflowExecution_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateWorkflowExecutionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(WorkflowServiceServer).CreateWorkflow(ctx, in)
+		return srv.(WorkflowServiceServer).CreateWorkflowExecution(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.WorkflowService/CreateWorkflow",
+		FullMethod: "/api.WorkflowService/CreateWorkflowExecution",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WorkflowServiceServer).CreateWorkflow(ctx, req.(*CreateWorkflowRequest))
+		return srv.(WorkflowServiceServer).CreateWorkflowExecution(ctx, req.(*CreateWorkflowExecutionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _WorkflowService_GetWorkflow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetWorkflowRequest)
+func _WorkflowService_GetWorkflowExecution_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetWorkflowExecutionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(WorkflowServiceServer).GetWorkflow(ctx, in)
+		return srv.(WorkflowServiceServer).GetWorkflowExecution(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.WorkflowService/GetWorkflow",
+		FullMethod: "/api.WorkflowService/GetWorkflowExecution",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WorkflowServiceServer).GetWorkflow(ctx, req.(*GetWorkflowRequest))
+		return srv.(WorkflowServiceServer).GetWorkflowExecution(ctx, req.(*GetWorkflowExecutionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _WorkflowService_ListWorkflows_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListWorkflowsRequest)
+func _WorkflowService_ListWorkflowExecutions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListWorkflowExecutionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(WorkflowServiceServer).ListWorkflows(ctx, in)
+		return srv.(WorkflowServiceServer).ListWorkflowExecutions(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.WorkflowService/ListWorkflows",
+		FullMethod: "/api.WorkflowService/ListWorkflowExecutions",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WorkflowServiceServer).ListWorkflows(ctx, req.(*ListWorkflowsRequest))
+		return srv.(WorkflowServiceServer).ListWorkflowExecutions(ctx, req.(*ListWorkflowExecutionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _WorkflowService_WatchWorkflow_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(WatchWorkflowRequest)
+func _WorkflowService_WatchWorkflowExecution_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(WatchWorkflowExecutionRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(WorkflowServiceServer).WatchWorkflow(m, &workflowServiceWatchWorkflowServer{stream})
+	return srv.(WorkflowServiceServer).WatchWorkflowExecution(m, &workflowServiceWatchWorkflowExecutionServer{stream})
 }
 
-type WorkflowService_WatchWorkflowServer interface {
-	Send(*Workflow) error
+type WorkflowService_WatchWorkflowExecutionServer interface {
+	Send(*WorkflowExecution) error
 	grpc.ServerStream
 }
 
-type workflowServiceWatchWorkflowServer struct {
+type workflowServiceWatchWorkflowExecutionServer struct {
 	grpc.ServerStream
 }
 
-func (x *workflowServiceWatchWorkflowServer) Send(m *Workflow) error {
+func (x *workflowServiceWatchWorkflowExecutionServer) Send(m *WorkflowExecution) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _WorkflowService_GetWorkflowLogs_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(GetWorkflowLogsRequest)
+func _WorkflowService_GetWorkflowExecutionLogs_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetWorkflowExecutionLogsRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(WorkflowServiceServer).GetWorkflowLogs(m, &workflowServiceGetWorkflowLogsServer{stream})
+	return srv.(WorkflowServiceServer).GetWorkflowExecutionLogs(m, &workflowServiceGetWorkflowExecutionLogsServer{stream})
 }
 
-type WorkflowService_GetWorkflowLogsServer interface {
+type WorkflowService_GetWorkflowExecutionLogsServer interface {
 	Send(*LogEntry) error
 	grpc.ServerStream
 }
 
-type workflowServiceGetWorkflowLogsServer struct {
+type workflowServiceGetWorkflowExecutionLogsServer struct {
 	grpc.ServerStream
 }
 
-func (x *workflowServiceGetWorkflowLogsServer) Send(m *LogEntry) error {
+func (x *workflowServiceGetWorkflowExecutionLogsServer) Send(m *LogEntry) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _WorkflowService_GetWorkflowMetrics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetWorkflowMetricsRequest)
+func _WorkflowService_GetWorkflowExecutionMetrics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetWorkflowExecutionMetricsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(WorkflowServiceServer).GetWorkflowMetrics(ctx, in)
+		return srv.(WorkflowServiceServer).GetWorkflowExecutionMetrics(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.WorkflowService/GetWorkflowMetrics",
+		FullMethod: "/api.WorkflowService/GetWorkflowExecutionMetrics",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WorkflowServiceServer).GetWorkflowMetrics(ctx, req.(*GetWorkflowMetricsRequest))
+		return srv.(WorkflowServiceServer).GetWorkflowExecutionMetrics(ctx, req.(*GetWorkflowExecutionMetricsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _WorkflowService_ResubmitWorkflow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ResubmitWorkflowRequest)
+func _WorkflowService_ResubmitWorkflowExecution_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResubmitWorkflowExecutionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(WorkflowServiceServer).ResubmitWorkflow(ctx, in)
+		return srv.(WorkflowServiceServer).ResubmitWorkflowExecution(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.WorkflowService/ResubmitWorkflow",
+		FullMethod: "/api.WorkflowService/ResubmitWorkflowExecution",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WorkflowServiceServer).ResubmitWorkflow(ctx, req.(*ResubmitWorkflowRequest))
+		return srv.(WorkflowServiceServer).ResubmitWorkflowExecution(ctx, req.(*ResubmitWorkflowExecutionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _WorkflowService_TerminateWorkflow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TerminateWorkflowRequest)
+func _WorkflowService_TerminateWorkflowExecution_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TerminateWorkflowExecutionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(WorkflowServiceServer).TerminateWorkflow(ctx, in)
+		return srv.(WorkflowServiceServer).TerminateWorkflowExecution(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.WorkflowService/TerminateWorkflow",
+		FullMethod: "/api.WorkflowService/TerminateWorkflowExecution",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WorkflowServiceServer).TerminateWorkflow(ctx, req.(*TerminateWorkflowRequest))
+		return srv.(WorkflowServiceServer).TerminateWorkflowExecution(ctx, req.(*TerminateWorkflowExecutionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1425,28 +1427,28 @@ var _WorkflowService_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*WorkflowServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CreateWorkflow",
-			Handler:    _WorkflowService_CreateWorkflow_Handler,
+			MethodName: "CreateWorkflowExecution",
+			Handler:    _WorkflowService_CreateWorkflowExecution_Handler,
 		},
 		{
-			MethodName: "GetWorkflow",
-			Handler:    _WorkflowService_GetWorkflow_Handler,
+			MethodName: "GetWorkflowExecution",
+			Handler:    _WorkflowService_GetWorkflowExecution_Handler,
 		},
 		{
-			MethodName: "ListWorkflows",
-			Handler:    _WorkflowService_ListWorkflows_Handler,
+			MethodName: "ListWorkflowExecutions",
+			Handler:    _WorkflowService_ListWorkflowExecutions_Handler,
 		},
 		{
-			MethodName: "GetWorkflowMetrics",
-			Handler:    _WorkflowService_GetWorkflowMetrics_Handler,
+			MethodName: "GetWorkflowExecutionMetrics",
+			Handler:    _WorkflowService_GetWorkflowExecutionMetrics_Handler,
 		},
 		{
-			MethodName: "ResubmitWorkflow",
-			Handler:    _WorkflowService_ResubmitWorkflow_Handler,
+			MethodName: "ResubmitWorkflowExecution",
+			Handler:    _WorkflowService_ResubmitWorkflowExecution_Handler,
 		},
 		{
-			MethodName: "TerminateWorkflow",
-			Handler:    _WorkflowService_TerminateWorkflow_Handler,
+			MethodName: "TerminateWorkflowExecution",
+			Handler:    _WorkflowService_TerminateWorkflowExecution_Handler,
 		},
 		{
 			MethodName: "CreateWorkflowTemplate",
@@ -1479,13 +1481,13 @@ var _WorkflowService_serviceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "WatchWorkflow",
-			Handler:       _WorkflowService_WatchWorkflow_Handler,
+			StreamName:    "WatchWorkflowExecution",
+			Handler:       _WorkflowService_WatchWorkflowExecution_Handler,
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "GetWorkflowLogs",
-			Handler:       _WorkflowService_GetWorkflowLogs_Handler,
+			StreamName:    "GetWorkflowExecutionLogs",
+			Handler:       _WorkflowService_GetWorkflowExecutionLogs_Handler,
 			ServerStreams: true,
 		},
 	},

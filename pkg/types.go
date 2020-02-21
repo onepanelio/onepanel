@@ -60,31 +60,31 @@ func (wt *WorkflowTemplate) GenerateUID() (string, error) {
 }
 
 const (
-	WorfklowPending   WorkflowPhase = "Pending"
-	WorfklowRunning   WorkflowPhase = "Running"
-	WorfklowSucceeded WorkflowPhase = "Succeeded"
-	WorfklowSkipped   WorkflowPhase = "Skipped"
-	WorfklowFailed    WorkflowPhase = "Failed"
-	WorfklowError     WorkflowPhase = "Error"
+	WorfklowPending   WorkflowExecutionPhase = "Pending"
+	WorfklowRunning   WorkflowExecutionPhase = "Running"
+	WorfklowSucceeded WorkflowExecutionPhase = "Succeeded"
+	WorfklowSkipped   WorkflowExecutionPhase = "Skipped"
+	WorfklowFailed    WorkflowExecutionPhase = "Failed"
+	WorfklowError     WorkflowExecutionPhase = "Error"
 )
 
-type WorkflowPhase string
+type WorkflowExecutionPhase string
 
-type Workflow struct {
+type WorkflowExecution struct {
 	ID               uint64
 	CreatedAt        time.Time `db:"created_at"`
 	UID              string
 	Name             string
 	GenerateName     string
-	Parameters       []WorkflowParameter
+	Parameters       []WorkflowExecutionParameter
 	Manifest         string
-	Phase            WorkflowPhase
+	Phase            WorkflowExecutionPhase
 	StartedAt        time.Time
 	FinishedAt       time.Time
 	WorkflowTemplate *WorkflowTemplate
 }
 
-type WorkflowParameter struct {
+type WorkflowExecutionParameter struct {
 	Name  string
 	Value *string
 }
@@ -93,11 +93,11 @@ type ListOptions = metav1.ListOptions
 
 type PodGCStrategy = wfv1.PodGCStrategy
 
-type WorkflowOptions struct {
+type WorkflowExecutionOptions struct {
 	Name           string
 	GenerateName   string
 	Entrypoint     string
-	Parameters     []WorkflowParameter
+	Parameters     []WorkflowExecutionParameter
 	ServiceAccount string
 	Labels         *map[string]string
 	ListOptions    *ListOptions
