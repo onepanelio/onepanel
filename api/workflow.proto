@@ -108,20 +108,7 @@ service WorkflowService {
     }
 }
 
-message CreateWorkflowExecutionRequest {
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
-		json_schema: {
-			title: "A bit of everything"
-			description: "Intentionaly complicated message type to cover many features of Protobuf."
-			required: ["uuid", "int64_value", "double_value"]
-		}
-		external_docs: {
-			url: "https://github.com/grpc-ecosystem/grpc-gateway";
-			description: "Find out more about ABitOfEverything";
-		}
-		example: { value: '{ "namespace": "my-namespace"}' }
-    };
-    
+message CreateWorkflowExecutionRequest {    
     string namespace = 1;
     WorkflowExecution workflowExecution = 2;
 }
