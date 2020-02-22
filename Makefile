@@ -7,7 +7,7 @@ jq:
 
 protoc:
 	protoc -I/usr/local/include \
- 		-Iapi/third_party/googleapis \
+		-Iapi/third_party/ \
  		-Iapi/ \
  		api/*.proto \
  		--go_out=plugins=grpc:api \
