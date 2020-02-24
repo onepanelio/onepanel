@@ -77,6 +77,7 @@ func startRPCServer(db *v1.DB, kubeConfig *v1.Config) {
 			auth.AuthUnaryInterceptor(kubeConfig, db)),
 	), grpc.StreamInterceptor(
 		grpc_middleware.ChainStreamServer(
+			grpc_logrus.StreamServerInterceptor(logEntry),
 			grpc_recovery.StreamServerInterceptor(recoveryOpts...),
 			auth.AuthStreamingInterceptor(kubeConfig, db)),
 	))
