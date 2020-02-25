@@ -8,6 +8,31 @@ import "protoc-gen-swagger/options/annotations.proto";
 import "workflow_template.proto";
 import "metric.proto";
 
+option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
+	schemes: HTTP;
+	schemes: HTTPS;
+	consumes: "application/json";
+	produces: "application/json";
+	security_definitions: {
+		security: {
+			key: "bearer";
+			value: {
+				type: TYPE_API_KEY;
+				in: IN_HEADER;
+				name: "authorization";
+				description: "Authentication token, prefixed by Bearer: Bearer <token>"
+			}
+		}
+	}
+	security: {
+		security_requirement: {
+			key: "bearer";
+			value: {};
+		}
+	}
+};
+
+
 service WorkflowService {
     // Creates a Workflow
     rpc CreateWorkflowExecution (CreateWorkflowExecutionRequest) returns (WorkflowExecution) {
