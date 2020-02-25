@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"flag"
 	"net"
 	"net/http"
@@ -36,15 +37,41 @@ var (
 func main() {
 	flag.Parse()
 
+	kubeConfig := v1.NewConfig()
+
 	db := sqlx.MustConnect(os.Getenv("DB_DRIVER_NAME"), os.Getenv("DB_DATASOURCE_NAME"))
 	if err := goose.Run("up", db.DB, "db"); err != nil {
-		log.Fatalf("goose up: %v", err)
+		log.Fatalf("Failed to run database migrations: %v", err)
 	}
-
-	kubeConfig := v1.NewConfig()
 
 	go startRPCServer(db, kubeConfig)
 	startHTTPProxy()
+}
+
+func getSystemConfig(kubeConfig *v1.Config) (config map[string]string, err error) {
+	namespace := "onepanel"
+	client, err := v1.NewServerClient(kubeConfig)
+	if err != nil {
+		log.Fatalf("Failed to connect to Kubernetes cluster: %v", err)
+	}
+
+	configMap, err := client.GetConfigMap(namespace, "onepanel")
+	if err != nil {
+		log.Fatalf("Failed to get system config: %v", err)
+		return
+	}
+	config = configMap.Data
+
+	secret, err := client.GetSecret(namespace, "onepanel-database")
+	if err != nil {
+		log.Fatalf("Failed to get system config: %v", err)
+	}
+	databaseUsername, _ := base64.StdEncoding.DecodeString(secret.Data["username"])
+	config["databaseUsername"] = string(databaseUsername)
+	databasePassword, _ := base64.StdEncoding.DecodeString(secret.Data["password"])
+	config["databasePassword"] = string(databasePassword)
+
+	return
 }
 
 func startRPCServer(db *v1.DB, kubeConfig *v1.Config) {
