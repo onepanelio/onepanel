@@ -39,6 +39,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5 // indirect
 	github.com/stretchr/testify v1.4.0
+	github.com/tmc/grpc-websocket-proxy v0.0.0-20200122045848-3419fae592fc
 	github.com/valyala/fasttemplate v1.1.0 // indirect
 	golang.org/x/crypto v0.0.0-20191128160524-b544559bb6d1 // indirect
 	golang.org/x/net v0.0.0-20200114155413-6afb5195e5aa // indirect

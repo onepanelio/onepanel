@@ -1,7 +1,7 @@
 jq:
 	cat api/apidocs.swagger.json \
 		| jq 'walk( if type == "object" then with_entries( .key |= sub( "api\\."; "") ) else . end )' \
-		| jq 'walk( if type == "string" then gsub( "api."; "") else . end )' \
+		| jq 'walk( if type == "string" then gsub( "api\\."; "") else . end )' \
 		> api/api.swagger.json \
 	&& rm api/apidocs.swagger.json
 
