@@ -57,6 +57,20 @@ Generate Python SDK:
 make python-sdk
 ```
 
+Note that for the Python SDK, you should setup a virtual environment.
+Example:
+```shell script
+python3 -m pip install virtualenv
+sudo apt install virtualenv #Ubuntu
+
+virtualenv -p /usr/bin/python3 venv3
+```
+You may also need these packages:
+```shell script
+pip install six python-dateutil urllib3 certifi
+```
+
+
 To generate API and SDKs:
 ```bash
 make all
