@@ -490,7 +490,7 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, name, podName, containerNam
 	)
 
 	if wf.Status.Nodes[podName].Completed() {
-		config, err = c.getNamespaceConfig(namespace)
+		config, err = c.GetNamespaceConfig(namespace)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"Namespace":     namespace,
@@ -502,7 +502,7 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, name, podName, containerNam
 			return nil, util.NewUserError(codes.PermissionDenied, "Can't get configuration.")
 		}
 
-		s3Client, err = c.getS3Client(namespace, config)
+		s3Client, err = c.GetS3Client(namespace, config)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"Namespace":     namespace,
@@ -576,7 +576,7 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, name, podName string) (m
 		config   map[string]string
 	)
 
-	config, err = c.getNamespaceConfig(namespace)
+	config, err = c.GetNamespaceConfig(namespace)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -587,7 +587,7 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, name, podName string) (m
 		return nil, util.NewUserError(codes.PermissionDenied, "Can't get configuration.")
 	}
 
-	s3Client, err = c.getS3Client(namespace, config)
+	s3Client, err = c.GetS3Client(namespace, config)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
