@@ -82,7 +82,7 @@ func (c *Client) GetSystemConfig() (config map[string]string, err error) {
 	}
 	databaseUsername, _ := base64.StdEncoding.DecodeString(secret.Data["databaseUsername"])
 	config["databaseUsername"] = string(databaseUsername)
-	databasePassword, _ := base64.StdEncoding.DecodeString(secret.Data["databaseUsername"])
+	databasePassword, _ := base64.StdEncoding.DecodeString(secret.Data["databasePassword"])
 	config["databasePassword"] = string(databasePassword)
 
 	return
