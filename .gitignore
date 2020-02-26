@@ -1,2 +1,5 @@
 .DS_Store
 .idea
+pocs
+__debug_bin
+openapi-generator-cli.jar
