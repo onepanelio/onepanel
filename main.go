@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"flag"
+	"fmt"
 	"net"
 	"net/http"
-	"os"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -36,15 +37,47 @@ var (
 func main() {
 	flag.Parse()
 
-	db := sqlx.MustConnect(os.Getenv("DB_DRIVER_NAME"), os.Getenv("DB_DATASOURCE_NAME"))
-	if err := goose.Run("up", db.DB, "db"); err != nil {
-		log.Fatalf("goose up: %v", err)
+	kubeConfig := v1.NewConfig()
+	config, err := getSystemConfig(kubeConfig)
+	if err != nil {
+		log.Fatalf("Failed to get system config: %v", err)
 	}
 
-	kubeConfig := v1.NewConfig()
+	databaseDataSourceName := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
+		config["databaseHost"], config["databaseUsername"], config["databasePassword"], config["databaseName"])
+	db := sqlx.MustConnect(config["databaseDriverName"], databaseDataSourceName)
+	if err := goose.Run("up", db.DB, "db"); err != nil {
+		log.Fatalf("Failed to run database migrations: %v", err)
+	}
 
 	go startRPCServer(db, kubeConfig)
 	startHTTPProxy()
+}
+
+// TODO: Move this to v1.Client
+func getSystemConfig(kubeConfig *v1.Config) (config map[string]string, err error) {
+	namespace := "onepanel"
+	client, err := v1.NewServerClient(kubeConfig)
+	if err != nil {
+		return
+	}
+
+	configMap, err := client.GetConfigMap(namespace, "onepanel")
+	if err != nil {
+		return
+	}
+	config = configMap.Data
+
+	secret, err := client.GetSecret(namespace, "onepanel")
+	if err != nil {
+		return
+	}
+	databaseUsername, _ := base64.StdEncoding.DecodeString(secret.Data["databaseUsername"])
+	config["databaseUsername"] = string(databaseUsername)
+	databasePassword, _ := base64.StdEncoding.DecodeString(secret.Data["databaseUsername"])
+	config["databasePassword"] = string(databasePassword)
+
+	return
 }
 
 func startRPCServer(db *v1.DB, kubeConfig *v1.Config) {

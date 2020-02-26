@@ -46,6 +46,20 @@ func NewConfig() (config *Config) {
 	return
 }
 
+func NewServerClient(config *Config) (client *Client, err error) {
+	kubeClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return
+	}
+
+	argoClient, err := argoprojv1alpha1.NewForConfig(config)
+	if err != nil {
+		return
+	}
+
+	return &Client{Interface: kubeClient, argoprojV1alpha1: argoClient}, nil
+}
+
 func NewClient(config *Config, db *sqlx.DB) (client *Client, err error) {
 	config.BearerTokenFile = ""
 	config.Username = ""
@@ -53,17 +67,17 @@ func NewClient(config *Config, db *sqlx.DB) (client *Client, err error) {
 	config.CertData = nil
 	config.CertFile = ""
 
-	kubeConfig, err := kubernetes.NewForConfig(config)
+	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return
 	}
 
-	argoConfig, err := argoprojv1alpha1.NewForConfig(config)
+	argoClient, err := argoprojv1alpha1.NewForConfig(config)
 	if err != nil {
 		return
 	}
 
-	return &Client{Interface: kubeConfig, argoprojV1alpha1: argoConfig, DB: db}, nil
+	return &Client{Interface: kubeClient, argoprojV1alpha1: argoClient, DB: db}, nil
 }
 
 func (c *Client) getNamespaceConfig(namespace string) (config map[string]string, err error) {
