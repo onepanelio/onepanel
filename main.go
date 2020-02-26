@@ -39,7 +39,7 @@ func main() {
 	kubeConfig := v1.NewConfig()
 	client, err := v1.NewClient(kubeConfig, nil)
 	if err != nil {
-		return
+		log.Fatalf("Failed to connect to Kubernetes cluster: %v", err)
 	}
 	config, err := client.GetSystemConfig()
 	if err != nil {
