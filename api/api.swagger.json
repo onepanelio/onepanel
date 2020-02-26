@@ -394,7 +394,7 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/workflow_executions/{name}/artifact": {
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}/artifacts/{key}": {
       "get": {
         "operationId": "GetArtifact",
         "responses": {
@@ -420,8 +420,8 @@
           },
           {
             "name": "key",
-            "in": "query",
-            "required": false,
+            "in": "path",
+            "required": true,
             "type": "string"
           }
         ],
@@ -892,7 +892,8 @@
       "type": "object",
       "properties": {
         "data": {
-          "type": "string"
+          "type": "string",
+          "format": "byte"
         }
       }
     },
