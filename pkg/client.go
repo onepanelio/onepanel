@@ -46,26 +46,14 @@ func NewConfig() (config *Config) {
 	return
 }
 
-func NewServerClient(config *Config) (client *Client, err error) {
-	kubeClient, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return
-	}
-
-	argoClient, err := argoprojv1alpha1.NewForConfig(config)
-	if err != nil {
-		return
-	}
-
-	return &Client{Interface: kubeClient, argoprojV1alpha1: argoClient}, nil
-}
-
 func NewClient(config *Config, db *sqlx.DB) (client *Client, err error) {
-	config.BearerTokenFile = ""
-	config.Username = ""
-	config.Password = ""
-	config.CertData = nil
-	config.CertFile = ""
+	if config.BearerToken != "" {
+		config.BearerTokenFile = ""
+		config.Username = ""
+		config.Password = ""
+		config.CertData = nil
+		config.CertFile = ""
+	}
 
 	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
@@ -80,7 +68,27 @@ func NewClient(config *Config, db *sqlx.DB) (client *Client, err error) {
 	return &Client{Interface: kubeClient, argoprojV1alpha1: argoClient, DB: db}, nil
 }
 
-func (c *Client) getNamespaceConfig(namespace string) (config map[string]string, err error) {
+func (c *Client) GetSystemConfig() (config map[string]string, err error) {
+	namespace := "onepanel"
+	configMap, err := c.GetConfigMap(namespace, "onepanel")
+	if err != nil {
+		return
+	}
+	config = configMap.Data
+
+	secret, err := c.GetSecret(namespace, "onepanel")
+	if err != nil {
+		return
+	}
+	databaseUsername, _ := base64.StdEncoding.DecodeString(secret.Data["databaseUsername"])
+	config["databaseUsername"] = string(databaseUsername)
+	databasePassword, _ := base64.StdEncoding.DecodeString(secret.Data["databaseUsername"])
+	config["databasePassword"] = string(databasePassword)
+
+	return
+}
+
+func (c *Client) GetNamespaceConfig(namespace string) (config map[string]string, err error) {
 	configMap, err := c.GetConfigMap(namespace, "onepanel")
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -107,7 +115,7 @@ func (c *Client) getNamespaceConfig(namespace string) (config map[string]string,
 	return
 }
 
-func (c *Client) getS3Client(namespace string, config map[string]string) (s3Client *s3.Client, err error) {
+func (c *Client) GetS3Client(namespace string, config map[string]string) (s3Client *s3.Client, err error) {
 	insecure, err := strconv.ParseBool(config[artifactRepositoryInSecureKey])
 	if err != nil {
 		log.WithFields(log.Fields{

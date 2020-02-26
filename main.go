@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"flag"
 	"fmt"
 	"net"
@@ -38,7 +37,11 @@ func main() {
 	flag.Parse()
 
 	kubeConfig := v1.NewConfig()
-	config, err := getSystemConfig(kubeConfig)
+	client, err := v1.NewClient(kubeConfig, nil)
+	if err != nil {
+		return
+	}
+	config, err := client.GetSystemConfig()
 	if err != nil {
 		log.Fatalf("Failed to get system config: %v", err)
 	}
@@ -52,32 +55,6 @@ func main() {
 
 	go startRPCServer(db, kubeConfig)
 	startHTTPProxy()
-}
-
-// TODO: Move this to v1.Client
-func getSystemConfig(kubeConfig *v1.Config) (config map[string]string, err error) {
-	namespace := "onepanel"
-	client, err := v1.NewServerClient(kubeConfig)
-	if err != nil {
-		return
-	}
-
-	configMap, err := client.GetConfigMap(namespace, "onepanel")
-	if err != nil {
-		return
-	}
-	config = configMap.Data
-
-	secret, err := client.GetSecret(namespace, "onepanel")
-	if err != nil {
-		return
-	}
-	databaseUsername, _ := base64.StdEncoding.DecodeString(secret.Data["databaseUsername"])
-	config["databaseUsername"] = string(databaseUsername)
-	databasePassword, _ := base64.StdEncoding.DecodeString(secret.Data["databaseUsername"])
-	config["databasePassword"] = string(databasePassword)
-
-	return
 }
 
 func startRPCServer(db *v1.DB, kubeConfig *v1.Config) {
