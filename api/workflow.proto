@@ -131,6 +131,12 @@ service WorkflowService {
             put: "/apis/v1beta1/{namespace}/workflow_templates/{uid}/archive"
         };
     }
+
+    rpc GetArtifact (GetArtifactRequest) returns (ArtifactResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflow_executions/{name}/artifact"
+        };
+    }
 }
 
 message CreateWorkflowExecutionRequest {    
@@ -141,6 +147,12 @@ message CreateWorkflowExecutionRequest {
 message GetWorkflowExecutionRequest {
     string namespace = 1;
     string name = 2;
+}
+
+message GetArtifactRequest {
+    string namespace = 1;
+    string name = 2;
+    string key = 3;
 }
 
 message WatchWorkflowExecutionRequest {
@@ -213,4 +225,8 @@ message WorkflowExecution {
 message WorkflowExecutionParameter {
     string name = 1;
     string value = 2;
+}
+
+message ArtifactResponse {
+    string data = 1;
 }

@@ -691,3 +691,34 @@ func (c *Client) TerminateWorkflowExecution(namespace, name string) (err error) 
 
 	return
 }
+
+func (c *Client) GetArtifactDownload(namespace, name, key string) (data []byte, err error) {
+	config, err := c.getNamespaceConfig(namespace)
+	if err != nil {
+		return
+	}
+
+	s3Client, err := c.getS3Client(namespace, config)
+	if err != nil {
+		return
+	}
+
+	opts := s3.GetObjectOptions{}
+	stream, err := s3Client.GetObject(config[artifactRepositoryBucketKey], key, opts)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"Key":       key,
+			"Error":     err.Error(),
+		}).Error("Metrics do not exist.")
+		return
+	}
+
+	data, err = ioutil.ReadAll(stream)
+	if err != nil {
+		return
+	}
+
+	return
+}

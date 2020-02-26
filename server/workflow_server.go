@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/base64"
 	"math"
 	"time"
 
@@ -411,5 +412,24 @@ func (s *WorkflowServer) ArchiveWorkflowTemplate(ctx context.Context, req *api.A
 		WorkflowTemplate: &api.WorkflowTemplate{
 			IsArchived: archived,
 		},
+	}, nil
+}
+
+func (s *WorkflowServer) GetArtifact(ctx context.Context, req *api.GetArtifactRequest) (*api.ArtifactResponse, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Name)
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	data, err := client.GetArtifactDownload(req.Namespace, req.Name, req.Key)
+	if err != nil {
+		return nil, err
+	}
+
+	strValue := base64.StdEncoding.EncodeToString(data)
+
+	return &api.ArtifactResponse{
+		Data: strValue,
 	}, nil
 }
