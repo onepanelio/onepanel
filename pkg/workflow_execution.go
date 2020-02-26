@@ -693,12 +693,12 @@ func (c *Client) TerminateWorkflowExecution(namespace, name string) (err error) 
 }
 
 func (c *Client) GetArtifact(namespace, name, key string) (data []byte, err error) {
-	config, err := c.getNamespaceConfig(namespace)
+	config, err := c.GetNamespaceConfig(namespace)
 	if err != nil {
 		return
 	}
 
-	s3Client, err := c.getS3Client(namespace, config)
+	s3Client, err := c.GetS3Client(namespace, config)
 	if err != nil {
 		return
 	}
