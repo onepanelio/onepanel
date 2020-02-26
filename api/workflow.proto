@@ -134,7 +134,7 @@ service WorkflowService {
 
     rpc GetArtifact (GetArtifactRequest) returns (ArtifactResponse) {
         option (google.api.http) = {
-            get: "/apis/v1beta1/{namespace}/workflow_executions/{name}/artifact"
+            get: "/apis/v1beta1/{namespace}/workflow_executions/{name}/artifacts/{key=**}"
         };
     }
 }
@@ -228,5 +228,5 @@ message WorkflowExecutionParameter {
 }
 
 message ArtifactResponse {
-    string data = 1;
+    bytes data = 1;
 }

@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"encoding/base64"
 	"math"
 	"time"
 
@@ -422,14 +421,12 @@ func (s *WorkflowServer) GetArtifact(ctx context.Context, req *api.GetArtifactRe
 		return nil, err
 	}
 
-	data, err := client.GetArtifactDownload(req.Namespace, req.Name, req.Key)
+	data, err := client.GetArtifact(req.Namespace, req.Name, req.Key)
 	if err != nil {
 		return nil, err
 	}
 
-	strValue := base64.StdEncoding.EncodeToString(data)
-
 	return &api.ArtifactResponse{
-		Data: strValue,
+		Data: data,
 	}, nil
 }

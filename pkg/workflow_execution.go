@@ -692,7 +692,7 @@ func (c *Client) TerminateWorkflowExecution(namespace, name string) (err error) 
 	return
 }
 
-func (c *Client) GetArtifactDownload(namespace, name, key string) (data []byte, err error) {
+func (c *Client) GetArtifact(namespace, name, key string) (data []byte, err error) {
 	config, err := c.getNamespaceConfig(namespace)
 	if err != nil {
 		return
