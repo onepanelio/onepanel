@@ -8,10 +8,10 @@ go get -u github.com/pressly/goose/cmd/goose
 Note: Up migration are automatically executed when the application is run.
 
 ```bash
-goose -dir db create <name> sql                 # Create migration in db folder
-goose -dir db postgres "${DB_DATASOURCE_NAME}" up    # Migrate the DB to the most recent version available
-goose -dir db postgres "${DB_DATASOURCE_NAME}" down  # Roll back the version by 1
-goose help                                      # See all available commands
+goose -dir db create <name> sql                       # Create migration in db folder
+goose -dir db postgres "${DB_DATASOURCE_NAME}" up     # Migrate the DB to the most recent version available
+goose -dir db postgres "${DB_DATASOURCE_NAME}" down   # Roll back the version by 1
+goose help                                            # See all available commands
 ```
 
 ## gRPC installation
@@ -45,16 +45,33 @@ This will place three binaries in your `$GOBIN`;
 
 Make sure that your `$GOBIN` is in your `$PATH`.
 
-## gRPC Code generation
+## Code generation
 
-Generate Go, HTTP reverse-proxy and Swagger files:
-
+Generate Go and Swagger APIs:
 ```bash
-protoc -I/usr/local/include \
-  -Iapi/third_party/googleapis \
-  -Iapi/ \
-  api/*.proto \
-  --go_out=plugins=grpc:api \
-  --grpc-gateway_out=logtostderr=true:api \
-  --swagger_out=logtostderr=true:api
+make api
+```
+
+Generate Python SDK:
+```bash
+make python-sdk
+```
+
+Note that for the Python SDK, you should setup a virtual environment.
+Example:
+```shell script
+python3 -m pip install virtualenv
+sudo apt install virtualenv #Ubuntu
+
+virtualenv -p /usr/bin/python3 venv3
+```
+You may also need these packages:
+```shell script
+pip install six python-dateutil urllib3 certifi
+```
+
+
+To generate API and SDKs:
+```bash
+make all
 ```

@@ -23,7 +23,7 @@ require (
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
-	github.com/grpc-ecosystem/grpc-gateway v1.12.2
+	github.com/grpc-ecosystem/grpc-gateway v1.13.0
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/imdario/mergo v0.3.8 // indirect
@@ -39,7 +39,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5 // indirect
 	github.com/stretchr/testify v1.4.0
-	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5
+	github.com/tmc/grpc-websocket-proxy v0.0.0-20200122045848-3419fae592fc
 	github.com/valyala/fasttemplate v1.1.0 // indirect
 	golang.org/x/crypto v0.0.0-20191128160524-b544559bb6d1 // indirect
 	golang.org/x/net v0.0.0-20200114155413-6afb5195e5aa // indirect
@@ -47,7 +47,7 @@ require (
 	golang.org/x/sys v0.0.0-20200124204421-9fbb57f87de9 // indirect
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
-	google.golang.org/genproto v0.0.0-20200128133413-58ce757ed39b
+	google.golang.org/genproto v0.0.0-20200218151345-dad8c97a84f5
 	google.golang.org/grpc v1.27.0
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/jcmturner/goidentity.v2 v2.0.0 // indirect
