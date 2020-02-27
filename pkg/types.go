@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"strings"
 	"time"
 
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
@@ -102,4 +103,26 @@ type WorkflowExecutionOptions struct {
 	Labels         *map[string]string
 	ListOptions    *ListOptions
 	PodGCStrategy  *PodGCStrategy
+}
+
+type File struct {
+	Path         string
+	Name         string
+	Size         int64
+	ContentType  string
+	LastModified time.Time
+	Directory    bool
+}
+
+func FilePathToName(path string) string {
+	if strings.HasSuffix(path, "/") {
+		path = path[:len(path)-1]
+	}
+
+	lastSlashIndex := strings.LastIndex(path, "/")
+	if lastSlashIndex < 0 {
+		return path
+	}
+
+	return path[lastSlashIndex+1:]
 }

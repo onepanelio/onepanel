@@ -137,6 +137,12 @@ service WorkflowService {
             get: "/apis/v1beta1/{namespace}/workflow_executions/{name}/artifacts/{key=**}"
         };
     }
+
+    rpc ListFiles (ListFilesRequest) returns (ListFilesResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflow_executions/{name}/files/{path=**}"
+        };
+    }
 }
 
 message CreateWorkflowExecutionRequest {    
@@ -229,4 +235,23 @@ message WorkflowExecutionParameter {
 
 message ArtifactResponse {
     bytes data = 1;
+}
+
+message File {
+    string path = 1;
+    string name = 2;
+    int64 size = 3;
+    string contentType = 4;
+    string lastModified = 5;
+    bool directory = 6;
+}
+
+message ListFilesRequest {
+    string namespace = 1;
+    string name = 2;
+    string path = 3;
+}
+
+message ListFilesResponse {
+    repeated File files = 1;
 }

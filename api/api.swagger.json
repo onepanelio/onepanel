@@ -430,6 +430,42 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}/files/{path}": {
+      "get": {
+        "operationId": "ListFiles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListFilesResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workflow_executions/{name}/pods/{podName}/containers/{containerName}/logs": {
       "get": {
         "operationId": "GetWorkflowExecutionLogs",
@@ -915,6 +951,31 @@
         }
       }
     },
+    "File": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "size": {
+          "type": "string",
+          "format": "int64"
+        },
+        "contentType": {
+          "type": "string"
+        },
+        "lastModified": {
+          "type": "string"
+        },
+        "directory": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
     "GetWorkflowExecutionMetricsResponse": {
       "type": "object",
       "properties": {
@@ -922,6 +983,17 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/Metric"
+          }
+        }
+      }
+    },
+    "ListFilesResponse": {
+      "type": "object",
+      "properties": {
+        "files": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/File"
           }
         }
       }

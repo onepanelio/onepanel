@@ -722,3 +722,42 @@ func (c *Client) GetArtifact(namespace, name, key string) (data []byte, err erro
 
 	return
 }
+
+func (c *Client) ListFiles(namespace, name, key string) (files []*File, err error) {
+	// @todo the key should be relative to the namespace/name combo
+	// @todo pagination, limit, etc.
+
+	config, err := c.GetNamespaceConfig(namespace)
+	if err != nil {
+		return
+	}
+
+	s3Client, err := c.GetS3Client(namespace, config)
+	if err != nil {
+		return
+	}
+
+	files = make([]*File, 0)
+
+	if len(key) > 0 {
+		if string(key[len(key)-1]) != "/" {
+			key += "/"
+		}
+	}
+
+	doneCh := make(chan struct{})
+	defer close(doneCh)
+	for objInfo := range s3Client.ListObjectsV2(config[artifactRepositoryBucketKey], key, false, doneCh) {
+		newFile := &File{
+			Path:         objInfo.Key,
+			Name:         FilePathToName(objInfo.Key),
+			Size:         objInfo.Size,
+			LastModified: objInfo.LastModified,
+			ContentType:  objInfo.ContentType,
+			Directory:    objInfo.ETag == "" && objInfo.Size == 0,
+		}
+		files = append(files, newFile)
+	}
+
+	return
+}

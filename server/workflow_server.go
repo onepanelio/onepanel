@@ -430,3 +430,31 @@ func (s *WorkflowServer) GetArtifact(ctx context.Context, req *api.GetArtifactRe
 		Data: data,
 	}, nil
 }
+
+func (s *WorkflowServer) ListFiles(ctx context.Context, req *api.ListFilesRequest) (*api.ListFilesResponse, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Name)
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	files, err := client.ListFiles(req.Namespace, req.Name, req.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	apiFiles := make([]*api.File, len(files))
+	for i, file := range files {
+		apiFiles[i] = &api.File{
+			Path:         file.Path,
+			Name:         file.Name,
+			Size:         file.Size,
+			ContentType:  file.ContentType,
+			LastModified: file.LastModified.UTC().Format(time.RFC3339),
+		}
+	}
+
+	return &api.ListFilesResponse{
+		Files: apiFiles,
+	}, nil
+}
