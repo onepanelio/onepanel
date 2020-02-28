@@ -448,6 +448,7 @@ func (s *WorkflowServer) ListFiles(ctx context.Context, req *api.ListFilesReques
 		apiFiles[i] = &api.File{
 			Path:         file.Path,
 			Name:         file.Name,
+			Directory:    file.Directory,
 			Size:         file.Size,
 			ContentType:  file.ContentType,
 			LastModified: file.LastModified.UTC().Format(time.RFC3339),
