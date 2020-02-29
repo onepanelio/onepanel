@@ -748,13 +748,19 @@ func (c *Client) ListFiles(namespace, name, key string) (files []*File, err erro
 	doneCh := make(chan struct{})
 	defer close(doneCh)
 	for objInfo := range s3Client.ListObjectsV2(config[artifactRepositoryBucketKey], key, false, doneCh) {
+		if objInfo.Key == key {
+			continue
+		}
+
+		isDirectory := (objInfo.ETag == "" || strings.HasSuffix(objInfo.Key, "/")) && objInfo.Size == 0
+
 		newFile := &File{
 			Path:         objInfo.Key,
 			Name:         FilePathToName(objInfo.Key),
 			Size:         objInfo.Size,
 			LastModified: objInfo.LastModified,
 			ContentType:  objInfo.ContentType,
-			Directory:    objInfo.ETag == "" && objInfo.Size == 0,
+			Directory:    isDirectory,
 		}
 		files = append(files, newFile)
 	}
