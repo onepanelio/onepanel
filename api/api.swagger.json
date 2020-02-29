@@ -2,6 +2,7 @@
   "swagger": "2.0",
   "info": {
     "title": "Onepanel Core",
+    "description": "Onepanel Core project API",
     "version": "0.5",
     "contact": {
       "name": "Onepanel Core project",

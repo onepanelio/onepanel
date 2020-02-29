@@ -6,7 +6,8 @@ import "protoc-gen-swagger/options/annotations.proto";
 
 option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
     info: {
-		title: "Onepanel Core";
+        title: "Onepanel Core";
+        description: "Onepanel Core project API";
 		version: "0.5";
 		contact: {
 			name: "Onepanel Core project";
