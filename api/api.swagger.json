@@ -1,8 +1,12 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "workflow.proto",
-    "version": "version not set"
+    "title": "Onepanel Core",
+    "version": "0.5",
+    "contact": {
+      "name": "Onepanel Core project",
+      "url": "https://github.com/onepanelio/core"
+    }
   },
   "schemes": [
     "http",
@@ -1300,16 +1304,16 @@
     }
   },
   "securityDefinitions": {
-    "bearer": {
+    "Bearer": {
       "type": "apiKey",
-      "description": "Authentication token, prefixed by Bearer: Bearer <token>",
+      "description": "Authentication token, prefixed by Bearer",
       "name": "authorization",
       "in": "header"
     }
   },
   "security": [
     {
-      "bearer": []
+      "Bearer": []
     }
   ]
 }

@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package api;
+
+import "protoc-gen-swagger/options/annotations.proto";
+
+option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
+    info: {
+		title: "Onepanel Core";
+		version: "0.5";
+		contact: {
+			name: "Onepanel Core project";
+			url: "https://github.com/onepanelio/core";
+		};
+	};
+	schemes: HTTP;
+	schemes: HTTPS;
+	consumes: "application/json";
+	produces: "application/json";
+	security_definitions: {
+		security: {
+			key: "Bearer";
+			value: {
+				type: TYPE_API_KEY;
+				in: IN_HEADER;
+				name: "authorization";
+				description: "Authentication token, prefixed by Bearer"
+			}
+		}
+	}
+	security: {
+		security_requirement: {
+			key: "Bearer";
+			value: {};
+		}
+	}
+};
