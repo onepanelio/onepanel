@@ -753,17 +753,11 @@ func (c *Client) ListFiles(namespace, name, key string) (files []*File, err erro
 		}
 
 		isDirectory := (objInfo.ETag == "" || strings.HasSuffix(objInfo.Key, "/")) && objInfo.Size == 0
-		extension := ""
-
-		dotIndex := strings.LastIndex(objInfo.Key, ".")
-		if dotIndex > 0 {
-			extension = objInfo.Key[dotIndex:]
-		}
 
 		newFile := &File{
 			Path:         objInfo.Key,
 			Name:         FilePathToName(objInfo.Key),
-			Extension:    extension,
+			Extension:    FilePathToExtension(objInfo.Key),
 			Size:         objInfo.Size,
 			LastModified: objInfo.LastModified,
 			ContentType:  objInfo.ContentType,

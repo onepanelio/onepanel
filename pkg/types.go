@@ -152,3 +152,17 @@ func FilePathToParentPath(path string) string {
 
 	return path[0:lastIndexOfForwardSlash]
 }
+
+func FilePathToExtension(path string) string {
+	dotIndex := strings.LastIndex(path, ".")
+
+	if dotIndex == -1 {
+		return ""
+	}
+
+	if dotIndex == (len(path) - 1) {
+		return ""
+	}
+
+	return path[dotIndex+1:]
+}

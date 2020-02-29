@@ -448,6 +448,7 @@ func (s *WorkflowServer) ListFiles(ctx context.Context, req *api.ListFilesReques
 		apiFiles[i] = &api.File{
 			Path:         file.Path,
 			Name:         file.Name,
+			Extension:    file.Extension,
 			Directory:    file.Directory,
 			Size:         file.Size,
 			ContentType:  file.ContentType,
