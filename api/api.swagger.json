@@ -3,12 +3,13 @@
   "info": {
     "title": "Onepanel Core",
     "description": "Onepanel Core project API",
-    "version": "0.5",
+    "version": "1.0.0-beta1",
     "contact": {
       "name": "Onepanel Core project",
       "url": "https://github.com/onepanelio/core"
     }
   },
+  "host": "localhost:8888",
   "schemes": [
     "http",
     "https"
