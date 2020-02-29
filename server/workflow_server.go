@@ -455,7 +455,10 @@ func (s *WorkflowServer) ListFiles(ctx context.Context, req *api.ListFilesReques
 		}
 	}
 
+	parentPath := v1.FilePathToParentPath(req.Path)
+
 	return &api.ListFilesResponse{
-		Files: apiFiles,
+		Files:      apiFiles,
+		ParentPath: parentPath,
 	}, nil
 }

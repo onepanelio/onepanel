@@ -960,6 +960,9 @@
         "name": {
           "type": "string"
         },
+        "extension": {
+          "type": "string"
+        },
         "size": {
           "type": "string",
           "format": "int64"
@@ -995,6 +998,9 @@
           "items": {
             "$ref": "#/definitions/File"
           }
+        },
+        "parentPath": {
+          "type": "string"
         }
       }
     },

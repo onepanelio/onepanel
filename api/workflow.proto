@@ -240,10 +240,11 @@ message ArtifactResponse {
 message File {
     string path = 1;
     string name = 2;
-    int64 size = 3;
-    string contentType = 4;
-    string lastModified = 5;
-    bool directory = 6;
+    string extension = 3;
+    int64 size = 4;
+    string contentType = 5;
+    string lastModified = 6;
+    bool directory = 7;
 }
 
 message ListFilesRequest {
@@ -254,4 +255,5 @@ message ListFilesRequest {
 
 message ListFilesResponse {
     repeated File files = 1;
+    string parentPath = 2;
 }
