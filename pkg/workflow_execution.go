@@ -453,9 +453,12 @@ func (c *Client) WatchWorkflowExecution(namespace, name string) (<-chan *Workflo
 				continue
 			}
 			workflowWatcher <- &WorkflowExecution{
-				UID:      string(workflow.UID),
-				Name:     workflow.Name,
-				Manifest: string(manifest),
+				CreatedAt:  workflow.CreationTimestamp.UTC(),
+				StartedAt:  workflow.Status.StartedAt.UTC(),
+				FinishedAt: workflow.Status.FinishedAt.UTC(),
+				UID:        string(workflow.UID),
+				Name:       workflow.Name,
+				Manifest:   string(manifest),
 			}
 
 			if !workflow.Status.FinishedAt.IsZero() {
