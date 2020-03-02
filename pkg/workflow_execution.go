@@ -691,3 +691,77 @@ func (c *Client) TerminateWorkflowExecution(namespace, name string) (err error) 
 
 	return
 }
+
+func (c *Client) GetArtifact(namespace, name, key string) (data []byte, err error) {
+	config, err := c.GetNamespaceConfig(namespace)
+	if err != nil {
+		return
+	}
+
+	s3Client, err := c.GetS3Client(namespace, config)
+	if err != nil {
+		return
+	}
+
+	opts := s3.GetObjectOptions{}
+	stream, err := s3Client.GetObject(config[artifactRepositoryBucketKey], key, opts)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"Key":       key,
+			"Error":     err.Error(),
+		}).Error("Metrics do not exist.")
+		return
+	}
+
+	data, err = ioutil.ReadAll(stream)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
+	config, err := c.GetNamespaceConfig(namespace)
+	if err != nil {
+		return
+	}
+
+	s3Client, err := c.GetS3Client(namespace, config)
+	if err != nil {
+		return
+	}
+
+	files = make([]*File, 0)
+
+	if len(key) > 0 {
+		if string(key[len(key)-1]) != "/" {
+			key += "/"
+		}
+	}
+
+	doneCh := make(chan struct{})
+	defer close(doneCh)
+	for objInfo := range s3Client.ListObjectsV2(config[artifactRepositoryBucketKey], key, false, doneCh) {
+		if objInfo.Key == key {
+			continue
+		}
+
+		isDirectory := (objInfo.ETag == "" || strings.HasSuffix(objInfo.Key, "/")) && objInfo.Size == 0
+
+		newFile := &File{
+			Path:         objInfo.Key,
+			Name:         FilePathToName(objInfo.Key),
+			Extension:    FilePathToExtension(objInfo.Key),
+			Size:         objInfo.Size,
+			LastModified: objInfo.LastModified,
+			ContentType:  objInfo.ContentType,
+			Directory:    isDirectory,
+		}
+		files = append(files, newFile)
+	}
+
+	return
+}

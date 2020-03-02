@@ -131,6 +131,18 @@ service WorkflowService {
             put: "/apis/v1beta1/{namespace}/workflow_templates/{uid}/archive"
         };
     }
+
+    rpc GetArtifact (GetArtifactRequest) returns (ArtifactResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflow_executions/{name}/artifacts/{key=**}"
+        };
+    }
+
+    rpc ListFiles (ListFilesRequest) returns (ListFilesResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflow_executions/{name}/files/{path=**}"
+        };
+    }
 }
 
 message CreateWorkflowExecutionRequest {    
@@ -141,6 +153,12 @@ message CreateWorkflowExecutionRequest {
 message GetWorkflowExecutionRequest {
     string namespace = 1;
     string name = 2;
+}
+
+message GetArtifactRequest {
+    string namespace = 1;
+    string name = 2;
+    string key = 3;
 }
 
 message WatchWorkflowExecutionRequest {
@@ -213,4 +231,29 @@ message WorkflowExecution {
 message WorkflowExecutionParameter {
     string name = 1;
     string value = 2;
+}
+
+message ArtifactResponse {
+    bytes data = 1;
+}
+
+message File {
+    string path = 1;
+    string name = 2;
+    string extension = 3;
+    int64 size = 4;
+    string contentType = 5;
+    string lastModified = 6;
+    bool directory = 7;
+}
+
+message ListFilesRequest {
+    string namespace = 1;
+    string name = 2;
+    string path = 3;
+}
+
+message ListFilesResponse {
+    repeated File files = 1;
+    string parentPath = 2;
 }
