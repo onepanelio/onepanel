@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"math"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -455,6 +457,17 @@ func (s *WorkflowServer) ListFiles(ctx context.Context, req *api.ListFilesReques
 			LastModified: file.LastModified.UTC().Format(time.RFC3339),
 		}
 	}
+
+	sort.Slice(apiFiles, func(i, j int) bool {
+		fileI := apiFiles[i]
+		fileJ := apiFiles[j]
+
+		if fileI.Directory && !fileJ.Directory {
+			return true
+		}
+
+		return strings.Compare(fileI.Path, fileJ.Path) < 0
+	})
 
 	parentPath := v1.FilePathToParentPath(req.Path)
 
