@@ -22,13 +22,18 @@ func NewWorkflowServer() *WorkflowServer {
 
 func apiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecution) {
 	workflow = &api.WorkflowExecution{
-		CreatedAt:  wf.CreatedAt.Format(time.RFC3339),
-		Name:       wf.Name,
-		Uid:        wf.UID,
-		Phase:      string(wf.Phase),
-		StartedAt:  wf.CreatedAt.Format(time.RFC3339),
-		FinishedAt: wf.FinishedAt.Format(time.RFC3339),
-		Manifest:   wf.Manifest,
+		CreatedAt: wf.CreatedAt.Format(time.RFC3339),
+		Name:      wf.Name,
+		Uid:       wf.UID,
+		Phase:     string(wf.Phase),
+		Manifest:  wf.Manifest,
+	}
+
+	if !wf.StartedAt.IsZero() {
+		workflow.StartedAt = wf.StartedAt.Format(time.RFC3339)
+	}
+	if !wf.FinishedAt.IsZero() {
+		workflow.FinishedAt = wf.FinishedAt.Format(time.RFC3339)
 	}
 
 	if wf.WorkflowTemplate != nil {
