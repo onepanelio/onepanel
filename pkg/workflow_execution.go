@@ -723,10 +723,7 @@ func (c *Client) GetArtifact(namespace, name, key string) (data []byte, err erro
 	return
 }
 
-func (c *Client) ListFiles(namespace, name, key string) (files []*File, err error) {
-	// @todo the key should be relative to the namespace/name combo
-	// @todo pagination, limit, etc.
-
+func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
 	config, err := c.GetNamespaceConfig(namespace)
 	if err != nil {
 		return

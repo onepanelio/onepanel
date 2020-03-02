@@ -440,7 +440,7 @@ func (s *WorkflowServer) ListFiles(ctx context.Context, req *api.ListFilesReques
 		return nil, err
 	}
 
-	files, err := client.ListFiles(req.Namespace, req.Name, req.Path)
+	files, err := client.ListFiles(req.Namespace, req.Path)
 	if err != nil {
 		return nil, err
 	}
