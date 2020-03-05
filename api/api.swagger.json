@@ -1,9 +1,15 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "workflow.proto",
-    "version": "version not set"
+    "title": "Onepanel Core",
+    "description": "Onepanel Core project API",
+    "version": "1.0.0-beta1",
+    "contact": {
+      "name": "Onepanel Core project",
+      "url": "https://github.com/onepanelio/core"
+    }
   },
+  "host": "localhost:8888",
   "schemes": [
     "http",
     "https"
@@ -455,6 +461,90 @@
           },
           {
             "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}/artifacts/{key}": {
+      "get": {
+        "operationId": "GetArtifact",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ArtifactResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}/files/{path}": {
+      "get": {
+        "operationId": "ListFiles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListFilesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "path",
             "in": "path",
             "required": true,
             "type": "string"
@@ -1019,6 +1109,15 @@
         }
       }
     },
+    "ArtifactResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
     "DeleteSecretKeyResponse": {
       "type": "object",
       "properties": {
@@ -1037,6 +1136,34 @@
         }
       }
     },
+    "File": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "extension": {
+          "type": "string"
+        },
+        "size": {
+          "type": "string",
+          "format": "int64"
+        },
+        "contentType": {
+          "type": "string"
+        },
+        "lastModified": {
+          "type": "string"
+        },
+        "directory": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
     "GetWorkflowExecutionMetricsResponse": {
       "type": "object",
       "properties": {
@@ -1045,6 +1172,20 @@
           "items": {
             "$ref": "#/definitions/Metric"
           }
+        }
+      }
+    },
+    "ListFilesResponse": {
+      "type": "object",
+      "properties": {
+        "files": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/File"
+          }
+        },
+        "parentPath": {
+          "type": "string"
         }
       }
     },
@@ -1339,16 +1480,16 @@
     }
   },
   "securityDefinitions": {
-    "bearer": {
+    "Bearer": {
       "type": "apiKey",
-      "description": "Authentication token, prefixed by Bearer: Bearer <token>",
+      "description": "Authentication token, prefixed by Bearer",
       "name": "authorization",
       "in": "header"
     }
   },
   "security": [
     {
-      "bearer": []
+      "Bearer": []
     }
   ]
 }
