@@ -441,16 +441,20 @@ func (c *Client) WatchWorkflowExecution(namespace, name string) (<-chan *Workflo
 			}
 
 			if !ok {
-				log.WithFields(log.Fields{
-					"Namespace": namespace,
-					"Name":      name,
-					"Workflow":  workflow,
-					"Error":     "Unable to convert watcher result chan into workflow",
-				}).Error("Unable to convert watcher result chan into workflow")
-				break
+				workflow, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
+				if err != nil {
+					log.WithFields(log.Fields{
+						"Namespace": namespace,
+						"Name":      name,
+						"Workflow":  workflow,
+						"Error":     err.Error(),
+					}).Error("Unable to get workflow.")
+
+					break
+				}
 			}
 
-			if workflow == nil {
+			if workflow == nil && ok {
 				continue
 			}
 			manifest, err := json.Marshal(workflow)
@@ -472,7 +476,7 @@ func (c *Client) WatchWorkflowExecution(namespace, name string) (<-chan *Workflo
 				Manifest:   string(manifest),
 			}
 
-			if !workflow.Status.FinishedAt.IsZero() {
+			if !workflow.Status.FinishedAt.IsZero() || !ok {
 				break
 			}
 		}
