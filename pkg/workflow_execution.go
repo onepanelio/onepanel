@@ -429,14 +429,25 @@ func (c *Client) WatchWorkflowExecution(namespace, name string) (<-chan *Workflo
 	}
 
 	var workflow *wfv1.Workflow
+	ok := true
 	workflowWatcher := make(chan *WorkflowExecution)
 	ticker := time.NewTicker(time.Second)
 	go func() {
 		for {
 			select {
 			case next := <-watcher.ResultChan():
-				workflow, _ = next.Object.(*wfv1.Workflow)
+				workflow, ok = next.Object.(*wfv1.Workflow)
 			case <-ticker.C:
+			}
+
+			if !ok {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"Name":      name,
+					"Workflow":  workflow,
+					"Error":     "Unable to convert watcher result chan into workflow",
+				}).Error("Unable to convert watcher result chan into workflow")
+				break
 			}
 
 			if workflow == nil {
