@@ -94,6 +94,7 @@ func startRPCServer(db *v1.DB, kubeConfig *v1.Config) {
 	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer())
 	api.RegisterSecretServiceServer(s, server.NewSecretServer())
 	api.RegisterNamespaceServiceServer(s, server.NewNamespaceServer())
+	api.RegisterAuthServiceServer(s, server.NewAuthServer())
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve RPC server: %v", err)
@@ -114,6 +115,7 @@ func startHTTPProxy() {
 	registerHandler(api.RegisterWorkflowServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
 	registerHandler(api.RegisterSecretServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
 	registerHandler(api.RegisterNamespaceServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
+	registerHandler(api.RegisterAuthServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
 
 	log.Printf("Starting HTTP proxy on port %v", *httpPort)
 

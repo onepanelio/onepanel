@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package api;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+service AuthService {
+    rpc IsValidToken(google.protobuf.Empty) returns (IsValidTokenResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/auth/token"
+        };
+    }
+}
+
+message IsValidTokenResponse {
+    bool valid = 1 ;
+}
