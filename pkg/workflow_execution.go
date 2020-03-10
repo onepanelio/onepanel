@@ -428,21 +428,33 @@ func (c *Client) WatchWorkflowExecution(namespace, name string) (<-chan *Workflo
 		return nil, util.NewUserError(codes.Unknown, "Error with watching workflow.")
 	}
 
-	var workflow *wfv1.Workflow
-	ok := true
 	workflowWatcher := make(chan *WorkflowExecution)
 	ticker := time.NewTicker(time.Second)
 	go func() {
+		var workflow *wfv1.Workflow
+		ok := true
+
 		for {
 			select {
 			case next := <-watcher.ResultChan():
 				workflow, ok = next.Object.(*wfv1.Workflow)
+
+				if !ok {
+					log.Printf("[info] result unable to typecast to workflow")
+				}
 			case <-ticker.C:
 			}
 
-			if !ok {
-				workflow, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
+			if workflow == nil && ok {
+				log.Printf("[info] Workflow == nil && ok. Cont.\n")
+				continue
+			}
+
+			if workflow == nil && !ok {
+				log.Printf("[info] Workflow == nil && !ok.\n")
+				workflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
 				if err != nil {
+					log.Printf("[info] Unable to get workflow from argo\n")
 					log.WithFields(log.Fields{
 						"Namespace": namespace,
 						"Name":      name,
@@ -451,12 +463,20 @@ func (c *Client) WatchWorkflowExecution(namespace, name string) (<-chan *Workflo
 					}).Error("Unable to get workflow.")
 
 					break
+				} else {
+					log.Printf("[info] Got workflow from argo. %+v.\n", workflow)
+				}
+
+				if workflow == nil {
+					log.Printf("[info] Workflow == nil. After got from argo.\n")
+					break
 				}
 			}
 
-			if workflow == nil && ok {
-				continue
+			if workflow == nil {
+				log.Printf("[info] Workflow == nil before marshal.\n")
 			}
+
 			manifest, err := json.Marshal(workflow)
 			if err != nil {
 				log.WithFields(log.Fields{
@@ -465,8 +485,9 @@ func (c *Client) WatchWorkflowExecution(namespace, name string) (<-chan *Workflo
 					"Workflow":  workflow,
 					"Error":     err.Error(),
 				}).Error("Error with trying to JSON Marshal workflow.Status.")
-				continue
+				break
 			}
+
 			workflowWatcher <- &WorkflowExecution{
 				CreatedAt:  workflow.CreationTimestamp.UTC(),
 				StartedAt:  workflow.Status.StartedAt.UTC(),
@@ -477,11 +498,15 @@ func (c *Client) WatchWorkflowExecution(namespace, name string) (<-chan *Workflo
 			}
 
 			if !workflow.Status.FinishedAt.IsZero() || !ok {
+				log.Printf("[info] workflow is finished or not ok breaking\n")
 				break
 			}
 		}
+
+		log.Printf("[info] closing and stopping\n")
 		close(workflowWatcher)
 		watcher.Stop()
+		ticker.Stop()
 	}()
 
 	return workflowWatcher, nil
