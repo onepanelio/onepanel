@@ -438,23 +438,16 @@ func (c *Client) WatchWorkflowExecution(namespace, name string) (<-chan *Workflo
 			select {
 			case next := <-watcher.ResultChan():
 				workflow, ok = next.Object.(*wfv1.Workflow)
-
-				if !ok {
-					log.Printf("[info] result unable to typecast to workflow")
-				}
 			case <-ticker.C:
 			}
 
 			if workflow == nil && ok {
-				log.Printf("[info] Workflow == nil && ok. Cont.\n")
 				continue
 			}
 
 			if workflow == nil && !ok {
-				log.Printf("[info] Workflow == nil && !ok.\n")
 				workflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
 				if err != nil {
-					log.Printf("[info] Unable to get workflow from argo\n")
 					log.WithFields(log.Fields{
 						"Namespace": namespace,
 						"Name":      name,
@@ -463,18 +456,11 @@ func (c *Client) WatchWorkflowExecution(namespace, name string) (<-chan *Workflo
 					}).Error("Unable to get workflow.")
 
 					break
-				} else {
-					log.Printf("[info] Got workflow from argo. %+v.\n", workflow)
 				}
 
 				if workflow == nil {
-					log.Printf("[info] Workflow == nil. After got from argo.\n")
 					break
 				}
-			}
-
-			if workflow == nil {
-				log.Printf("[info] Workflow == nil before marshal.\n")
 			}
 
 			manifest, err := json.Marshal(workflow)
@@ -498,12 +484,10 @@ func (c *Client) WatchWorkflowExecution(namespace, name string) (<-chan *Workflo
 			}
 
 			if !workflow.Status.FinishedAt.IsZero() || !ok {
-				log.Printf("[info] workflow is finished or not ok breaking\n")
 				break
 			}
 		}
 
-		log.Printf("[info] closing and stopping\n")
 		close(workflowWatcher)
 		watcher.Stop()
 		ticker.Stop()
