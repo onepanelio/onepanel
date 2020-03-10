@@ -428,11 +428,12 @@ func (c *Client) WatchWorkflowExecution(namespace, name string) (<-chan *Workflo
 		return nil, util.NewUserError(codes.Unknown, "Error with watching workflow.")
 	}
 
-	var workflow *wfv1.Workflow
-	ok := true
 	workflowWatcher := make(chan *WorkflowExecution)
 	ticker := time.NewTicker(time.Second)
 	go func() {
+		var workflow *wfv1.Workflow
+		ok := true
+
 		for {
 			select {
 			case next := <-watcher.ResultChan():
@@ -440,19 +441,28 @@ func (c *Client) WatchWorkflowExecution(namespace, name string) (<-chan *Workflo
 			case <-ticker.C:
 			}
 
-			if !ok {
-				log.WithFields(log.Fields{
-					"Namespace": namespace,
-					"Name":      name,
-					"Workflow":  workflow,
-					"Error":     "Unable to convert watcher result chan into workflow",
-				}).Error("Unable to convert watcher result chan into workflow")
-				break
-			}
-
-			if workflow == nil {
+			if workflow == nil && ok {
 				continue
 			}
+
+			if workflow == nil && !ok {
+				workflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
+				if err != nil {
+					log.WithFields(log.Fields{
+						"Namespace": namespace,
+						"Name":      name,
+						"Workflow":  workflow,
+						"Error":     err.Error(),
+					}).Error("Unable to get workflow.")
+
+					break
+				}
+
+				if workflow == nil {
+					break
+				}
+			}
+
 			manifest, err := json.Marshal(workflow)
 			if err != nil {
 				log.WithFields(log.Fields{
@@ -461,8 +471,9 @@ func (c *Client) WatchWorkflowExecution(namespace, name string) (<-chan *Workflo
 					"Workflow":  workflow,
 					"Error":     err.Error(),
 				}).Error("Error with trying to JSON Marshal workflow.Status.")
-				continue
+				break
 			}
+
 			workflowWatcher <- &WorkflowExecution{
 				CreatedAt:  workflow.CreationTimestamp.UTC(),
 				StartedAt:  workflow.Status.StartedAt.UTC(),
@@ -472,12 +483,14 @@ func (c *Client) WatchWorkflowExecution(namespace, name string) (<-chan *Workflo
 				Manifest:   string(manifest),
 			}
 
-			if !workflow.Status.FinishedAt.IsZero() {
+			if !workflow.Status.FinishedAt.IsZero() || !ok {
 				break
 			}
 		}
+
 		close(workflowWatcher)
 		watcher.Stop()
+		ticker.Stop()
 	}()
 
 	return workflowWatcher, nil
