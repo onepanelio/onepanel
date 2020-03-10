@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"github.com/onepanelio/core/pkg/util"
+	"google.golang.org/grpc/codes"
 	"math"
 	"sort"
 	"strings"
@@ -188,6 +190,9 @@ func (s *WorkflowServer) GetWorkflowExecutionMetrics(ctx context.Context, req *a
 			Value:  m.Value,
 			Format: m.Format,
 		})
+	}
+	if len(apiMetrics) == 0 {
+		return nil, util.NewUserError(codes.NotFound, "Metrics were not found.")
 	}
 
 	return &api.GetWorkflowExecutionMetricsResponse{Metrics: apiMetrics}, nil
