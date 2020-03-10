@@ -34,7 +34,7 @@ require (
 	github.com/mattn/go-sqlite3 v2.0.2+incompatible // indirect
 	github.com/minio/minio-go/v6 v6.0.45
 	github.com/modern-go/reflect2 v1.0.1 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose v2.6.0+incompatible
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5 // indirect
