@@ -6,22 +6,13 @@ import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
 service AuthService {
-    rpc IsValidToken(IsValidTokenRequest) returns (IsValidTokenResponse) {
+    rpc IsValidToken(google.protobuf.Empty) returns (IsValidTokenResponse) {
         option (google.api.http) = {
-            post: "/apis/v1beta1/auth/token"
-            body: "token"
+            get: "/apis/v1beta1/auth/token"
         };
     }
 }
 
 message IsValidTokenResponse {
-    bool valid = 1;
-}
-
-message IsValidTokenRequest {
-    Token token = 1;
-}
-
-message Token {
-    string token = 1;
+    bool valid = 1 ;
 }

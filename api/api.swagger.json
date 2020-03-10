@@ -22,7 +22,7 @@
   ],
   "paths": {
     "/apis/v1beta1/auth/token": {
-      "post": {
+      "get": {
         "operationId": "IsValidToken",
         "responses": {
           "200": {
@@ -32,16 +32,6 @@
             }
           }
         },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/Token"
-            }
-          }
-        ],
         "tags": [
           "AuthService"
         ]
@@ -1186,14 +1176,6 @@
         "exists": {
           "type": "boolean",
           "format": "boolean"
-        }
-      }
-    },
-    "Token": {
-      "type": "object",
-      "properties": {
-        "token": {
-          "type": "string"
         }
       }
     },

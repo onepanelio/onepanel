@@ -94,6 +94,7 @@ func startRPCServer(db *v1.DB, kubeConfig *v1.Config) {
 	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer())
 	api.RegisterSecretServiceServer(s, server.NewSecretServer())
 	api.RegisterNamespaceServiceServer(s, server.NewNamespaceServer())
+	api.RegisterAuthServiceServer(s, server.NewAuthServer())
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve RPC server: %v", err)
