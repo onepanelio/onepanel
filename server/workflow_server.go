@@ -152,16 +152,12 @@ func (s *WorkflowServer) GetWorkflowExecutionLogs(req *api.GetWorkflowExecutionL
 	}
 
 	le := &v1.LogEntry{}
-	ticker := time.NewTicker(time.Second)
 	for {
-		select {
-		case le = <-watcher:
-		case <-ticker.C:
-		}
-
+		le = <-watcher
 		if le == nil {
 			break
 		}
+
 		if err := stream.Send(&api.LogEntry{
 			Timestamp: le.Timestamp.String(),
 			Content:   le.Content,
