@@ -16,9 +16,6 @@ protoc:
 
 api: protoc jq
 
-python-sdk: openapi-generator
-	java -jar openapi-generator-cli.jar generate -p packageName=core.api,projectName=core.api -i api/api.swagger.json -g python -o ./sdks/python
-
 docker-build:
 	docker build -t onepanel-core .
 	docker tag onepanel-core:latest onepanel/core:1.0.0-beta.1
@@ -28,4 +25,4 @@ docker-push:
 
 docker-all: docker-build docker-push
 
-all: api python-sdk
+all: api
