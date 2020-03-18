@@ -5,7 +5,7 @@ Install `goose`:
 go get -u github.com/pressly/goose/cmd/goose
 ```
 
-Note: Up migration are automatically executed when the application is run.
+Note: Up migrations are automatically executed when the application is run.
 
 ```bash
 goose -dir db create <name> sql                       # Create migration in db folder
