@@ -644,6 +644,9 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, name, podName string) (m
 			"PodName":   podName,
 			"Error":     err.Error(),
 		}).Error("Unknown.")
+		if strings.Contains("The specified key does not exist.", err.Error()) {
+			return nil, util.NewUserError(codes.NotFound, "Metrics were not found.")
+		}
 		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
 	}
 
