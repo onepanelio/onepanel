@@ -153,22 +153,18 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		//Generate ENV vars from secret, if there is a container present in the workflow
 		//Get template ENV vars, avoid over-writing them with secret values
 		for key, value := range secret.Data {
-			//Flag to prevent over-writing user's envs
-			addSecretAsEnv := true
-			for _, templateEnv := range template.Container.Env {
-				if templateEnv.Name == key {
-					addSecretAsEnv = false
-					break
-				}
+			decodedValue, errDecode := base64.StdEncoding.DecodeString(value)
+			if errDecode != nil {
+				return errDecode
 			}
-			if addSecretAsEnv {
-				decodedValue, _ := base64.StdEncoding.DecodeString(value)
-				template.Container.Env = append(template.Container.Env, corev1.EnvVar{
-					Name:  key,
-					Value: string(decodedValue),
-				})
-			}
+			addEnvToTemplate(&template,key,string(decodedValue))
 		}
+		sysConfig, sysErr := c.GetSystemConfig()
+		if sysErr != nil {
+			return sysErr
+		}
+		addEnvToTemplate(&template,"onepanelApiUrl", sysConfig["onepanelApiUrl"])
+		addEnvToTemplate(&template,"providerType", sysConfig["providerType"])
 	}
 
 	return
