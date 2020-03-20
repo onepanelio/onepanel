@@ -164,8 +164,8 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		if sysErr != nil {
 			return sysErr
 		}
-		addEnvToTemplate(&template,"onepanelApiUrl", sysConfig["onepanelApiUrl"])
-		addEnvToTemplate(&template,"providerType", sysConfig["providerType"])
+		addEnvToTemplate(&template,"ONEPANEL_API_URL", sysConfig["ONEPANEL_API_URL"])
+		addEnvToTemplate(&template,"PROVIDER_TYPE", sysConfig["PROVIDER_TYPE"])
 	}
 
 	return
