@@ -845,11 +845,21 @@ func filterOutCustomTypesFromManifest(manifest []byte) (result []byte, err error
 		return manifest, nil
 	}
 
+	// We might not want some parameters due to data structuring.
+	parametersToKeep := make([]interface{}, 0)
+
 	for _, parameter := range parametersList {
 		paramMap, ok := parameter.(map[string]interface{})
 		if !ok {
 			continue
 		}
+
+		// If the parameter does not have a value, skip it so argo doesn't try to process it and fail.
+		if _, hasValue := paramMap["value"]; !hasValue {
+			continue
+		}
+
+		parametersToKeep = append(parametersToKeep, parameter)
 
 		keysToDelete := make([]string, 0)
 		for key := range paramMap {
@@ -862,6 +872,8 @@ func filterOutCustomTypesFromManifest(manifest []byte) (result []byte, err error
 			delete(paramMap, key)
 		}
 	}
+
+	argumentsMap["parameters"] = parametersToKeep
 
 	return yaml.Marshal(data)
 }
