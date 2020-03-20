@@ -174,6 +174,23 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 	return
 }
 
+func addEnvToTemplate(template *wfv1.Template, key string, value string) {
+	//Flag to prevent over-writing user's envs
+	overwriteUserEnv := true
+	for _, templateEnv := range template.Container.Env {
+		if templateEnv.Name == key {
+			overwriteUserEnv = false
+			break
+		}
+	}
+	if overwriteUserEnv {
+		template.Container.Env = append(template.Container.Env, corev1.EnvVar{
+			Name:  key,
+			Value: value,
+		})
+	}
+}
+
 func (c *Client) create(namespace string, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (createdWorkflow *wfv1.Workflow, err error) {
 	if opts == nil {
 		opts = &WorkflowExecutionOptions{}
