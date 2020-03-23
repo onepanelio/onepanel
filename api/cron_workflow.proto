@@ -5,8 +5,31 @@ package api;
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "workflow_template.proto";
+import "workflow.proto";
 import "metric.proto";
 
 service CronWorkflowService {
+    rpc CreateCronWorkflow (CreateWorkflowRequest) returns (CronWorkflow) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/{namespace}/cron_workflow"
+            body: "cronWorkflow"
+        };
+    }
+}
 
+message CreateWorkflowRequest {
+    string namespace = 1;
+    CronWorkflow cronWorkflow = 2;
+}
+
+message CronWorkflow {
+    string schedule = 1;
+    string timezone = 2;
+    bool suspend = 3;
+    string concurrencyPolicy = 4;
+    string startingDeadlineSeconds = 5;
+    string successfulJobsHistoryLimit = 6;
+    string failedJobsHistoryLimit = 7;
+
+    WorkflowExecution workflowExecution = 8;
 }
