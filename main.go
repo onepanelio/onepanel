@@ -91,6 +91,7 @@ func startRPCServer(db *v1.DB, kubeConfig *v1.Config) {
 			grpc_recovery.StreamServerInterceptor(recoveryOpts...),
 			auth.AuthStreamingInterceptor(kubeConfig, db)),
 	))
+	api.RegisterCronWorkflowServiceServer(s, server.NewCronWorkflowServer())
 	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer())
 	api.RegisterSecretServiceServer(s, server.NewSecretServer())
 	api.RegisterNamespaceServiceServer(s, server.NewNamespaceServer())
