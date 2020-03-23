@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package api;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "workflow_template.proto";
+import "metric.proto";
+
+service CronWorkflowService {
+
+}
