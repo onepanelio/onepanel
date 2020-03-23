@@ -4,3 +4,5 @@
 pocs
 __debug_bin
 openapi-generator-cli.jar
+vendor
+venv3
