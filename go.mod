@@ -3,8 +3,7 @@ module github.com/onepanelio/core
 go 1.14
 
 require (
-	github.com/Azure/go-autorest v14.0.0+incompatible
-	github.com/Azure/go-autorest/autorest/adal v0.8.2 // indirect
+	github.com/Azure/go-autorest v14.0.0+incompatible // indirect
 	github.com/Masterminds/squirrel v1.1.0
 	github.com/argoproj/argo v0.0.0-20200316175433-2e8ac609cba1
 	github.com/argoproj/pkg v0.0.0-20200102163130-2dd1f3f6b4de
