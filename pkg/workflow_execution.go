@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ghodss/yaml"
 	"io"
 	"io/ioutil"
 	"regexp"
@@ -59,6 +60,12 @@ func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []wfv1.Workflow, err e
 	if strict {
 		jsonOpts = append(jsonOpts, argojson.DisallowUnknownFields)
 	}
+
+	wfBytes, err = filterOutCustomTypesFromManifest(wfBytes)
+	if err != nil {
+		return
+	}
+
 	err = argojson.Unmarshal(wfBytes, &wf, jsonOpts...)
 	if err == nil {
 		return []wfv1.Workflow{wf}, nil
@@ -221,6 +228,11 @@ func (c *Client) create(namespace string, wf *wfv1.Workflow, opts *WorkflowExecu
 }
 
 func (c *Client) ValidateWorkflowExecution(namespace string, manifest []byte) (err error) {
+	manifest, err = filterOutCustomTypesFromManifest(manifest)
+	if err != nil {
+		return
+	}
+
 	workflows, err := unmarshalWorkflows(manifest, true)
 	if err != nil {
 		return
@@ -794,4 +806,74 @@ func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
 	}
 
 	return
+}
+
+func filterOutCustomTypesFromManifest(manifest []byte) (result []byte, err error) {
+	data := make(map[string]interface{})
+	err = yaml.Unmarshal(manifest, &data)
+	if err != nil {
+		return
+	}
+
+	spec, ok := data["spec"]
+	if !ok {
+		return manifest, nil
+	}
+
+	specMap, ok := spec.(map[string]interface{})
+	if !ok {
+		return manifest, nil
+	}
+
+	arguments, ok := specMap["arguments"]
+	if !ok {
+		return manifest, nil
+	}
+
+	argumentsMap, ok := arguments.(map[string]interface{})
+	if !ok {
+		return manifest, nil
+	}
+
+	parameters, ok := argumentsMap["parameters"]
+	if !ok {
+		return manifest, nil
+	}
+
+	parametersList, ok := parameters.([]interface{})
+	if !ok {
+		return manifest, nil
+	}
+
+	// We might not want some parameters due to data structuring.
+	parametersToKeep := make([]interface{}, 0)
+
+	for _, parameter := range parametersList {
+		paramMap, ok := parameter.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		// If the parameter does not have a value, skip it so argo doesn't try to process it and fail.
+		if _, hasValue := paramMap["value"]; !hasValue {
+			continue
+		}
+
+		parametersToKeep = append(parametersToKeep, parameter)
+
+		keysToDelete := make([]string, 0)
+		for key := range paramMap {
+			if key != "name" && key != "value" {
+				keysToDelete = append(keysToDelete, key)
+			}
+		}
+
+		for _, key := range keysToDelete {
+			delete(paramMap, key)
+		}
+	}
+
+	argumentsMap["parameters"] = parametersToKeep
+
+	return yaml.Marshal(data)
 }
