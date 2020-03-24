@@ -7,6 +7,8 @@ import (
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/pkg/errors"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type AuthServer struct{}
@@ -15,15 +17,17 @@ func NewAuthServer() *AuthServer {
 	return &AuthServer{}
 }
 
-func (a *AuthServer) IsValidToken(ctx context.Context, req *empty.Empty) (*api.IsValidTokenResponse, error) {
+func (a *AuthServer) IsValidToken(ctx context.Context, req *api.IsValidTokenRequest) (*empty.Empty, error) {
+	if ctx == nil {
+		return nil, status.Error(codes.Unauthenticated, "Unauthenticated.")
+	}
+
 	client := ctx.Value("kubeClient").(*v1.Client)
 
 	namespaces, err := client.ListOnepanelEnabledNamespaces()
 	if err != nil {
 		if err.Error() == "Unauthorized" {
-			return &api.IsValidTokenResponse{
-				Valid: false,
-			}, nil
+			return nil, status.Error(codes.Unauthenticated, "Unauthenticated.")
 		}
 		return nil, err
 	}
@@ -38,12 +42,8 @@ func (a *AuthServer) IsValidToken(ctx context.Context, req *empty.Empty) (*api.I
 	}
 
 	if !allowed {
-		return &api.IsValidTokenResponse{
-			Valid: false,
-		}, nil
+		return nil, status.Error(codes.Unauthenticated, "Unauthenticated.")
 	}
 
-	return &api.IsValidTokenResponse{
-		Valid: true,
-	}, nil
+	return &empty.Empty{}, nil
 }
