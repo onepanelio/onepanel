@@ -188,7 +188,7 @@ func addEnvToTemplate(template *wfv1.Template, key string, value string) {
 	}
 }
 
-func (c *Client) create(namespace string, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (createdWorkflow *wfv1.Workflow, err error) {
+func (c *Client) createWorkflow(namespace string, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (createdWorkflow *wfv1.Workflow, err error) {
 	if opts == nil {
 		opts = &WorkflowExecutionOptions{}
 	}
@@ -303,7 +303,7 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 
 	var createdWorkflows []*wfv1.Workflow
 	for _, wf := range workflows {
-		createdWorkflow, err := c.create(namespace, &wf, opts)
+		createdWorkflow, err := c.createWorkflow(namespace, &wf, opts)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"Namespace": namespace,
