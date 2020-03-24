@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+	"errors"
+	"github.com/onepanelio/core/api"
 	"net/http"
 	"strings"
 
