@@ -36,12 +36,19 @@ type Metric struct {
 }
 
 type CronWorkflow struct {
-	ID               uint64
-	CreatedAt        time.Time `db:"created_at"`
-	UID              string
-	Name             string
-	GenerateName     string
-    WorkflowExecution *WorkflowExecution
+	ID                         uint64
+	CreatedAt                  time.Time `db:"created_at"`
+	UID                        string
+	Name                       string
+	GenerateName               string
+	Schedule                   string
+	Timezone                   string
+	Suspend                    bool
+	ConcurrencyPolicy          string
+	StartingDeadlineSeconds    string
+	SuccessfulJobsHistoryLimit string
+	FailedJobsHistoryLimit     string
+	WorkflowExecution          *WorkflowExecution
 }
 
 type WorkflowTemplate struct {
