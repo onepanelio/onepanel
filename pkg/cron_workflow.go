@@ -4,13 +4,79 @@ import (
 	"fmt"
 	"github.com/argoproj/argo/pkg/apiclient/workflow"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"regexp"
 	"strings"
 )
-func (c *Client) createCronWorkflow(namespace string, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions)(createdCronWorkflow *wfv1.CronWorkflow, err error)  {
+
+func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow) (*CronWorkflow, error) {
+
+	//todo get CronWorkflowTemplate?
+	//todo moving todo
+	workflowTemplate, err := c.GetWorkflowTemplate(namespace, workflow.WorkflowTemplate.UID, workflow.WorkflowTemplate.Version)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace":    namespace,
+			"CronWorkflow": cronWorkflow,
+			"Error":        err.Error(),
+		}).Error("Error with getting workflow template.")
+		return nil, util.NewUserError(codes.NotFound, "Error with getting workflow template.")
+	}
+
+	// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
+	opts := &WorkflowExecutionOptions{}
+	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
+	opts.GenerateName = strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`)) + "-"
+	for _, param := range workflow.Parameters {
+		opts.Parameters = append(opts.Parameters, WorkflowExecutionParameter{
+			Name:  param.Name,
+			Value: param.Value,
+		})
+	}
+
+	if opts.Labels == nil {
+		opts.Labels = &map[string]string{}
+	}
+	(*opts.Labels)[workflowTemplateUIDLabelKey] = workflowTemplate.UID
+	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
+	workflows, err := unmarshalWorkflows([]byte(workflowTemplate.Manifest), true)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace":    namespace,
+			"CronWorkflow": cronWorkflow,
+			"Error":        err.Error(),
+		}).Error("Error parsing workflow.")
+		return nil, err
+	}
+
+	var createdWorkflows []*wfv1.Workflow
+	for _, wf := range workflows {
+		createdWorkflow, err := c.createWorkflow(namespace, &wf, opts)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"Namespace":    namespace,
+				"CronWorkflow": cronWorkflow,
+				"Error":        err.Error(),
+			}).Error("Error parsing workflow.")
+			return nil, err
+		}
+		createdWorkflows = append(createdWorkflows, createdWorkflow)
+	}
+
+	workflow.Name = createdWorkflows[0].Name
+	workflow.CreatedAt = createdWorkflows[0].CreationTimestamp.UTC()
+	workflow.UID = string(createdWorkflows[0].ObjectMeta.UID)
+	workflow.WorkflowTemplate = workflowTemplate
+	// Manifests could get big, don't return them in this case.
+	workflow.WorkflowTemplate.Manifest = ""
+
+	return cronWorkflow, nil
+}
+
+func (c *Client) createCronWorkflow(namespace string, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (createdCronWorkflow *wfv1.CronWorkflow, err error) {
 	if opts == nil {
 		opts = &WorkflowExecutionOptions{}
 	}
@@ -55,7 +121,6 @@ func (c *Client) createCronWorkflow(namespace string, cwf *wfv1.CronWorkflow, op
 	//if err = c.injectAutomatedFields(namespace, cwf.Spec.WorkflowSpec, opts); err != nil {
 	//	return nil, err
 	//}
-
 
 	createdCronWorkflow, err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Create(cwf)
 	if err != nil {
