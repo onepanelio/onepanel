@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ghodss/yaml"
+	"github.com/onepanelio/core/pkg/util/label"
 	"io"
 	"io/ioutil"
 	"regexp"
@@ -876,4 +877,139 @@ func filterOutCustomTypesFromManifest(manifest []byte) (result []byte, err error
 	argumentsMap["parameters"] = parametersToKeep
 
 	return yaml.Marshal(data)
+}
+
+// prefix is the label prefix.
+// e.g. prefix/my-label-key: my-label-value
+func (c *Client) GetWorkflowExecutionLabels(namespace, name, prefix string) (labels map[string]string, err error) {
+	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"Error":     err.Error(),
+		}).Error("Workflow not found.")
+		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
+	}
+
+	labels = label.FilterByPrefix(prefix, wf.Labels)
+	labels = label.RemovePrefix(prefix, labels)
+
+	return
+}
+
+// prefix is the label prefix.
+// e.g. prefix/my-label-key: my-label-value
+func (c *Client) GetWorkflowTemplateLabels(namespace, name, prefix string) (labels map[string]string, err error) {
+	wf, err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"Error":     err.Error(),
+		}).Error("Workflow Template not found.")
+		return nil, util.NewUserError(codes.NotFound, "Workflow Template not found.")
+	}
+
+	labels = label.FilterByPrefix(prefix, wf.Labels)
+	labels = label.RemovePrefix(prefix, labels)
+
+	return
+}
+
+func (c *Client) DeleteWorkflowExecutionLabel(namespace, name string, keysToDelete ...string) (labels map[string]string, err error) {
+	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"Error":     err.Error(),
+		}).Error("Workflow not found.")
+		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
+	}
+
+	label.Delete(wf.Labels, keysToDelete...)
+
+	return wf.Labels, nil
+}
+
+func (c *Client) DeleteWorkflowTemplateLabel(namespace, name string, keysToDelete ...string) (labels map[string]string, err error) {
+	wf, err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"Error":     err.Error(),
+		}).Error("Workflow Template not found.")
+		return nil, util.NewUserError(codes.NotFound, "Workflow Template not found.")
+	}
+
+	label.Delete(wf.Labels, keysToDelete...)
+
+	return wf.Labels, nil
+}
+
+// prefix is the label prefix.
+// we delete all labels with that prefix and set the new ones
+// e.g. prefix/my-label-key: my-label-value
+func (c *Client) SetWorkflowExecutionLabels(namespace, name, prefix string, keyValues map[string]string, deleteOld bool) (workflowLabels map[string]string, err error) {
+	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"Error":     err.Error(),
+		}).Error("Workflow not found.")
+		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
+	}
+
+	if deleteOld {
+		label.DeleteWithPrefix(wf.Labels, prefix)
+	}
+
+	label.MergeLabelsPrefix(wf.Labels, keyValues, prefix+"/")
+
+	wf, err = c.ArgoprojV1alpha1().Workflows(namespace).Update(wf)
+	if err != nil {
+		return nil, err
+	}
+
+	filteredMap := label.FilterByPrefix(prefix+"/", wf.Labels)
+	filteredMap = label.RemovePrefix(prefix+"/", filteredMap)
+
+	return filteredMap, nil
+}
+
+// prefix is the label prefix.
+// we delete all labels with that prefix and set the new ones
+// e.g. prefix/my-label-key: my-label-value
+func (c *Client) SetWorkflowTemplateLabels(namespace, name, prefix string, keyValues map[string]string, deleteOld bool) (workflowLabels map[string]string, err error) {
+	wf, err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"Error":     err.Error(),
+		}).Error("Workflow Template not found.")
+		return nil, util.NewUserError(codes.NotFound, "Workflow Template not found.")
+	}
+
+	if deleteOld {
+		label.DeleteWithPrefix(wf.Labels, prefix)
+	}
+
+	if wf.Labels == nil {
+		wf.Labels = make(map[string]string)
+	}
+	label.MergeLabelsPrefix(wf.Labels, keyValues, prefix+"/")
+
+	wf, err = c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Update(wf)
+	if err != nil {
+		return nil, err
+	}
+
+	filteredMap := label.FilterByPrefix(prefix+"/", wf.Labels)
+	filteredMap = label.RemovePrefix(prefix+"/", filteredMap)
+
+	return filteredMap, nil
 }

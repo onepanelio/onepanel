@@ -2,6 +2,8 @@ package v1
 
 import (
 	"database/sql"
+	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -52,11 +54,28 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, err
 	}
 
+	argoWft := &v1alpha1.WorkflowTemplate{
+		ObjectMeta: v1.ObjectMeta{
+			Name: uid,
+		},
+	}
+
+	argoWft, err = c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Create(argoWft)
+	if err != nil {
+		return nil, err
+	}
+
 	if err = c.insertWorkflowTemplateVersion(workflowTemplate, tx); err != nil {
+		if err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Delete(argoWft.Name, &v1.DeleteOptions{}); err != nil {
+			log.Printf("Unable to delete argo workflow template")
+		}
 		return nil, err
 	}
 
 	if err = tx.Commit(); err != nil {
+		if err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Delete(argoWft.Name, &v1.DeleteOptions{}); err != nil {
+			log.Printf("Unable to delete argo workflow template")
+		}
 		return nil, err
 	}
 
