@@ -2,9 +2,8 @@ package v1
 
 import (
 	"fmt"
-	"github.com/argoproj/argo/pkg/apiclient/workflow"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/onepanelio/core/api"
+	argojson "github.com/argoproj/pkg/json"
 	"github.com/onepanelio/core/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
@@ -16,6 +15,7 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 
 	//todo get CronWorkflowTemplate?
 	//todo moving todo
+	workflow := cronWorkflow.WorkflowExecution
 	workflowTemplate, err := c.GetWorkflowTemplate(namespace, workflow.WorkflowTemplate.UID, workflow.WorkflowTemplate.Version)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -42,7 +42,7 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 	}
 	(*opts.Labels)[workflowTemplateUIDLabelKey] = workflowTemplate.UID
 	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
-	workflows, err := unmarshalWorkflows([]byte(workflowTemplate.Manifest), true)
+	createdCronWorkflow, err := unmarshalCronWorkflows([]byte(workflowTemplate.Manifest), true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":    namespace,
@@ -52,26 +52,22 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 		return nil, err
 	}
 
-	var createdWorkflows []*wfv1.Workflow
-	for _, wf := range workflows {
-		createdWorkflow, err := c.createWorkflow(namespace, &wf, opts)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"Namespace":    namespace,
-				"CronWorkflow": cronWorkflow,
-				"Error":        err.Error(),
-			}).Error("Error parsing workflow.")
-			return nil, err
-		}
-		createdWorkflows = append(createdWorkflows, createdWorkflow)
+	argoCreatedCronWorkflow, err := c.createCronWorkflow(namespace, &createdCronWorkflow, opts)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace":    namespace,
+			"CronWorkflow": cronWorkflow,
+			"Error":        err.Error(),
+		}).Error("Error parsing workflow.")
+		return nil, err
 	}
 
-	workflow.Name = createdWorkflows[0].Name
-	workflow.CreatedAt = createdWorkflows[0].CreationTimestamp.UTC()
-	workflow.UID = string(createdWorkflows[0].ObjectMeta.UID)
-	workflow.WorkflowTemplate = workflowTemplate
+	cronWorkflow.Name = argoCreatedCronWorkflow.Name
+	cronWorkflow.CreatedAt = argoCreatedCronWorkflow.CreationTimestamp.UTC()
+	cronWorkflow.UID = string(argoCreatedCronWorkflow.ObjectMeta.UID)
+	cronWorkflow.WorkflowExecution.WorkflowTemplate = workflowTemplate
 	// Manifests could get big, don't return them in this case.
-	workflow.WorkflowTemplate.Manifest = ""
+	cronWorkflow.WorkflowExecution.WorkflowTemplate.Manifest = ""
 
 	return cronWorkflow, nil
 }
@@ -127,5 +123,18 @@ func (c *Client) createCronWorkflow(namespace string, cwf *wfv1.CronWorkflow, op
 		return nil, err
 	}
 
+	return
+}
+
+func unmarshalCronWorkflows(cwfBytes []byte, strict bool) (cwfs wfv1.CronWorkflow, err error) {
+	var cwf wfv1.CronWorkflow
+	var jsonOpts []argojson.JSONOpt
+	if strict {
+		jsonOpts = append(jsonOpts, argojson.DisallowUnknownFields)
+	}
+	err = argojson.Unmarshal(cwfBytes, &cwf, jsonOpts...)
+	if err == nil {
+		return cwf, nil
+	}
 	return
 }
