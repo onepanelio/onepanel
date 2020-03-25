@@ -22,16 +22,26 @@
   ],
   "paths": {
     "/apis/v1beta1/auth/token": {
-      "get": {
+      "post": {
         "operationId": "IsValidToken",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/IsValidTokenResponse"
+              "properties": {}
             }
           }
         },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TokenWrapper"
+            }
+          }
+        ],
         "tags": [
           "AuthService"
         ]
@@ -1012,15 +1022,6 @@
         }
       }
     },
-    "IsValidTokenResponse": {
-      "type": "object",
-      "properties": {
-        "valid": {
-          "type": "boolean",
-          "format": "boolean"
-        }
-      }
-    },
     "ListFilesResponse": {
       "type": "object",
       "properties": {
@@ -1176,6 +1177,14 @@
         "exists": {
           "type": "boolean",
           "format": "boolean"
+        }
+      }
+    },
+    "TokenWrapper": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string"
         }
       }
     },

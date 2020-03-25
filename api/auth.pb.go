@@ -26,66 +26,108 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-type IsValidTokenResponse struct {
-	Valid                bool     `protobuf:"varint,1,opt,name=valid,proto3" json:"valid,omitempty"`
+type TokenWrapper struct {
+	Token                string   `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *IsValidTokenResponse) Reset()         { *m = IsValidTokenResponse{} }
-func (m *IsValidTokenResponse) String() string { return proto.CompactTextString(m) }
-func (*IsValidTokenResponse) ProtoMessage()    {}
-func (*IsValidTokenResponse) Descriptor() ([]byte, []int) {
+func (m *TokenWrapper) Reset()         { *m = TokenWrapper{} }
+func (m *TokenWrapper) String() string { return proto.CompactTextString(m) }
+func (*TokenWrapper) ProtoMessage()    {}
+func (*TokenWrapper) Descriptor() ([]byte, []int) {
 	return fileDescriptor_8bbd6f3875b0e874, []int{0}
 }
 
-func (m *IsValidTokenResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_IsValidTokenResponse.Unmarshal(m, b)
+func (m *TokenWrapper) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TokenWrapper.Unmarshal(m, b)
 }
-func (m *IsValidTokenResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_IsValidTokenResponse.Marshal(b, m, deterministic)
+func (m *TokenWrapper) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TokenWrapper.Marshal(b, m, deterministic)
 }
-func (m *IsValidTokenResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_IsValidTokenResponse.Merge(m, src)
+func (m *TokenWrapper) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TokenWrapper.Merge(m, src)
 }
-func (m *IsValidTokenResponse) XXX_Size() int {
-	return xxx_messageInfo_IsValidTokenResponse.Size(m)
+func (m *TokenWrapper) XXX_Size() int {
+	return xxx_messageInfo_TokenWrapper.Size(m)
 }
-func (m *IsValidTokenResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_IsValidTokenResponse.DiscardUnknown(m)
+func (m *TokenWrapper) XXX_DiscardUnknown() {
+	xxx_messageInfo_TokenWrapper.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_IsValidTokenResponse proto.InternalMessageInfo
+var xxx_messageInfo_TokenWrapper proto.InternalMessageInfo
 
-func (m *IsValidTokenResponse) GetValid() bool {
+func (m *TokenWrapper) GetToken() string {
 	if m != nil {
-		return m.Valid
+		return m.Token
 	}
-	return false
+	return ""
+}
+
+type IsValidTokenRequest struct {
+	Token                *TokenWrapper `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
+}
+
+func (m *IsValidTokenRequest) Reset()         { *m = IsValidTokenRequest{} }
+func (m *IsValidTokenRequest) String() string { return proto.CompactTextString(m) }
+func (*IsValidTokenRequest) ProtoMessage()    {}
+func (*IsValidTokenRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8bbd6f3875b0e874, []int{1}
+}
+
+func (m *IsValidTokenRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_IsValidTokenRequest.Unmarshal(m, b)
+}
+func (m *IsValidTokenRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_IsValidTokenRequest.Marshal(b, m, deterministic)
+}
+func (m *IsValidTokenRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_IsValidTokenRequest.Merge(m, src)
+}
+func (m *IsValidTokenRequest) XXX_Size() int {
+	return xxx_messageInfo_IsValidTokenRequest.Size(m)
+}
+func (m *IsValidTokenRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_IsValidTokenRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_IsValidTokenRequest proto.InternalMessageInfo
+
+func (m *IsValidTokenRequest) GetToken() *TokenWrapper {
+	if m != nil {
+		return m.Token
+	}
+	return nil
 }
 
 func init() {
-	proto.RegisterType((*IsValidTokenResponse)(nil), "api.IsValidTokenResponse")
+	proto.RegisterType((*TokenWrapper)(nil), "api.TokenWrapper")
+	proto.RegisterType((*IsValidTokenRequest)(nil), "api.IsValidTokenRequest")
 }
 
 func init() { proto.RegisterFile("auth.proto", fileDescriptor_8bbd6f3875b0e874) }
 
 var fileDescriptor_8bbd6f3875b0e874 = []byte{
-	// 200 bytes of a gzipped FileDescriptorProto
+	// 228 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x4a, 0x2c, 0x2d, 0xc9,
 	0xd0, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x4e, 0x2c, 0xc8, 0x94, 0x92, 0x49, 0xcf, 0xcf,
 	0x4f, 0xcf, 0x49, 0xd5, 0x4f, 0x2c, 0xc8, 0xd4, 0x4f, 0xcc, 0xcb, 0xcb, 0x2f, 0x49, 0x2c, 0xc9,
 	0xcc, 0xcf, 0x2b, 0x86, 0x28, 0x91, 0x92, 0x86, 0xca, 0x82, 0x79, 0x49, 0xa5, 0x69, 0xfa, 0xa9,
-	0xb9, 0x05, 0x25, 0x95, 0x10, 0x49, 0x25, 0x1d, 0x2e, 0x11, 0xcf, 0xe2, 0xb0, 0xc4, 0x9c, 0xcc,
-	0x94, 0x90, 0xfc, 0xec, 0xd4, 0xbc, 0xa0, 0xd4, 0xe2, 0x82, 0xfc, 0xbc, 0xe2, 0x54, 0x21, 0x11,
-	0x2e, 0xd6, 0x32, 0x90, 0xa8, 0x04, 0xa3, 0x02, 0xa3, 0x06, 0x47, 0x10, 0x84, 0x63, 0x54, 0xc4,
-	0xc5, 0xed, 0x58, 0x5a, 0x92, 0x11, 0x9c, 0x5a, 0x54, 0x96, 0x99, 0x9c, 0x2a, 0x94, 0xcc, 0xc5,
-	0x83, 0xac, 0x59, 0x48, 0x4c, 0x0f, 0x62, 0x95, 0x1e, 0xcc, 0x2a, 0x3d, 0x57, 0x90, 0x55, 0x52,
-	0x92, 0x7a, 0x89, 0x05, 0x99, 0x7a, 0xd8, 0xec, 0x51, 0x52, 0x68, 0xba, 0xfc, 0x64, 0x32, 0x93,
-	0x94, 0x90, 0x04, 0xc8, 0xf1, 0xc5, 0xfa, 0x65, 0x86, 0x49, 0xa9, 0x25, 0x89, 0x86, 0xfa, 0x20,
-	0x1f, 0xea, 0x97, 0x80, 0x54, 0x26, 0xb1, 0x81, 0x0d, 0x33, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff,
-	0x50, 0x28, 0xf6, 0x19, 0xf6, 0x00, 0x00, 0x00,
+	0xb9, 0x05, 0x25, 0x95, 0x10, 0x49, 0x25, 0x15, 0x2e, 0x9e, 0x90, 0xfc, 0xec, 0xd4, 0xbc, 0xf0,
+	0xa2, 0xc4, 0x82, 0x82, 0xd4, 0x22, 0x21, 0x11, 0x2e, 0xd6, 0x12, 0x10, 0x5f, 0x82, 0x51, 0x81,
+	0x51, 0x83, 0x33, 0x08, 0xc2, 0x51, 0xb2, 0xe3, 0x12, 0xf6, 0x2c, 0x0e, 0x4b, 0xcc, 0xc9, 0x4c,
+	0x01, 0x2b, 0x0e, 0x4a, 0x2d, 0x2c, 0x4d, 0x2d, 0x2e, 0x11, 0x52, 0x47, 0x56, 0xcc, 0x6d, 0x24,
+	0xa8, 0x97, 0x58, 0x90, 0xa9, 0x87, 0x6c, 0x1c, 0x54, 0xbf, 0x51, 0x05, 0x17, 0xb7, 0x63, 0x69,
+	0x49, 0x46, 0x70, 0x6a, 0x51, 0x59, 0x66, 0x72, 0xaa, 0x50, 0x26, 0x17, 0x0f, 0xb2, 0x71, 0x42,
+	0x12, 0x60, 0x8d, 0x58, 0x6c, 0x90, 0x12, 0xd3, 0x83, 0x38, 0x5e, 0x0f, 0xe6, 0x78, 0x3d, 0x57,
+	0x90, 0xe3, 0x95, 0xd4, 0x9b, 0x2e, 0x3f, 0x99, 0xcc, 0xa4, 0xa8, 0x24, 0x01, 0xf2, 0x73, 0xb1,
+	0x7e, 0x99, 0x61, 0x52, 0x6a, 0x49, 0xa2, 0xa1, 0x3e, 0x28, 0x60, 0xf4, 0xc1, 0x56, 0x5a, 0x41,
+	0x6c, 0x4e, 0x62, 0x03, 0x6b, 0x34, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0x8e, 0xdc, 0xc7, 0x76,
+	0x34, 0x01, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -100,7 +142,7 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type AuthServiceClient interface {
-	IsValidToken(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*IsValidTokenResponse, error)
+	IsValidToken(ctx context.Context, in *IsValidTokenRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type authServiceClient struct {
@@ -111,8 +153,8 @@ func NewAuthServiceClient(cc *grpc.ClientConn) AuthServiceClient {
 	return &authServiceClient{cc}
 }
 
-func (c *authServiceClient) IsValidToken(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*IsValidTokenResponse, error) {
-	out := new(IsValidTokenResponse)
+func (c *authServiceClient) IsValidToken(ctx context.Context, in *IsValidTokenRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/api.AuthService/IsValidToken", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -122,14 +164,14 @@ func (c *authServiceClient) IsValidToken(ctx context.Context, in *empty.Empty, o
 
 // AuthServiceServer is the server API for AuthService service.
 type AuthServiceServer interface {
-	IsValidToken(context.Context, *empty.Empty) (*IsValidTokenResponse, error)
+	IsValidToken(context.Context, *IsValidTokenRequest) (*empty.Empty, error)
 }
 
 // UnimplementedAuthServiceServer can be embedded to have forward compatible implementations.
 type UnimplementedAuthServiceServer struct {
 }
 
-func (*UnimplementedAuthServiceServer) IsValidToken(ctx context.Context, req *empty.Empty) (*IsValidTokenResponse, error) {
+func (*UnimplementedAuthServiceServer) IsValidToken(ctx context.Context, req *IsValidTokenRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsValidToken not implemented")
 }
 
@@ -138,7 +180,7 @@ func RegisterAuthServiceServer(s *grpc.Server, srv AuthServiceServer) {
 }
 
 func _AuthService_IsValidToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+	in := new(IsValidTokenRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -150,7 +192,7 @@ func _AuthService_IsValidToken_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: "/api.AuthService/IsValidToken",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).IsValidToken(ctx, req.(*empty.Empty))
+		return srv.(AuthServiceServer).IsValidToken(ctx, req.(*IsValidTokenRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

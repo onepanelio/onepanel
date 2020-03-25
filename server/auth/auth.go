@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+	"errors"
+	"github.com/onepanelio/core/api"
 	"net/http"
 	"strings"
 
@@ -81,6 +83,27 @@ func IsAuthorized(c *v1.Client, namespace, verb, group, resource, name string) (
 
 func AuthUnaryInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		if info.FullMethod == "/api.AuthService/IsValidToken" {
+			md, ok := metadata.FromIncomingContext(ctx)
+			if !ok {
+				return resp, errors.New("unable to get metadata from incoming context")
+			}
+
+			tokenRequest, ok := req.(*api.IsValidTokenRequest)
+			if !ok {
+				return resp, errors.New("IsValidToken does not have correct request type")
+			}
+
+			md.Set("authorization", tokenRequest.Token.Token)
+
+			ctx, err = getClient(ctx, kubeConfig, db)
+			if err != nil {
+				ctx = nil
+			}
+
+			return handler(ctx, req)
+		}
+
 		ctx, err = getClient(ctx, kubeConfig, db)
 		if err != nil {
 			return
