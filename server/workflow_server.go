@@ -22,6 +22,10 @@ func NewWorkflowServer() *WorkflowServer {
 	return &WorkflowServer{}
 }
 
+func GenApiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecution) {
+	return apiWorkflowExecution(wf)
+}
+
 func apiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecution) {
 	workflow = &api.WorkflowExecution{
 		CreatedAt: wf.CreatedAt.Format(time.RFC3339),
