@@ -117,7 +117,9 @@ func init() {
 	proto.RegisterType((*Namespace)(nil), "api.Namespace")
 }
 
-func init() { proto.RegisterFile("namespace.proto", fileDescriptor_ecb1e126f615f5dd) }
+func init() {
+	proto.RegisterFile("namespace.proto", fileDescriptor_ecb1e126f615f5dd)
+}
 
 var fileDescriptor_ecb1e126f615f5dd = []byte{
 	// 238 bytes of a gzipped FileDescriptorProto

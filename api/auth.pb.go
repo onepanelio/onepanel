@@ -109,7 +109,9 @@ func init() {
 	proto.RegisterType((*IsValidTokenRequest)(nil), "api.IsValidTokenRequest")
 }
 
-func init() { proto.RegisterFile("auth.proto", fileDescriptor_8bbd6f3875b0e874) }
+func init() {
+	proto.RegisterFile("auth.proto", fileDescriptor_8bbd6f3875b0e874)
+}
 
 var fileDescriptor_8bbd6f3875b0e874 = []byte{
 	// 228 bytes of a gzipped FileDescriptorProto

@@ -27,9 +27,9 @@ message CronWorkflow {
     string timezone = 2;
     bool suspend = 3;
     string concurrencyPolicy = 4;
-    string startingDeadlineSeconds = 5;
-    string successfulJobsHistoryLimit = 6;
-    string failedJobsHistoryLimit = 7;
+    int64 startingDeadlineSeconds = 5;
+    int32 successfulJobsHistoryLimit = 6;
+    int32 failedJobsHistoryLimit = 7;
 
     WorkflowExecution workflowExecution = 8;
 }

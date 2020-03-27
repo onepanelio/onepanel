@@ -710,7 +710,9 @@ func init() {
 	proto.RegisterMapType((map[string]string)(nil), "api.Secret.DataEntry")
 }
 
-func init() { proto.RegisterFile("secret.proto", fileDescriptor_6acf428160d7a216) }
+func init() {
+	proto.RegisterFile("secret.proto", fileDescriptor_6acf428160d7a216)
+}
 
 var fileDescriptor_6acf428160d7a216 = []byte{
 	// 713 bytes of a gzipped FileDescriptorProto

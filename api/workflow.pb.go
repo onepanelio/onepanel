@@ -1405,7 +1405,9 @@ func init() {
 	proto.RegisterType((*DeleteLabelRequest)(nil), "api.DeleteLabelRequest")
 }
 
-func init() { proto.RegisterFile("workflow.proto", fileDescriptor_892c7f566756b0be) }
+func init() {
+	proto.RegisterFile("workflow.proto", fileDescriptor_892c7f566756b0be)
+}
 
 var fileDescriptor_892c7f566756b0be = []byte{
 	// 1711 bytes of a gzipped FileDescriptorProto
