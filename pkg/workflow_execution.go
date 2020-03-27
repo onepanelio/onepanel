@@ -247,7 +247,7 @@ func (c *Client) ValidateWorkflowExecution(namespace string, manifest []byte) (e
 		return
 	}
 
-	workflows, err := unmarshalWorkflows(manifest, true)
+	workflows, err := UnmarshalWorkflows(manifest, true)
 	if err != nil {
 		return
 	}
