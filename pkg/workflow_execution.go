@@ -55,7 +55,7 @@ func typeWorkflow(wf *wfv1.Workflow) (workflow *WorkflowExecution) {
 	return
 }
 
-func unmarshalWorkflows(wfBytes []byte, strict bool) (wfs []wfv1.Workflow, err error) {
+func UnmarshalWorkflows(wfBytes []byte, strict bool) (wfs []wfv1.Workflow, err error) {
 	var wf wfv1.Workflow
 	var jsonOpts []argojson.JSONOpt
 	if strict {
@@ -158,14 +158,14 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 			if errDecode != nil {
 				return errDecode
 			}
-			addEnvToTemplate(&template,key,string(decodedValue))
+			addEnvToTemplate(&template, key, string(decodedValue))
 		}
 		sysConfig, sysErr := c.GetSystemConfig()
 		if sysErr != nil {
 			return sysErr
 		}
-		addEnvToTemplate(&template,"ONEPANEL_API_URL", sysConfig["ONEPANEL_API_URL"])
-		addEnvToTemplate(&template,"PROVIDER_TYPE", sysConfig["PROVIDER_TYPE"])
+		addEnvToTemplate(&template, "ONEPANEL_API_URL", sysConfig["ONEPANEL_API_URL"])
+		addEnvToTemplate(&template, "PROVIDER_TYPE", sysConfig["PROVIDER_TYPE"])
 	}
 
 	return
@@ -291,7 +291,8 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	}
 	(*opts.Labels)[workflowTemplateUIDLabelKey] = workflowTemplate.UID
 	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
-	workflows, err := unmarshalWorkflows([]byte(workflowTemplate.Manifest), true)
+	//UX will prevent multiple workflows
+	workflows, err := UnmarshalWorkflows([]byte(workflowTemplate.Manifest), true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
