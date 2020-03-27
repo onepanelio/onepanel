@@ -63,5 +63,8 @@ func (c *CronWorkflowServer) CreateCronWorkflow(ctx context.Context, req *api.Cr
 	if err != nil {
 		return nil, err
 	}
+	if cwf == nil {
+		return nil, nil
+	}
 	return apiCronWorkflow(cwf), nil
 }

@@ -42,33 +42,46 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 	}
 	(*opts.Labels)[workflowTemplateUIDLabelKey] = workflowTemplate.UID
 	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
-	var testCWF wfv1.CronWorkflow
-	testCWF.Spec.Schedule = cronWorkflow.Schedule
-	testCWF.Spec.Timezone = cronWorkflow.Timezone
-	testCWF.Spec.Suspend = cronWorkflow.Suspend
-	testCWF.Spec.ConcurrencyPolicy = wfv1.ConcurrencyPolicy(cronWorkflow.ConcurrencyPolicy)
-	testCWF.Spec.StartingDeadlineSeconds = cronWorkflow.StartingDeadlineSeconds
-	testCWF.Spec.SuccessfulJobsHistoryLimit = cronWorkflow.SuccessfulJobsHistoryLimit
-	testCWF.Spec.FailedJobsHistoryLimit = cronWorkflow.FailedJobsHistoryLimit
-
-	argoCreatedCronWorkflow, err := c.createCronWorkflow(namespace, &testCWF, opts)
+	var argoCronWorkflow wfv1.CronWorkflow
+	argoCronWorkflow.Spec.Schedule = cronWorkflow.Schedule
+	argoCronWorkflow.Spec.Timezone = cronWorkflow.Timezone
+	argoCronWorkflow.Spec.Suspend = cronWorkflow.Suspend
+	argoCronWorkflow.Spec.ConcurrencyPolicy = wfv1.ConcurrencyPolicy(cronWorkflow.ConcurrencyPolicy)
+	argoCronWorkflow.Spec.StartingDeadlineSeconds = cronWorkflow.StartingDeadlineSeconds
+	argoCronWorkflow.Spec.SuccessfulJobsHistoryLimit = cronWorkflow.SuccessfulJobsHistoryLimit
+	argoCronWorkflow.Spec.FailedJobsHistoryLimit = cronWorkflow.FailedJobsHistoryLimit
+	//UX prevents multiple workflows
+	workflows, err := UnmarshalWorkflows([]byte(workflowTemplate.Manifest), true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":    namespace,
-			"CronWorkflow": cronWorkflow,
+			"CronWorkflow": workflow,
 			"Error":        err.Error(),
 		}).Error("Error parsing workflow.")
 		return nil, err
 	}
 
-	cronWorkflow.Name = argoCreatedCronWorkflow.Name
-	cronWorkflow.CreatedAt = argoCreatedCronWorkflow.CreationTimestamp.UTC()
-	cronWorkflow.UID = string(argoCreatedCronWorkflow.ObjectMeta.UID)
-	cronWorkflow.WorkflowExecution.WorkflowTemplate = workflowTemplate
-	// Manifests could get big, don't return them in this case.
-	cronWorkflow.WorkflowExecution.WorkflowTemplate.Manifest = ""
+	for _, wf := range workflows {
+		argoCronWorkflow.Spec.WorkflowSpec = wf.Spec
+		argoCreatedCronWorkflow, err := c.createCronWorkflow(namespace, &argoCronWorkflow, opts)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"Namespace":    namespace,
+				"CronWorkflow": cronWorkflow,
+				"Error":        err.Error(),
+			}).Error("Error parsing workflow.")
+			return nil, err
+		}
+		cronWorkflow.Name = argoCreatedCronWorkflow.Name
+		cronWorkflow.CreatedAt = argoCreatedCronWorkflow.CreationTimestamp.UTC()
+		cronWorkflow.UID = string(argoCreatedCronWorkflow.ObjectMeta.UID)
+		cronWorkflow.WorkflowExecution.WorkflowTemplate = workflowTemplate
+		// Manifests could get big, don't return them in this case.
+		cronWorkflow.WorkflowExecution.WorkflowTemplate.Manifest = ""
 
-	return cronWorkflow, nil
+		return cronWorkflow, nil
+	}
+	return nil, nil
 }
 
 func (c *Client) createCronWorkflow(namespace string, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (createdCronWorkflow *wfv1.CronWorkflow, err error) {
