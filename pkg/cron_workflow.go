@@ -42,17 +42,16 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 	}
 	(*opts.Labels)[workflowTemplateUIDLabelKey] = workflowTemplate.UID
 	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
-	createdCronWorkflow, err := unmarshalCronWorkflows([]byte(workflowTemplate.Manifest), true)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace":    namespace,
-			"CronWorkflow": cronWorkflow,
-			"Error":        err.Error(),
-		}).Error("Error parsing workflow.")
-		return nil, err
-	}
+	var testCWF wfv1.CronWorkflow
+	testCWF.Spec.Schedule = cronWorkflow.Schedule
+	testCWF.Spec.Timezone = cronWorkflow.Timezone
+	testCWF.Spec.Suspend = cronWorkflow.Suspend
+	testCWF.Spec.ConcurrencyPolicy = wfv1.ConcurrencyPolicy(cronWorkflow.ConcurrencyPolicy)
+	testCWF.Spec.StartingDeadlineSeconds = cronWorkflow.StartingDeadlineSeconds
+	testCWF.Spec.SuccessfulJobsHistoryLimit = cronWorkflow.SuccessfulJobsHistoryLimit
+	testCWF.Spec.FailedJobsHistoryLimit = cronWorkflow.FailedJobsHistoryLimit
 
-	argoCreatedCronWorkflow, err := c.createCronWorkflow(namespace, &createdCronWorkflow, opts)
+	argoCreatedCronWorkflow, err := c.createCronWorkflow(namespace, &testCWF, opts)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":    namespace,
