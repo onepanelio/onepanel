@@ -47,7 +47,7 @@ func main() {
 	}
 
 	databaseDataSourceName := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
-		"localhost", "admin", "admin", "onepanel-core")
+		config["databaseHost"], config["databaseUsername"], config["databasePassword"], config["databaseName"])
 	db := sqlx.MustConnect(config["databaseDriverName"], databaseDataSourceName)
 	if err := goose.Run("up", db.DB, "db"); err != nil {
 		log.Fatalf("Failed to run database migrations: %v", err)
