@@ -48,11 +48,18 @@ func (c *CronWorkflowServer) CreateCronWorkflow(ctx context.Context, req *api.Cr
 		})
 	}
 
-	cronWorkflow := &v1.CronWorkflow{
-		WorkflowExecution: workflow,
+	cronWorkflow := v1.CronWorkflow{
+		Schedule:                   req.CronWorkflow.Schedule,
+		Timezone:                   req.CronWorkflow.Timezone,
+		Suspend:                    req.CronWorkflow.Suspend,
+		ConcurrencyPolicy:          req.CronWorkflow.ConcurrencyPolicy,
+		StartingDeadlineSeconds:    &req.CronWorkflow.StartingDeadlineSeconds,
+		SuccessfulJobsHistoryLimit: &req.CronWorkflow.SuccessfulJobsHistoryLimit,
+		FailedJobsHistoryLimit:     &req.CronWorkflow.FailedJobsHistoryLimit,
+		WorkflowExecution:          workflow,
 	}
 
-	cwf, err := client.CreateCronWorkflow(req.Namespace, cronWorkflow)
+	cwf, err := client.CreateCronWorkflow(req.Namespace, &cronWorkflow)
 	if err != nil {
 		return nil, err
 	}
