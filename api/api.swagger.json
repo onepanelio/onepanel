@@ -562,10 +562,8 @@
         "tags": [
           "WorkflowService"
         ]
-      }
-    },
-    "/apis/v1beta1/{namespace}/workflow_executions/{name}/labels/replace": {
-      "post": {
+      },
+      "put": {
         "operationId": "ReplaceWorkflowExecutionLabels",
         "responses": {
           "200": {
@@ -924,10 +922,8 @@
         "tags": [
           "WorkflowService"
         ]
-      }
-    },
-    "/apis/v1beta1/{namespace}/workflow_templates/{name}/labels/replace": {
-      "post": {
+      },
+      "put": {
         "operationId": "ReplaceWorkflowTemplateLabels",
         "responses": {
           "200": {

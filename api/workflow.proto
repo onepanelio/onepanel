@@ -133,7 +133,7 @@ service WorkflowService {
 
     rpc ReplaceWorkflowExecutionLabels (ReplaceLabelsRequest) returns (GetLabelsResponse) {
         option (google.api.http) = {
-            post: "/apis/v1beta1/{namespace}/workflow_executions/{name}/labels/replace"
+            put: "/apis/v1beta1/{namespace}/workflow_executions/{name}/labels"
             body: "labels"
         };
     }
@@ -159,7 +159,7 @@ service WorkflowService {
 
     rpc ReplaceWorkflowTemplateLabels (ReplaceLabelsRequest) returns (GetLabelsResponse) {
         option (google.api.http) = {
-            post: "/apis/v1beta1/{namespace}/workflow_templates/{name}/labels/replace"
+            put: "/apis/v1beta1/{namespace}/workflow_templates/{name}/labels"
             body: "labels"
         };
     }

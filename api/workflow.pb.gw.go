@@ -2572,7 +2572,7 @@ func RegisterWorkflowServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 
 	})
 
-	mux.Handle("POST", pattern_WorkflowService_ReplaceWorkflowExecutionLabels_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_WorkflowService_ReplaceWorkflowExecutionLabels_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -2652,7 +2652,7 @@ func RegisterWorkflowServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 
 	})
 
-	mux.Handle("POST", pattern_WorkflowService_ReplaceWorkflowTemplateLabels_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_WorkflowService_ReplaceWorkflowTemplateLabels_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -3133,7 +3133,7 @@ func RegisterWorkflowServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 
 	})
 
-	mux.Handle("POST", pattern_WorkflowService_ReplaceWorkflowExecutionLabels_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_WorkflowService_ReplaceWorkflowExecutionLabels_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -3213,7 +3213,7 @@ func RegisterWorkflowServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 
 	})
 
-	mux.Handle("POST", pattern_WorkflowService_ReplaceWorkflowTemplateLabels_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_WorkflowService_ReplaceWorkflowTemplateLabels_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -3297,7 +3297,7 @@ var (
 
 	pattern_WorkflowService_AddWorkflowExecutionLabels_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"apis", "v1beta1", "namespace", "workflow_executions", "name", "labels"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_WorkflowService_ReplaceWorkflowExecutionLabels_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5, 2, 6}, []string{"apis", "v1beta1", "namespace", "workflow_executions", "name", "labels", "replace"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_WorkflowService_ReplaceWorkflowExecutionLabels_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"apis", "v1beta1", "namespace", "workflow_executions", "name", "labels"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_WorkflowService_DeleteWorkflowExecutionLabel_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5, 1, 0, 4, 1, 5, 6}, []string{"apis", "v1beta1", "namespace", "workflow_executions", "name", "labels", "key"}, "", runtime.AssumeColonVerbOpt(true)))
 
@@ -3305,7 +3305,7 @@ var (
 
 	pattern_WorkflowService_AddWorkflowTemplateLabels_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"apis", "v1beta1", "namespace", "workflow_templates", "name", "labels"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_WorkflowService_ReplaceWorkflowTemplateLabels_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5, 2, 6}, []string{"apis", "v1beta1", "namespace", "workflow_templates", "name", "labels", "replace"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_WorkflowService_ReplaceWorkflowTemplateLabels_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"apis", "v1beta1", "namespace", "workflow_templates", "name", "labels"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_WorkflowService_DeleteWorkflowTemplateLabel_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5, 1, 0, 4, 1, 5, 6}, []string{"apis", "v1beta1", "namespace", "workflow_templates", "name", "labels", "key"}, "", runtime.AssumeColonVerbOpt(true)))
 )
