@@ -45,9 +45,9 @@ type CronWorkflow struct {
 	Timezone                   string
 	Suspend                    bool
 	ConcurrencyPolicy          string
-	StartingDeadlineSeconds    string
-	SuccessfulJobsHistoryLimit string
-	FailedJobsHistoryLimit     string
+	StartingDeadlineSeconds    *int64
+	SuccessfulJobsHistoryLimit *int32
+	FailedJobsHistoryLimit     *int32
 	WorkflowExecution          *WorkflowExecution
 }
 

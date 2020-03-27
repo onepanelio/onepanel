@@ -20,9 +20,9 @@ func apiCronWorkflow(cwf *v1.CronWorkflow) (cronWorkflow *api.CronWorkflow) {
 		Timezone:                   cwf.Timezone,
 		Suspend:                    cwf.Suspend,
 		ConcurrencyPolicy:          cwf.ConcurrencyPolicy,
-		StartingDeadlineSeconds:    cwf.StartingDeadlineSeconds,
-		SuccessfulJobsHistoryLimit: cwf.SuccessfulJobsHistoryLimit,
-		FailedJobsHistoryLimit:     cwf.FailedJobsHistoryLimit,
+		StartingDeadlineSeconds:    *cwf.StartingDeadlineSeconds,
+		SuccessfulJobsHistoryLimit: *cwf.SuccessfulJobsHistoryLimit,
+		FailedJobsHistoryLimit:     *cwf.FailedJobsHistoryLimit,
 		WorkflowExecution:          GenApiWorkflowExecution(cwf.WorkflowExecution),
 	}
 	return
