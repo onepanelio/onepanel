@@ -6,6 +6,7 @@ import (
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/server/auth"
+	"math"
 )
 
 type CronWorkflowServer struct{}
@@ -93,4 +94,48 @@ func (c *CronWorkflowServer) GetCronWorkflow(ctx context.Context, req *api.GetCr
 		return nil, err
 	}
 	return apiCronWorkflow(cwf), nil
+}
+
+func (c *CronWorkflowServer) ListCronWorkflows(ctx context.Context, req *api.ListCronWorkflowRequest) (*api.ListCronWorkflowsResponse, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "cronworkflows", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	if req.PageSize <= 0 {
+		req.PageSize = 15
+	}
+
+	cronWorkflows, err := client.ListCronWorkflows(req.Namespace)
+	if err != nil {
+		return nil, err
+	}
+	var apiCronWorkflows []*api.CronWorkflow
+	for _, cwf := range cronWorkflows {
+		apiCronWorkflows = append(apiCronWorkflows, apiCronWorkflow(cwf))
+	}
+
+	pages := int32(math.Ceil(float64(len(apiCronWorkflows)) / float64(req.PageSize)))
+	if req.Page > pages {
+		req.Page = pages
+	}
+
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+
+	start := (req.Page - 1) * req.PageSize
+	end := start + req.PageSize
+	if end >= int32(len(apiCronWorkflows)) {
+		end = int32(len(apiCronWorkflows))
+	}
+
+	return &api.ListCronWorkflowsResponse{
+		Count:         end - start,
+		CronWorkflows: apiCronWorkflows[start:end],
+		Page:          req.Page,
+		Pages:         pages,
+		TotalCount:    int32(len(apiCronWorkflows)),
+	}, nil
 }

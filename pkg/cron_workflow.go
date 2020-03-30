@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/codes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -110,6 +111,41 @@ func (c *Client) GetCronWorkflow(namespace, name string) (cronWorkflow *CronWork
 		WorkflowExecution:          nil,
 	}
 
+	return
+}
+
+func (c *Client) ListCronWorkflows(namespace string) (cronWorkflows []*CronWorkflow, err error) {
+	cronWorkflowList, err := c.ArgoprojV1alpha1().CronWorkflows(namespace).List(ListOptions{})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Error":     err.Error(),
+		}).Error("CronWorkflows not found.")
+		return nil, util.NewUserError(codes.NotFound, "CronWorkflows not found.")
+	}
+	cwfs := cronWorkflowList.Items
+	sort.Slice(cwfs, func(i, j int) bool {
+		ith := cwfs[i].CreationTimestamp.Time
+		jth := cwfs[j].CreationTimestamp.Time
+		//Most recent first
+		return ith.After(jth)
+	})
+
+	for _, cwf := range cwfs {
+		cronWorkflows = append(cronWorkflows, &CronWorkflow{
+			CreatedAt:                  cwf.CreationTimestamp.UTC(),
+			UID:                        string(cwf.ObjectMeta.UID),
+			Name:                       cwf.Name,
+			Schedule:                   cwf.Spec.Schedule,
+			Timezone:                   cwf.Spec.Timezone,
+			Suspend:                    cwf.Spec.Suspend,
+			ConcurrencyPolicy:          string(cwf.Spec.ConcurrencyPolicy),
+			StartingDeadlineSeconds:    cwf.Spec.StartingDeadlineSeconds,
+			SuccessfulJobsHistoryLimit: cwf.Spec.SuccessfulJobsHistoryLimit,
+			FailedJobsHistoryLimit:     cwf.Spec.FailedJobsHistoryLimit,
+			WorkflowExecution:          nil,
+		})
+	}
 	return
 }
 

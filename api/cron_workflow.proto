@@ -21,6 +21,12 @@ service CronWorkflowService {
             get: "/apis/v1beta1/{namespace}/cron_workflow/{name}"
         };
     }
+
+    rpc ListCronWorkflows(ListCronWorkflowRequest) returns (ListCronWorkflowsResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/cron_workflows"
+        };
+    }
 }
 
 message GetCronWorkflowRequest {
@@ -32,6 +38,21 @@ message CreateCronWorkflowRequest {
     string namespace = 1;
     CronWorkflow cronWorkflow = 2;
 }
+
+message ListCronWorkflowRequest {
+    string namespace = 1;
+    int32 pageSize = 4;
+    int32 page = 5;
+}
+
+message ListCronWorkflowsResponse {
+    int32 count = 1;
+    repeated CronWorkflow cronWorkflows = 2;
+    int32 page = 3;
+    int32 pages = 4;
+    int32 totalCount = 5;
+}
+
 
 message CronWorkflow {
     string schedule = 1;
