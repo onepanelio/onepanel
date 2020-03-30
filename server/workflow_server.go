@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"github.com/onepanelio/core/pkg/util"
 	"google.golang.org/grpc/codes"
 	"math"
@@ -367,6 +368,48 @@ func (s *WorkflowServer) GetWorkflowTemplate(ctx context.Context, req *api.GetWo
 	}
 
 	return apiWorkflowTemplate(workflowTemplate), nil
+}
+
+func (s *WorkflowServer) CloneWorkflowTemplate(ctx context.Context, req *api.CloneWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	allowed, err = auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	//Verify the template exists
+	workflowTemplate, err := client.GetWorkflowTemplate(req.Namespace, req.Uid, req.Version)
+	if err != nil {
+		return nil, err
+	}
+
+	//Verify the cloned template name doesn't exist already
+	workflowTemplateByName, err := client.GetWorkflowTemplateByName(req.Namespace, req.Name, req.Version)
+	if err != nil {
+		if !strings.Contains(err.Error(), "not found") {
+			return nil, err
+		}
+	}
+	if workflowTemplateByName != nil {
+		return nil, errors.New("Cannot clone, WorkflowTemplate name already taken.")
+	}
+
+	workflowTemplateClone := &v1.WorkflowTemplate{
+		Name:     req.Name,
+		Manifest: workflowTemplate.Manifest,
+		IsLatest: true,
+	}
+	workflowTemplateCloned, err := client.CreateWorkflowTemplate(req.Namespace, workflowTemplateClone)
+	if err != nil {
+		return nil, err
+	}
+
+	return apiWorkflowTemplate(workflowTemplateCloned), nil
 }
 
 func (s *WorkflowServer) ListWorkflowTemplateVersions(ctx context.Context, req *api.ListWorkflowTemplateVersionsRequest) (*api.ListWorkflowTemplateVersionsResponse, error) {

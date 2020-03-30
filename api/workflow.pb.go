@@ -1405,7 +1405,9 @@ func init() {
 	proto.RegisterType((*DeleteLabelRequest)(nil), "api.DeleteLabelRequest")
 }
 
-func init() { proto.RegisterFile("workflow.proto", fileDescriptor_892c7f566756b0be) }
+func init() {
+	proto.RegisterFile("workflow.proto", fileDescriptor_892c7f566756b0be)
+}
 
 var fileDescriptor_892c7f566756b0be = []byte{
 	// 1711 bytes of a gzipped FileDescriptorProto
@@ -1520,11 +1522,11 @@ var fileDescriptor_892c7f566756b0be = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // WorkflowServiceClient is the client API for WorkflowService service.
 //
@@ -1545,6 +1547,7 @@ type WorkflowServiceClient interface {
 	GetWorkflowTemplate(ctx context.Context, in *GetWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error)
 	ListWorkflowTemplateVersions(ctx context.Context, in *ListWorkflowTemplateVersionsRequest, opts ...grpc.CallOption) (*ListWorkflowTemplateVersionsResponse, error)
 	ListWorkflowTemplates(ctx context.Context, in *ListWorkflowTemplatesRequest, opts ...grpc.CallOption) (*ListWorkflowTemplatesResponse, error)
+	CloneWorkflowTemplate(ctx context.Context, in *CloneWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error)
 	ArchiveWorkflowTemplate(ctx context.Context, in *ArchiveWorkflowTemplateRequest, opts ...grpc.CallOption) (*ArchiveWorkflowTemplateResponse, error)
 	GetArtifact(ctx context.Context, in *GetArtifactRequest, opts ...grpc.CallOption) (*ArtifactResponse, error)
 	ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error)
@@ -1559,10 +1562,10 @@ type WorkflowServiceClient interface {
 }
 
 type workflowServiceClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewWorkflowServiceClient(cc *grpc.ClientConn) WorkflowServiceClient {
+func NewWorkflowServiceClient(cc grpc.ClientConnInterface) WorkflowServiceClient {
 	return &workflowServiceClient{cc}
 }
 
@@ -1738,6 +1741,15 @@ func (c *workflowServiceClient) ListWorkflowTemplates(ctx context.Context, in *L
 	return out, nil
 }
 
+func (c *workflowServiceClient) CloneWorkflowTemplate(ctx context.Context, in *CloneWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error) {
+	out := new(WorkflowTemplate)
+	err := c.cc.Invoke(ctx, "/api.WorkflowService/CloneWorkflowTemplate", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *workflowServiceClient) ArchiveWorkflowTemplate(ctx context.Context, in *ArchiveWorkflowTemplateRequest, opts ...grpc.CallOption) (*ArchiveWorkflowTemplateResponse, error) {
 	out := new(ArchiveWorkflowTemplateResponse)
 	err := c.cc.Invoke(ctx, "/api.WorkflowService/ArchiveWorkflowTemplate", in, out, opts...)
@@ -1854,6 +1866,7 @@ type WorkflowServiceServer interface {
 	GetWorkflowTemplate(context.Context, *GetWorkflowTemplateRequest) (*WorkflowTemplate, error)
 	ListWorkflowTemplateVersions(context.Context, *ListWorkflowTemplateVersionsRequest) (*ListWorkflowTemplateVersionsResponse, error)
 	ListWorkflowTemplates(context.Context, *ListWorkflowTemplatesRequest) (*ListWorkflowTemplatesResponse, error)
+	CloneWorkflowTemplate(context.Context, *CloneWorkflowTemplateRequest) (*WorkflowTemplate, error)
 	ArchiveWorkflowTemplate(context.Context, *ArchiveWorkflowTemplateRequest) (*ArchiveWorkflowTemplateResponse, error)
 	GetArtifact(context.Context, *GetArtifactRequest) (*ArtifactResponse, error)
 	ListFiles(context.Context, *ListFilesRequest) (*ListFilesResponse, error)
@@ -1912,6 +1925,9 @@ func (*UnimplementedWorkflowServiceServer) ListWorkflowTemplateVersions(ctx cont
 }
 func (*UnimplementedWorkflowServiceServer) ListWorkflowTemplates(ctx context.Context, req *ListWorkflowTemplatesRequest) (*ListWorkflowTemplatesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListWorkflowTemplates not implemented")
+}
+func (*UnimplementedWorkflowServiceServer) CloneWorkflowTemplate(ctx context.Context, req *CloneWorkflowTemplateRequest) (*WorkflowTemplate, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CloneWorkflowTemplate not implemented")
 }
 func (*UnimplementedWorkflowServiceServer) ArchiveWorkflowTemplate(ctx context.Context, req *ArchiveWorkflowTemplateRequest) (*ArchiveWorkflowTemplateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ArchiveWorkflowTemplate not implemented")
@@ -2209,6 +2225,24 @@ func _WorkflowService_ListWorkflowTemplates_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WorkflowService_CloneWorkflowTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CloneWorkflowTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkflowServiceServer).CloneWorkflowTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.WorkflowService/CloneWorkflowTemplate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkflowServiceServer).CloneWorkflowTemplate(ctx, req.(*CloneWorkflowTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _WorkflowService_ArchiveWorkflowTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ArchiveWorkflowTemplateRequest)
 	if err := dec(in); err != nil {
@@ -2458,6 +2492,10 @@ var _WorkflowService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListWorkflowTemplates",
 			Handler:    _WorkflowService_ListWorkflowTemplates_Handler,
+		},
+		{
+			MethodName: "CloneWorkflowTemplate",
+			Handler:    _WorkflowService_CloneWorkflowTemplate_Handler,
 		},
 		{
 			MethodName: "ArchiveWorkflowTemplate",
