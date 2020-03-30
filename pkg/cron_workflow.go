@@ -54,7 +54,7 @@ func (c *Client) UpdateCronWorkflow(namespace string, name string, cronWorkflow 
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":    namespace,
-			"CronWorkflow": workflow,
+			"CronWorkflow": cronWorkflow,
 			"Error":        err.Error(),
 		}).Error("Error parsing workflow.")
 		return nil, err
@@ -125,7 +125,7 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":    namespace,
-			"CronWorkflow": workflow,
+			"CronWorkflow": cronWorkflow,
 			"Error":        err.Error(),
 		}).Error("Error parsing workflow.")
 		return nil, err
