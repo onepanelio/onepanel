@@ -16,6 +16,13 @@ service CronWorkflowService {
         };
     }
 
+    rpc UpdateCronWorkflow(UpdateCronWorkflowRequest) returns (CronWorkflow) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/{namespace}/cron_workflow/{name}"
+            body: "cronWorkflow"
+        };
+    }
+
     rpc GetCronWorkflow(GetCronWorkflowRequest) returns (CronWorkflow) {
         option (google.api.http) = {
             get: "/apis/v1beta1/{namespace}/cron_workflow/{name}"
@@ -49,6 +56,12 @@ message GetCronWorkflowRequest {
 message CreateCronWorkflowRequest {
     string namespace = 1;
     CronWorkflow cronWorkflow = 2;
+}
+
+message UpdateCronWorkflowRequest {
+    string namespace = 1 ;
+    string name = 2;
+    CronWorkflow cronWorkflow = 3;
 }
 
 message ListCronWorkflowRequest {

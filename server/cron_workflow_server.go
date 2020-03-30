@@ -85,6 +85,46 @@ func (c *CronWorkflowServer) CreateCronWorkflow(ctx context.Context, req *api.Cr
 	return apiCronWorkflow(cwf), nil
 }
 
+func (c *CronWorkflowServer) UpdateCronWorkflow(ctx context.Context, req *api.UpdateCronWorkflowRequest) (*api.CronWorkflow, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "cronworkflows", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+	workflow := &v1.WorkflowExecution{
+		WorkflowTemplate: &v1.WorkflowTemplate{
+			UID:     req.CronWorkflow.WorkflowExecution.WorkflowTemplate.Uid,
+			Version: req.CronWorkflow.WorkflowExecution.WorkflowTemplate.Version,
+		},
+	}
+	for _, param := range req.CronWorkflow.WorkflowExecution.Parameters {
+		workflow.Parameters = append(workflow.Parameters, v1.WorkflowExecutionParameter{
+			Name:  param.Name,
+			Value: ptr.String(param.Value),
+		})
+	}
+
+	cronWorkflow := v1.CronWorkflow{
+		Schedule:                   req.CronWorkflow.Schedule,
+		Timezone:                   req.CronWorkflow.Timezone,
+		Suspend:                    req.CronWorkflow.Suspend,
+		ConcurrencyPolicy:          req.CronWorkflow.ConcurrencyPolicy,
+		StartingDeadlineSeconds:    &req.CronWorkflow.StartingDeadlineSeconds,
+		SuccessfulJobsHistoryLimit: &req.CronWorkflow.SuccessfulJobsHistoryLimit,
+		FailedJobsHistoryLimit:     &req.CronWorkflow.FailedJobsHistoryLimit,
+		WorkflowExecution:          workflow,
+	}
+
+	cwf, err := client.UpdateCronWorkflow(req.Namespace, req.Name, &cronWorkflow)
+	if err != nil {
+		return nil, err
+	}
+	if cwf == nil {
+		return nil, nil
+	}
+	return apiCronWorkflow(cwf), nil
+}
+
 func (c *CronWorkflowServer) GetCronWorkflow(ctx context.Context, req *api.GetCronWorkflowRequest) (*api.CronWorkflow, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "cronworkflows", req.Name)
