@@ -37,8 +37,8 @@ func apiCronWorkflow(cwf *v1.CronWorkflow) (cronWorkflow *api.CronWorkflow) {
 		cronWorkflow.FailedJobsHistoryLimit = *cwf.FailedJobsHistoryLimit
 	}
 
-	if cwf.WorkflowTemplate != nil {
-		cronWorkflow.WorkflowTemplate = GenApiWorkflowTemplate(cwf.WorkflowTemplate)
+	if cwf.WorkflowExecution != nil {
+		cronWorkflow.WorkflowExecution = GenApiWorkflowExecution(cwf.WorkflowExecution)
 	}
 
 	return
@@ -51,29 +51,28 @@ func (c *CronWorkflowServer) CreateCronWorkflow(ctx context.Context, req *api.Cr
 		return nil, err
 	}
 
-	workflowTemplate := &v1.WorkflowTemplate{
-		UID:     req.CronWorkflow.WorkflowTemplate.Uid,
-		Version: req.CronWorkflow.WorkflowTemplate.Version,
+	workflow := &v1.WorkflowExecution{
+		WorkflowTemplate: &v1.WorkflowTemplate{
+			UID:     req.CronWorkflow.WorkflowExecution.WorkflowTemplate.Uid,
+			Version: req.CronWorkflow.WorkflowExecution.WorkflowTemplate.Version,
+		},
 	}
-
-	var workflowExecutionParams []*v1.WorkflowExecutionParameter
-	for _, param := range req.CronWorkflow.Parameters {
-		workflowExecutionParams = append(workflowExecutionParams, &v1.WorkflowExecutionParameter{
+	for _, param := range req.CronWorkflow.WorkflowExecution.Parameters {
+		workflow.Parameters = append(workflow.Parameters, v1.WorkflowExecutionParameter{
 			Name:  param.Name,
 			Value: ptr.String(param.Value),
 		})
 	}
 
 	cronWorkflow := v1.CronWorkflow{
-		Schedule:                    req.CronWorkflow.Schedule,
-		Timezone:                    req.CronWorkflow.Timezone,
-		Suspend:                     req.CronWorkflow.Suspend,
-		ConcurrencyPolicy:           req.CronWorkflow.ConcurrencyPolicy,
-		StartingDeadlineSeconds:     &req.CronWorkflow.StartingDeadlineSeconds,
-		SuccessfulJobsHistoryLimit:  &req.CronWorkflow.SuccessfulJobsHistoryLimit,
-		FailedJobsHistoryLimit:      &req.CronWorkflow.FailedJobsHistoryLimit,
-		WorkflowExecutionParameters: workflowExecutionParams,
-		WorkflowTemplate:            workflowTemplate,
+		Schedule:                   req.CronWorkflow.Schedule,
+		Timezone:                   req.CronWorkflow.Timezone,
+		Suspend:                    req.CronWorkflow.Suspend,
+		ConcurrencyPolicy:          req.CronWorkflow.ConcurrencyPolicy,
+		StartingDeadlineSeconds:    &req.CronWorkflow.StartingDeadlineSeconds,
+		SuccessfulJobsHistoryLimit: &req.CronWorkflow.SuccessfulJobsHistoryLimit,
+		FailedJobsHistoryLimit:     &req.CronWorkflow.FailedJobsHistoryLimit,
+		WorkflowExecution:          workflow,
 	}
 
 	cwf, err := client.CreateCronWorkflow(req.Namespace, &cronWorkflow)
@@ -92,29 +91,28 @@ func (c *CronWorkflowServer) UpdateCronWorkflow(ctx context.Context, req *api.Up
 	if err != nil || !allowed {
 		return nil, err
 	}
-	workflowTemplate := &v1.WorkflowTemplate{
-		UID:     req.CronWorkflow.WorkflowTemplate.Uid,
-		Version: req.CronWorkflow.WorkflowTemplate.Version,
+	workflow := &v1.WorkflowExecution{
+		WorkflowTemplate: &v1.WorkflowTemplate{
+			UID:     req.CronWorkflow.WorkflowExecution.WorkflowTemplate.Uid,
+			Version: req.CronWorkflow.WorkflowExecution.WorkflowTemplate.Version,
+		},
 	}
-
-	var workflowExecutionParams []*v1.WorkflowExecutionParameter
-	for _, param := range req.CronWorkflow.Parameters {
-		workflowExecutionParams = append(workflowExecutionParams, &v1.WorkflowExecutionParameter{
+	for _, param := range req.CronWorkflow.WorkflowExecution.Parameters {
+		workflow.Parameters = append(workflow.Parameters, v1.WorkflowExecutionParameter{
 			Name:  param.Name,
 			Value: ptr.String(param.Value),
 		})
 	}
 
 	cronWorkflow := v1.CronWorkflow{
-		Schedule:                    req.CronWorkflow.Schedule,
-		Timezone:                    req.CronWorkflow.Timezone,
-		Suspend:                     req.CronWorkflow.Suspend,
-		ConcurrencyPolicy:           req.CronWorkflow.ConcurrencyPolicy,
-		StartingDeadlineSeconds:     &req.CronWorkflow.StartingDeadlineSeconds,
-		SuccessfulJobsHistoryLimit:  &req.CronWorkflow.SuccessfulJobsHistoryLimit,
-		FailedJobsHistoryLimit:      &req.CronWorkflow.FailedJobsHistoryLimit,
-		WorkflowExecutionParameters: workflowExecutionParams,
-		WorkflowTemplate:            workflowTemplate,
+		Schedule:                   req.CronWorkflow.Schedule,
+		Timezone:                   req.CronWorkflow.Timezone,
+		Suspend:                    req.CronWorkflow.Suspend,
+		ConcurrencyPolicy:          req.CronWorkflow.ConcurrencyPolicy,
+		StartingDeadlineSeconds:    &req.CronWorkflow.StartingDeadlineSeconds,
+		SuccessfulJobsHistoryLimit: &req.CronWorkflow.SuccessfulJobsHistoryLimit,
+		FailedJobsHistoryLimit:     &req.CronWorkflow.FailedJobsHistoryLimit,
+		WorkflowExecution:          workflow,
 	}
 
 	cwf, err := client.UpdateCronWorkflow(req.Namespace, req.Name, &cronWorkflow)
