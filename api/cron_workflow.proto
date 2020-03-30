@@ -27,7 +27,19 @@ service CronWorkflowService {
             get: "/apis/v1beta1/{namespace}/cron_workflows"
         };
     }
+
+    rpc TerminateCronWorkflow (TerminateCronWorkflowRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            put: "/apis/v1beta1/{namespace}/cron_workflows/{name}/terminate"
+        };
+    }
 }
+
+message TerminateCronWorkflowRequest {
+    string namespace = 1;
+    string name = 2;
+}
+
 
 message GetCronWorkflowRequest {
     string namespace = 1;
@@ -55,13 +67,14 @@ message ListCronWorkflowsResponse {
 
 
 message CronWorkflow {
-    string schedule = 1;
-    string timezone = 2;
-    bool suspend = 3;
-    string concurrencyPolicy = 4;
-    int64 startingDeadlineSeconds = 5;
-    int32 successfulJobsHistoryLimit = 6;
-    int32 failedJobsHistoryLimit = 7;
+    string name = 1;
+    string schedule = 2;
+    string timezone = 3;
+    bool suspend = 4;
+    string concurrencyPolicy = 5;
+    int64 startingDeadlineSeconds = 6;
+    int32 successfulJobsHistoryLimit = 7;
+    int32 failedJobsHistoryLimit = 8;
 
-    WorkflowExecution workflowExecution = 8;
+    WorkflowExecution workflowExecution = 9;
 }

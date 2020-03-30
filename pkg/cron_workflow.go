@@ -203,6 +203,11 @@ func (c *Client) createCronWorkflow(namespace string, cwf *wfv1.CronWorkflow, op
 	return
 }
 
+func (c *Client) TerminateCronWorkflow(namespace, name string) (err error) {
+	err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Delete(name, nil)
+	return
+}
+
 func unmarshalCronWorkflows(cwfBytes []byte, strict bool) (cwfs wfv1.CronWorkflow, err error) {
 	var cwf wfv1.CronWorkflow
 	var jsonOpts []argojson.JSONOpt

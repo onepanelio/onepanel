@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util/ptr"
@@ -17,6 +18,7 @@ func NewCronWorkflowServer() *CronWorkflowServer {
 
 func apiCronWorkflow(cwf *v1.CronWorkflow) (cronWorkflow *api.CronWorkflow) {
 	cronWorkflow = &api.CronWorkflow{
+		Name:              cwf.Name,
 		Schedule:          cwf.Schedule,
 		Timezone:          cwf.Timezone,
 		Suspend:           cwf.Suspend,
@@ -138,4 +140,19 @@ func (c *CronWorkflowServer) ListCronWorkflows(ctx context.Context, req *api.Lis
 		Pages:         pages,
 		TotalCount:    int32(len(apiCronWorkflows)),
 	}, nil
+}
+
+func (c *CronWorkflowServer) TerminateCronWorkflow(ctx context.Context, req *api.TerminateCronWorkflowRequest) (*empty.Empty, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "argoproj.io", "cronworkflows", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	err = client.TerminateWorkflowExecution(req.Namespace, req.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	return &empty.Empty{}, nil
 }
