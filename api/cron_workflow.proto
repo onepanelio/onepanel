@@ -9,15 +9,26 @@ import "workflow.proto";
 import "metric.proto";
 
 service CronWorkflowService {
-    rpc CreateCronWorkflow (CreateWorkflowRequest) returns (CronWorkflow) {
+    rpc CreateCronWorkflow (CreateCronWorkflowRequest) returns (CronWorkflow) {
         option (google.api.http) = {
             post: "/apis/v1beta1/{namespace}/cron_workflow"
             body: "cronWorkflow"
         };
     }
+
+    rpc GetCronWorkflow(GetCronWorkflowRequest) returns (CronWorkflow) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/cron_workflow/{name}"
+        };
+    }
 }
 
-message CreateWorkflowRequest {
+message GetCronWorkflowRequest {
+    string namespace = 1;
+    string name = 2;
+}
+
+message CreateCronWorkflowRequest {
     string namespace = 1;
     CronWorkflow cronWorkflow = 2;
 }

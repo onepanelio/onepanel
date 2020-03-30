@@ -7,6 +7,7 @@ import (
 	"github.com/onepanelio/core/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"regexp"
 	"strings"
 )
@@ -82,6 +83,34 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 		return cronWorkflow, nil
 	}
 	return nil, nil
+}
+
+func (c *Client) GetCronWorkflow(namespace, name string) (cronWorkflow *CronWorkflow, err error) {
+	cwf, err := c.ArgoprojV1alpha1().CronWorkflows(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"Error":     err.Error(),
+		}).Error("CronWorkflow not found.")
+		return nil, util.NewUserError(codes.NotFound, "CronWorkflow not found.")
+	}
+
+	cronWorkflow = &CronWorkflow{
+		CreatedAt:                  cwf.CreationTimestamp.UTC(),
+		UID:                        string(cwf.UID),
+		Name:                       cwf.Name,
+		Schedule:                   cwf.Spec.Schedule,
+		Timezone:                   cwf.Spec.Timezone,
+		Suspend:                    cwf.Spec.Suspend,
+		ConcurrencyPolicy:          string(cwf.Spec.ConcurrencyPolicy),
+		StartingDeadlineSeconds:    cwf.Spec.StartingDeadlineSeconds,
+		SuccessfulJobsHistoryLimit: cwf.Spec.SuccessfulJobsHistoryLimit,
+		FailedJobsHistoryLimit:     cwf.Spec.FailedJobsHistoryLimit,
+		WorkflowExecution:          nil,
+	}
+
+	return
 }
 
 func (c *Client) createCronWorkflow(namespace string, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (createdCronWorkflow *wfv1.CronWorkflow, err error) {

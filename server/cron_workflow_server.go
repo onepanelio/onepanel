@@ -16,19 +16,32 @@ func NewCronWorkflowServer() *CronWorkflowServer {
 
 func apiCronWorkflow(cwf *v1.CronWorkflow) (cronWorkflow *api.CronWorkflow) {
 	cronWorkflow = &api.CronWorkflow{
-		Schedule:                   cwf.Schedule,
-		Timezone:                   cwf.Timezone,
-		Suspend:                    cwf.Suspend,
-		ConcurrencyPolicy:          cwf.ConcurrencyPolicy,
-		StartingDeadlineSeconds:    *cwf.StartingDeadlineSeconds,
-		SuccessfulJobsHistoryLimit: *cwf.SuccessfulJobsHistoryLimit,
-		FailedJobsHistoryLimit:     *cwf.FailedJobsHistoryLimit,
-		WorkflowExecution:          GenApiWorkflowExecution(cwf.WorkflowExecution),
+		Schedule:          cwf.Schedule,
+		Timezone:          cwf.Timezone,
+		Suspend:           cwf.Suspend,
+		ConcurrencyPolicy: cwf.ConcurrencyPolicy,
 	}
+
+	if cwf.StartingDeadlineSeconds != nil {
+		cronWorkflow.StartingDeadlineSeconds = *cwf.StartingDeadlineSeconds
+	}
+
+	if cwf.SuccessfulJobsHistoryLimit != nil {
+		cronWorkflow.SuccessfulJobsHistoryLimit = *cwf.SuccessfulJobsHistoryLimit
+	}
+
+	if cwf.FailedJobsHistoryLimit != nil {
+		cronWorkflow.FailedJobsHistoryLimit = *cwf.FailedJobsHistoryLimit
+	}
+
+	if cwf.WorkflowExecution != nil {
+		cronWorkflow.WorkflowExecution = GenApiWorkflowExecution(cwf.WorkflowExecution)
+	}
+
 	return
 }
 
-func (c *CronWorkflowServer) CreateCronWorkflow(ctx context.Context, req *api.CreateWorkflowRequest) (*api.CronWorkflow, error) {
+func (c *CronWorkflowServer) CreateCronWorkflow(ctx context.Context, req *api.CreateCronWorkflowRequest) (*api.CronWorkflow, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "cronworkflows", "")
 	if err != nil || !allowed {
@@ -65,6 +78,19 @@ func (c *CronWorkflowServer) CreateCronWorkflow(ctx context.Context, req *api.Cr
 	}
 	if cwf == nil {
 		return nil, nil
+	}
+	return apiCronWorkflow(cwf), nil
+}
+
+func (c *CronWorkflowServer) GetCronWorkflow(ctx context.Context, req *api.GetCronWorkflowRequest) (*api.CronWorkflow, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "cronworkflows", req.Name)
+	if err != nil || !allowed {
+		return nil, err
+	}
+	cwf, err := client.GetCronWorkflow(req.Namespace, req.Name)
+	if err != nil {
+		return nil, err
 	}
 	return apiCronWorkflow(cwf), nil
 }
