@@ -57,6 +57,10 @@ func apiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecu
 	return
 }
 
+func GenApiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
+	return apiWorkflowTemplate(wft)
+}
+
 func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 	return &api.WorkflowTemplate{
 		Uid:        wft.UID,

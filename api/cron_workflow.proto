@@ -88,6 +88,6 @@ message CronWorkflow {
     int64 startingDeadlineSeconds = 6;
     int32 successfulJobsHistoryLimit = 7;
     int32 failedJobsHistoryLimit = 8;
-
-    WorkflowExecution workflowExecution = 9;
+    repeated WorkflowExecutionParameter parameters = 9;
+    WorkflowTemplate workflowTemplate = 10;
 }

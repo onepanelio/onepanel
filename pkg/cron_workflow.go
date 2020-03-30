@@ -14,8 +14,7 @@ import (
 )
 
 func (c *Client) UpdateCronWorkflow(namespace string, name string, cronWorkflow *CronWorkflow) (*CronWorkflow, error) {
-	workflow := cronWorkflow.WorkflowExecution
-	workflowTemplate, err := c.GetWorkflowTemplate(namespace, workflow.WorkflowTemplate.UID, workflow.WorkflowTemplate.Version)
+	workflowTemplate, err := c.GetWorkflowTemplate(namespace, cronWorkflow.WorkflowTemplate.UID, cronWorkflow.WorkflowTemplate.Version)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":    namespace,
@@ -29,7 +28,7 @@ func (c *Client) UpdateCronWorkflow(namespace string, name string, cronWorkflow 
 	opts := &WorkflowExecutionOptions{}
 	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
 	opts.GenerateName = strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`)) + "-"
-	for _, param := range workflow.Parameters {
+	for _, param := range cronWorkflow.WorkflowExecutionParameters {
 		opts.Parameters = append(opts.Parameters, WorkflowExecutionParameter{
 			Name:  param.Name,
 			Value: param.Value,
@@ -54,7 +53,7 @@ func (c *Client) UpdateCronWorkflow(namespace string, name string, cronWorkflow 
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":    namespace,
-			"CronWorkflow": workflow,
+			"CronWorkflow": cronWorkflow,
 			"Error":        err.Error(),
 		}).Error("Error parsing workflow.")
 		return nil, err
@@ -74,9 +73,9 @@ func (c *Client) UpdateCronWorkflow(namespace string, name string, cronWorkflow 
 		cronWorkflow.Name = argoCreatedCronWorkflow.Name
 		cronWorkflow.CreatedAt = argoCreatedCronWorkflow.CreationTimestamp.UTC()
 		cronWorkflow.UID = string(argoCreatedCronWorkflow.ObjectMeta.UID)
-		cronWorkflow.WorkflowExecution.WorkflowTemplate = workflowTemplate
+		cronWorkflow.WorkflowTemplate = workflowTemplate
 		// Manifests could get big, don't return them in this case.
-		cronWorkflow.WorkflowExecution.WorkflowTemplate.Manifest = ""
+		cronWorkflow.WorkflowTemplate.Manifest = ""
 
 		return cronWorkflow, nil
 	}
@@ -84,9 +83,7 @@ func (c *Client) UpdateCronWorkflow(namespace string, name string, cronWorkflow 
 }
 
 func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow) (*CronWorkflow, error) {
-
-	workflow := cronWorkflow.WorkflowExecution
-	workflowTemplate, err := c.GetWorkflowTemplate(namespace, workflow.WorkflowTemplate.UID, workflow.WorkflowTemplate.Version)
+	workflowTemplate, err := c.GetWorkflowTemplate(namespace, cronWorkflow.WorkflowTemplate.UID, cronWorkflow.WorkflowTemplate.Version)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":    namespace,
@@ -100,7 +97,7 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 	opts := &WorkflowExecutionOptions{}
 	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
 	opts.GenerateName = strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`)) + "-"
-	for _, param := range workflow.Parameters {
+	for _, param := range cronWorkflow.WorkflowExecutionParameters {
 		opts.Parameters = append(opts.Parameters, WorkflowExecutionParameter{
 			Name:  param.Name,
 			Value: param.Value,
@@ -125,7 +122,7 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":    namespace,
-			"CronWorkflow": workflow,
+			"CronWorkflow": cronWorkflow,
 			"Error":        err.Error(),
 		}).Error("Error parsing workflow.")
 		return nil, err
@@ -145,9 +142,9 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 		cronWorkflow.Name = argoCreatedCronWorkflow.Name
 		cronWorkflow.CreatedAt = argoCreatedCronWorkflow.CreationTimestamp.UTC()
 		cronWorkflow.UID = string(argoCreatedCronWorkflow.ObjectMeta.UID)
-		cronWorkflow.WorkflowExecution.WorkflowTemplate = workflowTemplate
+		cronWorkflow.WorkflowTemplate = workflowTemplate
 		// Manifests could get big, don't return them in this case.
-		cronWorkflow.WorkflowExecution.WorkflowTemplate.Manifest = ""
+		cronWorkflow.WorkflowTemplate.Manifest = ""
 
 		return cronWorkflow, nil
 	}
@@ -176,7 +173,6 @@ func (c *Client) GetCronWorkflow(namespace, name string) (cronWorkflow *CronWork
 		StartingDeadlineSeconds:    cwf.Spec.StartingDeadlineSeconds,
 		SuccessfulJobsHistoryLimit: cwf.Spec.SuccessfulJobsHistoryLimit,
 		FailedJobsHistoryLimit:     cwf.Spec.FailedJobsHistoryLimit,
-		WorkflowExecution:          nil,
 	}
 
 	return
@@ -211,7 +207,6 @@ func (c *Client) ListCronWorkflows(namespace string) (cronWorkflows []*CronWorkf
 			StartingDeadlineSeconds:    cwf.Spec.StartingDeadlineSeconds,
 			SuccessfulJobsHistoryLimit: cwf.Spec.SuccessfulJobsHistoryLimit,
 			FailedJobsHistoryLimit:     cwf.Spec.FailedJobsHistoryLimit,
-			WorkflowExecution:          nil,
 		})
 	}
 	return
