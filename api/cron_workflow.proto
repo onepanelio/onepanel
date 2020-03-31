@@ -37,7 +37,7 @@ service CronWorkflowService {
 
     rpc TerminateCronWorkflow (TerminateCronWorkflowRequest) returns (google.protobuf.Empty) {
         option (google.api.http) = {
-            put: "/apis/v1beta1/{namespace}/cron_workflows/{name}/terminate"
+            delete: "/apis/v1beta1/{namespace}/cron_workflows/{name}/terminate"
         };
     }
 }

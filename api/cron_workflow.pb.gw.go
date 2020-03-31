@@ -499,7 +499,7 @@ func RegisterCronWorkflowServiceHandlerServer(ctx context.Context, mux *runtime.
 
 	})
 
-	mux.Handle("PUT", pattern_CronWorkflowService_TerminateCronWorkflow_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("DELETE", pattern_CronWorkflowService_TerminateCronWorkflow_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -640,7 +640,7 @@ func RegisterCronWorkflowServiceHandlerClient(ctx context.Context, mux *runtime.
 
 	})
 
-	mux.Handle("PUT", pattern_CronWorkflowService_TerminateCronWorkflow_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("DELETE", pattern_CronWorkflowService_TerminateCronWorkflow_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
