@@ -189,7 +189,7 @@ func (c *CronWorkflowServer) TerminateCronWorkflow(ctx context.Context, req *api
 		return nil, err
 	}
 
-	err = client.TerminateWorkflowExecution(req.Namespace, req.Name)
+	err = client.TerminateCronWorkflow(req.Namespace, req.Name)
 	if err != nil {
 		return nil, err
 	}
