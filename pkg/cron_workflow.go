@@ -2,8 +2,10 @@ package v1
 
 import (
 	"fmt"
+	sq "github.com/Masterminds/squirrel"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	argojson "github.com/argoproj/pkg/json"
+	"github.com/google/uuid"
 	"github.com/onepanelio/core/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
@@ -133,7 +135,7 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 
 	for _, wf := range workflows {
 		argoCronWorkflow.Spec.WorkflowSpec = wf.Spec
-		argoCreatedCronWorkflow, err := c.createCronWorkflow(namespace, &argoCronWorkflow, opts)
+		argoCreatedCronWorkflow, err := c.createCronWorkflow(namespace, workflowTemplate.ID, &argoCronWorkflow, opts)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"Namespace":    namespace,
@@ -279,7 +281,36 @@ func (c *Client) updateCronWorkflow(namespace string, name string, cwf *wfv1.Cro
 	return
 }
 
-func (c *Client) createCronWorkflow(namespace string, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (createdCronWorkflow *wfv1.CronWorkflow, err error) {
+func (c *Client) createCronWorkflow(namespace string, workflowTemplateId uint64, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (createdCronWorkflow *wfv1.CronWorkflow, err error) {
+	uidRaw, err := uuid.NewRandom()
+	if err != nil {
+		return nil, err
+	}
+	uid := uidRaw.String()
+
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	rows, err := sb.Insert("cron_workflows_templates").
+		SetMap(sq.Eq{
+			"uid":                  uid,
+			"namespace":            namespace,
+			"workflow_template_id": workflowTemplateId,
+		}).RunWith(tx).Query()
+	if err != nil {
+		return nil, err
+	}
+	err = rows.Close()
+	if err != nil {
+		return nil, err
+	}
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
 	if opts == nil {
 		opts = &WorkflowExecutionOptions{}
 	}

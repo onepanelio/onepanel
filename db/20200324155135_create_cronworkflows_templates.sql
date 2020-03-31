@@ -5,7 +5,6 @@ CREATE TABLE cron_workflows_templates
     id          serial PRIMARY KEY,
     uid         varchar(36) UNIQUE NOT NULL CHECK(uid <> ''),
     workflow_template_id integer,
-    name        text NOT NULL CHECK(name <> ''),
     namespace   varchar(36) NOT NULL,
 
     -- auditing info
