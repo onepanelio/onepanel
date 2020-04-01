@@ -79,9 +79,7 @@ func init() {
 	proto.RegisterType((*Metric)(nil), "api.Metric")
 }
 
-func init() {
-	proto.RegisterFile("metric.proto", fileDescriptor_da41641f55bff5df)
-}
+func init() { proto.RegisterFile("metric.proto", fileDescriptor_da41641f55bff5df) }
 
 var fileDescriptor_da41641f55bff5df = []byte{
 	// 105 bytes of a gzipped FileDescriptorProto

@@ -202,6 +202,15 @@ func (c *Client) ListCronWorkflows(namespace string) (cronWorkflows []*CronWorkf
 	})
 
 	for _, cwf := range cwfs {
+		var parameters []WorkflowExecutionParameter
+
+		for _, param := range cwf.Spec.WorkflowSpec.Arguments.Parameters {
+			parameters = append(parameters, WorkflowExecutionParameter{
+				Name:  param.Name,
+				Value: param.Value,
+			})
+		}
+
 		cronWorkflows = append(cronWorkflows, &CronWorkflow{
 			CreatedAt:                  cwf.CreationTimestamp.UTC(),
 			UID:                        string(cwf.ObjectMeta.UID),
@@ -213,7 +222,9 @@ func (c *Client) ListCronWorkflows(namespace string) (cronWorkflows []*CronWorkf
 			StartingDeadlineSeconds:    cwf.Spec.StartingDeadlineSeconds,
 			SuccessfulJobsHistoryLimit: cwf.Spec.SuccessfulJobsHistoryLimit,
 			FailedJobsHistoryLimit:     cwf.Spec.FailedJobsHistoryLimit,
-			WorkflowExecution:          nil,
+			WorkflowExecution: &WorkflowExecution{
+				Parameters: parameters,
+			},
 		})
 	}
 	return
