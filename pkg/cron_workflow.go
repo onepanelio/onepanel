@@ -5,6 +5,7 @@ import (
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	argojson "github.com/argoproj/pkg/json"
 	"github.com/onepanelio/core/pkg/util"
+	"github.com/onepanelio/core/pkg/util/label"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -180,6 +181,72 @@ func (c *Client) GetCronWorkflow(namespace, name string) (cronWorkflow *CronWork
 	}
 
 	return
+}
+
+// prefix is the label prefix.
+// e.g. prefix/my-label-key: my-label-value
+func (c *Client) GetCronWorkflowLabels(namespace, name, prefix string) (labels map[string]string, err error) {
+	cwf, err := c.ArgoprojV1alpha1().CronWorkflows(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"Error":     err.Error(),
+		}).Error("CronWorkflow not found.")
+		return nil, util.NewUserError(codes.NotFound, "CronWorkflow not found.")
+	}
+
+	labels = label.FilterByPrefix(prefix, cwf.Labels)
+	labels = label.RemovePrefix(prefix, labels)
+
+	return
+}
+
+// prefix is the label prefix.
+// we delete all labels with that prefix and set the new ones
+// e.g. prefix/my-label-key: my-label-value
+func (c *Client) SetCronWorkflowLabels(namespace, name, prefix string, keyValues map[string]string, deleteOld bool) (workflowLabels map[string]string, err error) {
+	cwf, err := c.ArgoprojV1alpha1().CronWorkflows(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"Error":     err.Error(),
+		}).Error("CronWorkflow not found.")
+		return nil, util.NewUserError(codes.NotFound, "CronWorkflow not found.")
+	}
+
+	if deleteOld {
+		label.DeleteWithPrefix(cwf.Labels, prefix)
+	}
+
+	label.MergeLabelsPrefix(cwf.Labels, keyValues, prefix+"/")
+
+	cwf, err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Update(cwf)
+	if err != nil {
+		return nil, err
+	}
+
+	filteredMap := label.FilterByPrefix(prefix+"/", cwf.Labels)
+	filteredMap = label.RemovePrefix(prefix+"/", filteredMap)
+
+	return filteredMap, nil
+}
+
+func (c *Client) DeleteCronWorkflowLabel(namespace, name string, keysToDelete ...string) (labels map[string]string, err error) {
+	wf, err := c.ArgoprojV1alpha1().CronWorkflows(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"Error":     err.Error(),
+		}).Error("CronWorkflow not found.")
+		return nil, util.NewUserError(codes.NotFound, "CronWorkflow not found.")
+	}
+
+	label.Delete(wf.Labels, keysToDelete...)
+
+	return wf.Labels, nil
 }
 
 func (c *Client) ListCronWorkflows(namespace, workflowTemplateUID string) (cronWorkflows []*CronWorkflow, err error) {
