@@ -339,11 +339,6 @@ func (c *Client) createCronWorkflow(namespace string, workflowTemplateUid string
 	//if err = c.injectAutomatedFields(namespace, cwf.Spec.WorkflowSpec, opts); err != nil {
 	//	return nil, err
 	//}
-	//todo move earlier
-	var cwfLabels map[string]string
-	cwfLabels = make(map[string]string)
-	cwfLabels["workflowTemplateUid"] = workflowTemplateUid
-	//cwf.Labels
 
 	createdCronWorkflow, err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Create(cwf)
 	if err != nil {
