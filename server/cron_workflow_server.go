@@ -156,7 +156,7 @@ func (c *CronWorkflowServer) ListCronWorkflows(ctx context.Context, req *api.Lis
 		req.PageSize = 15
 	}
 
-	cronWorkflows, err := client.ListCronWorkflows(req.Namespace)
+	cronWorkflows, err := client.ListCronWorkflows(req.Namespace, req.WorkflowTemplateUid)
 	if err != nil {
 		return nil, err
 	}

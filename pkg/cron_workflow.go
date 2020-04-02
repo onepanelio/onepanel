@@ -2,10 +2,8 @@ package v1
 
 import (
 	"fmt"
-	sq "github.com/Masterminds/squirrel"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	argojson "github.com/argoproj/pkg/json"
-	"github.com/google/uuid"
 	"github.com/onepanelio/core/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
@@ -135,7 +133,7 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 
 	for _, wf := range workflows {
 		argoCronWorkflow.Spec.WorkflowSpec = wf.Spec
-		argoCreatedCronWorkflow, err := c.createCronWorkflow(namespace, workflowTemplate.ID, &argoCronWorkflow, opts)
+		argoCreatedCronWorkflow, err := c.createCronWorkflow(namespace, workflowTemplate.UID, &argoCronWorkflow, opts)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"Namespace":    namespace,
@@ -184,8 +182,12 @@ func (c *Client) GetCronWorkflow(namespace, name string) (cronWorkflow *CronWork
 	return
 }
 
-func (c *Client) ListCronWorkflows(namespace string) (cronWorkflows []*CronWorkflow, err error) {
-	cronWorkflowList, err := c.ArgoprojV1alpha1().CronWorkflows(namespace).List(ListOptions{})
+func (c *Client) ListCronWorkflows(namespace, workflowTemplateUID string) (cronWorkflows []*CronWorkflow, err error) {
+	listOptions := ListOptions{}
+	if workflowTemplateUID != "" {
+		listOptions.LabelSelector = "onepanel.io/workflow-template-uid=" + workflowTemplateUID
+	}
+	cronWorkflowList, err := c.ArgoprojV1alpha1().CronWorkflows(namespace).List(listOptions)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -292,35 +294,35 @@ func (c *Client) updateCronWorkflow(namespace string, name string, cwf *wfv1.Cro
 	return
 }
 
-func (c *Client) createCronWorkflow(namespace string, workflowTemplateId uint64, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (createdCronWorkflow *wfv1.CronWorkflow, err error) {
-	uidRaw, err := uuid.NewRandom()
-	if err != nil {
-		return nil, err
-	}
-	uid := uidRaw.String()
-
-	tx, err := c.DB.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-
-	rows, err := sb.Insert("cron_workflows_templates").
-		SetMap(sq.Eq{
-			"uid":                  uid,
-			"namespace":            namespace,
-			"workflow_template_id": workflowTemplateId,
-		}).RunWith(tx).Query()
-	if err != nil {
-		return nil, err
-	}
-	err = rows.Close()
-	if err != nil {
-		return nil, err
-	}
-	if err = tx.Commit(); err != nil {
-		return nil, err
-	}
+func (c *Client) createCronWorkflow(namespace string, workflowTemplateUid string, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (createdCronWorkflow *wfv1.CronWorkflow, err error) {
+	//uidRaw, err := uuid.NewRandom()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//uid := uidRaw.String()
+	//
+	//tx, err := c.DB.Begin()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//defer tx.Rollback()
+	//
+	//rows, err := sb.Insert("cron_workflows_templates").
+	//	SetMap(sq.Eq{
+	//		"uid":                  uid,
+	//		"namespace":            namespace,
+	//		"workflow_template_id": workflowTemplateId,
+	//	}).RunWith(tx).Query()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//err = rows.Close()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if err = tx.Commit(); err != nil {
+	//	return nil, err
+	//}
 
 	if opts == nil {
 		opts = &WorkflowExecutionOptions{}
@@ -366,6 +368,11 @@ func (c *Client) createCronWorkflow(namespace string, workflowTemplateId uint64,
 	//if err = c.injectAutomatedFields(namespace, cwf.Spec.WorkflowSpec, opts); err != nil {
 	//	return nil, err
 	//}
+	//todo move earlier
+	var cwfLabels map[string]string
+	cwfLabels = make(map[string]string)
+	cwfLabels["workflowTemplateUid"] = workflowTemplateUid
+	//cwf.Labels
 
 	createdCronWorkflow, err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Create(cwf)
 	if err != nil {

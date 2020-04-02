@@ -32,6 +32,9 @@ service CronWorkflowService {
     rpc ListCronWorkflows(ListCronWorkflowRequest) returns (ListCronWorkflowsResponse) {
         option (google.api.http) = {
             get: "/apis/v1beta1/{namespace}/cron_workflows"
+            additional_bindings {
+				get: "/apis/v1beta1/{namespace}/cron_workflows/{workflow_template_uid}"
+			}
         };
     }
 
@@ -66,8 +69,9 @@ message UpdateCronWorkflowRequest {
 
 message ListCronWorkflowRequest {
     string namespace = 1;
-    int32 pageSize = 4;
-    int32 page = 5;
+    string workflow_template_uid = 2;
+    int32 pageSize = 3;
+    int32 page = 4;
 }
 
 message ListCronWorkflowsResponse {
