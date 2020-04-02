@@ -295,35 +295,6 @@ func (c *Client) updateCronWorkflow(namespace string, name string, cwf *wfv1.Cro
 }
 
 func (c *Client) createCronWorkflow(namespace string, workflowTemplateUid string, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (createdCronWorkflow *wfv1.CronWorkflow, err error) {
-	//uidRaw, err := uuid.NewRandom()
-	//if err != nil {
-	//	return nil, err
-	//}
-	//uid := uidRaw.String()
-	//
-	//tx, err := c.DB.Begin()
-	//if err != nil {
-	//	return nil, err
-	//}
-	//defer tx.Rollback()
-	//
-	//rows, err := sb.Insert("cron_workflows_templates").
-	//	SetMap(sq.Eq{
-	//		"uid":                  uid,
-	//		"namespace":            namespace,
-	//		"workflow_template_id": workflowTemplateId,
-	//	}).RunWith(tx).Query()
-	//if err != nil {
-	//	return nil, err
-	//}
-	//err = rows.Close()
-	//if err != nil {
-	//	return nil, err
-	//}
-	//if err = tx.Commit(); err != nil {
-	//	return nil, err
-	//}
-
 	if opts == nil {
 		opts = &WorkflowExecutionOptions{}
 	}
