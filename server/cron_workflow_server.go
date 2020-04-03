@@ -145,6 +145,107 @@ func (c *CronWorkflowServer) GetCronWorkflow(ctx context.Context, req *api.GetCr
 	return apiCronWorkflow(cwf), nil
 }
 
+func (c *CronWorkflowServer) GetCronWorkflowLabels(ctx context.Context, req *api.GetLabelsRequest) (*api.GetLabelsResponse, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "cronworkflows", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	labels, err := client.GetCronWorkflowLabels(req.Namespace, req.Name, "tags.onepanel.io/")
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &api.GetLabelsResponse{
+		Labels: mapToKeyValue(labels),
+	}
+
+	return resp, nil
+}
+
+// Adds any labels that are not yet associated to the workflow execution.
+// If the label already exists, overwrites it.
+func (c *CronWorkflowServer) AddCronWorkflowLabels(ctx context.Context, req *api.AddLabelsRequest) (*api.GetLabelsResponse, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "cronworkflows", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	keyValues := make(map[string]string)
+	for _, item := range req.Labels.Items {
+		keyValues[item.Key] = item.Value
+	}
+
+	labels, err := client.SetCronWorkflowLabels(req.Namespace, req.Name, "tags.onepanel.io/", keyValues, false)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &api.GetLabelsResponse{
+		Labels: mapToKeyValue(labels),
+	}
+
+	return resp, nil
+}
+
+// Deletes all of the old labels and adds the new ones.
+func (c *CronWorkflowServer) ReplaceCronWorkflowLabels(ctx context.Context, req *api.ReplaceLabelsRequest) (*api.GetLabelsResponse, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "cronworkflows", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	keyValues := make(map[string]string)
+	for _, item := range req.Labels.Items {
+		keyValues[item.Key] = item.Value
+	}
+
+	labels, err := client.SetCronWorkflowLabels(req.Namespace, req.Name, "tags.onepanel.io/", keyValues, true)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &api.GetLabelsResponse{
+		Labels: mapToKeyValue(labels),
+	}
+
+	return resp, nil
+}
+
+func (c *CronWorkflowServer) DeleteCronWorkflowLabel(ctx context.Context, req *api.DeleteLabelRequest) (*api.GetLabelsResponse, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "argoproj.io", "cronworkflows", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	prefix := "tags.onepanel.io/"
+	keyToDelete := prefix + req.Key
+	labels, err := client.DeleteCronWorkflowLabel(req.Namespace, req.Name, keyToDelete)
+	if err != nil {
+		return nil, err
+	}
+
+	keyValues := make(map[string]string)
+	for key, val := range labels {
+		keyValues[key] = val
+	}
+
+	labels, err = client.SetCronWorkflowLabels(req.Namespace, req.Name, "", keyValues, true)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &api.GetLabelsResponse{
+		Labels: mapToKeyValue(labels),
+	}
+
+	return resp, nil
+}
+
 func (c *CronWorkflowServer) ListCronWorkflows(ctx context.Context, req *api.ListCronWorkflowRequest) (*api.ListCronWorkflowsResponse, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "cronworkflows", "")
@@ -156,7 +257,7 @@ func (c *CronWorkflowServer) ListCronWorkflows(ctx context.Context, req *api.Lis
 		req.PageSize = 15
 	}
 
-	cronWorkflows, err := client.ListCronWorkflows(req.Namespace)
+	cronWorkflows, err := client.ListCronWorkflows(req.Namespace, req.WorkflowTemplateUid)
 	if err != nil {
 		return nil, err
 	}

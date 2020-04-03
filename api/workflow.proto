@@ -6,6 +6,7 @@ import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "workflow_template.proto";
 import "metric.proto";
+import "label.proto";
 
 service WorkflowService {
     // Creates a Workflow
@@ -282,40 +283,4 @@ message ListFilesRequest {
 message ListFilesResponse {
     repeated File files = 1;
     string parentPath = 2;
-}
-
-message KeyValue {
-    string key = 1;
-    string value = 2;
-}
-
-message Labels {
-    repeated KeyValue items = 1;
-}
-
-message AddLabelsRequest {
-    string namespace = 1;
-    string name = 2;
-    Labels labels = 3;
-}
-
-message ReplaceLabelsRequest {
-    string namespace = 1;
-    string name = 2;
-    Labels labels = 3;
-}
-
-message GetLabelsRequest {
-    string namespace = 1;
-    string name = 2;
-}
-
-message GetLabelsResponse {
-    repeated KeyValue labels = 1;
-}
-
-message DeleteLabelRequest {
-    string namespace = 1;
-    string name = 2;
-    string key = 3;
 }

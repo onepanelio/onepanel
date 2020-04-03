@@ -982,15 +982,15 @@ func (c *Client) SetWorkflowExecutionLabels(namespace, name, prefix string, keyV
 		label.DeleteWithPrefix(wf.Labels, prefix)
 	}
 
-	label.MergeLabelsPrefix(wf.Labels, keyValues, prefix+"/")
+	label.MergeLabelsPrefix(wf.Labels, keyValues, prefix)
 
 	wf, err = c.ArgoprojV1alpha1().Workflows(namespace).Update(wf)
 	if err != nil {
 		return nil, err
 	}
 
-	filteredMap := label.FilterByPrefix(prefix+"/", wf.Labels)
-	filteredMap = label.RemovePrefix(prefix+"/", filteredMap)
+	filteredMap := label.FilterByPrefix(prefix, wf.Labels)
+	filteredMap = label.RemovePrefix(prefix, filteredMap)
 
 	return filteredMap, nil
 }
@@ -1016,15 +1016,15 @@ func (c *Client) SetWorkflowTemplateLabels(namespace, name, prefix string, keyVa
 	if wf.Labels == nil {
 		wf.Labels = make(map[string]string)
 	}
-	label.MergeLabelsPrefix(wf.Labels, keyValues, prefix+"/")
+	label.MergeLabelsPrefix(wf.Labels, keyValues, prefix)
 
 	wf, err = c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Update(wf)
 	if err != nil {
 		return nil, err
 	}
 
-	filteredMap := label.FilterByPrefix(prefix+"/", wf.Labels)
-	filteredMap = label.RemovePrefix(prefix+"/", filteredMap)
+	filteredMap := label.FilterByPrefix(prefix, wf.Labels)
+	filteredMap = label.RemovePrefix(prefix, filteredMap)
 
 	return filteredMap, nil
 }

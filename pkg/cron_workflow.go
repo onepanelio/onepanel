@@ -2,11 +2,10 @@ package v1
 
 import (
 	"fmt"
-	sq "github.com/Masterminds/squirrel"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	argojson "github.com/argoproj/pkg/json"
-	"github.com/google/uuid"
 	"github.com/onepanelio/core/pkg/util"
+	"github.com/onepanelio/core/pkg/util/label"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -135,7 +134,7 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 
 	for _, wf := range workflows {
 		argoCronWorkflow.Spec.WorkflowSpec = wf.Spec
-		argoCreatedCronWorkflow, err := c.createCronWorkflow(namespace, workflowTemplate.ID, &argoCronWorkflow, opts)
+		argoCreatedCronWorkflow, err := c.createCronWorkflow(namespace, workflowTemplate.UID, &argoCronWorkflow, opts)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"Namespace":    namespace,
@@ -184,8 +183,78 @@ func (c *Client) GetCronWorkflow(namespace, name string) (cronWorkflow *CronWork
 	return
 }
 
-func (c *Client) ListCronWorkflows(namespace string) (cronWorkflows []*CronWorkflow, err error) {
-	cronWorkflowList, err := c.ArgoprojV1alpha1().CronWorkflows(namespace).List(ListOptions{})
+// prefix is the label prefix.
+// e.g. prefix/my-label-key: my-label-value
+func (c *Client) GetCronWorkflowLabels(namespace, name, prefix string) (labels map[string]string, err error) {
+	cwf, err := c.ArgoprojV1alpha1().CronWorkflows(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"Error":     err.Error(),
+		}).Error("CronWorkflow not found.")
+		return nil, util.NewUserError(codes.NotFound, "CronWorkflow not found.")
+	}
+
+	labels = label.FilterByPrefix(prefix, cwf.Labels)
+	labels = label.RemovePrefix(prefix, labels)
+
+	return
+}
+
+// prefix is the label prefix.
+// we delete all labels with that prefix and set the new ones
+// e.g. prefix/my-label-key: my-label-value
+func (c *Client) SetCronWorkflowLabels(namespace, name, prefix string, keyValues map[string]string, deleteOld bool) (workflowLabels map[string]string, err error) {
+	cwf, err := c.ArgoprojV1alpha1().CronWorkflows(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"Error":     err.Error(),
+		}).Error("CronWorkflow not found.")
+		return nil, util.NewUserError(codes.NotFound, "CronWorkflow not found.")
+	}
+
+	if deleteOld {
+		label.DeleteWithPrefix(cwf.Labels, prefix)
+	}
+
+	label.MergeLabelsPrefix(cwf.Labels, keyValues, prefix)
+
+	cwf, err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Update(cwf)
+	if err != nil {
+		return nil, err
+	}
+
+	filteredMap := label.FilterByPrefix(prefix, cwf.Labels)
+	filteredMap = label.RemovePrefix(prefix, filteredMap)
+
+	return filteredMap, nil
+}
+
+func (c *Client) DeleteCronWorkflowLabel(namespace, name string, keysToDelete ...string) (labels map[string]string, err error) {
+	wf, err := c.ArgoprojV1alpha1().CronWorkflows(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"Error":     err.Error(),
+		}).Error("CronWorkflow not found.")
+		return nil, util.NewUserError(codes.NotFound, "CronWorkflow not found.")
+	}
+
+	label.Delete(wf.Labels, keysToDelete...)
+
+	return wf.Labels, nil
+}
+
+func (c *Client) ListCronWorkflows(namespace, workflowTemplateUID string) (cronWorkflows []*CronWorkflow, err error) {
+	listOptions := ListOptions{}
+	if workflowTemplateUID != "" {
+		listOptions.LabelSelector = "onepanel.io/workflow-template-uid=" + workflowTemplateUID
+	}
+	cronWorkflowList, err := c.ArgoprojV1alpha1().CronWorkflows(namespace).List(listOptions)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -292,36 +361,7 @@ func (c *Client) updateCronWorkflow(namespace string, name string, cwf *wfv1.Cro
 	return
 }
 
-func (c *Client) createCronWorkflow(namespace string, workflowTemplateId uint64, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (createdCronWorkflow *wfv1.CronWorkflow, err error) {
-	uidRaw, err := uuid.NewRandom()
-	if err != nil {
-		return nil, err
-	}
-	uid := uidRaw.String()
-
-	tx, err := c.DB.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-
-	rows, err := sb.Insert("cron_workflows_templates").
-		SetMap(sq.Eq{
-			"uid":                  uid,
-			"namespace":            namespace,
-			"workflow_template_id": workflowTemplateId,
-		}).RunWith(tx).Query()
-	if err != nil {
-		return nil, err
-	}
-	err = rows.Close()
-	if err != nil {
-		return nil, err
-	}
-	if err = tx.Commit(); err != nil {
-		return nil, err
-	}
-
+func (c *Client) createCronWorkflow(namespace string, workflowTemplateUid string, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (createdCronWorkflow *wfv1.CronWorkflow, err error) {
 	if opts == nil {
 		opts = &WorkflowExecutionOptions{}
 	}
