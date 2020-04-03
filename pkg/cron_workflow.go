@@ -220,15 +220,15 @@ func (c *Client) SetCronWorkflowLabels(namespace, name, prefix string, keyValues
 		label.DeleteWithPrefix(cwf.Labels, prefix)
 	}
 
-	label.MergeLabelsPrefix(cwf.Labels, keyValues, prefix+"/")
+	label.MergeLabelsPrefix(cwf.Labels, keyValues, prefix)
 
 	cwf, err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Update(cwf)
 	if err != nil {
 		return nil, err
 	}
 
-	filteredMap := label.FilterByPrefix(prefix+"/", cwf.Labels)
-	filteredMap = label.RemovePrefix(prefix+"/", filteredMap)
+	filteredMap := label.FilterByPrefix(prefix, cwf.Labels)
+	filteredMap = label.RemovePrefix(prefix, filteredMap)
 
 	return filteredMap, nil
 }

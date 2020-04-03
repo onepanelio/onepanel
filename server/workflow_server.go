@@ -532,7 +532,7 @@ func (s *WorkflowServer) AddWorkflowExecutionLabels(ctx context.Context, req *ap
 		keyValues[item.Key] = item.Value
 	}
 
-	labels, err := client.SetWorkflowExecutionLabels(req.Namespace, req.Name, "tags.onepanel.io", keyValues, false)
+	labels, err := client.SetWorkflowExecutionLabels(req.Namespace, req.Name, "tags.onepanel.io/", keyValues, false)
 	if err != nil {
 		return nil, err
 	}
@@ -557,7 +557,7 @@ func (s *WorkflowServer) ReplaceWorkflowExecutionLabels(ctx context.Context, req
 		keyValues[item.Key] = item.Value
 	}
 
-	labels, err := client.SetWorkflowExecutionLabels(req.Namespace, req.Name, "tags.onepanel.io", keyValues, true)
+	labels, err := client.SetWorkflowExecutionLabels(req.Namespace, req.Name, "tags.onepanel.io/", keyValues, true)
 	if err != nil {
 		return nil, err
 	}
@@ -578,6 +578,16 @@ func (s *WorkflowServer) DeleteWorkflowExecutionLabel(ctx context.Context, req *
 
 	keyToDelete := "tags.onepanel.io/" + req.Key
 	labels, err := client.DeleteWorkflowExecutionLabel(req.Namespace, req.Name, keyToDelete)
+	if err != nil {
+		return nil, err
+	}
+
+	keyValues := make(map[string]string)
+	for key, val := range labels {
+		keyValues[key] = val
+	}
+
+	labels, err = client.SetWorkflowExecutionLabels(req.Namespace, req.Name, "", keyValues, true)
 	if err != nil {
 		return nil, err
 	}
@@ -622,7 +632,7 @@ func (s *WorkflowServer) AddWorkflowTemplateLabels(ctx context.Context, req *api
 		keyValues[item.Key] = item.Value
 	}
 
-	labels, err := client.SetWorkflowTemplateLabels(req.Namespace, req.Name, "tags.onepanel.io", keyValues, false)
+	labels, err := client.SetWorkflowTemplateLabels(req.Namespace, req.Name, "tags.onepanel.io/", keyValues, false)
 	if err != nil {
 		return nil, err
 	}
@@ -647,7 +657,7 @@ func (s *WorkflowServer) ReplaceWorkflowTemplateLabels(ctx context.Context, req 
 		keyValues[item.Key] = item.Value
 	}
 
-	labels, err := client.SetWorkflowTemplateLabels(req.Namespace, req.Name, "tags.onepanel.io", keyValues, true)
+	labels, err := client.SetWorkflowTemplateLabels(req.Namespace, req.Name, "tags.onepanel.io/", keyValues, true)
 	if err != nil {
 		return nil, err
 	}

@@ -178,7 +178,7 @@ func (c *CronWorkflowServer) AddCronWorkflowLabels(ctx context.Context, req *api
 		keyValues[item.Key] = item.Value
 	}
 
-	labels, err := client.SetCronWorkflowLabels(req.Namespace, req.Name, "tags.onepanel.io", keyValues, false)
+	labels, err := client.SetCronWorkflowLabels(req.Namespace, req.Name, "tags.onepanel.io/", keyValues, false)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +203,7 @@ func (c *CronWorkflowServer) ReplaceCronWorkflowLabels(ctx context.Context, req 
 		keyValues[item.Key] = item.Value
 	}
 
-	labels, err := client.SetCronWorkflowLabels(req.Namespace, req.Name, "tags.onepanel.io", keyValues, true)
+	labels, err := client.SetCronWorkflowLabels(req.Namespace, req.Name, "tags.onepanel.io/", keyValues, true)
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +222,8 @@ func (c *CronWorkflowServer) DeleteCronWorkflowLabel(ctx context.Context, req *a
 		return nil, err
 	}
 
-	keyToDelete := "tags.onepanel.io/" + req.Key
+	prefix := "tags.onepanel.io/"
+	keyToDelete := prefix + req.Key
 	labels, err := client.DeleteCronWorkflowLabel(req.Namespace, req.Name, keyToDelete)
 	if err != nil {
 		return nil, err
@@ -233,7 +234,7 @@ func (c *CronWorkflowServer) DeleteCronWorkflowLabel(ctx context.Context, req *a
 		keyValues[key] = val
 	}
 
-	labels, err = client.SetCronWorkflowLabels(req.Namespace, req.Name, "tags.onepanel.io", keyValues, true)
+	labels, err = client.SetCronWorkflowLabels(req.Namespace, req.Name, "", keyValues, true)
 	if err != nil {
 		return nil, err
 	}
