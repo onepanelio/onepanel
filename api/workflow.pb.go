@@ -1061,9 +1061,7 @@ func init() {
 	proto.RegisterType((*ListFilesResponse)(nil), "api.ListFilesResponse")
 }
 
-func init() {
-	proto.RegisterFile("workflow.proto", fileDescriptor_892c7f566756b0be)
-}
+func init() { proto.RegisterFile("workflow.proto", fileDescriptor_892c7f566756b0be) }
 
 var fileDescriptor_892c7f566756b0be = []byte{
 	// 1610 bytes of a gzipped FileDescriptorProto
@@ -1172,11 +1170,11 @@ var fileDescriptor_892c7f566756b0be = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConnInterface
+var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
+const _ = grpc.SupportPackageIsVersion4
 
 // WorkflowServiceClient is the client API for WorkflowService service.
 //
@@ -1211,10 +1209,10 @@ type WorkflowServiceClient interface {
 }
 
 type workflowServiceClient struct {
-	cc grpc.ClientConnInterface
+	cc *grpc.ClientConn
 }
 
-func NewWorkflowServiceClient(cc grpc.ClientConnInterface) WorkflowServiceClient {
+func NewWorkflowServiceClient(cc *grpc.ClientConn) WorkflowServiceClient {
 	return &workflowServiceClient{cc}
 }
 
