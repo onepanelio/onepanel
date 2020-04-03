@@ -2,6 +2,7 @@ package v1
 
 import (
 	"fmt"
+	v1 "k8s.io/api/core/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -39,6 +40,29 @@ func (c *Client) ListNamespaces() (namespaces []*Namespace, err error) {
 			Name:   ns.Name,
 			Labels: ns.Labels,
 		})
+	}
+
+	return
+}
+
+func (c *Client) CreateNamespace(name string) (namespace *Namespace, err error) {
+	createNamespace := &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+			Labels: map[string]string{
+				"istio-injection":       "enabled",
+				onepanelEnabledLabelKey: "true",
+			},
+		},
+	}
+
+	k8Namespace, err := c.CoreV1().Namespaces().Create(createNamespace)
+	if err != nil {
+		return
+	}
+
+	namespace = &Namespace{
+		Name: k8Namespace.Name,
 	}
 
 	return

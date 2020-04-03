@@ -3,19 +3,38 @@ syntax = "proto3";
 package api;
 
 import "google/api/annotations.proto";
-import "google/protobuf/empty.proto";
 
 service NamespaceService {
-    rpc ListNamespaces(google.protobuf.Empty) returns (ListNamespacesResponse) {
+    rpc ListNamespaces(ListNamespacesRequest) returns (ListNamespacesResponse) {
         option (google.api.http) = {
             get: "/apis/v1beta1/namespaces"
         };
     }
+
+    rpc CreateNamespace(CreateNamespaceRequest) returns (Namespace) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/namespaces"
+            body: "namespace"
+        };
+    }
+}
+
+message ListNamespacesRequest {
+    int32 pageSize = 1;
+    int32 page = 2;
+    string query = 3;
 }
 
 message ListNamespacesResponse {
     int32 count = 1;
     repeated Namespace namespaces = 2;
+    int32 page = 3;
+    int32 pages = 4;
+    int32 totalCount = 5;
+}
+
+message CreateNamespaceRequest {
+    Namespace namespace = 1;
 }
 
 message Namespace {
