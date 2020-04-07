@@ -469,9 +469,7 @@ func init() {
 	proto.RegisterType((*CronWorkflow)(nil), "api.CronWorkflow")
 }
 
-func init() {
-	proto.RegisterFile("cron_workflow.proto", fileDescriptor_989cccaad551a50c)
-}
+func init() { proto.RegisterFile("cron_workflow.proto", fileDescriptor_989cccaad551a50c) }
 
 var fileDescriptor_989cccaad551a50c = []byte{
 	// 855 bytes of a gzipped FileDescriptorProto
@@ -533,11 +531,11 @@ var fileDescriptor_989cccaad551a50c = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConnInterface
+var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
+const _ = grpc.SupportPackageIsVersion4
 
 // CronWorkflowServiceClient is the client API for CronWorkflowService service.
 //
@@ -555,10 +553,10 @@ type CronWorkflowServiceClient interface {
 }
 
 type cronWorkflowServiceClient struct {
-	cc grpc.ClientConnInterface
+	cc *grpc.ClientConn
 }
 
-func NewCronWorkflowServiceClient(cc grpc.ClientConnInterface) CronWorkflowServiceClient {
+func NewCronWorkflowServiceClient(cc *grpc.ClientConn) CronWorkflowServiceClient {
 	return &cronWorkflowServiceClient{cc}
 }
 
