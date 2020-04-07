@@ -599,9 +599,7 @@ func init() {
 	proto.RegisterType((*WorkflowTemplate)(nil), "api.WorkflowTemplate")
 }
 
-func init() {
-	proto.RegisterFile("workflow_template.proto", fileDescriptor_b9a07547748a96e8)
-}
+func init() { proto.RegisterFile("workflow_template.proto", fileDescriptor_b9a07547748a96e8) }
 
 var fileDescriptor_b9a07547748a96e8 = []byte{
 	// 378 bytes of a gzipped FileDescriptorProto
