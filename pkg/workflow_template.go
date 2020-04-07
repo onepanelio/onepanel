@@ -178,6 +178,29 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int32) (work
 	return
 }
 
+func (c *Client) getWorkflowTemplateByName(namespace, name string, version int32) (workflowTemplate *WorkflowTemplate, err error) {
+	workflowTemplate = &WorkflowTemplate{}
+
+	sb := c.workflowTemplatesSelectBuilder(namespace).Where(sq.Eq{"wt.name": name}).
+		Columns("wtv.manifest").
+		OrderBy("wtv.version desc").
+		Limit(1)
+	if version != 0 {
+		sb = sb.Where(sq.Eq{"wtv.version": version})
+	}
+	query, args, err := sb.ToSql()
+	if err != nil {
+		return
+	}
+
+	if err = c.DB.Get(workflowTemplate, query, args...); err == sql.ErrNoRows {
+		err = nil
+		workflowTemplate = nil
+	}
+
+	return
+}
+
 func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTemplateVersions []*WorkflowTemplate, err error) {
 	workflowTemplateVersions = []*WorkflowTemplate{}
 
@@ -342,6 +365,28 @@ func (c *Client) GetWorkflowTemplate(namespace, uid string, version int32) (work
 	if workflowTemplate == nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}
+
+	return
+}
+
+func (c *Client) GetWorkflowTemplateByName(namespace, name string, version int32) (workflowTemplate *WorkflowTemplate, err error) {
+	workflowTemplate, err = c.getWorkflowTemplateByName(namespace, name, version)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace":        namespace,
+			"WorkflowTemplate": workflowTemplate,
+			"Error":            err.Error(),
+		}).Error("Get Workflow Template failed.")
+		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
+	}
+	if workflowTemplate == nil {
+		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
+	}
+
+	return
+}
+
+func (c *Client) CloneWorkflowTemplate() (workflowTemplate *WorkflowTemplate, err error) {
 
 	return
 }
