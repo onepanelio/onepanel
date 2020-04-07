@@ -407,6 +407,7 @@ func (c *Client) createCronWorkflow(namespace string, workflowTemplateUid string
 	//	return nil, err
 	//}
 
+	cwf.Spec.WorkflowMetadata = &metav1.ObjectMeta{Labels: *opts.Labels}
 	createdCronWorkflow, err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Create(cwf)
 	if err != nil {
 		return nil, err

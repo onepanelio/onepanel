@@ -256,7 +256,7 @@ func (c *Client) ValidateWorkflowExecution(namespace string, manifest []byte) (e
 	wftmplGetter := templateresolution.WrapWorkflowTemplateInterface(c.ArgoprojV1alpha1().WorkflowTemplates(namespace))
 	for _, wf := range workflows {
 		c.injectAutomatedFields(namespace, &wf, &WorkflowExecutionOptions{})
-		err = validate.ValidateWorkflow(wftmplGetter, &wf, validate.ValidateOpts{})
+		_, err = validate.ValidateWorkflow(wftmplGetter, &wf, validate.ValidateOpts{})
 		if err != nil {
 			return
 		}
@@ -726,7 +726,7 @@ func (c *Client) ResubmitWorkflowExecution(namespace, name string) (workflow *Wo
 }
 
 func (c *Client) ResumeWorkflowExecution(namespace, name string) (workflow *WorkflowExecution, err error) {
-	err = argoutil.ResumeWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), name)
+	err = argoutil.ResumeWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), name, "")
 	if err != nil {
 		return
 	}
