@@ -916,7 +916,7 @@ func (c *Client) GetWorkflowExecutionLabels(namespace, name, prefix string) (lab
 // prefix is the label prefix.
 // e.g. prefix/my-label-key: my-label-value
 func (c *Client) GetWorkflowTemplateLabels(namespace, name, prefix string) (labels map[string]string, err error) {
-	wf, err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Get(name, metav1.GetOptions{})
+	wf, err := c.getArgoWorkflowTemplate(namespace, name, "latest")
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -999,7 +999,7 @@ func (c *Client) SetWorkflowExecutionLabels(namespace, name, prefix string, keyV
 // we delete all labels with that prefix and set the new ones
 // e.g. prefix/my-label-key: my-label-value
 func (c *Client) SetWorkflowTemplateLabels(namespace, name, prefix string, keyValues map[string]string, deleteOld bool) (workflowLabels map[string]string, err error) {
-	wf, err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Get(name, metav1.GetOptions{})
+	wf, err := c.getArgoWorkflowTemplate(namespace, name, "latest")
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,

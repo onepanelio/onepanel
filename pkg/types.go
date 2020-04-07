@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"gopkg.in/yaml.v2"
 	"strings"
 	"time"
 
@@ -181,4 +182,23 @@ func FilePathToExtension(path string) string {
 	}
 
 	return path[dotIndex+1:]
+}
+
+func WrapSpecInK8s(data []byte) ([]byte, error) {
+	mapping := make(map[interface{}]interface{})
+	if err := yaml.Unmarshal(data, mapping); err != nil {
+		return nil, err
+	}
+
+	contentMap := map[interface{}]interface{}{
+		"metadata": make(map[interface{}]interface{}),
+		"spec":     mapping,
+	}
+
+	finalBytes, err := yaml.Marshal(contentMap)
+	if err != nil {
+		return nil, nil
+	}
+
+	return finalBytes, nil
 }
