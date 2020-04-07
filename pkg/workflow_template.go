@@ -386,11 +386,6 @@ func (c *Client) GetWorkflowTemplateByName(namespace, name string, version int32
 	return
 }
 
-func (c *Client) CloneWorkflowTemplate() (workflowTemplate *WorkflowTemplate, err error) {
-
-	return
-}
-
 func (c *Client) ListWorkflowTemplateVersions(namespace, uid string) (workflowTemplateVersions []*WorkflowTemplate, err error) {
 	workflowTemplateVersions, err = c.listWorkflowTemplateVersions(namespace, uid)
 	if err != nil {
