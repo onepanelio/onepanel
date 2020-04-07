@@ -408,6 +408,13 @@ func (c *Client) createCronWorkflow(namespace string, wf *wfv1.Workflow, cwf *wf
 	}
 	cwf.Spec.WorkflowSpec = wf.Spec
 	cwf.Spec.WorkflowMetadata = &wf.ObjectMeta
+
+	//merge the labels
+	mergedLabels := wf.ObjectMeta.Labels
+	for k, v := range *opts.Labels {
+		mergedLabels[k] = v
+	}
+	cwf.Spec.WorkflowMetadata.Labels = mergedLabels
 	createdCronWorkflow, err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Create(cwf)
 	if err != nil {
 		return nil, err
