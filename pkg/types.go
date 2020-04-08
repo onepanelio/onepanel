@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"github.com/ghodss/yaml"
 	"strings"
 	"time"
 
@@ -60,6 +61,7 @@ type WorkflowTemplate struct {
 	Version    int32
 	IsLatest   bool `db:"is_latest"`
 	IsArchived bool `db:"is_archived"`
+	LatestArgo *wfv1.WorkflowTemplate
 }
 
 func (wt *WorkflowTemplate) GetManifestBytes() []byte {
@@ -74,6 +76,20 @@ func (wt *WorkflowTemplate) GenerateUID() (string, error) {
 	wt.UID = uid.String()
 
 	return wt.UID, nil
+}
+
+func (wt *WorkflowTemplate) GetWorkflowManifestBytes() ([]byte, error) {
+	if wt.LatestArgo == nil {
+		return []byte{}, nil
+	}
+
+	wt.LatestArgo.TypeMeta.Kind = "Workflow"
+	wt.LatestArgo.ObjectMeta = metav1.ObjectMeta{
+		GenerateName: wt.LatestArgo.ObjectMeta.GenerateName,
+		Labels:       wt.LatestArgo.ObjectMeta.Labels,
+	}
+
+	return yaml.Marshal(wt.LatestArgo)
 }
 
 const (

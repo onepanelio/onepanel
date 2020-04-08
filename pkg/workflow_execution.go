@@ -293,7 +293,17 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	(*opts.Labels)[workflowTemplateUIDLabelKey] = workflowTemplate.UID
 	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
 	//UX will prevent multiple workflows
-	workflows, err := UnmarshalWorkflows([]byte(workflowTemplate.Manifest), true)
+	manifest, err := workflowTemplate.GetWorkflowManifestBytes()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace":        namespace,
+			"WorkflowTemplate": workflowTemplate,
+			"Error":            err.Error(),
+		}).Error("Error with getting WorkflowManifest from workflow template")
+		return nil, err
+	}
+
+	workflows, err := UnmarshalWorkflows(manifest, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -315,6 +325,17 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 			return nil, err
 		}
 		createdWorkflows = append(createdWorkflows, createdWorkflow)
+	}
+
+	if createdWorkflows == nil {
+		err = errors.New("unable to create workflow")
+		log.WithFields(log.Fields{
+			"Namespace":        namespace,
+			"WorkflowTemplate": workflowTemplate,
+			"Error":            err.Error(),
+		}).Error("Error parsing workflow.")
+
+		return nil, err
 	}
 
 	workflow.Name = createdWorkflows[0].Name

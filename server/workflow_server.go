@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/onepanelio/core/pkg/util"
 	"google.golang.org/grpc/codes"
-	"gopkg.in/yaml.v2"
 	"math"
 	"sort"
 	"strings"
@@ -60,22 +59,12 @@ func apiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecu
 }
 
 func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
-	mapping := make(map[interface{}]interface{})
-	if err := yaml.Unmarshal([]byte(wft.Manifest), mapping); err != nil {
-		return nil
-	}
-
-	finalManifest, err := yaml.Marshal(mapping["spec"])
-	if err != nil {
-		return nil
-	}
-
 	return &api.WorkflowTemplate{
 		Uid:        wft.UID,
 		CreatedAt:  wft.CreatedAt.UTC().Format(time.RFC3339),
 		Name:       wft.Name,
 		Version:    wft.Version,
-		Manifest:   string(finalManifest),
+		Manifest:   wft.Manifest,
 		IsLatest:   wft.IsLatest,
 		IsArchived: wft.IsArchived,
 	}
