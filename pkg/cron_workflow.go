@@ -134,7 +134,7 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 
 	for _, wf := range workflows {
 		argoCronWorkflow.Spec.WorkflowSpec = wf.Spec
-		argoCreatedCronWorkflow, err := c.createCronWorkflow(namespace, workflowTemplate.UID, &argoCronWorkflow, opts)
+		argoCreatedCronWorkflow, err := c.createCronWorkflow(namespace, &wf, &argoCronWorkflow, opts)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"Namespace":    namespace,
@@ -361,7 +361,7 @@ func (c *Client) updateCronWorkflow(namespace string, name string, cwf *wfv1.Cro
 	return
 }
 
-func (c *Client) createCronWorkflow(namespace string, workflowTemplateUid string, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (createdCronWorkflow *wfv1.CronWorkflow, err error) {
+func (c *Client) createCronWorkflow(namespace string, wf *wfv1.Workflow, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (createdCronWorkflow *wfv1.CronWorkflow, err error) {
 	if opts == nil {
 		opts = &WorkflowExecutionOptions{}
 	}
@@ -403,11 +403,21 @@ func (c *Client) createCronWorkflow(namespace string, workflowTemplateUid string
 	}
 
 	//todo move this earlier in the process
-	//if err = c.injectAutomatedFields(namespace, cwf.Spec.WorkflowSpec, opts); err != nil {
-	//	return nil, err
-	//}
+	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
+		return nil, err
+	}
+	cwf.Spec.WorkflowSpec = wf.Spec
+	cwf.Spec.WorkflowMetadata = &wf.ObjectMeta
 
-	cwf.Spec.WorkflowMetadata = &metav1.ObjectMeta{Labels: *opts.Labels}
+	//merge the labels
+	mergedLabels := wf.ObjectMeta.Labels
+	if mergedLabels == nil {
+		mergedLabels = make(map[string]string)
+	}
+	for k, v := range *opts.Labels {
+		mergedLabels[k] = v
+	}
+	cwf.Spec.WorkflowMetadata.Labels = mergedLabels
 	createdCronWorkflow, err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Create(cwf)
 	if err != nil {
 		return nil, err
