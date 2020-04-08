@@ -411,6 +411,9 @@ func (c *Client) createCronWorkflow(namespace string, wf *wfv1.Workflow, cwf *wf
 
 	//merge the labels
 	mergedLabels := wf.ObjectMeta.Labels
+	if mergedLabels == nil {
+		mergedLabels = make(map[string]string)
+	}
 	for k, v := range *opts.Labels {
 		mergedLabels[k] = v
 	}
