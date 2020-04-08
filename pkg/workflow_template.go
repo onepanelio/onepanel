@@ -183,6 +183,7 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int32) (work
 		return nil, err
 	}
 	workflowTemplate.Manifest = string(manifest)
+	workflowTemplate.LatestArgo = argoWft
 
 	return
 }
