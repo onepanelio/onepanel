@@ -2,6 +2,8 @@ package v1
 
 import (
 	"database/sql"
+	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -52,11 +54,28 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, err
 	}
 
+	argoWft := &v1alpha1.WorkflowTemplate{
+		ObjectMeta: v1.ObjectMeta{
+			Name: uid,
+		},
+	}
+
+	argoWft, err = c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Create(argoWft)
+	if err != nil {
+		return nil, err
+	}
+
 	if err = c.insertWorkflowTemplateVersion(workflowTemplate, tx); err != nil {
+		if err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Delete(argoWft.Name, &v1.DeleteOptions{}); err != nil {
+			log.Printf("Unable to delete argo workflow template")
+		}
 		return nil, err
 	}
 
 	if err = tx.Commit(); err != nil {
+		if err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Delete(argoWft.Name, &v1.DeleteOptions{}); err != nil {
+			log.Printf("Unable to delete argo workflow template")
+		}
 		return nil, err
 	}
 
@@ -140,6 +159,29 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int32) (work
 	workflowTemplate = &WorkflowTemplate{}
 
 	sb := c.workflowTemplatesSelectBuilder(namespace).Where(sq.Eq{"wt.uid": uid}).
+		Columns("wtv.manifest").
+		OrderBy("wtv.version desc").
+		Limit(1)
+	if version != 0 {
+		sb = sb.Where(sq.Eq{"wtv.version": version})
+	}
+	query, args, err := sb.ToSql()
+	if err != nil {
+		return
+	}
+
+	if err = c.DB.Get(workflowTemplate, query, args...); err == sql.ErrNoRows {
+		err = nil
+		workflowTemplate = nil
+	}
+
+	return
+}
+
+func (c *Client) getWorkflowTemplateByName(namespace, name string, version int32) (workflowTemplate *WorkflowTemplate, err error) {
+	workflowTemplate = &WorkflowTemplate{}
+
+	sb := c.workflowTemplatesSelectBuilder(namespace).Where(sq.Eq{"wt.name": name}).
 		Columns("wtv.manifest").
 		OrderBy("wtv.version desc").
 		Limit(1)
@@ -312,6 +354,23 @@ func (c *Client) UpdateWorkflowTemplateVersion(namespace string, workflowTemplat
 
 func (c *Client) GetWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *WorkflowTemplate, err error) {
 	workflowTemplate, err = c.getWorkflowTemplate(namespace, uid, version)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace":        namespace,
+			"WorkflowTemplate": workflowTemplate,
+			"Error":            err.Error(),
+		}).Error("Get Workflow Template failed.")
+		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
+	}
+	if workflowTemplate == nil {
+		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
+	}
+
+	return
+}
+
+func (c *Client) GetWorkflowTemplateByName(namespace, name string, version int32) (workflowTemplate *WorkflowTemplate, err error) {
+	workflowTemplate, err = c.getWorkflowTemplateByName(namespace, name, version)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":        namespace,

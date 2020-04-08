@@ -35,6 +35,22 @@ type Metric struct {
 	Format string `json:"omitempty"`
 }
 
+type CronWorkflow struct {
+	ID                         uint64
+	CreatedAt                  time.Time `db:"created_at"`
+	UID                        string
+	Name                       string
+	GenerateName               string
+	Schedule                   string
+	Timezone                   string
+	Suspend                    bool
+	ConcurrencyPolicy          string
+	StartingDeadlineSeconds    *int64
+	SuccessfulJobsHistoryLimit *int32
+	FailedJobsHistoryLimit     *int32
+	WorkflowExecution          *WorkflowExecution
+}
+
 type WorkflowTemplate struct {
 	ID         uint64
 	CreatedAt  time.Time `db:"created_at"`

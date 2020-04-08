@@ -18,6 +18,13 @@ message GetWorkflowTemplateRequest {
     int32 version = 3;
 }
 
+message CloneWorkflowTemplateRequest {
+    string namespace = 1;
+    string uid = 2;
+    string name = 3;
+    int32 version = 4;
+}
+
 message ListWorkflowTemplateVersionsRequest {
     string namespace = 1;
     string uid = 2;

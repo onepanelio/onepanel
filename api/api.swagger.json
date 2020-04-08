@@ -109,6 +109,360 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/cron_workflow": {
+      "post": {
+        "operationId": "CreateCronWorkflow",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/CronWorkflow"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CronWorkflow"
+            }
+          }
+        ],
+        "tags": [
+          "CronWorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/cron_workflow/{name}": {
+      "get": {
+        "operationId": "GetCronWorkflow",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/CronWorkflow"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CronWorkflowService"
+        ]
+      },
+      "post": {
+        "operationId": "UpdateCronWorkflow",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/CronWorkflow"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CronWorkflow"
+            }
+          }
+        ],
+        "tags": [
+          "CronWorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/cron_workflows": {
+      "get": {
+        "operationId": "ListCronWorkflows",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListCronWorkflowsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "workflow_template_uid",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "CronWorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/cron_workflows/{name}/labels": {
+      "get": {
+        "operationId": "GetCronWorkflowLabels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetLabelsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CronWorkflowService"
+        ]
+      },
+      "post": {
+        "operationId": "AddCronWorkflowLabels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetLabelsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Labels"
+            }
+          }
+        ],
+        "tags": [
+          "CronWorkflowService"
+        ]
+      },
+      "put": {
+        "operationId": "ReplaceCronWorkflowLabels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetLabelsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Labels"
+            }
+          }
+        ],
+        "tags": [
+          "CronWorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/cron_workflows/{name}/labels/{key}": {
+      "delete": {
+        "operationId": "DeleteCronWorkflowLabel",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetLabelsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CronWorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/cron_workflows/{name}/terminate": {
+      "delete": {
+        "operationId": "TerminateCronWorkflow",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CronWorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/cron_workflows/{workflow_template_uid}": {
+      "get": {
+        "operationId": "ListCronWorkflows2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListCronWorkflowsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "workflow_template_uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "CronWorkflowService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/secrets": {
       "get": {
         "operationId": "ListSecrets",
@@ -544,6 +898,144 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}/labels": {
+      "get": {
+        "operationId": "GetWorkflowExecutionLabels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetLabelsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      },
+      "post": {
+        "operationId": "AddWorkflowExecutionLabels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetLabelsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Labels"
+            }
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      },
+      "put": {
+        "operationId": "ReplaceWorkflowExecutionLabels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetLabelsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Labels"
+            }
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}/labels/{key}": {
+      "delete": {
+        "operationId": "DeleteWorkflowExecutionLabel",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetLabelsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workflow_executions/{name}/pods/{podName}/containers/{containerName}/logs": {
       "get": {
         "operationId": "GetWorkflowExecutionLogs",
@@ -766,6 +1258,144 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/workflow_templates/{name}/labels": {
+      "get": {
+        "operationId": "GetWorkflowTemplateLabels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetLabelsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      },
+      "post": {
+        "operationId": "AddWorkflowTemplateLabels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetLabelsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Labels"
+            }
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      },
+      "put": {
+        "operationId": "ReplaceWorkflowTemplateLabels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetLabelsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Labels"
+            }
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_templates/{name}/labels/{key}": {
+      "delete": {
+        "operationId": "DeleteWorkflowTemplateLabel",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetLabelsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workflow_templates/{uid}": {
       "get": {
         "operationId": "GetWorkflowTemplate",
@@ -826,6 +1456,92 @@
             "in": "path",
             "required": true,
             "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_templates/{uid}/clone/{name}": {
+      "get": {
+        "operationId": "CloneWorkflowTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkflowTemplate"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_templates/{uid}/clone/{name}/{version}": {
+      "get": {
+        "operationId": "CloneWorkflowTemplate2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkflowTemplate"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
           }
         ],
         "tags": [
@@ -1011,6 +1727,42 @@
         }
       }
     },
+    "CronWorkflow": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "schedule": {
+          "type": "string"
+        },
+        "timezone": {
+          "type": "string"
+        },
+        "suspend": {
+          "type": "boolean",
+          "format": "boolean"
+        },
+        "concurrencyPolicy": {
+          "type": "string"
+        },
+        "startingDeadlineSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "successfulJobsHistoryLimit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "failedJobsHistoryLimit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "workflowExecution": {
+          "$ref": "#/definitions/WorkflowExecution"
+        }
+      }
+    },
     "DeleteSecretKeyResponse": {
       "type": "object",
       "properties": {
@@ -1057,6 +1809,17 @@
         }
       }
     },
+    "GetLabelsResponse": {
+      "type": "object",
+      "properties": {
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/KeyValue"
+          }
+        }
+      }
+    },
     "GetWorkflowExecutionMetricsResponse": {
       "type": "object",
       "properties": {
@@ -1065,6 +1828,55 @@
           "items": {
             "$ref": "#/definitions/Metric"
           }
+        }
+      }
+    },
+    "KeyValue": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "Labels": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/KeyValue"
+          }
+        }
+      }
+    },
+    "ListCronWorkflowsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "cronWorkflows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CronWorkflow"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pages": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
