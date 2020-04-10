@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"github.com/onepanelio/core/pkg/util"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
-	"log"
 	"math"
 	"sort"
 	"strings"
@@ -45,12 +45,20 @@ func apiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecu
 	}
 
 	if wf.WorkflowTemplate != nil {
+		wftManifest, err := v1.RemoveAllButSpec(wf.WorkflowTemplate.GetManifestBytes())
+		if err != nil {
+			log.WithFields(log.Fields{
+				"Method": "apiWorkflowExecution",
+				"Step":   "RemoveAllButSpec",
+				"Error":  err.Error(),
+			}).Error("Invalid status.")
+		}
 		workflow.WorkflowTemplate = &api.WorkflowTemplate{
 			Uid:        wf.WorkflowTemplate.UID,
 			CreatedAt:  wf.WorkflowTemplate.CreatedAt.UTC().Format(time.RFC3339),
 			Name:       wf.WorkflowTemplate.Name,
 			Version:    wf.WorkflowTemplate.Version,
-			Manifest:   wf.WorkflowTemplate.Manifest,
+			Manifest:   string(wftManifest),
 			IsLatest:   wf.WorkflowTemplate.IsLatest,
 			IsArchived: wf.WorkflowTemplate.IsArchived,
 		}
@@ -62,7 +70,11 @@ func apiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecu
 func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 	manifest, err := v1.RemoveAllButSpec(wft.GetManifestBytes())
 	if err != nil {
-		log.Printf("Error - TODO @todo")
+		log.WithFields(log.Fields{
+			"Method": "apiWorkflowTemplate",
+			"Step":   "RemoveAllButSpec",
+			"Error":  err.Error(),
+		}).Error("Get Workflow Template failed.")
 	}
 
 	return &api.WorkflowTemplate{
