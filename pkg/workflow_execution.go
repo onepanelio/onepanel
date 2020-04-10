@@ -440,14 +440,33 @@ func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflow
 	})
 
 	for _, wf := range wfs {
-		workflows = append(workflows, &WorkflowExecution{
+		execution := &WorkflowExecution{
 			Name:       wf.ObjectMeta.Name,
 			UID:        string(wf.ObjectMeta.UID),
 			Phase:      WorkflowExecutionPhase(wf.Status.Phase),
 			StartedAt:  wf.Status.StartedAt.UTC(),
 			FinishedAt: wf.Status.FinishedAt.UTC(),
 			CreatedAt:  wf.CreationTimestamp.UTC(),
-		})
+		}
+
+		versionString, ok := wf.Labels[workflowTemplateVersionLabelKey]
+		if ok {
+			versionNumber, err := strconv.Atoi(versionString)
+			if err == nil {
+				execution.WorkflowTemplate = &WorkflowTemplate{
+					Version: int32(versionNumber),
+				}
+			} else {
+				log.WithFields(log.Fields{
+					"Namespace":            namespace,
+					"WorkflowTemplateUID":  workflowTemplateUID,
+					"WorkflowExecutionUID": wf.UID,
+					"Error":                "Unable to get workflow template version",
+				}).Error("Unable to get workflow template version")
+			}
+		}
+
+		workflows = append(workflows, execution)
 	}
 
 	return

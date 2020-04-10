@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/onepanelio/core/pkg/util/number"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strconv"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -148,8 +149,6 @@ func (c *Client) workflowTemplatesSelectBuilder(namespace string) sq.SelectBuild
 	return sb
 }
 
-// todo get version here?
-// todo what is the version supposed to provide here? What information?
 func (c *Client) getWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *WorkflowTemplate, err error) {
 	workflowTemplate = &WorkflowTemplate{}
 
@@ -185,6 +184,13 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int32) (work
 	workflowTemplate.Manifest = string(manifest)
 	workflowTemplate.LatestArgo = argoWft
 
+	templateVersion, err := strconv.Atoi(argoWft.Labels["onepanel.io/version"])
+	if err != nil {
+		return nil, err
+	}
+
+	workflowTemplate.Version = int32(templateVersion)
+
 	return
 }
 
@@ -212,15 +218,40 @@ func (c *Client) getWorkflowTemplateByName(namespace, name string, version int32
 }
 
 func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTemplateVersions []*WorkflowTemplate, err error) {
-	workflowTemplateVersions = []*WorkflowTemplate{}
-
-	query, args, err := c.workflowTemplatesSelectBuilder(namespace).Where(sq.Eq{"wt.uid": uid}).
-		OrderBy("wtv.version desc").ToSql()
+	template, err := c.GetWorkflowTemplate(namespace, uid, 0)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	err = c.DB.Select(&workflowTemplateVersions, query, args...)
+	argoTemplates, err := c.listArgoWorkflowTemplates(namespace, uid)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, argoTemplate := range *argoTemplates {
+		version, versionErr := strconv.Atoi(argoTemplate.Labels["onepanel.io/version"])
+		if versionErr != nil {
+			return nil, versionErr
+		}
+
+		isLatest := false
+		if _, ok := argoTemplate.Labels["onepanel.io/version_latest"]; ok {
+			isLatest = true
+		}
+
+		newItem := WorkflowTemplate{
+			ID:         template.ID,
+			CreatedAt:  template.CreatedAt,
+			UID:        template.UID,
+			Name:       template.Name,
+			Manifest:   template.Manifest,
+			Version:    int32(version),
+			IsLatest:   isLatest,
+			IsArchived: template.IsArchived,
+		}
+
+		workflowTemplateVersions = append(workflowTemplateVersions, &newItem)
+	}
 
 	return
 }
@@ -524,4 +555,19 @@ func (c *Client) getArgoWorkflowTemplate(namespace, workflowTemplateUid, version
 	}
 
 	return &templates[0], nil
+}
+
+func (c *Client) listArgoWorkflowTemplates(namespace, workflowTemplateUid string) (*[]v1alpha1.WorkflowTemplate, error) {
+	labelSelect := fmt.Sprintf("onepanel.io/workflow_template_uid=%v", workflowTemplateUid)
+
+	workflowTemplates, err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).List(v1.ListOptions{
+		LabelSelector: labelSelect,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	templates := []v1alpha1.WorkflowTemplate(workflowTemplates.Items)
+
+	return &templates, nil
 }

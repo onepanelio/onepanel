@@ -51,7 +51,13 @@ func (c *Client) UpdateCronWorkflow(namespace string, name string, cronWorkflow 
 	argoCronWorkflow.Spec.SuccessfulJobsHistoryLimit = cronWorkflow.SuccessfulJobsHistoryLimit
 	argoCronWorkflow.Spec.FailedJobsHistoryLimit = cronWorkflow.FailedJobsHistoryLimit
 	//UX prevents multiple workflows
-	workflows, err := UnmarshalWorkflows([]byte(workflowTemplate.Manifest), true)
+
+	manifestBytes, err := workflowTemplate.GetWorkflowManifestBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	workflows, err := UnmarshalWorkflows(manifestBytes, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":    namespace,

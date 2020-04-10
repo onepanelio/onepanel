@@ -428,7 +428,7 @@ func (s *WorkflowServer) ListWorkflowTemplateVersions(ctx context.Context, req *
 		return nil, err
 	}
 
-	workflowTemplates := []*api.WorkflowTemplate{}
+	var workflowTemplates []*api.WorkflowTemplate
 	for _, wtv := range workflowTemplateVersions {
 		workflowTemplates = append(workflowTemplates, apiWorkflowTemplate(wtv))
 	}
