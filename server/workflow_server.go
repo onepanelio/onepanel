@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/onepanelio/core/pkg/util"
 	"google.golang.org/grpc/codes"
+	"log"
 	"math"
 	"sort"
 	"strings"
@@ -59,12 +60,17 @@ func apiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecu
 }
 
 func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
+	manifest, err := v1.RemoveAllButSpec(wft.GetManifestBytes())
+	if err != nil {
+		log.Printf("Error - TODO @todo")
+	}
+
 	return &api.WorkflowTemplate{
 		Uid:        wft.UID,
 		CreatedAt:  wft.CreatedAt.UTC().Format(time.RFC3339),
 		Name:       wft.Name,
 		Version:    wft.Version,
-		Manifest:   wft.Manifest,
+		Manifest:   string(manifest),
 		IsLatest:   wft.IsLatest,
 		IsArchived: wft.IsArchived,
 	}

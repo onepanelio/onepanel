@@ -1,7 +1,8 @@
 package v1
 
 import (
-	"github.com/ghodss/yaml"
+	"encoding/json"
+	"gopkg.in/yaml.v2"
 	"strings"
 	"time"
 
@@ -89,7 +90,7 @@ func (wt *WorkflowTemplate) GetWorkflowManifestBytes() ([]byte, error) {
 		Labels:       wt.LatestArgo.ObjectMeta.Labels,
 	}
 
-	return yaml.Marshal(wt.LatestArgo)
+	return json.Marshal(wt.LatestArgo)
 }
 
 const (
@@ -197,4 +198,33 @@ func FilePathToExtension(path string) string {
 	}
 
 	return path[dotIndex+1:]
+}
+
+func WrapSpecInK8s(data []byte) ([]byte, error) {
+	mapping := make(map[interface{}]interface{})
+	if err := yaml.Unmarshal(data, mapping); err != nil {
+		return nil, err
+	}
+
+	contentMap := map[interface{}]interface{}{
+		"metadata": make(map[interface{}]interface{}),
+		"spec":     mapping,
+	}
+
+	finalBytes, err := yaml.Marshal(contentMap)
+	if err != nil {
+		return nil, nil
+	}
+
+	return finalBytes, nil
+}
+
+func RemoveAllButSpec(manifest []byte) ([]byte, error) {
+	mapping := make(map[interface{}]interface{})
+
+	if err := yaml.Unmarshal(manifest, mapping); err != nil {
+		return []byte{}, nil
+	}
+
+	return yaml.Marshal(mapping["spec"])
 }

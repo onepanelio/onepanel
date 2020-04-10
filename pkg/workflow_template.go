@@ -296,7 +296,12 @@ func (c *Client) archiveWorkflowTemplate(namespace, uid string) (bool, error) {
 
 func (c *Client) CreateWorkflowTemplate(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
 	// validate workflow template
-	if err := c.ValidateWorkflowExecution(namespace, workflowTemplate.GetManifestBytes()); err != nil {
+	finalBytes, err := WrapSpecInK8s(workflowTemplate.GetManifestBytes())
+	if err != nil {
+		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
+	}
+
+	if err := c.ValidateWorkflowExecution(namespace, finalBytes); err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
@@ -305,7 +310,7 @@ func (c *Client) CreateWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
 	}
 
-	workflowTemplate, err := c.createWorkflowTemplate(namespace, workflowTemplate)
+	workflowTemplate, err = c.createWorkflowTemplate(namespace, workflowTemplate)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":        namespace,
@@ -320,7 +325,12 @@ func (c *Client) CreateWorkflowTemplate(namespace string, workflowTemplate *Work
 
 func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
 	// validate workflow template
-	if err := c.ValidateWorkflowExecution(namespace, workflowTemplate.GetManifestBytes()); err != nil {
+	finalBytes, err := WrapSpecInK8s(workflowTemplate.GetManifestBytes())
+	if err != nil {
+		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
+	}
+
+	if err := c.ValidateWorkflowExecution(namespace, finalBytes); err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
@@ -513,7 +523,12 @@ func createArgoWorkflowTemplate(workflowTemplate *WorkflowTemplate, version stri
 	var jsonOpts []argojson.JSONOpt
 	jsonOpts = append(jsonOpts, argojson.DisallowUnknownFields)
 
-	err := yaml.Unmarshal(workflowTemplate.GetManifestBytes(), &argoWft)
+	finalBytes, err := WrapSpecInK8s(workflowTemplate.GetManifestBytes())
+	if err != nil {
+		return nil, err
+	}
+
+	err = yaml.Unmarshal(finalBytes, &argoWft)
 	if err != nil {
 		return nil, err
 	}
