@@ -7,6 +7,7 @@ import (
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/server/auth"
+	"github.com/onepanelio/core/server/converter"
 	"math"
 )
 
@@ -59,6 +60,7 @@ func (c *CronWorkflowServer) CreateCronWorkflow(ctx context.Context, req *api.Cr
 	}
 
 	workflow := &v1.WorkflowExecution{
+		Labels: converter.APIKeyValueToLabel(req.CronWorkflow.WorkflowExecution.Labels),
 		WorkflowTemplate: &v1.WorkflowTemplate{
 			UID:     req.CronWorkflow.WorkflowExecution.WorkflowTemplate.Uid,
 			Version: req.CronWorkflow.WorkflowExecution.WorkflowTemplate.Version,

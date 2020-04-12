@@ -4,9 +4,7 @@ package api;
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
-import "workflow_template.proto";
 import "workflow.proto";
-import "metric.proto";
 import "label.proto";
 
 service CronWorkflowService {

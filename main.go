@@ -91,6 +91,7 @@ func startRPCServer(db *v1.DB, kubeConfig *v1.Config) {
 			grpc_recovery.StreamServerInterceptor(recoveryOpts...),
 			auth.AuthStreamingInterceptor(kubeConfig, db)),
 	))
+	api.RegisterWorkflowTemplateServiceServer(s, server.NewWorkflowTemplateServer())
 	api.RegisterCronWorkflowServiceServer(s, server.NewCronWorkflowServer())
 	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer())
 	api.RegisterSecretServiceServer(s, server.NewSecretServer())
@@ -113,6 +114,7 @@ func startHTTPProxy() {
 	mux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithInsecure()}
 
+	registerHandler(api.RegisterWorkflowTemplateServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
 	registerHandler(api.RegisterWorkflowServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
 	registerHandler(api.RegisterCronWorkflowServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
 	registerHandler(api.RegisterSecretServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)

@@ -4,8 +4,13 @@
 package api
 
 import (
+	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
+	_ "google.golang.org/genproto/googleapis/api/annotations"
+	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -499,16 +504,17 @@ func (m *ArchiveWorkflowTemplateResponse) GetWorkflowTemplate() *WorkflowTemplat
 }
 
 type WorkflowTemplate struct {
-	CreatedAt            string   `protobuf:"bytes,1,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
-	Uid                  string   `protobuf:"bytes,2,opt,name=uid,proto3" json:"uid,omitempty"`
-	Name                 string   `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	Version              int32    `protobuf:"varint,4,opt,name=version,proto3" json:"version,omitempty"`
-	Manifest             string   `protobuf:"bytes,5,opt,name=manifest,proto3" json:"manifest,omitempty"`
-	IsLatest             bool     `protobuf:"varint,6,opt,name=isLatest,proto3" json:"isLatest,omitempty"`
-	IsArchived           bool     `protobuf:"varint,7,opt,name=isArchived,proto3" json:"isArchived,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	CreatedAt            string      `protobuf:"bytes,1,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	Uid                  string      `protobuf:"bytes,2,opt,name=uid,proto3" json:"uid,omitempty"`
+	Name                 string      `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Version              int32       `protobuf:"varint,4,opt,name=version,proto3" json:"version,omitempty"`
+	Manifest             string      `protobuf:"bytes,5,opt,name=manifest,proto3" json:"manifest,omitempty"`
+	IsLatest             bool        `protobuf:"varint,6,opt,name=isLatest,proto3" json:"isLatest,omitempty"`
+	IsArchived           bool        `protobuf:"varint,7,opt,name=isArchived,proto3" json:"isArchived,omitempty"`
+	Labels               []*KeyValue `protobuf:"bytes,8,rep,name=labels,proto3" json:"labels,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
+	XXX_unrecognized     []byte      `json:"-"`
+	XXX_sizecache        int32       `json:"-"`
 }
 
 func (m *WorkflowTemplate) Reset()         { *m = WorkflowTemplate{} }
@@ -585,6 +591,13 @@ func (m *WorkflowTemplate) GetIsArchived() bool {
 	return false
 }
 
+func (m *WorkflowTemplate) GetLabels() []*KeyValue {
+	if m != nil {
+		return m.Labels
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*CreateWorkflowTemplateRequest)(nil), "api.CreateWorkflowTemplateRequest")
 	proto.RegisterType((*UpdateWorkflowTemplateVersionRequest)(nil), "api.UpdateWorkflowTemplateVersionRequest")
@@ -602,29 +615,534 @@ func init() {
 func init() { proto.RegisterFile("workflow_template.proto", fileDescriptor_b9a07547748a96e8) }
 
 var fileDescriptor_b9a07547748a96e8 = []byte{
-	// 378 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x54, 0x41, 0x4f, 0x32, 0x31,
-	0x10, 0x4d, 0x59, 0x16, 0xd8, 0xf9, 0x2e, 0x7c, 0x8d, 0xc6, 0x86, 0x00, 0x6e, 0x56, 0x0e, 0x7b,
-	0xe2, 0xa0, 0x57, 0x2f, 0x84, 0x83, 0x17, 0x0e, 0x66, 0x23, 0x7a, 0x34, 0x75, 0xb7, 0xc4, 0x46,
-	0xd8, 0xd6, 0x6d, 0x81, 0xc4, 0x78, 0xd0, 0x93, 0x7f, 0xcd, 0x9f, 0x65, 0xb6, 0x2c, 0x88, 0xc0,
-	0x1a, 0x45, 0xf4, 0xd6, 0x99, 0x79, 0x33, 0xef, 0xcd, 0xb4, 0x1d, 0x38, 0x98, 0x8a, 0xe4, 0x6e,
-	0x30, 0x14, 0xd3, 0x6b, 0xcd, 0x46, 0x72, 0x48, 0x35, 0x6b, 0xcb, 0x44, 0x68, 0x81, 0x2d, 0x2a,
-	0xb9, 0xf7, 0x84, 0xa0, 0xd1, 0x4d, 0x18, 0xd5, 0xec, 0x2a, 0x83, 0x5d, 0x64, 0xa8, 0x80, 0xdd,
-	0x8f, 0x99, 0xd2, 0xb8, 0x0e, 0x4e, 0x4c, 0x47, 0x4c, 0x49, 0x1a, 0x32, 0x82, 0x5c, 0xe4, 0x3b,
-	0xc1, 0xbb, 0x03, 0x77, 0xa0, 0x3a, 0x5d, 0x49, 0x24, 0x05, 0x17, 0xf9, 0xff, 0x8e, 0xf7, 0xdb,
-	0x54, 0xf2, 0xf6, 0x5a, 0xd5, 0x35, 0xb8, 0xf7, 0x82, 0xa0, 0xd5, 0x97, 0xd1, 0x06, 0x09, 0x97,
-	0x2c, 0x51, 0x5c, 0xc4, 0x7f, 0xa6, 0x64, 0x00, 0xb5, 0x33, 0xa6, 0xb7, 0x1b, 0x44, 0x15, 0xac,
-	0x31, 0x8f, 0x0c, 0xa3, 0x13, 0xa4, 0x47, 0x4c, 0xa0, 0x3c, 0x99, 0x35, 0x40, 0x2c, 0x17, 0xf9,
-	0x76, 0x30, 0x37, 0xbd, 0x47, 0xa8, 0x77, 0x87, 0x22, 0x66, 0xbb, 0x62, 0xc2, 0x50, 0x4c, 0xc3,
-	0x86, 0xc6, 0x09, 0xcc, 0x79, 0x99, 0xbd, 0xf8, 0x91, 0xbd, 0x0f, 0x47, 0x3d, 0xae, 0x74, 0xce,
-	0xb0, 0xd5, 0x96, 0x22, 0xbc, 0x67, 0x04, 0xad, 0xcf, 0xeb, 0x2a, 0x29, 0x62, 0xc5, 0xf0, 0x1e,
-	0xd8, 0xa1, 0x18, 0xc7, 0xda, 0x14, 0xb5, 0x83, 0x99, 0x81, 0xbb, 0xf0, 0x7f, 0xf5, 0x3e, 0x14,
-	0x29, 0xb8, 0x56, 0xfe, 0xfd, 0xad, 0xe3, 0xbd, 0x53, 0xa8, 0x6f, 0x92, 0xf0, 0xb5, 0x9e, 0xbc,
-	0x07, 0x68, 0xe4, 0x64, 0xff, 0xbe, 0xf2, 0x73, 0x68, 0x76, 0x92, 0xf0, 0x96, 0x4f, 0x76, 0xf5,
-	0x28, 0xbc, 0x08, 0x0e, 0x73, 0x2b, 0x66, 0xfd, 0x6c, 0xfa, 0x32, 0xe8, 0x7b, 0x5f, 0xe6, 0x15,
-	0x41, 0x75, 0x15, 0x96, 0x4a, 0x0d, 0xcd, 0x4e, 0x89, 0x3a, 0x7a, 0x2e, 0x75, 0xe1, 0xf8, 0xe9,
-	0xfb, 0xc5, 0x35, 0xa8, 0x8c, 0x68, 0xcc, 0x07, 0x4c, 0x69, 0x62, 0x9b, 0x8c, 0x85, 0x9d, 0xc6,
-	0xb8, 0xea, 0xa5, 0x13, 0xd5, 0xa4, 0xe4, 0x22, 0xbf, 0x12, 0x2c, 0x6c, 0xdc, 0x04, 0xe0, 0x2a,
-	0x1b, 0x49, 0x44, 0xca, 0x26, 0xba, 0xe4, 0xb9, 0x29, 0x99, 0xb5, 0x78, 0xf2, 0x16, 0x00, 0x00,
-	0xff, 0xff, 0x16, 0xdf, 0x5b, 0xc1, 0x31, 0x05, 0x00, 0x00,
+	// 848 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x97, 0xcf, 0x6f, 0xd3, 0x48,
+	0x14, 0xc7, 0x35, 0x4d, 0xd3, 0x36, 0xaf, 0x5a, 0xa9, 0x7d, 0xbb, 0x69, 0x5c, 0x6f, 0xd2, 0x66,
+	0xdd, 0xae, 0x94, 0xae, 0x56, 0xb1, 0xda, 0xdd, 0x53, 0xb7, 0x2b, 0x9a, 0xa6, 0x50, 0xa0, 0x39,
+	0x20, 0x43, 0x8b, 0xd4, 0x0b, 0xb8, 0xf1, 0xa4, 0x58, 0x75, 0x6d, 0x13, 0x3b, 0xa9, 0x4a, 0x88,
+	0x44, 0xe1, 0x80, 0xb8, 0xf4, 0xc2, 0x0f, 0x21, 0x21, 0x71, 0xe6, 0x4f, 0xe0, 0xcc, 0xbf, 0xd0,
+	0x7f, 0x01, 0x0e, 0x9c, 0xf8, 0x17, 0x90, 0xc7, 0x4e, 0x48, 0x13, 0xdb, 0xe4, 0x17, 0xdc, 0x32,
+	0x33, 0x6f, 0xde, 0x7c, 0xbe, 0xef, 0xcd, 0xbc, 0xe7, 0x40, 0xe2, 0xd8, 0x28, 0x1f, 0x96, 0x34,
+	0xe3, 0xf8, 0x8e, 0x4d, 0x8f, 0x4c, 0x4d, 0xb6, 0x69, 0xd6, 0x2c, 0x1b, 0xb6, 0x81, 0x11, 0xd9,
+	0x54, 0xf9, 0xe4, 0x81, 0x61, 0x1c, 0x68, 0x54, 0x94, 0x4d, 0x55, 0x94, 0x75, 0xdd, 0xb0, 0x65,
+	0x5b, 0x35, 0x74, 0xcb, 0x35, 0xe1, 0x27, 0x35, 0x79, 0x9f, 0x6a, 0xee, 0x40, 0x78, 0x44, 0x20,
+	0x95, 0x2f, 0x53, 0xd9, 0xa6, 0xb7, 0x3d, 0x8f, 0xb7, 0x3c, 0x87, 0x12, 0xbd, 0x5f, 0xa1, 0x96,
+	0x8d, 0x49, 0x88, 0xe9, 0xf2, 0x11, 0xb5, 0x4c, 0xb9, 0x48, 0x39, 0x92, 0x26, 0x99, 0x98, 0xf4,
+	0x6d, 0x02, 0x73, 0x30, 0x75, 0xdc, 0xb6, 0x91, 0x1b, 0x49, 0x93, 0xcc, 0xe4, 0x4a, 0x3c, 0x2b,
+	0x9b, 0x6a, 0xb6, 0xc3, 0x6b, 0x87, 0xb9, 0xf0, 0x94, 0xc0, 0xe2, 0x8e, 0xa9, 0xf8, 0x20, 0xec,
+	0xd2, 0xb2, 0xa5, 0x1a, 0xfa, 0x4f, 0x23, 0x29, 0x01, 0xbf, 0x45, 0xed, 0xfe, 0x02, 0x31, 0x05,
+	0x91, 0x8a, 0xaa, 0xb0, 0x13, 0x63, 0x92, 0xf3, 0x13, 0x39, 0x18, 0xaf, 0xba, 0x02, 0xb8, 0x48,
+	0x9a, 0x64, 0xa2, 0x52, 0x63, 0x28, 0x3c, 0x84, 0x64, 0x5e, 0x33, 0x74, 0x3a, 0xac, 0x93, 0x10,
+	0x46, 0x9d, 0x65, 0x76, 0x4c, 0x4c, 0x62, 0xbf, 0x5b, 0x4f, 0x1f, 0xbd, 0x78, 0xfa, 0x0e, 0x2c,
+	0x14, 0x54, 0xcb, 0x0e, 0x08, 0xb6, 0xd5, 0x27, 0x84, 0x70, 0x4a, 0x60, 0x31, 0xdc, 0xaf, 0x65,
+	0x1a, 0xba, 0x45, 0xf1, 0x37, 0x88, 0x16, 0x8d, 0x8a, 0x6e, 0x33, 0xa7, 0x51, 0xc9, 0x1d, 0x60,
+	0x1e, 0xa6, 0xdb, 0xf3, 0x61, 0x71, 0x23, 0xe9, 0x48, 0x70, 0xfe, 0x3a, 0xed, 0x85, 0x35, 0x48,
+	0xfa, 0x21, 0x74, 0xa7, 0x49, 0x78, 0x00, 0xa9, 0x80, 0xdd, 0x3f, 0x9e, 0xfc, 0x06, 0xcc, 0xe5,
+	0xca, 0xc5, 0x7b, 0x6a, 0x75, 0x58, 0x97, 0x42, 0x50, 0x60, 0x3e, 0xd0, 0xa3, 0xa7, 0xc7, 0xef,
+	0xc9, 0x90, 0xde, 0x9e, 0xcc, 0x17, 0x02, 0x53, 0xed, 0x66, 0x0e, 0x6a, 0x91, 0xd5, 0x14, 0x25,
+	0x67, 0x37, 0x50, 0x9b, 0x13, 0x83, 0xde, 0x5f, 0xe4, 0x61, 0xe2, 0x48, 0xd6, 0xd5, 0x12, 0xb5,
+	0x6c, 0x2e, 0xca, 0x76, 0x34, 0xc7, 0xce, 0x9a, 0x6a, 0x15, 0x9c, 0x88, 0xda, 0xdc, 0x58, 0x9a,
+	0x64, 0x26, 0xa4, 0xe6, 0x18, 0xe7, 0x00, 0x54, 0xcb, 0x0b, 0x89, 0xc2, 0x8d, 0xb3, 0xd5, 0x96,
+	0x19, 0xfc, 0x13, 0xc6, 0x58, 0x65, 0xb4, 0xb8, 0x09, 0x96, 0xbc, 0x5f, 0x58, 0x0c, 0xb6, 0xe9,
+	0xc9, 0xae, 0xac, 0x55, 0xa8, 0xe4, 0x2d, 0xae, 0x3c, 0x9b, 0x86, 0x44, 0xbb, 0xe2, 0x9b, 0xb4,
+	0x5c, 0x55, 0x8b, 0x14, 0xdf, 0x10, 0x98, 0xf1, 0xaf, 0xa6, 0x28, 0x30, 0x6f, 0xa1, 0xa5, 0x96,
+	0xf7, 0x8f, 0xba, 0x70, 0xe5, 0xf1, 0xf9, 0xc7, 0xe7, 0x23, 0xeb, 0xc2, 0xdf, 0x4e, 0x41, 0xb7,
+	0xc4, 0xea, 0xf2, 0x3e, 0xb5, 0xe5, 0x65, 0xb1, 0xd6, 0xcc, 0x7e, 0x5d, 0xec, 0x68, 0x07, 0xd6,
+	0x6a, 0x47, 0xae, 0xf0, 0x13, 0x81, 0x54, 0x68, 0xa1, 0xc5, 0x25, 0x06, 0xd0, 0x4d, 0x31, 0x0e,
+	0x62, 0x3d, 0x25, 0x0c, 0xb6, 0xc6, 0x1f, 0xf4, 0x02, 0x2b, 0xd6, 0xda, 0x61, 0xb3, 0x15, 0x55,
+	0xa9, 0x8b, 0x5e, 0xca, 0xfd, 0xd6, 0xbd, 0xa5, 0xba, 0x8f, 0xce, 0x0f, 0x81, 0x3d, 0xad, 0xa1,
+	0x73, 0x80, 0x64, 0x94, 0x98, 0xbe, 0xbb, 0x42, 0x61, 0x98, 0xfa, 0x7c, 0x44, 0x9c, 0x13, 0xf8,
+	0xd5, 0xa7, 0x19, 0xe1, 0x3c, 0xc3, 0x0a, 0x6e, 0x53, 0x41, 0xdc, 0x4f, 0xdc, 0xc4, 0xd4, 0x71,
+	0xa5, 0x37, 0x70, 0x87, 0x73, 0x6f, 0x0b, 0x2f, 0xf7, 0xbe, 0xab, 0x25, 0x7b, 0x8d, 0x64, 0xe1,
+	0x7b, 0xe2, 0x5f, 0xa1, 0x1b, 0x4d, 0x02, 0x33, 0x8c, 0xbe, 0x8b, 0xfe, 0xc4, 0x2f, 0x75, 0x61,
+	0xe9, 0xd6, 0x39, 0x21, 0xcf, 0xa4, 0xff, 0x8f, 0xff, 0x0d, 0x20, 0x02, 0x5f, 0x10, 0x88, 0xfb,
+	0xb6, 0x07, 0xfc, 0x23, 0x90, 0xa4, 0x09, 0x2b, 0x84, 0x99, 0x78, 0x94, 0xff, 0x32, 0xca, 0x2c,
+	0xf6, 0xf4, 0xcc, 0xf1, 0x33, 0x81, 0xb8, 0xef, 0xc7, 0x84, 0x87, 0x15, 0xf6, 0xa1, 0x11, 0x74,
+	0x57, 0x5e, 0xba, 0x77, 0xe5, 0x8c, 0xe0, 0xa5, 0x3e, 0x22, 0x56, 0x74, 0x4e, 0x74, 0x4d, 0xeb,
+	0x7b, 0xdb, 0x78, 0x6d, 0x40, 0x17, 0x2d, 0xb7, 0xe7, 0x1d, 0x81, 0x44, 0x40, 0x4f, 0xc3, 0x05,
+	0x26, 0x25, 0xbc, 0x87, 0xf2, 0x8b, 0xe1, 0x46, 0x5e, 0x22, 0x36, 0x98, 0xfa, 0x35, 0x7e, 0xb5,
+	0x0f, 0x72, 0xd9, 0xf5, 0x8d, 0x67, 0x04, 0x66, 0x7d, 0x1e, 0x69, 0x81, 0xf5, 0x10, 0x8c, 0x37,
+	0x1e, 0xb1, 0x3b, 0x6e, 0xe0, 0xcd, 0xb4, 0x4f, 0x5f, 0x04, 0xc2, 0x1e, 0x81, 0xdc, 0xf0, 0xb9,
+	0x6d, 0x0b, 0x5f, 0x11, 0x98, 0xcd, 0x29, 0x4a, 0x28, 0x50, 0x4e, 0x51, 0xba, 0x03, 0xba, 0xce,
+	0x80, 0x36, 0x85, 0x01, 0x80, 0x56, 0xbd, 0x7e, 0x8a, 0x6f, 0x09, 0xa4, 0x24, 0x6a, 0x6a, 0x72,
+	0x91, 0x06, 0xc0, 0xcd, 0x32, 0x0a, 0xcf, 0xa6, 0x27, 0x40, 0x7e, 0x18, 0x80, 0xaf, 0x09, 0xfc,
+	0xbe, 0x49, 0x35, 0x6a, 0xfb, 0xf3, 0x61, 0x82, 0x31, 0xb8, 0x16, 0x6c, 0xe6, 0x7b, 0x70, 0x57,
+	0x19, 0xdc, 0xc6, 0x5f, 0xeb, 0xfd, 0xc3, 0x89, 0xb5, 0x43, 0x7a, 0x52, 0xdf, 0x1f, 0x63, 0x7f,
+	0xe2, 0xfe, 0xf9, 0x1a, 0x00, 0x00, 0xff, 0xff, 0xa9, 0x6a, 0x98, 0x70, 0x0f, 0x0e, 0x00, 0x00,
+}
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConn
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion4
+
+// WorkflowTemplateServiceClient is the client API for WorkflowTemplateService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type WorkflowTemplateServiceClient interface {
+	CreateWorkflowTemplate(ctx context.Context, in *CreateWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error)
+	UpdateWorkflowTemplateVersion(ctx context.Context, in *UpdateWorkflowTemplateVersionRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error)
+	CreateWorkflowTemplateVersion(ctx context.Context, in *CreateWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error)
+	GetWorkflowTemplate(ctx context.Context, in *GetWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error)
+	ListWorkflowTemplateVersions(ctx context.Context, in *ListWorkflowTemplateVersionsRequest, opts ...grpc.CallOption) (*ListWorkflowTemplateVersionsResponse, error)
+	ListWorkflowTemplates(ctx context.Context, in *ListWorkflowTemplatesRequest, opts ...grpc.CallOption) (*ListWorkflowTemplatesResponse, error)
+	CloneWorkflowTemplate(ctx context.Context, in *CloneWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error)
+	ArchiveWorkflowTemplate(ctx context.Context, in *ArchiveWorkflowTemplateRequest, opts ...grpc.CallOption) (*ArchiveWorkflowTemplateResponse, error)
+	GetWorkflowTemplateLabels(ctx context.Context, in *GetLabelsRequest, opts ...grpc.CallOption) (*GetLabelsResponse, error)
+	AddWorkflowTemplateLabels(ctx context.Context, in *AddLabelsRequest, opts ...grpc.CallOption) (*GetLabelsResponse, error)
+	ReplaceWorkflowTemplateLabels(ctx context.Context, in *ReplaceLabelsRequest, opts ...grpc.CallOption) (*GetLabelsResponse, error)
+	DeleteWorkflowTemplateLabel(ctx context.Context, in *DeleteLabelRequest, opts ...grpc.CallOption) (*GetLabelsResponse, error)
+}
+
+type workflowTemplateServiceClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewWorkflowTemplateServiceClient(cc *grpc.ClientConn) WorkflowTemplateServiceClient {
+	return &workflowTemplateServiceClient{cc}
+}
+
+func (c *workflowTemplateServiceClient) CreateWorkflowTemplate(ctx context.Context, in *CreateWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error) {
+	out := new(WorkflowTemplate)
+	err := c.cc.Invoke(ctx, "/api.WorkflowTemplateService/CreateWorkflowTemplate", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workflowTemplateServiceClient) UpdateWorkflowTemplateVersion(ctx context.Context, in *UpdateWorkflowTemplateVersionRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error) {
+	out := new(WorkflowTemplate)
+	err := c.cc.Invoke(ctx, "/api.WorkflowTemplateService/UpdateWorkflowTemplateVersion", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workflowTemplateServiceClient) CreateWorkflowTemplateVersion(ctx context.Context, in *CreateWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error) {
+	out := new(WorkflowTemplate)
+	err := c.cc.Invoke(ctx, "/api.WorkflowTemplateService/CreateWorkflowTemplateVersion", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workflowTemplateServiceClient) GetWorkflowTemplate(ctx context.Context, in *GetWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error) {
+	out := new(WorkflowTemplate)
+	err := c.cc.Invoke(ctx, "/api.WorkflowTemplateService/GetWorkflowTemplate", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workflowTemplateServiceClient) ListWorkflowTemplateVersions(ctx context.Context, in *ListWorkflowTemplateVersionsRequest, opts ...grpc.CallOption) (*ListWorkflowTemplateVersionsResponse, error) {
+	out := new(ListWorkflowTemplateVersionsResponse)
+	err := c.cc.Invoke(ctx, "/api.WorkflowTemplateService/ListWorkflowTemplateVersions", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workflowTemplateServiceClient) ListWorkflowTemplates(ctx context.Context, in *ListWorkflowTemplatesRequest, opts ...grpc.CallOption) (*ListWorkflowTemplatesResponse, error) {
+	out := new(ListWorkflowTemplatesResponse)
+	err := c.cc.Invoke(ctx, "/api.WorkflowTemplateService/ListWorkflowTemplates", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workflowTemplateServiceClient) CloneWorkflowTemplate(ctx context.Context, in *CloneWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error) {
+	out := new(WorkflowTemplate)
+	err := c.cc.Invoke(ctx, "/api.WorkflowTemplateService/CloneWorkflowTemplate", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workflowTemplateServiceClient) ArchiveWorkflowTemplate(ctx context.Context, in *ArchiveWorkflowTemplateRequest, opts ...grpc.CallOption) (*ArchiveWorkflowTemplateResponse, error) {
+	out := new(ArchiveWorkflowTemplateResponse)
+	err := c.cc.Invoke(ctx, "/api.WorkflowTemplateService/ArchiveWorkflowTemplate", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workflowTemplateServiceClient) GetWorkflowTemplateLabels(ctx context.Context, in *GetLabelsRequest, opts ...grpc.CallOption) (*GetLabelsResponse, error) {
+	out := new(GetLabelsResponse)
+	err := c.cc.Invoke(ctx, "/api.WorkflowTemplateService/GetWorkflowTemplateLabels", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workflowTemplateServiceClient) AddWorkflowTemplateLabels(ctx context.Context, in *AddLabelsRequest, opts ...grpc.CallOption) (*GetLabelsResponse, error) {
+	out := new(GetLabelsResponse)
+	err := c.cc.Invoke(ctx, "/api.WorkflowTemplateService/AddWorkflowTemplateLabels", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workflowTemplateServiceClient) ReplaceWorkflowTemplateLabels(ctx context.Context, in *ReplaceLabelsRequest, opts ...grpc.CallOption) (*GetLabelsResponse, error) {
+	out := new(GetLabelsResponse)
+	err := c.cc.Invoke(ctx, "/api.WorkflowTemplateService/ReplaceWorkflowTemplateLabels", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workflowTemplateServiceClient) DeleteWorkflowTemplateLabel(ctx context.Context, in *DeleteLabelRequest, opts ...grpc.CallOption) (*GetLabelsResponse, error) {
+	out := new(GetLabelsResponse)
+	err := c.cc.Invoke(ctx, "/api.WorkflowTemplateService/DeleteWorkflowTemplateLabel", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// WorkflowTemplateServiceServer is the server API for WorkflowTemplateService service.
+type WorkflowTemplateServiceServer interface {
+	CreateWorkflowTemplate(context.Context, *CreateWorkflowTemplateRequest) (*WorkflowTemplate, error)
+	UpdateWorkflowTemplateVersion(context.Context, *UpdateWorkflowTemplateVersionRequest) (*WorkflowTemplate, error)
+	CreateWorkflowTemplateVersion(context.Context, *CreateWorkflowTemplateRequest) (*WorkflowTemplate, error)
+	GetWorkflowTemplate(context.Context, *GetWorkflowTemplateRequest) (*WorkflowTemplate, error)
+	ListWorkflowTemplateVersions(context.Context, *ListWorkflowTemplateVersionsRequest) (*ListWorkflowTemplateVersionsResponse, error)
+	ListWorkflowTemplates(context.Context, *ListWorkflowTemplatesRequest) (*ListWorkflowTemplatesResponse, error)
+	CloneWorkflowTemplate(context.Context, *CloneWorkflowTemplateRequest) (*WorkflowTemplate, error)
+	ArchiveWorkflowTemplate(context.Context, *ArchiveWorkflowTemplateRequest) (*ArchiveWorkflowTemplateResponse, error)
+	GetWorkflowTemplateLabels(context.Context, *GetLabelsRequest) (*GetLabelsResponse, error)
+	AddWorkflowTemplateLabels(context.Context, *AddLabelsRequest) (*GetLabelsResponse, error)
+	ReplaceWorkflowTemplateLabels(context.Context, *ReplaceLabelsRequest) (*GetLabelsResponse, error)
+	DeleteWorkflowTemplateLabel(context.Context, *DeleteLabelRequest) (*GetLabelsResponse, error)
+}
+
+// UnimplementedWorkflowTemplateServiceServer can be embedded to have forward compatible implementations.
+type UnimplementedWorkflowTemplateServiceServer struct {
+}
+
+func (*UnimplementedWorkflowTemplateServiceServer) CreateWorkflowTemplate(ctx context.Context, req *CreateWorkflowTemplateRequest) (*WorkflowTemplate, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateWorkflowTemplate not implemented")
+}
+func (*UnimplementedWorkflowTemplateServiceServer) UpdateWorkflowTemplateVersion(ctx context.Context, req *UpdateWorkflowTemplateVersionRequest) (*WorkflowTemplate, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateWorkflowTemplateVersion not implemented")
+}
+func (*UnimplementedWorkflowTemplateServiceServer) CreateWorkflowTemplateVersion(ctx context.Context, req *CreateWorkflowTemplateRequest) (*WorkflowTemplate, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateWorkflowTemplateVersion not implemented")
+}
+func (*UnimplementedWorkflowTemplateServiceServer) GetWorkflowTemplate(ctx context.Context, req *GetWorkflowTemplateRequest) (*WorkflowTemplate, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetWorkflowTemplate not implemented")
+}
+func (*UnimplementedWorkflowTemplateServiceServer) ListWorkflowTemplateVersions(ctx context.Context, req *ListWorkflowTemplateVersionsRequest) (*ListWorkflowTemplateVersionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListWorkflowTemplateVersions not implemented")
+}
+func (*UnimplementedWorkflowTemplateServiceServer) ListWorkflowTemplates(ctx context.Context, req *ListWorkflowTemplatesRequest) (*ListWorkflowTemplatesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListWorkflowTemplates not implemented")
+}
+func (*UnimplementedWorkflowTemplateServiceServer) CloneWorkflowTemplate(ctx context.Context, req *CloneWorkflowTemplateRequest) (*WorkflowTemplate, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CloneWorkflowTemplate not implemented")
+}
+func (*UnimplementedWorkflowTemplateServiceServer) ArchiveWorkflowTemplate(ctx context.Context, req *ArchiveWorkflowTemplateRequest) (*ArchiveWorkflowTemplateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ArchiveWorkflowTemplate not implemented")
+}
+func (*UnimplementedWorkflowTemplateServiceServer) GetWorkflowTemplateLabels(ctx context.Context, req *GetLabelsRequest) (*GetLabelsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetWorkflowTemplateLabels not implemented")
+}
+func (*UnimplementedWorkflowTemplateServiceServer) AddWorkflowTemplateLabels(ctx context.Context, req *AddLabelsRequest) (*GetLabelsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddWorkflowTemplateLabels not implemented")
+}
+func (*UnimplementedWorkflowTemplateServiceServer) ReplaceWorkflowTemplateLabels(ctx context.Context, req *ReplaceLabelsRequest) (*GetLabelsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReplaceWorkflowTemplateLabels not implemented")
+}
+func (*UnimplementedWorkflowTemplateServiceServer) DeleteWorkflowTemplateLabel(ctx context.Context, req *DeleteLabelRequest) (*GetLabelsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteWorkflowTemplateLabel not implemented")
+}
+
+func RegisterWorkflowTemplateServiceServer(s *grpc.Server, srv WorkflowTemplateServiceServer) {
+	s.RegisterService(&_WorkflowTemplateService_serviceDesc, srv)
+}
+
+func _WorkflowTemplateService_CreateWorkflowTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateWorkflowTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkflowTemplateServiceServer).CreateWorkflowTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.WorkflowTemplateService/CreateWorkflowTemplate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkflowTemplateServiceServer).CreateWorkflowTemplate(ctx, req.(*CreateWorkflowTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkflowTemplateService_UpdateWorkflowTemplateVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateWorkflowTemplateVersionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkflowTemplateServiceServer).UpdateWorkflowTemplateVersion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.WorkflowTemplateService/UpdateWorkflowTemplateVersion",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkflowTemplateServiceServer).UpdateWorkflowTemplateVersion(ctx, req.(*UpdateWorkflowTemplateVersionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkflowTemplateService_CreateWorkflowTemplateVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateWorkflowTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkflowTemplateServiceServer).CreateWorkflowTemplateVersion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.WorkflowTemplateService/CreateWorkflowTemplateVersion",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkflowTemplateServiceServer).CreateWorkflowTemplateVersion(ctx, req.(*CreateWorkflowTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkflowTemplateService_GetWorkflowTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetWorkflowTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkflowTemplateServiceServer).GetWorkflowTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.WorkflowTemplateService/GetWorkflowTemplate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkflowTemplateServiceServer).GetWorkflowTemplate(ctx, req.(*GetWorkflowTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkflowTemplateService_ListWorkflowTemplateVersions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListWorkflowTemplateVersionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkflowTemplateServiceServer).ListWorkflowTemplateVersions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.WorkflowTemplateService/ListWorkflowTemplateVersions",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkflowTemplateServiceServer).ListWorkflowTemplateVersions(ctx, req.(*ListWorkflowTemplateVersionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkflowTemplateService_ListWorkflowTemplates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListWorkflowTemplatesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkflowTemplateServiceServer).ListWorkflowTemplates(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.WorkflowTemplateService/ListWorkflowTemplates",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkflowTemplateServiceServer).ListWorkflowTemplates(ctx, req.(*ListWorkflowTemplatesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkflowTemplateService_CloneWorkflowTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CloneWorkflowTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkflowTemplateServiceServer).CloneWorkflowTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.WorkflowTemplateService/CloneWorkflowTemplate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkflowTemplateServiceServer).CloneWorkflowTemplate(ctx, req.(*CloneWorkflowTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkflowTemplateService_ArchiveWorkflowTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ArchiveWorkflowTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkflowTemplateServiceServer).ArchiveWorkflowTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.WorkflowTemplateService/ArchiveWorkflowTemplate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkflowTemplateServiceServer).ArchiveWorkflowTemplate(ctx, req.(*ArchiveWorkflowTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkflowTemplateService_GetWorkflowTemplateLabels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLabelsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkflowTemplateServiceServer).GetWorkflowTemplateLabels(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.WorkflowTemplateService/GetWorkflowTemplateLabels",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkflowTemplateServiceServer).GetWorkflowTemplateLabels(ctx, req.(*GetLabelsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkflowTemplateService_AddWorkflowTemplateLabels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddLabelsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkflowTemplateServiceServer).AddWorkflowTemplateLabels(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.WorkflowTemplateService/AddWorkflowTemplateLabels",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkflowTemplateServiceServer).AddWorkflowTemplateLabels(ctx, req.(*AddLabelsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkflowTemplateService_ReplaceWorkflowTemplateLabels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReplaceLabelsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkflowTemplateServiceServer).ReplaceWorkflowTemplateLabels(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.WorkflowTemplateService/ReplaceWorkflowTemplateLabels",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkflowTemplateServiceServer).ReplaceWorkflowTemplateLabels(ctx, req.(*ReplaceLabelsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkflowTemplateService_DeleteWorkflowTemplateLabel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteLabelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkflowTemplateServiceServer).DeleteWorkflowTemplateLabel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.WorkflowTemplateService/DeleteWorkflowTemplateLabel",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkflowTemplateServiceServer).DeleteWorkflowTemplateLabel(ctx, req.(*DeleteLabelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _WorkflowTemplateService_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "api.WorkflowTemplateService",
+	HandlerType: (*WorkflowTemplateServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreateWorkflowTemplate",
+			Handler:    _WorkflowTemplateService_CreateWorkflowTemplate_Handler,
+		},
+		{
+			MethodName: "UpdateWorkflowTemplateVersion",
+			Handler:    _WorkflowTemplateService_UpdateWorkflowTemplateVersion_Handler,
+		},
+		{
+			MethodName: "CreateWorkflowTemplateVersion",
+			Handler:    _WorkflowTemplateService_CreateWorkflowTemplateVersion_Handler,
+		},
+		{
+			MethodName: "GetWorkflowTemplate",
+			Handler:    _WorkflowTemplateService_GetWorkflowTemplate_Handler,
+		},
+		{
+			MethodName: "ListWorkflowTemplateVersions",
+			Handler:    _WorkflowTemplateService_ListWorkflowTemplateVersions_Handler,
+		},
+		{
+			MethodName: "ListWorkflowTemplates",
+			Handler:    _WorkflowTemplateService_ListWorkflowTemplates_Handler,
+		},
+		{
+			MethodName: "CloneWorkflowTemplate",
+			Handler:    _WorkflowTemplateService_CloneWorkflowTemplate_Handler,
+		},
+		{
+			MethodName: "ArchiveWorkflowTemplate",
+			Handler:    _WorkflowTemplateService_ArchiveWorkflowTemplate_Handler,
+		},
+		{
+			MethodName: "GetWorkflowTemplateLabels",
+			Handler:    _WorkflowTemplateService_GetWorkflowTemplateLabels_Handler,
+		},
+		{
+			MethodName: "AddWorkflowTemplateLabels",
+			Handler:    _WorkflowTemplateService_AddWorkflowTemplateLabels_Handler,
+		},
+		{
+			MethodName: "ReplaceWorkflowTemplateLabels",
+			Handler:    _WorkflowTemplateService_ReplaceWorkflowTemplateLabels_Handler,
+		},
+		{
+			MethodName: "DeleteWorkflowTemplateLabel",
+			Handler:    _WorkflowTemplateService_DeleteWorkflowTemplateLabel_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "workflow_template.proto",
 }

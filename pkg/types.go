@@ -63,6 +63,7 @@ type WorkflowTemplate struct {
 	IsLatest   bool `db:"is_latest"`
 	IsArchived bool `db:"is_archived"`
 	LatestArgo *wfv1.WorkflowTemplate
+	Labels     map[string]string
 }
 
 func (wt *WorkflowTemplate) GetManifestBytes() []byte {
@@ -116,6 +117,7 @@ type WorkflowExecution struct {
 	StartedAt        time.Time
 	FinishedAt       time.Time
 	WorkflowTemplate *WorkflowTemplate
+	Labels           map[string]string
 }
 
 type WorkflowExecutionParameter struct {

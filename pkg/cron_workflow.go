@@ -118,6 +118,8 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 	}
 	(*opts.Labels)[workflowTemplateUIDLabelKey] = workflowTemplate.UID
 	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
+	label.MergeLabelsPrefix(*opts.Labels, workflow.Labels, label.TagPrefix)
+
 	var argoCronWorkflow wfv1.CronWorkflow
 	argoCronWorkflow.Spec.Schedule = cronWorkflow.Schedule
 	argoCronWorkflow.Spec.Timezone = cronWorkflow.Timezone

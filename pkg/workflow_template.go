@@ -8,6 +8,7 @@ import (
 	argojson "github.com/argoproj/pkg/json"
 	"github.com/ghodss/yaml"
 	"github.com/google/uuid"
+	"github.com/onepanelio/core/pkg/util/label"
 	"github.com/onepanelio/core/pkg/util/number"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strconv"
@@ -538,12 +539,16 @@ func createArgoWorkflowTemplate(workflowTemplate *WorkflowTemplate, version stri
 		return nil, err
 	}
 	argoWft.Name = newUuid.String()
-	argoWft.Labels = map[string]string{
-		"onepanel.io/workflow_template":     workflowTemplate.Name,
-		"onepanel.io/workflow_template_uid": workflowTemplate.UID,
-		"onepanel.io/version":               version,
-		"onepanel.io/version_latest":        "true",
+
+	labels := map[string]string{
+		label.WorkflowTemplate:    workflowTemplate.Name,
+		label.WorkflowTemplateUid: workflowTemplate.UID,
+		label.Version:             version,
+		label.VersionLatest:       "true",
 	}
+
+	label.MergeLabelsPrefix(labels, workflowTemplate.Labels, label.TagPrefix)
+	argoWft.Labels = labels
 
 	return argoWft, nil
 }
@@ -552,9 +557,9 @@ func createArgoWorkflowTemplate(workflowTemplate *WorkflowTemplate, version stri
 func (c *Client) getArgoWorkflowTemplate(namespace, workflowTemplateUid, version string) (*v1alpha1.WorkflowTemplate, error) {
 	labelSelect := fmt.Sprintf("onepanel.io/workflow_template_uid=%v", workflowTemplateUid)
 	if version == "latest" {
-		labelSelect += ",onepanel.io/version_latest=true"
+		labelSelect += "," + label.VersionLatest + "=true"
 	} else {
-		labelSelect += fmt.Sprintf(",onepanel.io/version=%v", version)
+		labelSelect += fmt.Sprintf(",%v=%v", label.Version, version)
 	}
 
 	workflowTemplates, err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).List(v1.ListOptions{

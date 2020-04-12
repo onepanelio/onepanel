@@ -292,6 +292,8 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	}
 	(*opts.Labels)[workflowTemplateUIDLabelKey] = workflowTemplate.UID
 	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
+	label.MergeLabelsPrefix(*opts.Labels, workflow.Labels, label.TagPrefix)
+
 	//UX will prevent multiple workflows
 	manifest, err := workflowTemplate.GetWorkflowManifestBytes()
 	if err != nil {
