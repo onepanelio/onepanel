@@ -4,38 +4,21 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	sq "github.com/Masterminds/squirrel"
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	argojson "github.com/argoproj/pkg/json"
 	"github.com/ghodss/yaml"
 	"github.com/google/uuid"
+	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/label"
 	"github.com/onepanelio/core/pkg/util/number"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strconv"
-	"time"
-
-	sq "github.com/Masterminds/squirrel"
-	"github.com/onepanelio/core/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strconv"
 )
 
 var sb = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-
-// Deprecated
-func (c *Client) insertWorkflowTemplateVersion(workflowTemplate *WorkflowTemplate, runner sq.BaseRunner) (err error) {
-	err = sb.Insert("workflow_template_versions").
-		SetMap(sq.Eq{
-			"workflow_template_id": workflowTemplate.ID,
-			"version":              int32(time.Now().Unix()),
-			"is_latest":            workflowTemplate.IsLatest,
-		}).
-		Suffix("RETURNING version").
-		RunWith(runner).
-		QueryRow().Scan(&workflowTemplate.Version)
-
-	return
-}
 
 func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
 	uid, err := workflowTemplate.GenerateUID()
@@ -72,68 +55,6 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		if err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Delete(argoWft.Name, &v1.DeleteOptions{}); err != nil {
 			log.Printf("Unable to delete argo workflow template")
 		}
-		return nil, err
-	}
-
-	return workflowTemplate, nil
-}
-
-func (c *Client) removeIsLatestFromWorkflowTemplateVersions(workflowTemplate *WorkflowTemplate) error {
-	query, args, err := sb.Update("workflow_template_versions").
-		Set("is_latest", true).
-		Where(sq.Eq{
-			"workflow_template_id": workflowTemplate.ID,
-			"is_latest":            false,
-		}).
-		ToSql()
-	if err != nil {
-		return err
-	}
-
-	if _, err := c.DB.Exec(query, args...); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *Client) createWorkflowTemplateVersion(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
-	query, args, err := sb.Select("id, name").
-		From("workflow_templates").
-		Where(sq.Eq{
-			"namespace": namespace,
-			"uid":       workflowTemplate.UID,
-		}).
-		Limit(1).ToSql()
-	if err != nil {
-		return nil, err
-	}
-
-	if err = c.DB.Get(workflowTemplate, query, args...); err == sql.ErrNoRows {
-		return nil, nil
-	}
-
-	if err = c.insertWorkflowTemplateVersion(workflowTemplate, c.DB); err != nil {
-		return nil, err
-	}
-
-	return workflowTemplate, nil
-}
-
-func (c *Client) updateWorkflowTemplateVersion(workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
-	query, args, err := sb.Update("workflow_template_versions").
-		Set("manifest", workflowTemplate.Manifest).
-		Where(sq.Eq{
-			"workflow_template_id": workflowTemplate.ID,
-			"version":              workflowTemplate.Version,
-		}).
-		ToSql()
-
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err := c.DB.Exec(query, args...); err != nil {
 		return nil, err
 	}
 
@@ -230,14 +151,19 @@ func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTe
 	}
 
 	for _, argoTemplate := range *argoTemplates {
-		version, versionErr := strconv.Atoi(argoTemplate.Labels["onepanel.io/version"])
+		version, versionErr := strconv.Atoi(argoTemplate.Labels[label.Version])
 		if versionErr != nil {
 			return nil, versionErr
 		}
 
 		isLatest := false
-		if _, ok := argoTemplate.Labels["onepanel.io/version_latest"]; ok {
+		if _, ok := argoTemplate.Labels[label.VersionLatest]; ok {
 			isLatest = true
+		}
+
+		manifest, err := yaml.Marshal(argoTemplate)
+		if err != nil {
+			return nil, err
 		}
 
 		newItem := WorkflowTemplate{
@@ -245,7 +171,7 @@ func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTe
 			CreatedAt:  template.CreatedAt,
 			UID:        template.UID,
 			Name:       template.Name,
-			Manifest:   template.Manifest,
+			Manifest:   string(manifest),
 			Version:    int32(version),
 			IsLatest:   isLatest,
 			IsArchived: template.IsArchived,
@@ -351,9 +277,9 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 		return nil, err
 	}
 
-	incrementedVersion, err := number.IncrementStringInt(latest.Labels["onepanel.io/version"])
+	incrementedVersion, err := number.IncrementStringInt(latest.Labels[label.Version])
 
-	delete(latest.Labels, "onepanel.io/version_latest")
+	delete(latest.Labels, label.VersionLatest)
 
 	if _, err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Update(latest); err != nil {
 		return nil, err
@@ -368,61 +294,8 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 	updatedTemplate.ObjectMeta.ResourceVersion = ""
 	updatedTemplate.ObjectMeta.SetSelfLink("")
 
-	// todo - all the error messages
 	if _, err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Create(updatedTemplate); err != nil {
 		return nil, err
-	}
-
-	//
-	//workflowTemplate, err := c.createWorkflowTemplateVersion(namespace, workflowTemplate)
-	//if err != nil {
-	//	log.WithFields(log.Fields{
-	//		"Namespace":        namespace,
-	//		"WorkflowTemplate": workflowTemplate,
-	//		"Error":            err.Error(),
-	//	}).Error("Could not create workflow template version.")
-	//	return nil, util.NewUserErrorWrap(err, "Workflow template")
-	//}
-	//if workflowTemplate == nil {
-	//	return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
-	//}
-
-	return workflowTemplate, nil
-}
-
-func (c *Client) UpdateWorkflowTemplateVersion(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
-	// validate workflow template
-	if err := c.ValidateWorkflowExecution(namespace, workflowTemplate.GetManifestBytes()); err != nil {
-		log.WithFields(log.Fields{
-			"Namespace":        namespace,
-			"WorkflowTemplate": workflowTemplate,
-			"Error":            err.Error(),
-		}).Error("Workflow could not be validated.")
-		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
-	}
-
-	originalWorkflowTemplate, err := c.getWorkflowTemplate(namespace, workflowTemplate.UID, workflowTemplate.Version)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace":        namespace,
-			"WorkflowTemplate": workflowTemplate,
-			"Error":            err.Error(),
-		}).Error("Could not get workflow template.")
-		return nil, util.NewUserError(codes.Unknown, "Could not update workflow template version.")
-	}
-
-	workflowTemplate.ID = originalWorkflowTemplate.ID
-	workflowTemplate, err = c.updateWorkflowTemplateVersion(workflowTemplate)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace":        namespace,
-			"WorkflowTemplate": workflowTemplate,
-			"Error":            err.Error(),
-		}).Error("Could not update workflow template version.")
-		return nil, util.NewUserErrorWrap(err, "Workflow template")
-	}
-	if workflowTemplate == nil {
-		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}
 
 	return workflowTemplate, nil
@@ -570,6 +443,10 @@ func (c *Client) getArgoWorkflowTemplate(namespace, workflowTemplateUid, version
 	}
 
 	templates := workflowTemplates.Items
+	if templates.Len() == 0 {
+		return nil, errors.New("not found")
+	}
+
 	if templates.Len() > 1 {
 		return nil, errors.New("not unique result")
 	}
@@ -590,4 +467,23 @@ func (c *Client) listArgoWorkflowTemplates(namespace, workflowTemplateUid string
 	templates := []v1alpha1.WorkflowTemplate(workflowTemplates.Items)
 
 	return &templates, nil
+}
+
+// prefix is the label prefix.
+// e.g. prefix/my-label-key: my-label-value
+func (c *Client) GetWorkflowTemplateLabels(namespace, name, prefix string) (labels map[string]string, err error) {
+	wf, err := c.getArgoWorkflowTemplate(namespace, name, "latest")
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"Error":     err.Error(),
+		}).Error("Workflow Template not found.")
+		return nil, util.NewUserError(codes.NotFound, "Workflow Template not found.")
+	}
+
+	labels = label.FilterByPrefix(prefix, wf.Labels)
+	labels = label.RemovePrefix(prefix, labels)
+
+	return
 }

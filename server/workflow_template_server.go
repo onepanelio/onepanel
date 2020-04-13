@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
+	"github.com/onepanelio/core/pkg/util/label"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/onepanelio/core/server/converter"
 	log "github.com/sirupsen/logrus"
@@ -85,6 +86,7 @@ func (s *WorkflowTemplateServer) CreateWorkflowTemplateVersion(ctx context.Conte
 		UID:      req.WorkflowTemplate.Uid,
 		Name:     req.WorkflowTemplate.Name,
 		Manifest: req.WorkflowTemplate.Manifest,
+		Labels:   converter.APIKeyValueToLabel(req.WorkflowTemplate.Labels),
 	}
 
 	workflowTemplate, err = client.CreateWorkflowTemplateVersion(req.Namespace, workflowTemplate)
@@ -111,10 +113,7 @@ func (s *WorkflowTemplateServer) UpdateWorkflowTemplateVersion(ctx context.Conte
 		Manifest: req.WorkflowTemplate.Manifest,
 		Version:  req.WorkflowTemplate.Version,
 	}
-	workflowTemplate, err = client.UpdateWorkflowTemplateVersion(req.Namespace, workflowTemplate)
-	if err != nil {
-		return nil, err
-	}
+
 	req.WorkflowTemplate.Uid = workflowTemplate.UID
 	req.WorkflowTemplate.Name = workflowTemplate.Name
 	req.WorkflowTemplate.Version = workflowTemplate.Version
@@ -251,7 +250,7 @@ func (s *WorkflowTemplateServer) GetWorkflowTemplateLabels(ctx context.Context, 
 		return nil, err
 	}
 
-	labels, err := client.GetWorkflowTemplateLabels(req.Namespace, req.Name, "tags.onepanel.io/")
+	labels, err := client.GetWorkflowTemplateLabels(req.Namespace, req.Name, label.TagPrefix)
 	if err != nil {
 		return nil, err
 	}

@@ -60,7 +60,7 @@ type WorkflowTemplate struct {
 	Name       string
 	Manifest   string
 	Version    int32
-	IsLatest   bool `db:"is_latest"`
+	IsLatest   bool
 	IsArchived bool `db:"is_archived"`
 	LatestArgo *wfv1.WorkflowTemplate
 	Labels     map[string]string

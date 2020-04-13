@@ -955,25 +955,6 @@ func (c *Client) GetWorkflowExecutionLabels(namespace, name, prefix string) (lab
 	return
 }
 
-// prefix is the label prefix.
-// e.g. prefix/my-label-key: my-label-value
-func (c *Client) GetWorkflowTemplateLabels(namespace, name, prefix string) (labels map[string]string, err error) {
-	wf, err := c.getArgoWorkflowTemplate(namespace, name, "latest")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"Name":      name,
-			"Error":     err.Error(),
-		}).Error("Workflow Template not found.")
-		return nil, util.NewUserError(codes.NotFound, "Workflow Template not found.")
-	}
-
-	labels = label.FilterByPrefix(prefix, wf.Labels)
-	labels = label.RemovePrefix(prefix, labels)
-
-	return
-}
-
 func (c *Client) DeleteWorkflowExecutionLabel(namespace, name string, keysToDelete ...string) (labels map[string]string, err error) {
 	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
