@@ -63,7 +63,7 @@ service WorkflowTemplateService {
         };
     }
 
-    rpc GetWorkflowTemplateLabels (GetLabelsRequest) returns (GetLabelsResponse) {
+    rpc GetWorkflowTemplateLabels (GetWorkflowTemplateLabelsRequest) returns (GetLabelsResponse) {
         option (google.api.http) = {
             get: "/apis/v1beta1/{namespace}/workflow_templates/{name}/labels"
         };
@@ -150,4 +150,10 @@ message WorkflowTemplate {
     bool isLatest = 6;
     bool isArchived = 7;
     repeated KeyValue labels = 8;
+}
+
+message GetWorkflowTemplateLabelsRequest {
+    string namespace = 1;
+    string name = 2;
+    int32 version = 3;
 }

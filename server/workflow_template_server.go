@@ -243,14 +243,14 @@ func (s *WorkflowTemplateServer) ArchiveWorkflowTemplate(ctx context.Context, re
 	}, nil
 }
 
-func (s *WorkflowTemplateServer) GetWorkflowTemplateLabels(ctx context.Context, req *api.GetLabelsRequest) (*api.GetLabelsResponse, error) {
+func (s *WorkflowTemplateServer) GetWorkflowTemplateLabels(ctx context.Context, req *api.GetWorkflowTemplateLabelsRequest) (*api.GetLabelsResponse, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", "")
 	if err != nil || !allowed {
 		return nil, err
 	}
 
-	labels, err := client.GetWorkflowTemplateLabels(req.Namespace, req.Name, label.TagPrefix)
+	labels, err := client.GetWorkflowTemplateLabels(req.Namespace, req.Name, label.TagPrefix, req.Version)
 	if err != nil {
 		return nil, err
 	}

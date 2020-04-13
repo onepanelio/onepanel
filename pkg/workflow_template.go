@@ -471,8 +471,14 @@ func (c *Client) listArgoWorkflowTemplates(namespace, workflowTemplateUid string
 
 // prefix is the label prefix.
 // e.g. prefix/my-label-key: my-label-value
-func (c *Client) GetWorkflowTemplateLabels(namespace, name, prefix string) (labels map[string]string, err error) {
-	wf, err := c.getArgoWorkflowTemplate(namespace, name, "latest")
+// if version is 0, latest is used.
+func (c *Client) GetWorkflowTemplateLabels(namespace, name, prefix string, version int32) (labels map[string]string, err error) {
+	versionAsString := "latest"
+	if version != 0 {
+		versionAsString = fmt.Sprintf("%v", version)
+	}
+
+	wf, err := c.getArgoWorkflowTemplate(namespace, name, versionAsString)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
