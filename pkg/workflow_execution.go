@@ -234,6 +234,25 @@ func (c *Client) createWorkflow(namespace string, wf *wfv1.Workflow, opts *Workf
 		return nil, err
 	}
 
+	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics()
+	if err != nil {
+		return nil, err
+	}
+	if exitHandlerStepTemplate != "" {
+		exitHandler := wfv1.Template{
+			Name: "exit-handler",
+			Steps: []wfv1.ParallelSteps{
+				{
+					Steps: []wfv1.WorkflowStep{
+						{Name: exitHandlerStepName, Template: exitHandlerStepTemplate, When: exitHandlerStepWhen},
+					},
+				},
+			},
+		}
+		wf.Spec.OnExit = "exit-handler"
+		wf.Spec.Templates = append(wf.Spec.Templates, exitHandler, exitHandlerTemplate)
+	}
+
 	createdWorkflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
 	if err != nil {
 		return nil, err

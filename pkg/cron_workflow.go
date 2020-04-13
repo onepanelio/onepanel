@@ -355,6 +355,26 @@ func (c *Client) updateCronWorkflow(namespace string, name string, wf *wfv1.Work
 	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
 		return nil, err
 	}
+
+	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics()
+	if err != nil {
+		return nil, err
+	}
+	if exitHandlerStepTemplate != "" {
+		exitHandler := wfv1.Template{
+			Name: "exit-handler",
+			Steps: []wfv1.ParallelSteps{
+				{
+					Steps: []wfv1.WorkflowStep{
+						{Name: exitHandlerStepName, Template: exitHandlerStepTemplate, When: exitHandlerStepWhen},
+					},
+				},
+			},
+		}
+		wf.Spec.OnExit = "exit-handler"
+		wf.Spec.Templates = append(wf.Spec.Templates, exitHandler, exitHandlerTemplate)
+	}
+
 	cwf.Spec.WorkflowSpec = wf.Spec
 	cwf.Spec.WorkflowMetadata = &wf.ObjectMeta
 
@@ -423,6 +443,26 @@ func (c *Client) createCronWorkflow(namespace string, wf *wfv1.Workflow, cwf *wf
 	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
 		return nil, err
 	}
+
+	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics()
+	if err != nil {
+		return nil, err
+	}
+	if exitHandlerStepTemplate != "" {
+		exitHandler := wfv1.Template{
+			Name: "exit-handler",
+			Steps: []wfv1.ParallelSteps{
+				{
+					Steps: []wfv1.WorkflowStep{
+						{Name: exitHandlerStepName, Template: exitHandlerStepTemplate, When: exitHandlerStepWhen},
+					},
+				},
+			},
+		}
+		wf.Spec.OnExit = "exit-handler"
+		wf.Spec.Templates = append(wf.Spec.Templates, exitHandler, exitHandlerTemplate)
+	}
+
 	cwf.Spec.WorkflowSpec = wf.Spec
 	cwf.Spec.WorkflowMetadata = &wf.ObjectMeta
 
