@@ -1055,14 +1055,24 @@ with statistics about the workflow that was just executed.
 func GetExitHandlerWorkflowStatistics() (workflowStepName, workflowStepTemplate, workflowStepWhen string, err error, wfv1Template wfv1.Template) {
 	workflowStepName = "workflow-statistics"
 	workflowStepTemplate = "workflow-statistics-template"
+	host := env.GetEnv("ONEPANEL_CORE_HOST", "")
+	if host == "" {
+		err = errors.New("ONEPANEL_CORE_HOST is empty.")
+		return
+	}
+	port := env.GetEnv("ONEPANEL_CORE_PORT", "")
+	if port == "" {
+		err = errors.New("ONEPANEL_CORE_PORT is empty.")
+		return
+	}
+
 	wfv1Template = wfv1.Template{
 		Name: workflowStepTemplate,
 		Container: &corev1.Container{
 			Image:   "alpine:latest",
 			Command: []string{"sh", "-c"},
-			//todo env var for the host and port
 			Args: []string{"apk add curl;" +
-				"curl 'http://172.17.0.5:8888/apis/v1beta1/namespaces?pageSize=15&page=1&query=a' -H 'Connection: keep-alive' -H 'Accept: application/json' -H 'Sec-Fetch-Dest: empty' -H 'Authorization: Bearer Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjRSamJlczl6SDVzem5nUzhuQ0RIcDg0SFhNY0VlNDhvWTd0dVNnMGRlb0kifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJkZWZhdWx0LXRva2VuLWttOWtwIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImRlZmF1bHQiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiI4ODJjZWQ1Ni00ZTY0LTQwOTUtOWMwMC1lMjVlM2I0OWYwODMiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6a3ViZS1zeXN0ZW06ZGVmYXVsdCJ9.kS0Iblqan6lkc0F1XVUV7o9s_IzM_0UtEbykjYWsmIyjHVuoxD8re5c6Szl_bBE6hqNlnT8js56pLq2vh_SvjN-fZdDCA28SQq_5n9HkroCuMVOEZYkOiYPXVQO2SScCwOPAb6coTDY9dM_Rz5sTjwOdMcklZ7181tzxSiyHoDTy9i-qF9knb8DzciwfK7EbKL8oMMBSKZfshAFKV_pjp1IaCtmi-lGKVYcZqrrYN782dWK5tEQyo3YUya1tindUhBZOAriNW0D1n759yis8CgsopRGSsG36_1GnjDcxuKFVWhbqW9OTl0uABXWcg2hK2jxTGDzyX2LMM-YHJtlkRA' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36' -H 'Origin: http://localhost:4200' -H 'Sec-Fetch-Site: same-site' -H 'Sec-Fetch-Mode: cors' -H 'Referer: http://localhost:4200/aleksandr/workflows/test-hzfm6' -H 'Accept-Language: en-US,en;q=0.9' --compressed" +
+				"curl 'http://" + host + ":" + port + "/apis/v1beta1/namespaces?pageSize=15&page=1&query=a' -H 'Connection: keep-alive' -H 'Accept: application/json' -H 'Sec-Fetch-Dest: empty' -H 'Authorization: Bearer Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjRSamJlczl6SDVzem5nUzhuQ0RIcDg0SFhNY0VlNDhvWTd0dVNnMGRlb0kifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJkZWZhdWx0LXRva2VuLWttOWtwIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImRlZmF1bHQiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiI4ODJjZWQ1Ni00ZTY0LTQwOTUtOWMwMC1lMjVlM2I0OWYwODMiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6a3ViZS1zeXN0ZW06ZGVmYXVsdCJ9.kS0Iblqan6lkc0F1XVUV7o9s_IzM_0UtEbykjYWsmIyjHVuoxD8re5c6Szl_bBE6hqNlnT8js56pLq2vh_SvjN-fZdDCA28SQq_5n9HkroCuMVOEZYkOiYPXVQO2SScCwOPAb6coTDY9dM_Rz5sTjwOdMcklZ7181tzxSiyHoDTy9i-qF9knb8DzciwfK7EbKL8oMMBSKZfshAFKV_pjp1IaCtmi-lGKVYcZqrrYN782dWK5tEQyo3YUya1tindUhBZOAriNW0D1n759yis8CgsopRGSsG36_1GnjDcxuKFVWhbqW9OTl0uABXWcg2hK2jxTGDzyX2LMM-YHJtlkRA' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36' -H 'Origin: http://localhost:4200' -H 'Sec-Fetch-Site: same-site' -H 'Sec-Fetch-Mode: cors' -H 'Referer: http://localhost:4200/aleksandr/workflows/test-hzfm6' -H 'Accept-Language: en-US,en;q=0.9' --compressed" +
 				"; echo e-mail: {{workflow.name}} {{workflow.status}}. Failed steps {{workflow.failures}}"},
 		},
 	}
