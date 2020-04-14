@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	sq "github.com/Masterminds/squirrel"
 	"github.com/ghodss/yaml"
 	"github.com/onepanelio/core/pkg/util/label"
 	"io"
@@ -344,6 +345,49 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	workflow.WorkflowTemplate.Manifest = ""
 
 	return workflow, nil
+}
+
+func (c *Client) AddWorkflowExecutionStatistic(namespace, name string, workflowTemplateID int64, createdAt time.Time, workflowOutcomeIsSuccess bool) (err error) {
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if workflowOutcomeIsSuccess {
+		_, err := sb.Insert("workflow_executions").
+			SetMap(sq.Eq{
+				"workflow_template_id": workflowTemplateID,
+				"name":                 name,
+				"namespace":            namespace,
+				"created_at":           createdAt.UTC(),
+				"finished_at":          time.Now().UTC(),
+			}).RunWith(tx).Exec()
+		if err != nil {
+			return err
+		}
+		err = tx.Commit()
+		if err != nil {
+			return err
+		}
+		return err
+	} else {
+		_, err := sb.Insert("workflow_executions").
+			SetMap(sq.Eq{
+				"workflow_template_id": workflowTemplateID,
+				"name":                 name,
+				"namespace":            namespace,
+				"created_at":           createdAt.UTC(),
+				"failed_at":            time.Now().UTC(),
+			}).RunWith(tx).Exec()
+		if err != nil {
+			return err
+		}
+		err = tx.Commit()
+		if err != nil {
+			return err
+		}
+		return err
+	}
 }
 
 func (c *Client) GetWorkflowExecution(namespace, name string) (workflow *WorkflowExecution, err error) {
