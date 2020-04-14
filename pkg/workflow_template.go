@@ -432,7 +432,7 @@ func createArgoWorkflowTemplate(workflowTemplate *WorkflowTemplate, version stri
 
 // version "latest" will get the latest version.
 func (c *Client) getArgoWorkflowTemplate(namespace, workflowTemplateUid, version string) (*v1alpha1.WorkflowTemplate, error) {
-	labelSelect := fmt.Sprintf("onepanel.io/workflow_template_uid=%v", workflowTemplateUid)
+	labelSelect := fmt.Sprintf("%v=%v", label.WorkflowTemplateUid, workflowTemplateUid)
 	if version == "latest" {
 		labelSelect += "," + label.VersionLatest + "=true"
 	} else {
@@ -459,8 +459,7 @@ func (c *Client) getArgoWorkflowTemplate(namespace, workflowTemplateUid, version
 }
 
 func (c *Client) listArgoWorkflowTemplates(namespace, workflowTemplateUid string) (*[]v1alpha1.WorkflowTemplate, error) {
-	labelSelect := fmt.Sprintf("onepanel.io/workflow_template_uid=%v", workflowTemplateUid)
-
+	labelSelect := fmt.Sprintf("%v=%v", label.WorkflowTemplateUid, workflowTemplateUid)
 	workflowTemplates, err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).List(v1.ListOptions{
 		LabelSelector: labelSelect,
 	})

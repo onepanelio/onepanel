@@ -7,8 +7,8 @@ import (
 const (
 	OnepanelPrefix      = "onepanel.io/"
 	TagPrefix           = "tags.onepanel.io/"
-	WorkflowTemplate    = OnepanelPrefix + "workflow_template"
-	WorkflowTemplateUid = OnepanelPrefix + "workflow_template_uid"
+	WorkflowTemplate    = OnepanelPrefix + "workflow-template"
+	WorkflowTemplateUid = OnepanelPrefix + "workflow-template-uid"
 	Version             = OnepanelPrefix + "version"
 	VersionLatest       = OnepanelPrefix + "version-latest"
 )
