@@ -4,6 +4,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	argojson "github.com/argoproj/pkg/json"
@@ -15,7 +19,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strconv"
 )
 
 var sb = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
@@ -413,8 +416,9 @@ func createArgoWorkflowTemplate(workflowTemplate *WorkflowTemplate, version stri
 	}
 	argoWft.Name = newUuid.String()
 
+	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
 	labels := map[string]string{
-		label.WorkflowTemplate:    workflowTemplate.Name,
+		label.WorkflowTemplate:    strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`)),
 		label.WorkflowTemplateUid: workflowTemplate.UID,
 		label.Version:             version,
 		label.VersionLatest:       "true",
