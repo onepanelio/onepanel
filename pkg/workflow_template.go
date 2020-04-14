@@ -409,11 +409,13 @@ func createArgoWorkflowTemplate(workflowTemplate *WorkflowTemplate, version stri
 		return nil, err
 	}
 
-	argoWft.Name = fmt.Sprintf("%v-v%v", workflowTemplate.Name, version)
-
 	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
+	worfklowTemplateName := strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`))
+
+	argoWft.Name = fmt.Sprintf("%v-v%v", worfklowTemplateName, version)
+
 	labels := map[string]string{
-		label.WorkflowTemplate:    strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`)),
+		label.WorkflowTemplate:    worfklowTemplateName,
 		label.WorkflowTemplateUid: workflowTemplate.UID,
 		label.Version:             version,
 		label.VersionLatest:       "true",
