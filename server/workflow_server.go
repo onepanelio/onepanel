@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/onepanelio/core/pkg/util"
 	"google.golang.org/grpc/codes"
 	"math"
@@ -114,7 +113,16 @@ func (s *WorkflowServer) CreateWorkflowExecution(ctx context.Context, req *api.C
 }
 
 func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, request *api.AddWorkflowExecutionStatisticRequest) (*empty.Empty, error) {
-	fmt.Printf("%v\n", request)
+	client := ctx.Value("kubeClient").(*v1.Client)
+	workflowOutcomeIsSuccess := false
+	if request.Statistics.WorkflowStatus == "Success" {
+		workflowOutcomeIsSuccess = true
+	}
+	//todo createdAt parse
+	err := client.AddWorkflowExecutionStatistic(request.Namespace, request.Name, request.Statistics.WorkflowTemplateId, time.Now(), workflowOutcomeIsSuccess)
+	if err != nil {
+		return nil, err
+	}
 	return &empty.Empty{}, nil
 }
 
