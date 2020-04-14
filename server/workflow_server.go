@@ -337,7 +337,7 @@ func (s *WorkflowServer) ListFiles(ctx context.Context, req *api.ListFilesReques
 
 func (s *WorkflowServer) GetWorkflowExecutionLabels(ctx context.Context, req *api.GetLabelsRequest) (*api.GetLabelsResponse, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", "")
 	if err != nil || !allowed {
 		return nil, err
 	}
