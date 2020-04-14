@@ -107,7 +107,7 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int32) (work
 		return nil, err
 	}
 	workflowTemplate.Manifest = string(manifest)
-	workflowTemplate.LatestArgo = argoWft
+	workflowTemplate.ArgoWorkflowTemplate = argoWft
 
 	templateVersion, err := strconv.Atoi(argoWft.Labels["onepanel.io/version"])
 	if err != nil {

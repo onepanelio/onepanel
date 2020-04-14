@@ -54,16 +54,16 @@ type CronWorkflow struct {
 }
 
 type WorkflowTemplate struct {
-	ID         uint64
-	CreatedAt  time.Time `db:"created_at"`
-	UID        string
-	Name       string
-	Manifest   string
-	Version    int32
-	IsLatest   bool
-	IsArchived bool `db:"is_archived"`
-	LatestArgo *wfv1.WorkflowTemplate
-	Labels     map[string]string
+	ID                   uint64
+	CreatedAt            time.Time `db:"created_at"`
+	UID                  string
+	Name                 string
+	Manifest             string
+	Version              int32
+	IsLatest             bool
+	IsArchived           bool `db:"is_archived"`
+	ArgoWorkflowTemplate *wfv1.WorkflowTemplate
+	Labels               map[string]string
 }
 
 func (wt *WorkflowTemplate) GetManifestBytes() []byte {
@@ -81,17 +81,17 @@ func (wt *WorkflowTemplate) GenerateUID() (string, error) {
 }
 
 func (wt *WorkflowTemplate) GetWorkflowManifestBytes() ([]byte, error) {
-	if wt.LatestArgo == nil {
+	if wt.ArgoWorkflowTemplate == nil {
 		return []byte{}, nil
 	}
 
-	wt.LatestArgo.TypeMeta.Kind = "Workflow"
-	wt.LatestArgo.ObjectMeta = metav1.ObjectMeta{
-		GenerateName: wt.LatestArgo.ObjectMeta.GenerateName,
-		Labels:       wt.LatestArgo.ObjectMeta.Labels,
+	wt.ArgoWorkflowTemplate.TypeMeta.Kind = "Workflow"
+	wt.ArgoWorkflowTemplate.ObjectMeta = metav1.ObjectMeta{
+		GenerateName: wt.ArgoWorkflowTemplate.ObjectMeta.GenerateName,
+		Labels:       wt.ArgoWorkflowTemplate.ObjectMeta.Labels,
 	}
 
-	return json.Marshal(wt.LatestArgo)
+	return json.Marshal(wt.ArgoWorkflowTemplate)
 }
 
 const (
