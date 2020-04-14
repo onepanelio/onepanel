@@ -234,7 +234,7 @@ func (c *Client) createWorkflow(namespace string, wf *wfv1.Workflow, opts *Workf
 		return nil, err
 	}
 
-	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics()
+	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics(namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -1052,7 +1052,7 @@ func (c *Client) SetWorkflowTemplateLabels(namespace, name, prefix string, keyVa
 Will build a template that makes a CURL request to the onepanel-core API,
 with statistics about the workflow that was just executed.
 */
-func GetExitHandlerWorkflowStatistics() (workflowStepName, workflowStepTemplate, workflowStepWhen string, err error, wfv1Template wfv1.Template) {
+func GetExitHandlerWorkflowStatistics(namespace string) (workflowStepName, workflowStepTemplate, workflowStepWhen string, err error, wfv1Template wfv1.Template) {
 	workflowStepName = "workflow-statistics"
 	workflowStepTemplate = "workflow-statistics-template"
 	host := env.GetEnv("ONEPANEL_CORE_HOST", "")
