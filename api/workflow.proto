@@ -303,6 +303,8 @@ message ListFilesResponse {
 
 message Statistics {
     string workflowStatus = 1;
+    string createdAt = 2;
+    int64 workflowTemplateId = 3;
 }
 
 message AddWorkflowExecutionStatisticRequest {
