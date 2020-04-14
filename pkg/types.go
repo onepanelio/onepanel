@@ -228,5 +228,53 @@ func RemoveAllButSpec(manifest []byte) ([]byte, error) {
 		return []byte{}, nil
 	}
 
+	deleteEmptyValuesMapping(mapping)
+
 	return yaml.Marshal(mapping["spec"])
+}
+
+// Returns the number of keys in the map
+func deleteEmptyValuesMapping(mapping map[interface{}]interface{}) int {
+	keys := 0
+	for key, value := range mapping {
+		keys++
+		valueAsMapping, ok := value.(map[interface{}]interface{})
+		if ok {
+			if deleteEmptyValuesMapping(valueAsMapping) == 0 {
+				delete(mapping, key)
+			}
+		}
+
+		valueAsArray, ok := value.([]interface{})
+		if ok {
+			deleteEmptyValuesArray(valueAsArray)
+		}
+
+		valueAsString, ok := value.(string)
+		if ok && valueAsString == "" {
+			delete(mapping, key)
+		}
+	}
+
+	return keys
+}
+
+// Returns the number of items in the array.
+func deleteEmptyValuesArray(values []interface{}) int {
+	count := 0
+	for _, value := range values {
+		count++
+
+		valueAsMapping, ok := value.(map[interface{}]interface{})
+		if ok {
+			deleteEmptyValuesMapping(valueAsMapping)
+		}
+
+		valueAsArray, ok := value.([]interface{})
+		if ok {
+			deleteEmptyValuesArray(valueAsArray)
+		}
+	}
+
+	return count
 }
