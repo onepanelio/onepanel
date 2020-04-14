@@ -12,7 +12,6 @@ import (
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	argojson "github.com/argoproj/pkg/json"
 	"github.com/ghodss/yaml"
-	"github.com/google/uuid"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/label"
 	"github.com/onepanelio/core/pkg/util/number"
@@ -410,11 +409,7 @@ func createArgoWorkflowTemplate(workflowTemplate *WorkflowTemplate, version stri
 		return nil, err
 	}
 
-	newUuid, err := uuid.NewRandom()
-	if err != nil {
-		return nil, err
-	}
-	argoWft.Name = newUuid.String()
+	argoWft.Name = fmt.Sprintf("%v-v%v", workflowTemplate.Name, version)
 
 	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
 	labels := map[string]string{
