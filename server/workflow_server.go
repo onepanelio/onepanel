@@ -358,7 +358,7 @@ func (s *WorkflowServer) GetWorkflowExecutionLabels(ctx context.Context, req *ap
 // If the label already exists, overwrites it.
 func (s *WorkflowServer) AddWorkflowExecutionLabels(ctx context.Context, req *api.AddLabelsRequest) (*api.GetLabelsResponse, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "workflows", "")
 	if err != nil || !allowed {
 		return nil, err
 	}
@@ -383,7 +383,7 @@ func (s *WorkflowServer) AddWorkflowExecutionLabels(ctx context.Context, req *ap
 // Deletes all of the old labels and adds the new ones.
 func (s *WorkflowServer) ReplaceWorkflowExecutionLabels(ctx context.Context, req *api.ReplaceLabelsRequest) (*api.GetLabelsResponse, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "workflows", "")
 	if err != nil || !allowed {
 		return nil, err
 	}

@@ -170,7 +170,7 @@ func (c *CronWorkflowServer) GetCronWorkflowLabels(ctx context.Context, req *api
 // If the label already exists, overwrites it.
 func (c *CronWorkflowServer) AddCronWorkflowLabels(ctx context.Context, req *api.AddLabelsRequest) (*api.GetLabelsResponse, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "cronworkflows", "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "cronworkflows", "")
 	if err != nil || !allowed {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func (c *CronWorkflowServer) AddCronWorkflowLabels(ctx context.Context, req *api
 // Deletes all of the old labels and adds the new ones.
 func (c *CronWorkflowServer) ReplaceCronWorkflowLabels(ctx context.Context, req *api.ReplaceLabelsRequest) (*api.GetLabelsResponse, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "cronworkflows", "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "cronworkflows", "")
 	if err != nil || !allowed {
 		return nil, err
 	}
