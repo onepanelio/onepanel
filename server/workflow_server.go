@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/onepanelio/core/pkg/util"
 	"google.golang.org/grpc/codes"
 	"math"
@@ -110,6 +111,11 @@ func (s *WorkflowServer) CreateWorkflowExecution(ctx context.Context, req *api.C
 	}
 
 	return apiWorkflowExecution(wf), nil
+}
+
+func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, request *api.AddWorkflowExecutionStatisticRequest) (*empty.Empty, error) {
+	fmt.Printf("%v\n", request)
+	return &empty.Empty{}, nil
 }
 
 func (s *WorkflowServer) GetWorkflowExecution(ctx context.Context, req *api.GetWorkflowExecutionRequest) (*api.WorkflowExecution, error) {
