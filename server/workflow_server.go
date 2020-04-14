@@ -118,10 +118,18 @@ func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, req
 	if request.Statistics.WorkflowStatus == "Success" {
 		workflowOutcomeIsSuccess = true
 	}
-	//todo createdAt parse
-	err := client.AddWorkflowExecutionStatistic(request.Namespace, request.Name, request.Statistics.WorkflowTemplateId, time.Now(), workflowOutcomeIsSuccess)
+	/*
+		 The format from Argo will be:
+			Workflow creation timestamp formatted in RFC 3339 (e.g. 2018-08-23T05:42:49Z)
+	*/
+	createdAt, err := time.Parse(time.RFC3339, request.Statistics.CreatedAt)
 	if err != nil {
-		return nil, err
+		return &empty.Empty{}, err
+	}
+	err = client.AddWorkflowExecutionStatistic(request.Namespace, request.Name,
+		request.Statistics.WorkflowTemplateId, createdAt, workflowOutcomeIsSuccess)
+	if err != nil {
+		return &empty.Empty{}, err
 	}
 	return &empty.Empty{}, nil
 }
