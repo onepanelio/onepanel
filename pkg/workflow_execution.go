@@ -1100,7 +1100,6 @@ with statistics about the workflow that was just executed.
 func GetExitHandlerWorkflowStatistics(namespace string, workflowTemplateId *uint64) (workflowStepName, workflowStepTemplate, workflowStepWhen string, err error, wfv1Template wfv1.Template) {
 	workflowStepName = "workflow-statistics"
 	workflowStepTemplate = "workflow-statistics-template"
-	//todo ensure these envs are present
 	host := env.GetEnv("ONEPANEL_CORE_SERVICE_HOST", "")
 	if host == "" {
 		err = errors.New("ONEPANEL_CORE_SERVICE_HOST is empty.")
