@@ -52,14 +52,34 @@ type CronWorkflow struct {
 }
 
 type WorkflowTemplate struct {
-	ID         uint64
-	CreatedAt  time.Time `db:"created_at"`
-	UID        string
-	Name       string
-	Manifest   string
-	Version    int32
-	IsLatest   bool `db:"is_latest"`
-	IsArchived bool `db:"is_archived"`
+	ID                         uint64
+	CreatedAt                  time.Time `db:"created_at"`
+	UID                        string
+	Name                       string
+	Manifest                   string
+	Version                    int32
+	IsLatest                   bool `db:"is_latest"`
+	IsArchived                 bool `db:"is_archived"`
+	WorkflowExecutionStatistic *WorkflowExecutionStatisticReport
+}
+
+type WorkflowExecutionStatisticReport struct {
+	Total        uint64
+	LastExecuted time.Time
+	Running      uint64
+	Completed    uint64
+	Failed       uint64
+}
+
+type WorkflowExecutionStatistic struct {
+	ID                 uint64
+	WorkflowTemplateId uint64
+	Name               string
+	Namespace          string
+	//Interface to support null values for timestamps, when scanning from db into structs
+	CreatedAt  interface{} `db:"created_at"`
+	FinishedAt interface{} `db:"finished_at"`
+	FailedAt   interface{} `db:"failed_at"`
 }
 
 func (wt *WorkflowTemplate) GetManifestBytes() []byte {

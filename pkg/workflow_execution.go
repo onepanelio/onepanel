@@ -1093,6 +1093,51 @@ func (c *Client) SetWorkflowTemplateLabels(namespace, name, prefix string, keyVa
 	return filteredMap, nil
 }
 
+func (c *Client) GetWorkflowExecutionStatisticsForTemplate(workflowTemplate *WorkflowTemplate) (err error) {
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	query, args, err := sb.Select("name, created_at, finished_at").
+		From("workflow_executions").Where(sq.Eq{"workflow_template_id": workflowTemplate.ID}).OrderBy("created_at DESC").ToSql()
+	if err != nil {
+		return err
+	}
+	var workflowExecStats []WorkflowExecutionStatistic
+	err = c.DB.Select(&workflowExecStats, query, args...)
+
+	if err != nil {
+		return err
+	}
+
+	workflowTemplate.WorkflowExecutionStatistic = &WorkflowExecutionStatisticReport{}
+	if len(workflowExecStats) == 0 {
+		return
+	}
+
+	//Calculate and set the values
+	workflowTemplate.WorkflowExecutionStatistic.Total = uint64(len(workflowExecStats))
+	createdAtTime, ok := (workflowExecStats[0].CreatedAt).(time.Time)
+	if !ok {
+		return errors.New("Unable to get time of created_at")
+	}
+	workflowTemplate.WorkflowExecutionStatistic.LastExecuted = createdAtTime
+	for _, workflowExecStat := range workflowExecStats {
+		if workflowExecStat.FailedAt != nil {
+			workflowTemplate.WorkflowExecutionStatistic.Failed++
+		}
+		if workflowExecStat.FinishedAt == nil {
+			workflowTemplate.WorkflowExecutionStatistic.Running++
+		}
+		if workflowExecStat.FinishedAt != nil {
+			workflowTemplate.WorkflowExecutionStatistic.Completed++
+		}
+	}
+	return
+}
+
 /**
 Will build a template that makes a CURL request to the onepanel-core API,
 with statistics about the workflow that was just executed.

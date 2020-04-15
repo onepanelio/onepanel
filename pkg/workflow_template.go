@@ -410,6 +410,10 @@ func (c *Client) ListWorkflowTemplates(namespace string) (workflowTemplateVersio
 		return nil, util.NewUserError(codes.NotFound, "Workflow templates not found.")
 	}
 
+	for _, workflowTemplate := range workflowTemplateVersions {
+		err = c.GetWorkflowExecutionStatisticsForTemplate(workflowTemplate)
+	}
+
 	return
 }
 
