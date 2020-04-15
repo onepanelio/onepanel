@@ -356,7 +356,7 @@ func (c *Client) updateCronWorkflow(namespace string, name string, workflowTempl
 		return nil, err
 	}
 
-	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics(namespace, workflowTemplateId)
+	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics(c, namespace, workflowTemplateId)
 	if err != nil {
 		return nil, err
 	}
@@ -444,7 +444,7 @@ func (c *Client) createCronWorkflow(namespace string, workflowTemplateId *uint64
 		return nil, err
 	}
 
-	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics(namespace, workflowTemplateId)
+	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics(c, namespace, workflowTemplateId)
 	if err != nil {
 		return nil, err
 	}

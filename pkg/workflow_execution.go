@@ -236,7 +236,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateId *uint64, wf
 		return nil, err
 	}
 
-	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics(namespace, workflowTemplateId)
+	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics(c, namespace, workflowTemplateId)
 	if err != nil {
 		return nil, err
 	}
@@ -1097,7 +1097,7 @@ func (c *Client) SetWorkflowTemplateLabels(namespace, name, prefix string, keyVa
 Will build a template that makes a CURL request to the onepanel-core API,
 with statistics about the workflow that was just executed.
 */
-func GetExitHandlerWorkflowStatistics(namespace string, workflowTemplateId *uint64) (workflowStepName, workflowStepTemplate, workflowStepWhen string, err error, wfv1Template wfv1.Template) {
+func GetExitHandlerWorkflowStatistics(client *Client, namespace string, workflowTemplateId *uint64) (workflowStepName, workflowStepTemplate, workflowStepWhen string, err error, wfv1Template wfv1.Template) {
 	workflowStepName = "workflow-statistics"
 	workflowStepTemplate = "workflow-statistics-template"
 	host := env.GetEnv("ONEPANEL_CORE_SERVICE_HOST", "")
@@ -1123,7 +1123,12 @@ func GetExitHandlerWorkflowStatistics(namespace string, workflowTemplateId *uint
 	}
 	jsonRequestStr := string(jsonRequestBytes)
 	curlJSONBody := fmt.Sprintf("--data '%s'", jsonRequestStr)
-	//todo get auth token
+
+	token, err := GetBearerToken(namespace)
+	if err != nil {
+		return "", "", "", err, wfv1.Template{}
+	}
+
 	wfv1Template = wfv1.Template{
 		Name: workflowStepTemplate,
 		Container: &corev1.Container{
@@ -1131,7 +1136,7 @@ func GetExitHandlerWorkflowStatistics(namespace string, workflowTemplateId *uint
 			Command: []string{"sh", "-c"},
 			Args: []string{"apk add curl;" +
 				"curl '" + curlEndpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
-				"-H 'Sec-Fetch-Dest: empty' -H 'Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjRSamJlczl6SDVzem5nUzhuQ0RIcDg0SFhNY0VlNDhvWTd0dVNnMGRlb0kifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJkZWZhdWx0LXRva2VuLWttOWtwIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImRlZmF1bHQiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiI4ODJjZWQ1Ni00ZTY0LTQwOTUtOWMwMC1lMjVlM2I0OWYwODMiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6a3ViZS1zeXN0ZW06ZGVmYXVsdCJ9.kS0Iblqan6lkc0F1XVUV7o9s_IzM_0UtEbykjYWsmIyjHVuoxD8re5c6Szl_bBE6hqNlnT8js56pLq2vh_SvjN-fZdDCA28SQq_5n9HkroCuMVOEZYkOiYPXVQO2SScCwOPAb6coTDY9dM_Rz5sTjwOdMcklZ7181tzxSiyHoDTy9i-qF9knb8DzciwfK7EbKL8oMMBSKZfshAFKV_pjp1IaCtmi-lGKVYcZqrrYN782dWK5tEQyo3YUya1tindUhBZOAriNW0D1n759yis8CgsopRGSsG36_1GnjDcxuKFVWhbqW9OTl0uABXWcg2hK2jxTGDzyX2LMM-YHJtlkRA' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36' -H 'Sec-Fetch-Site: same-site' -H 'Sec-Fetch-Mode: cors' -H 'Accept-Language: en-US,en;q=0.9' " +
+				"-H 'Sec-Fetch-Dest: empty' -H 'Authorization: Bearer " + token + "' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36' -H 'Sec-Fetch-Site: same-site' -H 'Sec-Fetch-Mode: cors' -H 'Accept-Language: en-US,en;q=0.9' " +
 				curlJSONBody + " --compressed",
 			},
 		},
