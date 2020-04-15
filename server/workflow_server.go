@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/onepanelio/core/pkg/util"
 	"google.golang.org/grpc/codes"
 	"math"
@@ -120,10 +119,9 @@ func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, req
 		workflowOutcomeIsSuccess = true
 	}
 	/*
-		 The format from Argo will be:
-			Workflow creation timestamp formatted in RFC 3339 (e.g. 2018-08-23T05:42:49Z)
+	 The format from Argo needs to be parsed.
+	 It's not RFC3339
 	*/
-	fmt.Printf("Request POST:\n %+v \n", request)
 	layout := "2006-01-02 15:04:05 -0700 MST"
 	createdAt, err := time.Parse(layout, request.Statistics.CreatedAt)
 	if err != nil {
