@@ -1118,7 +1118,7 @@ func (c *Client) GetWorkflowExecutionStatisticsForTemplate(workflowTemplate *Wor
 	}
 
 	//Calculate and set the values
-	workflowTemplate.WorkflowExecutionStatisticReport.Total = uint64(len(workflowExecStats))
+	workflowTemplate.WorkflowExecutionStatisticReport.Total = int32(len(workflowExecStats))
 	createdAtTime, ok := (workflowExecStats[0].CreatedAt).(time.Time)
 	if !ok {
 		return errors.New("Unable to get time of created_at")

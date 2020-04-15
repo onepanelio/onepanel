@@ -64,11 +64,11 @@ type WorkflowTemplate struct {
 }
 
 type WorkflowExecutionStatisticReport struct {
-	Total        uint64
+	Total        int32
 	LastExecuted time.Time
-	Running      uint64
-	Completed    uint64
-	Failed       uint64
+	Running      int32
+	Completed    int32
+	Failed       int32
 }
 
 type WorkflowExecutionStatistic struct {

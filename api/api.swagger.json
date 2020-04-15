@@ -2487,23 +2487,23 @@
       "type": "object",
       "properties": {
         "total": {
-          "type": "string",
-          "format": "uint64"
+          "type": "integer",
+          "format": "int32"
         },
         "lastExecuted": {
           "type": "string"
         },
         "running": {
-          "type": "string",
-          "format": "uint64"
+          "type": "integer",
+          "format": "int32"
         },
         "completed": {
-          "type": "string",
-          "format": "uint64"
+          "type": "integer",
+          "format": "int32"
         },
         "failed": {
-          "type": "string",
-          "format": "uint64"
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -2534,7 +2534,7 @@
           "type": "boolean",
           "format": "boolean"
         },
-        "workflowExecutionStatisticReport": {
+        "stats": {
           "$ref": "#/definitions/WorkflowExecutionStatisticReport"
         }
       }
