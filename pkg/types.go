@@ -2,6 +2,8 @@ package v1
 
 import (
 	"encoding/json"
+	"github.com/onepanelio/core/pkg/util/mapping"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 	"strings"
 	"time"
@@ -71,13 +73,13 @@ func (wt *WorkflowTemplate) GetManifestBytes() []byte {
 }
 
 func (wt *WorkflowTemplate) GetParametersKeyString() (map[string]string, error) {
-	mapping := make(map[interface{}]interface{})
+	root := make(map[interface{}]interface{})
 
-	if err := yaml.Unmarshal(wt.GetManifestBytes(), mapping); err != nil {
+	if err := yaml.Unmarshal(wt.GetManifestBytes(), root); err != nil {
 		return nil, err
 	}
 
-	arguments, ok := mapping["arguments"]
+	arguments, ok := root["arguments"]
 	if !ok {
 		return nil, nil
 	}
@@ -95,6 +97,10 @@ func (wt *WorkflowTemplate) GetParametersKeyString() (map[string]string, error) 
 	parametersAsArray, ok := parameters.([]interface{})
 	if !ok {
 		return nil, nil
+	}
+
+	if len(parametersAsArray) == 0 {
+		delete(root, arguments)
 	}
 
 	result := make(map[string]string)
@@ -144,6 +150,46 @@ func (wt *WorkflowTemplate) GetWorkflowManifestBytes() ([]byte, error) {
 	}
 
 	return json.Marshal(wt.ArgoWorkflowTemplate)
+}
+
+func (wt *WorkflowTemplate) FormatManifest() (string, error) {
+	manifestMap, err := mapping.NewFromYamlString(wt.Manifest)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Method": "FormatManifest",
+			"Step":   "NewFromYamlString",
+			"Error":  err.Error(),
+		}).Error("FormatManifest Workflow Template failed.")
+
+		return "", nil
+	}
+
+	manifestMap, err = manifestMap.GetChildMap("spec")
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Method": "FormatManifest",
+			"Step":   "GetChildMap",
+			"Error":  err.Error(),
+		}).Error("GetChildMap Workflow Template failed.")
+
+		return "", nil
+	}
+	manifestMap.PruneEmpty()
+
+	if wt.ArgoWorkflowTemplate != nil {
+		AddWorkflowTemplateParametersFromAnnotations(manifestMap, wt.ArgoWorkflowTemplate.Annotations)
+	}
+
+	manifestBytes, err := manifestMap.ToYamlBytes()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Method": "FormatManifest",
+			"Step":   "ToYamlBytes",
+			"Error":  err.Error(),
+		}).Error("ToYamlBytes Workflow Template failed.")
+	}
+
+	return string(manifestBytes), nil
 }
 
 const (
@@ -273,38 +319,29 @@ func WrapSpecInK8s(data []byte) ([]byte, error) {
 	return finalBytes, nil
 }
 
-func RemoveAllButSpec(manifest []byte) (map[interface{}]interface{}, error) {
-	mapping := make(map[interface{}]interface{})
-
-	if err := yaml.Unmarshal(manifest, mapping); err != nil {
-		return nil, err
+func AddWorkflowTemplateParametersFromAnnotations(spec mapping.Mapping, annotations map[string]string) {
+	if spec == nil || len(annotations) == 0 {
+		return
 	}
 
-	deleteEmptyValuesMapping(mapping)
-
-	spec, ok := mapping["spec"].(map[interface{}]interface{})
-	if !ok {
-		return nil, nil
+	arguments, err := spec.GetChildMap("arguments")
+	if err != nil {
+		return
 	}
 
-	return spec, nil
-}
-
-func AddWorkflowTemplateParametersFromAnnotations(spec map[interface{}]interface{}, annotations map[string]string) {
-	// TODO put in parameters here, decoding as you go.
-	// @todo don't forget to clean up the code and centralize it somewhere.
-	// maybe we should have a manifest builder or something.
-
-	spec["arguments"] = make(map[interface{}]interface{})
-	arguments := spec["arguments"].(map[interface{}]interface{})
-	arguments["parameters"] = make([]interface{}, 0)
-	parameters := make([]interface{}, len(annotations))
+	parameters, err := arguments.GetChildMap("parameters")
+	if err != nil {
+		return
+	}
 
 	for _, value := range annotations {
-		data := make(map[interface{}]interface{})
-		err := yaml.Unmarshal([]byte(value), data)
+		data, err := mapping.NewFromYamlString(value)
 		if err != nil {
-			// todo log
+			log.WithFields(log.Fields{
+				"Method": "AddWorkflowTemplateParametersFromAnnotations",
+				"Step":   "NewFromYamlString",
+				"Error":  err.Error(),
+			}).Error("Error with AddWorkflowTemplateParametersFromAnnotations")
 			continue
 		}
 
@@ -313,55 +350,12 @@ func AddWorkflowTemplateParametersFromAnnotations(spec map[interface{}]interface
 		if ok {
 			order = orderValue.(int)
 			delete(data, "order")
-			parameters[order] = data
+
+			if order >= 0 && order < len(parameters) {
+				parameters[order] = data
+			}
 		}
 	}
 
 	arguments["parameters"] = parameters
-}
-
-// Returns the number of keys in the map
-func deleteEmptyValuesMapping(mapping map[interface{}]interface{}) int {
-	keys := 0
-	for key, value := range mapping {
-		keys++
-		valueAsMapping, ok := value.(map[interface{}]interface{})
-		if ok {
-			if deleteEmptyValuesMapping(valueAsMapping) == 0 {
-				delete(mapping, key)
-			}
-		}
-
-		valueAsArray, ok := value.([]interface{})
-		if ok {
-			deleteEmptyValuesArray(valueAsArray)
-		}
-
-		valueAsString, ok := value.(string)
-		if ok && valueAsString == "" {
-			delete(mapping, key)
-		}
-	}
-
-	return keys
-}
-
-// Returns the number of items in the array.
-func deleteEmptyValuesArray(values []interface{}) int {
-	count := 0
-	for _, value := range values {
-		count++
-
-		valueAsMapping, ok := value.(map[interface{}]interface{})
-		if ok {
-			deleteEmptyValuesMapping(valueAsMapping)
-		}
-
-		valueAsArray, ok := value.([]interface{})
-		if ok {
-			deleteEmptyValuesArray(valueAsArray)
-		}
-	}
-
-	return count
 }
