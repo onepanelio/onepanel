@@ -98,7 +98,7 @@ func (wt *WorkflowTemplate) GetParametersKeyString() (map[string]string, error) 
 	}
 
 	result := make(map[string]string)
-	for _, parameter := range parametersAsArray {
+	for index, parameter := range parametersAsArray {
 		parameterMap, ok := parameter.(map[interface{}]interface{})
 		if !ok {
 			continue
@@ -110,6 +110,7 @@ func (wt *WorkflowTemplate) GetParametersKeyString() (map[string]string, error) 
 			continue
 		}
 
+		parameterMap["order"] = index
 		remainingParameters, err := yaml.Marshal(parameterMap)
 		if err != nil {
 			continue
@@ -297,7 +298,7 @@ func AddWorkflowTemplateParametersFromAnnotations(spec map[interface{}]interface
 	spec["arguments"] = make(map[interface{}]interface{})
 	arguments := spec["arguments"].(map[interface{}]interface{})
 	arguments["parameters"] = make([]interface{}, 0)
-	parameters := arguments["parameters"].([]interface{})
+	parameters := make([]interface{}, len(annotations))
 
 	for _, value := range annotations {
 		data := make(map[interface{}]interface{})
@@ -307,7 +308,13 @@ func AddWorkflowTemplateParametersFromAnnotations(spec map[interface{}]interface
 			continue
 		}
 
-		parameters = append(parameters, data)
+		order := 0
+		orderValue, ok := data["order"]
+		if ok {
+			order = orderValue.(int)
+			delete(data, "order")
+			parameters[order] = data
+		}
 	}
 
 	arguments["parameters"] = parameters
