@@ -48,6 +48,19 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 	}
 
 	argoWft, err := createArgoWorkflowTemplate(workflowTemplate, "1")
+
+	parametersMap, err := workflowTemplate.GetParametersKeyString()
+	if err != nil {
+		return nil, err
+	}
+
+	if argoWft.Annotations == nil {
+		argoWft.Annotations = make(map[string]string)
+	}
+	for key, value := range parametersMap {
+		argoWft.Annotations[key] = value
+	}
+
 	argoWft, err = c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Create(argoWft)
 	if err != nil {
 		return nil, err
@@ -170,7 +183,7 @@ func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTe
 
 		newItem := WorkflowTemplate{
 			ID:         template.ID,
-			CreatedAt:  template.CreatedAt,
+			CreatedAt:  argoTemplate.CreationTimestamp.Time,
 			UID:        template.UID,
 			Name:       template.Name,
 			Manifest:   string(manifest),
@@ -295,6 +308,18 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 	updatedTemplate.TypeMeta = v1.TypeMeta{}
 	updatedTemplate.ObjectMeta.ResourceVersion = ""
 	updatedTemplate.ObjectMeta.SetSelfLink("")
+
+	parametersMap, err := workflowTemplate.GetParametersKeyString()
+	if err != nil {
+		return nil, err
+	}
+
+	if updatedTemplate.Annotations == nil {
+		updatedTemplate.Annotations = make(map[string]string)
+	}
+	for key, value := range parametersMap {
+		updatedTemplate.Annotations[key] = value
+	}
 
 	if _, err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Create(updatedTemplate); err != nil {
 		return nil, err

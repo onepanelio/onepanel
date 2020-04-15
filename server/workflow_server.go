@@ -6,6 +6,7 @@ import (
 	"github.com/onepanelio/core/server/converter"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
+	"gopkg.in/yaml.v2"
 	"math"
 	"sort"
 	"strings"
@@ -45,7 +46,7 @@ func apiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecu
 	}
 
 	if wf.WorkflowTemplate != nil {
-		wftManifest, err := v1.RemoveAllButSpec(wf.WorkflowTemplate.GetManifestBytes())
+		wftManifestMap, err := v1.RemoveAllButSpec(wf.WorkflowTemplate.GetManifestBytes())
 		if err != nil {
 			log.WithFields(log.Fields{
 				"Method": "apiWorkflowExecution",
@@ -53,12 +54,24 @@ func apiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecu
 				"Error":  err.Error(),
 			}).Error("Invalid status.")
 		}
+		if wf.WorkflowTemplate.ArgoWorkflowTemplate != nil {
+			v1.AddWorkflowTemplateParametersFromAnnotations(wftManifestMap, wf.WorkflowTemplate.ArgoWorkflowTemplate.Annotations)
+		}
+
+		manifestBytes := []byte{}
+		if wftManifestMap != nil {
+			manifestBytes, err = yaml.Marshal(wftManifestMap)
+			if err != nil {
+				// todo log
+			}
+		}
+
 		workflow.WorkflowTemplate = &api.WorkflowTemplate{
 			Uid:        wf.WorkflowTemplate.UID,
 			CreatedAt:  wf.WorkflowTemplate.CreatedAt.UTC().Format(time.RFC3339),
 			Name:       wf.WorkflowTemplate.Name,
 			Version:    wf.WorkflowTemplate.Version,
-			Manifest:   string(wftManifest),
+			Manifest:   string(manifestBytes),
 			IsLatest:   wf.WorkflowTemplate.IsLatest,
 			IsArchived: wf.WorkflowTemplate.IsArchived,
 		}

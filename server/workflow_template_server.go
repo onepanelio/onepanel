@@ -9,6 +9,7 @@ import (
 	"github.com/onepanelio/core/server/auth"
 	"github.com/onepanelio/core/server/converter"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 	"strings"
 	"time"
 )
@@ -20,7 +21,7 @@ func NewWorkflowTemplateServer() *WorkflowTemplateServer {
 }
 
 func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
-	manifest, err := v1.RemoveAllButSpec(wft.GetManifestBytes())
+	manifestMap, err := v1.RemoveAllButSpec(wft.GetManifestBytes())
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Method": "apiWorkflowTemplate",
@@ -29,12 +30,23 @@ func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 		}).Error("Get Workflow Template failed.")
 	}
 
+	if wft.ArgoWorkflowTemplate != nil {
+		v1.AddWorkflowTemplateParametersFromAnnotations(manifestMap, wft.ArgoWorkflowTemplate.Annotations)
+	}
+	manifestBytes := []byte{}
+	if manifestMap != nil {
+		manifestBytes, err = yaml.Marshal(manifestMap)
+		if err != nil {
+			// todo log it
+		}
+	}
+
 	return &api.WorkflowTemplate{
 		Uid:        wft.UID,
 		CreatedAt:  wft.CreatedAt.UTC().Format(time.RFC3339),
 		Name:       wft.Name,
 		Version:    wft.Version,
-		Manifest:   string(manifest),
+		Manifest:   string(manifestBytes),
 		IsLatest:   wft.IsLatest,
 		IsArchived: wft.IsArchived,
 	}

@@ -70,6 +70,57 @@ func (wt *WorkflowTemplate) GetManifestBytes() []byte {
 	return []byte(wt.Manifest)
 }
 
+func (wt *WorkflowTemplate) GetParametersKeyString() (map[string]string, error) {
+	mapping := make(map[interface{}]interface{})
+
+	if err := yaml.Unmarshal(wt.GetManifestBytes(), mapping); err != nil {
+		return nil, err
+	}
+
+	arguments, ok := mapping["arguments"]
+	if !ok {
+		return nil, nil
+	}
+
+	argumentsMap, ok := arguments.(map[interface{}]interface{})
+	if !ok {
+		return nil, nil
+	}
+
+	parameters, ok := argumentsMap["parameters"]
+	if !ok {
+		return nil, nil
+	}
+
+	parametersAsArray, ok := parameters.([]interface{})
+	if !ok {
+		return nil, nil
+	}
+
+	result := make(map[string]string)
+	for _, parameter := range parametersAsArray {
+		parameterMap, ok := parameter.(map[interface{}]interface{})
+		if !ok {
+			continue
+		}
+
+		key := parameterMap["name"]
+		keyAsString, ok := key.(string)
+		if !ok {
+			continue
+		}
+
+		remainingParameters, err := yaml.Marshal(parameterMap)
+		if err != nil {
+			continue
+		}
+
+		result[keyAsString] = string(remainingParameters)
+	}
+
+	return result, nil
+}
+
 func (wt *WorkflowTemplate) GenerateUID() (string, error) {
 	uid, err := uuid.NewRandom()
 	if err != nil {
@@ -221,16 +272,45 @@ func WrapSpecInK8s(data []byte) ([]byte, error) {
 	return finalBytes, nil
 }
 
-func RemoveAllButSpec(manifest []byte) ([]byte, error) {
+func RemoveAllButSpec(manifest []byte) (map[interface{}]interface{}, error) {
 	mapping := make(map[interface{}]interface{})
 
 	if err := yaml.Unmarshal(manifest, mapping); err != nil {
-		return []byte{}, nil
+		return nil, err
 	}
 
 	deleteEmptyValuesMapping(mapping)
 
-	return yaml.Marshal(mapping["spec"])
+	spec, ok := mapping["spec"].(map[interface{}]interface{})
+	if !ok {
+		return nil, nil
+	}
+
+	return spec, nil
+}
+
+func AddWorkflowTemplateParametersFromAnnotations(spec map[interface{}]interface{}, annotations map[string]string) {
+	// TODO put in parameters here, decoding as you go.
+	// @todo don't forget to clean up the code and centralize it somewhere.
+	// maybe we should have a manifest builder or something.
+
+	spec["arguments"] = make(map[interface{}]interface{})
+	arguments := spec["arguments"].(map[interface{}]interface{})
+	arguments["parameters"] = make([]interface{}, 0)
+	parameters := arguments["parameters"].([]interface{})
+
+	for _, value := range annotations {
+		data := make(map[interface{}]interface{})
+		err := yaml.Unmarshal([]byte(value), data)
+		if err != nil {
+			// todo log
+			continue
+		}
+
+		parameters = append(parameters, data)
+	}
+
+	arguments["parameters"] = parameters
 }
 
 // Returns the number of keys in the map
