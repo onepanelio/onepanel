@@ -63,7 +63,7 @@ func (c *Client) UpdateCronWorkflow(namespace string, name string, cronWorkflow 
 
 	for _, wf := range workflows {
 		argoCronWorkflow.Spec.WorkflowSpec = wf.Spec
-		argoCreatedCronWorkflow, err := c.updateCronWorkflow(namespace, name, &wf, &argoCronWorkflow, opts)
+		argoCreatedCronWorkflow, err := c.updateCronWorkflow(namespace, name, &workflowTemplate.ID, &wf, &argoCronWorkflow, opts)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"Namespace":    namespace,
@@ -134,7 +134,7 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 
 	for _, wf := range workflows {
 		argoCronWorkflow.Spec.WorkflowSpec = wf.Spec
-		argoCreatedCronWorkflow, err := c.createCronWorkflow(namespace, &wf, &argoCronWorkflow, opts)
+		argoCreatedCronWorkflow, err := c.createCronWorkflow(namespace, &workflowTemplate.ID, &wf, &argoCronWorkflow, opts)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"Namespace":    namespace,
@@ -299,7 +299,7 @@ func (c *Client) ListCronWorkflows(namespace, workflowTemplateUID string) (cronW
 	return
 }
 
-func (c *Client) updateCronWorkflow(namespace string, name string, wf *wfv1.Workflow, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (updatedCronWorkflow *wfv1.CronWorkflow, err error) {
+func (c *Client) updateCronWorkflow(namespace string, name string, workflowTemplateId *uint64, wf *wfv1.Workflow, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (updatedCronWorkflow *wfv1.CronWorkflow, err error) {
 	//Make sure the CronWorkflow exists before we edit it
 	toUpdateCWF, err := c.ArgoprojV1alpha1().CronWorkflows(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
@@ -356,7 +356,7 @@ func (c *Client) updateCronWorkflow(namespace string, name string, wf *wfv1.Work
 		return nil, err
 	}
 
-	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics(namespace)
+	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics(namespace, workflowTemplateId)
 	if err != nil {
 		return nil, err
 	}
@@ -398,7 +398,7 @@ func (c *Client) updateCronWorkflow(namespace string, name string, wf *wfv1.Work
 	return
 }
 
-func (c *Client) createCronWorkflow(namespace string, wf *wfv1.Workflow, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (createdCronWorkflow *wfv1.CronWorkflow, err error) {
+func (c *Client) createCronWorkflow(namespace string, workflowTemplateId *uint64, wf *wfv1.Workflow, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (createdCronWorkflow *wfv1.CronWorkflow, err error) {
 	if opts == nil {
 		opts = &WorkflowExecutionOptions{}
 	}
@@ -444,7 +444,7 @@ func (c *Client) createCronWorkflow(namespace string, wf *wfv1.Workflow, cwf *wf
 		return nil, err
 	}
 
-	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics(namespace)
+	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics(namespace, workflowTemplateId)
 	if err != nil {
 		return nil, err
 	}
