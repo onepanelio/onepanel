@@ -2483,6 +2483,30 @@
         }
       }
     },
+    "WorkflowExecutionStatisticReport": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "lastExecuted": {
+          "type": "string"
+        },
+        "running": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "completed": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "failed": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
     "WorkflowTemplate": {
       "type": "object",
       "properties": {
@@ -2509,6 +2533,9 @@
         "isArchived": {
           "type": "boolean",
           "format": "boolean"
+        },
+        "workflowExecutionStatisticReport": {
+          "$ref": "#/definitions/WorkflowExecutionStatisticReport"
         }
       }
     },

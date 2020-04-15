@@ -53,6 +53,14 @@ message ArchiveWorkflowTemplateResponse {
     WorkflowTemplate workflowTemplate = 1;
 }
 
+message WorkflowExecutionStatisticReport {
+    uint64 total = 1;
+    string lastExecuted = 2;
+    uint64 running = 3;
+    uint64 completed = 4;
+    uint64 failed = 5;
+}
+
 message WorkflowTemplate {
     string createdAt = 1;
     string uid = 2;
@@ -61,4 +69,5 @@ message WorkflowTemplate {
     string manifest = 5;
     bool isLatest = 6;
     bool isArchived = 7;
+    WorkflowExecutionStatisticReport workflowExecutionStatisticReport = 8;
 }

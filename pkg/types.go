@@ -52,15 +52,15 @@ type CronWorkflow struct {
 }
 
 type WorkflowTemplate struct {
-	ID                         uint64
-	CreatedAt                  time.Time `db:"created_at"`
-	UID                        string
-	Name                       string
-	Manifest                   string
-	Version                    int32
-	IsLatest                   bool `db:"is_latest"`
-	IsArchived                 bool `db:"is_archived"`
-	WorkflowExecutionStatistic *WorkflowExecutionStatisticReport
+	ID                               uint64
+	CreatedAt                        time.Time `db:"created_at"`
+	UID                              string
+	Name                             string
+	Manifest                         string
+	Version                          int32
+	IsLatest                         bool `db:"is_latest"`
+	IsArchived                       bool `db:"is_archived"`
+	WorkflowExecutionStatisticReport *WorkflowExecutionStatisticReport
 }
 
 type WorkflowExecutionStatisticReport struct {

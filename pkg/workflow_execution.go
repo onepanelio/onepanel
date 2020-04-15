@@ -1112,27 +1112,27 @@ func (c *Client) GetWorkflowExecutionStatisticsForTemplate(workflowTemplate *Wor
 		return err
 	}
 
-	workflowTemplate.WorkflowExecutionStatistic = &WorkflowExecutionStatisticReport{}
+	workflowTemplate.WorkflowExecutionStatisticReport = &WorkflowExecutionStatisticReport{}
 	if len(workflowExecStats) == 0 {
 		return
 	}
 
 	//Calculate and set the values
-	workflowTemplate.WorkflowExecutionStatistic.Total = uint64(len(workflowExecStats))
+	workflowTemplate.WorkflowExecutionStatisticReport.Total = uint64(len(workflowExecStats))
 	createdAtTime, ok := (workflowExecStats[0].CreatedAt).(time.Time)
 	if !ok {
 		return errors.New("Unable to get time of created_at")
 	}
-	workflowTemplate.WorkflowExecutionStatistic.LastExecuted = createdAtTime
+	workflowTemplate.WorkflowExecutionStatisticReport.LastExecuted = createdAtTime
 	for _, workflowExecStat := range workflowExecStats {
 		if workflowExecStat.FailedAt != nil {
-			workflowTemplate.WorkflowExecutionStatistic.Failed++
+			workflowTemplate.WorkflowExecutionStatisticReport.Failed++
 		}
 		if workflowExecStat.FinishedAt == nil {
-			workflowTemplate.WorkflowExecutionStatistic.Running++
+			workflowTemplate.WorkflowExecutionStatisticReport.Running++
 		}
 		if workflowExecStat.FinishedAt != nil {
-			workflowTemplate.WorkflowExecutionStatistic.Completed++
+			workflowTemplate.WorkflowExecutionStatisticReport.Completed++
 		}
 	}
 	return

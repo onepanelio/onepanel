@@ -67,6 +67,13 @@ func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 		Manifest:   wft.Manifest,
 		IsLatest:   wft.IsLatest,
 		IsArchived: wft.IsArchived,
+		WorkflowExecutionStatisticReport: &api.WorkflowExecutionStatisticReport{
+			Total:        wft.WorkflowExecutionStatisticReport.Total,
+			LastExecuted: wft.WorkflowExecutionStatisticReport.LastExecuted.String(),
+			Running:      wft.WorkflowExecutionStatisticReport.Running,
+			Completed:    wft.WorkflowExecutionStatisticReport.Completed,
+			Failed:       wft.WorkflowExecutionStatisticReport.Failed,
+		},
 	}
 }
 
