@@ -1144,6 +1144,44 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}/statistics": {
+      "post": {
+        "operationId": "AddWorkflowExecutionStatistics",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Statistics"
+            }
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workflow_executions/{name}/terminate": {
       "put": {
         "operationId": "TerminateWorkflowExecution",
@@ -1284,6 +1322,40 @@
           },
           {
             "name": "version",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "stats.total",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "stats.lastExecuted",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "stats.running",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "stats.completed",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "stats.failed",
             "in": "query",
             "required": false,
             "type": "integer",
@@ -2057,6 +2129,21 @@
         }
       }
     },
+    "Statistics": {
+      "type": "object",
+      "properties": {
+        "workflowStatus": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "workflowTemplateId": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
     "TokenWrapper": {
       "type": "object",
       "properties": {
@@ -2126,6 +2213,30 @@
         }
       }
     },
+    "WorkflowExecutionStatisticReport": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "lastExecuted": {
+          "type": "string"
+        },
+        "running": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "completed": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "failed": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "WorkflowTemplate": {
       "type": "object",
       "properties": {
@@ -2158,6 +2269,9 @@
           "items": {
             "$ref": "#/definitions/KeyValue"
           }
+        },
+        "stats": {
+          "$ref": "#/definitions/WorkflowExecutionStatisticReport"
         }
       }
     },

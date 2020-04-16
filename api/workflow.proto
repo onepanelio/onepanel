@@ -96,6 +96,13 @@ service WorkflowService {
             delete: "/apis/v1beta1/{namespace}/workflow_executions/{name}/labels/{key}"
         };
     }
+
+    rpc AddWorkflowExecutionStatistics (AddWorkflowExecutionStatisticRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/{namespace}/workflow_executions/{name}/statistics"
+            body: "statistics"
+        };
+    }
 }
 
 message CreateWorkflowExecutionRequest {    
@@ -211,4 +218,16 @@ message ListFilesRequest {
 message ListFilesResponse {
     repeated File files = 1;
     string parentPath = 2;
+}
+
+message Statistics {
+    string workflowStatus = 1;
+    string createdAt = 2;
+    int64 workflowTemplateId = 3;
+}
+
+message AddWorkflowExecutionStatisticRequest {
+    string namespace = 1;
+    string name = 2;
+    Statistics statistics = 3;
 }

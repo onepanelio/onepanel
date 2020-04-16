@@ -1,4 +1,4 @@
-FROM golang:1.13.8 AS builder
+FROM golang:1.13.10 AS builder
 
 WORKDIR /go/src
 COPY . .
@@ -7,7 +7,7 @@ RUN go get -d -v ./...
 RUN go install -v ./...
 
 
-FROM golang:1.13.8
+FROM golang:1.13.10
 COPY --from=builder /go/bin/core .
 COPY --from=builder /go/src/db ./db
 

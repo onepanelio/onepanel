@@ -79,6 +79,31 @@ func (s *WorkflowServer) CreateWorkflowExecution(ctx context.Context, req *api.C
 	return apiWorkflowExecution(wf), nil
 }
 
+func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, request *api.AddWorkflowExecutionStatisticRequest) (*empty.Empty, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	workflowOutcomeIsSuccess := false
+	// todo - Succeeded ?
+	if request.Statistics.WorkflowStatus == "Success" {
+		workflowOutcomeIsSuccess = true
+	}
+
+	/*
+	 The format from Argo needs to be parsed.
+	 It's not RFC3339
+	*/
+	layout := "2006-01-02 15:04:05 -0700 MST"
+	createdAt, err := time.Parse(layout, request.Statistics.CreatedAt)
+	if err != nil {
+		return &empty.Empty{}, err
+	}
+	err = client.AddWorkflowExecutionStatistic(request.Namespace, request.Name,
+		request.Statistics.WorkflowTemplateId, createdAt, workflowOutcomeIsSuccess)
+	if err != nil {
+		return &empty.Empty{}, err
+	}
+	return &empty.Empty{}, nil
+}
+
 func (s *WorkflowServer) GetWorkflowExecution(ctx context.Context, req *api.GetWorkflowExecutionRequest) (*api.WorkflowExecution, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Name)

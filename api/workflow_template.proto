@@ -141,6 +141,14 @@ message ArchiveWorkflowTemplateResponse {
     WorkflowTemplate workflowTemplate = 1;
 }
 
+message WorkflowExecutionStatisticReport {
+    int32 total = 1;
+    string lastExecuted = 2;
+    int32 running = 3;
+    int32 completed = 4;
+    int32 failed = 5;
+}
+
 message WorkflowTemplate {
     string createdAt = 1;
     string uid = 2;
@@ -150,10 +158,13 @@ message WorkflowTemplate {
     bool isLatest = 6;
     bool isArchived = 7;
     repeated KeyValue labels = 8;
+
+    WorkflowExecutionStatisticReport stats = 9;
 }
 
 message GetWorkflowTemplateLabelsRequest {
     string namespace = 1;
     string name = 2;
     int32 version = 3;
+    WorkflowExecutionStatisticReport stats = 8;
 }

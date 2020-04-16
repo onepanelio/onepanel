@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	sq "github.com/Masterminds/squirrel"
 	"github.com/ghodss/yaml"
+	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/pkg/util/label"
 	"io"
 	"io/ioutil"
@@ -190,7 +192,7 @@ func addEnvToTemplate(template *wfv1.Template, key string, value string) {
 	}
 }
 
-func (c *Client) createWorkflow(namespace string, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (createdWorkflow *wfv1.Workflow, err error) {
+func (c *Client) createWorkflow(namespace string, workflowTemplateId *uint64, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (createdWorkflow *wfv1.Workflow, err error) {
 	if opts == nil {
 		opts = &WorkflowExecutionOptions{}
 	}
@@ -233,6 +235,25 @@ func (c *Client) createWorkflow(namespace string, wf *wfv1.Workflow, opts *Workf
 
 	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
 		return nil, err
+	}
+
+	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics(c, namespace, workflowTemplateId)
+	if err != nil {
+		return nil, err
+	}
+	if exitHandlerStepTemplate != "" {
+		exitHandler := wfv1.Template{
+			Name: "exit-handler",
+			Steps: []wfv1.ParallelSteps{
+				{
+					Steps: []wfv1.WorkflowStep{
+						{Name: exitHandlerStepName, Template: exitHandlerStepTemplate, When: exitHandlerStepWhen},
+					},
+				},
+			},
+		}
+		wf.Spec.OnExit = "exit-handler"
+		wf.Spec.Templates = append(wf.Spec.Templates, exitHandler, exitHandlerTemplate)
 	}
 
 	createdWorkflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
@@ -318,7 +339,7 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 
 	var createdWorkflows []*wfv1.Workflow
 	for _, wf := range workflows {
-		createdWorkflow, err := c.createWorkflow(namespace, &wf, opts)
+		createdWorkflow, err := c.createWorkflow(namespace, &workflowTemplate.ID, &wf, opts)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"Namespace": namespace,
@@ -349,6 +370,49 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	workflow.WorkflowTemplate.Manifest = ""
 
 	return workflow, nil
+}
+
+func (c *Client) AddWorkflowExecutionStatistic(namespace, name string, workflowTemplateID int64, createdAt time.Time, workflowOutcomeIsSuccess bool) (err error) {
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if workflowOutcomeIsSuccess {
+		_, err := sb.Insert("workflow_executions").
+			SetMap(sq.Eq{
+				"workflow_template_id": workflowTemplateID,
+				"name":                 name,
+				"namespace":            namespace,
+				"created_at":           createdAt.UTC(),
+				"finished_at":          time.Now().UTC(),
+			}).RunWith(tx).Exec()
+		if err != nil {
+			return err
+		}
+		err = tx.Commit()
+		if err != nil {
+			return err
+		}
+		return err
+	} else {
+		_, err := sb.Insert("workflow_executions").
+			SetMap(sq.Eq{
+				"workflow_template_id": workflowTemplateID,
+				"name":                 name,
+				"namespace":            namespace,
+				"created_at":           createdAt.UTC(),
+				"failed_at":            time.Now().UTC(),
+			}).RunWith(tx).Exec()
+		if err != nil {
+			return err
+		}
+		err = tx.Commit()
+		if err != nil {
+			return err
+		}
+		return err
+	}
 }
 
 func (c *Client) GetWorkflowExecution(namespace, name string) (workflow *WorkflowExecution, err error) {
@@ -1051,4 +1115,97 @@ func (c *Client) SetWorkflowTemplateLabels(namespace, name, prefix string, keyVa
 	filteredMap = label.RemovePrefix(prefix, filteredMap)
 
 	return filteredMap, nil
+}
+
+func (c *Client) GetWorkflowExecutionStatisticsForTemplate(workflowTemplate *WorkflowTemplate) (err error) {
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	query, args, err := sb.Select("name, created_at, finished_at").
+		From("workflow_executions").Where(sq.Eq{"workflow_template_id": workflowTemplate.ID}).OrderBy("created_at DESC").ToSql()
+	if err != nil {
+		return err
+	}
+	var workflowExecStats []WorkflowExecutionStatistic
+	err = c.DB.Select(&workflowExecStats, query, args...)
+
+	if err != nil {
+		return err
+	}
+
+	workflowTemplate.WorkflowExecutionStatisticReport = &WorkflowExecutionStatisticReport{}
+	if len(workflowExecStats) == 0 {
+		return
+	}
+
+	//Calculate and set the values
+	workflowTemplate.WorkflowExecutionStatisticReport.Total = int32(len(workflowExecStats))
+	createdAtTime := workflowExecStats[0].CreatedAt
+	workflowTemplate.WorkflowExecutionStatisticReport.LastExecuted = *createdAtTime
+	for _, workflowExecStat := range workflowExecStats {
+		if workflowExecStat.FailedAt != nil {
+			workflowTemplate.WorkflowExecutionStatisticReport.Failed++
+		}
+		if workflowExecStat.FinishedAt == nil {
+			workflowTemplate.WorkflowExecutionStatisticReport.Running++
+		}
+		if workflowExecStat.FinishedAt != nil {
+			workflowTemplate.WorkflowExecutionStatisticReport.Completed++
+		}
+	}
+	return
+}
+
+/**
+Will build a template that makes a CURL request to the onepanel-core API,
+with statistics about the workflow that was just executed.
+*/
+func GetExitHandlerWorkflowStatistics(client *Client, namespace string, workflowTemplateId *uint64) (workflowStepName, workflowStepTemplate, workflowStepWhen string, err error, wfv1Template wfv1.Template) {
+	workflowStepName = "workflow-statistics"
+	workflowStepTemplate = "workflow-statistics-template"
+	host := env.GetEnv("ONEPANEL_CORE_SERVICE_HOST", "")
+	if host == "" {
+		err = errors.New("ONEPANEL_CORE_SERVICE_HOST is empty.")
+		return
+	}
+	port := env.GetEnv("ONEPANEL_CORE_SERVICE_PORT", "")
+	if port == "" {
+		err = errors.New("ONEPANEL_CORE_SERVICE_PORT is empty.")
+		return
+	}
+	curlEndpoint := fmt.Sprintf("http://%s:%s/apis/v1beta1/%s/workflow_executions/{{workflow.name}}/statistics", host, port, namespace)
+
+	jsonRequestStruct := api.Statistics{
+		WorkflowStatus:     "{{workflow.status}}",
+		CreatedAt:          "{{workflow.creationTimestamp}}",
+		WorkflowTemplateId: int64(*workflowTemplateId),
+	}
+	jsonRequestBytes, err := json.Marshal(jsonRequestStruct)
+	if err != nil {
+		return "", "", "", err, wfv1.Template{}
+	}
+	jsonRequestStr := string(jsonRequestBytes)
+	curlJSONBody := fmt.Sprintf("--data '%s'", jsonRequestStr)
+
+	token, err := GetBearerToken(namespace)
+	if err != nil {
+		return "", "", "", err, wfv1.Template{}
+	}
+
+	wfv1Template = wfv1.Template{
+		Name: workflowStepTemplate,
+		Container: &corev1.Container{
+			Image:   "alpine:latest",
+			Command: []string{"sh", "-c"},
+			Args: []string{"apk add curl;" +
+				"curl '" + curlEndpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
+				"-H 'Sec-Fetch-Dest: empty' -H 'Authorization: Bearer " + token + "' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36' -H 'Sec-Fetch-Site: same-site' -H 'Sec-Fetch-Mode: cors' -H 'Accept-Language: en-US,en;q=0.9' " +
+				curlJSONBody + " --compressed",
+			},
+		},
+	}
+	return
 }

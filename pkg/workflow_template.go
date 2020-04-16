@@ -87,7 +87,9 @@ func (c *Client) workflowTemplatesSelectBuilder(namespace string) sq.SelectBuild
 }
 
 func (c *Client) getWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *WorkflowTemplate, err error) {
-	workflowTemplate = &WorkflowTemplate{}
+	workflowTemplate = &WorkflowTemplate{
+		WorkflowExecutionStatisticReport: &WorkflowExecutionStatisticReport{},
+	}
 
 	sb := c.workflowTemplatesSelectBuilder(namespace).Where(sq.Eq{"wt.uid": uid})
 	query, args, err := sb.ToSql()
@@ -121,14 +123,14 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int32) (work
 	workflowTemplate.Manifest = string(manifest)
 	workflowTemplate.ArgoWorkflowTemplate = argoWft
 
-	templateVersion, err := strconv.Atoi(argoWft.Labels["onepanel.io/version"])
+	templateVersion, err := strconv.Atoi(argoWft.Labels[label.Version])
 	if err != nil {
 		return nil, err
 	}
 
 	workflowTemplate.Version = int32(templateVersion)
 
-	return
+	return workflowTemplate, nil
 }
 
 func (c *Client) getWorkflowTemplateByName(namespace, name string, version int32) (workflowTemplate *WorkflowTemplate, err error) {
@@ -385,6 +387,17 @@ func (c *Client) ListWorkflowTemplates(namespace string) (workflowTemplateVersio
 			"Error":     err.Error(),
 		}).Error("Workflow templates not found.")
 		return nil, util.NewUserError(codes.NotFound, "Workflow templates not found.")
+	}
+
+	for _, workflowTemplate := range workflowTemplateVersions {
+		err = c.GetWorkflowExecutionStatisticsForTemplate(workflowTemplate)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"Namespace": namespace,
+				"Error":     err.Error(),
+			}).Error("Unable to get Workflow Execution Statistic for Template.")
+			return nil, util.NewUserError(codes.NotFound, "Unable to get Workflow Execution Statistic for Template.")
+		}
 	}
 
 	return

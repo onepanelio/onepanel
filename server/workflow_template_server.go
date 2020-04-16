@@ -24,7 +24,7 @@ func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 		manifest = ""
 	}
 
-	return &api.WorkflowTemplate{
+	res := &api.WorkflowTemplate{
 		Uid:        wft.UID,
 		CreatedAt:  wft.CreatedAt.UTC().Format(time.RFC3339),
 		Name:       wft.Name,
@@ -33,6 +33,18 @@ func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 		IsLatest:   wft.IsLatest,
 		IsArchived: wft.IsArchived,
 	}
+
+	if wft.WorkflowExecutionStatisticReport != nil {
+		res.Stats = &api.WorkflowExecutionStatisticReport{
+			Total:        wft.WorkflowExecutionStatisticReport.Total,
+			LastExecuted: wft.WorkflowExecutionStatisticReport.LastExecuted.String(),
+			Running:      wft.WorkflowExecutionStatisticReport.Running,
+			Completed:    wft.WorkflowExecutionStatisticReport.Completed,
+			Failed:       wft.WorkflowExecutionStatisticReport.Failed,
+		}
+	}
+
+	return res
 }
 
 func mapToKeyValue(input map[string]string) []*api.KeyValue {
