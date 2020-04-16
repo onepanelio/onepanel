@@ -1191,7 +1191,7 @@ func GetExitHandlerWorkflowStatistics(client *Client, namespace string, workflow
 			Command: []string{"sh", "-c"},
 			Args: []string{"apk add curl;" +
 				"curl '" + curlEndpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
-				"-H 'Sec-Fetch-Dest: empty' -H 'Authorization: Bearer " + token + "' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36' -H 'Sec-Fetch-Site: same-site' -H 'Sec-Fetch-Mode: cors' -H 'Accept-Language: en-US,en;q=0.9' " +
+				"-H 'Authorization: Bearer " + token + "' " +
 				curlJSONBody + " --compressed",
 			},
 		},
