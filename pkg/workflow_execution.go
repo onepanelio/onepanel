@@ -1187,12 +1187,12 @@ func GetExitHandlerWorkflowStatistics(client *Client, namespace string, workflow
 	wfv1Template = wfv1.Template{
 		Name: workflowStepTemplate,
 		Container: &corev1.Container{
-			Image:   "alpine:latest",
+			Image:   "curlimages/curl",
 			Command: []string{"sh", "-c"},
-			Args: []string{"apk add curl;" +
+			Args: []string{
 				"curl '" + curlEndpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
-				"-H 'Authorization: Bearer " + token + "' " +
-				curlJSONBody + " --compressed",
+					"-H 'Authorization: Bearer " + token + "' " +
+					curlJSONBody + " --compressed",
 			},
 		},
 	}
