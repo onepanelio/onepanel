@@ -329,10 +329,8 @@ func AddWorkflowTemplateParametersFromAnnotations(spec mapping.Mapping, annotati
 		return
 	}
 
-	parameters, err := arguments.GetChildMap("parameters")
-	if err != nil {
-		return
-	}
+	arguments["parameters"] = make([]interface{}, 0)
+	parameters := make([]interface{}, len(annotations))
 
 	for _, value := range annotations {
 		data, err := mapping.NewFromYamlString(value)
