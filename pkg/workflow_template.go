@@ -238,7 +238,7 @@ func (c *Client) archiveWorkflowTemplate(namespace, uid string) (bool, error) {
 
 func (c *Client) CreateWorkflowTemplate(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
 	// validate workflow template
-	finalBytes, err := WrapSpecInK8s(workflowTemplate.GetManifestBytes())
+	finalBytes, err := workflowTemplate.WrapSpec()
 	if err != nil {
 		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
 	}
@@ -267,7 +267,7 @@ func (c *Client) CreateWorkflowTemplate(namespace string, workflowTemplate *Work
 
 func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
 	// validate workflow template
-	finalBytes, err := WrapSpecInK8s(workflowTemplate.GetManifestBytes())
+	finalBytes, err := workflowTemplate.WrapSpec()
 	if err != nil {
 		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
 	}
@@ -424,7 +424,7 @@ func createArgoWorkflowTemplate(workflowTemplate *WorkflowTemplate, version stri
 	var jsonOpts []argojson.JSONOpt
 	jsonOpts = append(jsonOpts, argojson.DisallowUnknownFields)
 
-	finalBytes, err := WrapSpecInK8s(workflowTemplate.GetManifestBytes())
+	finalBytes, err := workflowTemplate.WrapSpec()
 	if err != nil {
 		return nil, err
 	}

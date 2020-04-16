@@ -176,9 +176,7 @@ func (wt *WorkflowTemplate) FormatManifest() (string, error) {
 	}
 	manifestMap.PruneEmpty()
 
-	if wt.ArgoWorkflowTemplate != nil {
-		AddWorkflowTemplateParametersFromAnnotations(manifestMap, wt.ArgoWorkflowTemplate.Annotations)
-	}
+	wt.AddWorkflowTemplateParametersFromAnnotations(manifestMap)
 
 	manifestBytes, err := manifestMap.ToYamlBytes()
 	if err != nil {
@@ -190,6 +188,79 @@ func (wt *WorkflowTemplate) FormatManifest() (string, error) {
 	}
 
 	return string(manifestBytes), nil
+}
+
+// Take the manifest from the workflow template, which is just the "spec" contents
+// and wrap it so we have
+// {
+//    metadata: {},
+//    spec: spec_data
+// }
+// the above wrapping is what is returned.
+func (wt *WorkflowTemplate) WrapSpec() ([]byte, error) {
+	data := wt.GetManifestBytes()
+
+	mapping := make(map[interface{}]interface{})
+
+	if err := yaml.Unmarshal(data, mapping); err != nil {
+		return nil, err
+	}
+
+	contentMap := map[interface{}]interface{}{
+		"metadata": make(map[interface{}]interface{}),
+		"spec":     mapping,
+	}
+
+	finalBytes, err := yaml.Marshal(contentMap)
+	if err != nil {
+		return nil, nil
+	}
+
+	return finalBytes, nil
+}
+
+func (wt *WorkflowTemplate) AddWorkflowTemplateParametersFromAnnotations(spec mapping.Mapping) {
+	if wt.ArgoWorkflowTemplate == nil {
+		return
+	}
+
+	annotations := wt.ArgoWorkflowTemplate.Annotations
+	if spec == nil || len(annotations) == 0 {
+		return
+	}
+
+	arguments, err := spec.GetChildMap("arguments")
+	if err != nil {
+		return
+	}
+
+	arguments["parameters"] = make([]interface{}, 0)
+	parameters := make([]interface{}, len(annotations))
+
+	for _, value := range annotations {
+		data, err := mapping.NewFromYamlString(value)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"Method": "AddWorkflowTemplateParametersFromAnnotations",
+				"Step":   "NewFromYamlString",
+				"Error":  err.Error(),
+			}).Error("Error with AddWorkflowTemplateParametersFromAnnotations")
+			continue
+		}
+
+		order := 0
+		orderValue, ok := data["order"]
+		if ok {
+			order = orderValue.(int)
+			delete(data, "order")
+
+			if order >= 0 && order < len(parameters) {
+				parameters[order] = data
+			}
+		}
+	}
+
+	arguments["parameters"] = parameters
 }
 
 const (
@@ -298,62 +369,4 @@ func FilePathToExtension(path string) string {
 	}
 
 	return path[dotIndex+1:]
-}
-
-func WrapSpecInK8s(data []byte) ([]byte, error) {
-	mapping := make(map[interface{}]interface{})
-	if err := yaml.Unmarshal(data, mapping); err != nil {
-		return nil, err
-	}
-
-	contentMap := map[interface{}]interface{}{
-		"metadata": make(map[interface{}]interface{}),
-		"spec":     mapping,
-	}
-
-	finalBytes, err := yaml.Marshal(contentMap)
-	if err != nil {
-		return nil, nil
-	}
-
-	return finalBytes, nil
-}
-
-func AddWorkflowTemplateParametersFromAnnotations(spec mapping.Mapping, annotations map[string]string) {
-	if spec == nil || len(annotations) == 0 {
-		return
-	}
-
-	arguments, err := spec.GetChildMap("arguments")
-	if err != nil {
-		return
-	}
-
-	arguments["parameters"] = make([]interface{}, 0)
-	parameters := make([]interface{}, len(annotations))
-
-	for _, value := range annotations {
-		data, err := mapping.NewFromYamlString(value)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"Method": "AddWorkflowTemplateParametersFromAnnotations",
-				"Step":   "NewFromYamlString",
-				"Error":  err.Error(),
-			}).Error("Error with AddWorkflowTemplateParametersFromAnnotations")
-			continue
-		}
-
-		order := 0
-		orderValue, ok := data["order"]
-		if ok {
-			order = orderValue.(int)
-			delete(data, "order")
-
-			if order >= 0 && order < len(parameters) {
-				parameters[order] = data
-			}
-		}
-	}
-
-	arguments["parameters"] = parameters
 }
