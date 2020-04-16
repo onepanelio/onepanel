@@ -4,6 +4,15 @@ import (
 	"strings"
 )
 
+const (
+	OnepanelPrefix      = "onepanel.io/"
+	TagPrefix           = "tags.onepanel.io/"
+	WorkflowTemplate    = OnepanelPrefix + "workflow-template"
+	WorkflowTemplateUid = OnepanelPrefix + "workflow-template-uid"
+	Version             = OnepanelPrefix + "version"
+	VersionLatest       = OnepanelPrefix + "version-latest"
+)
+
 // Function that modifies an input string
 type StringModifier func(string) string
 

@@ -51,7 +51,13 @@ func (c *Client) UpdateCronWorkflow(namespace string, name string, cronWorkflow 
 	argoCronWorkflow.Spec.SuccessfulJobsHistoryLimit = cronWorkflow.SuccessfulJobsHistoryLimit
 	argoCronWorkflow.Spec.FailedJobsHistoryLimit = cronWorkflow.FailedJobsHistoryLimit
 	//UX prevents multiple workflows
-	workflows, err := UnmarshalWorkflows([]byte(workflowTemplate.Manifest), true)
+
+	manifestBytes, err := workflowTemplate.GetWorkflowManifestBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	workflows, err := UnmarshalWorkflows(manifestBytes, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":    namespace,
@@ -85,7 +91,6 @@ func (c *Client) UpdateCronWorkflow(namespace string, name string, cronWorkflow 
 }
 
 func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow) (*CronWorkflow, error) {
-
 	workflow := cronWorkflow.WorkflowExecution
 	workflowTemplate, err := c.GetWorkflowTemplate(namespace, workflow.WorkflowTemplate.UID, workflow.WorkflowTemplate.Version)
 	if err != nil {
@@ -113,6 +118,8 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 	}
 	(*opts.Labels)[workflowTemplateUIDLabelKey] = workflowTemplate.UID
 	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
+	label.MergeLabelsPrefix(*opts.Labels, workflow.Labels, label.TagPrefix)
+
 	var argoCronWorkflow wfv1.CronWorkflow
 	argoCronWorkflow.Spec.Schedule = cronWorkflow.Schedule
 	argoCronWorkflow.Spec.Timezone = cronWorkflow.Timezone
@@ -122,7 +129,12 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 	argoCronWorkflow.Spec.SuccessfulJobsHistoryLimit = cronWorkflow.SuccessfulJobsHistoryLimit
 	argoCronWorkflow.Spec.FailedJobsHistoryLimit = cronWorkflow.FailedJobsHistoryLimit
 	//UX prevents multiple workflows
-	workflows, err := UnmarshalWorkflows([]byte(workflowTemplate.Manifest), true)
+	manifestBytes, err := workflowTemplate.GetWorkflowManifestBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	workflows, err := UnmarshalWorkflows(manifestBytes, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":    namespace,

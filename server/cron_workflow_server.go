@@ -7,6 +7,7 @@ import (
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/server/auth"
+	"github.com/onepanelio/core/server/converter"
 	"math"
 )
 
@@ -59,6 +60,7 @@ func (c *CronWorkflowServer) CreateCronWorkflow(ctx context.Context, req *api.Cr
 	}
 
 	workflow := &v1.WorkflowExecution{
+		Labels: converter.APIKeyValueToLabel(req.CronWorkflow.WorkflowExecution.Labels),
 		WorkflowTemplate: &v1.WorkflowTemplate{
 			UID:     req.CronWorkflow.WorkflowExecution.WorkflowTemplate.Uid,
 			Version: req.CronWorkflow.WorkflowExecution.WorkflowTemplate.Version,
@@ -147,7 +149,7 @@ func (c *CronWorkflowServer) GetCronWorkflow(ctx context.Context, req *api.GetCr
 
 func (c *CronWorkflowServer) GetCronWorkflowLabels(ctx context.Context, req *api.GetLabelsRequest) (*api.GetLabelsResponse, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "cronworkflows", "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "cronworkflows", "")
 	if err != nil || !allowed {
 		return nil, err
 	}
@@ -168,7 +170,7 @@ func (c *CronWorkflowServer) GetCronWorkflowLabels(ctx context.Context, req *api
 // If the label already exists, overwrites it.
 func (c *CronWorkflowServer) AddCronWorkflowLabels(ctx context.Context, req *api.AddLabelsRequest) (*api.GetLabelsResponse, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "cronworkflows", "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "cronworkflows", "")
 	if err != nil || !allowed {
 		return nil, err
 	}
@@ -193,7 +195,7 @@ func (c *CronWorkflowServer) AddCronWorkflowLabels(ctx context.Context, req *api
 // Deletes all of the old labels and adds the new ones.
 func (c *CronWorkflowServer) ReplaceCronWorkflowLabels(ctx context.Context, req *api.ReplaceLabelsRequest) (*api.GetLabelsResponse, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "cronworkflows", "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "cronworkflows", "")
 	if err != nil || !allowed {
 		return nil, err
 	}

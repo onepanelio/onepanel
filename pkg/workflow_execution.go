@@ -293,8 +293,20 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	}
 	(*opts.Labels)[workflowTemplateUIDLabelKey] = workflowTemplate.UID
 	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
+	label.MergeLabelsPrefix(*opts.Labels, workflow.Labels, label.TagPrefix)
+
 	//UX will prevent multiple workflows
-	workflows, err := UnmarshalWorkflows([]byte(workflowTemplate.Manifest), true)
+	manifest, err := workflowTemplate.GetWorkflowManifestBytes()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace":        namespace,
+			"WorkflowTemplate": workflowTemplate,
+			"Error":            err.Error(),
+		}).Error("Error with getting WorkflowManifest from workflow template")
+		return nil, err
+	}
+
+	workflows, err := UnmarshalWorkflows(manifest, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -316,6 +328,17 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 			return nil, err
 		}
 		createdWorkflows = append(createdWorkflows, createdWorkflow)
+	}
+
+	if createdWorkflows == nil {
+		err = errors.New("unable to create workflow")
+		log.WithFields(log.Fields{
+			"Namespace":        namespace,
+			"WorkflowTemplate": workflowTemplate,
+			"Error":            err.Error(),
+		}).Error("Error parsing workflow.")
+
+		return nil, err
 	}
 
 	workflow.Name = createdWorkflows[0].Name
@@ -420,14 +443,33 @@ func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflow
 	})
 
 	for _, wf := range wfs {
-		workflows = append(workflows, &WorkflowExecution{
+		execution := &WorkflowExecution{
 			Name:       wf.ObjectMeta.Name,
 			UID:        string(wf.ObjectMeta.UID),
 			Phase:      WorkflowExecutionPhase(wf.Status.Phase),
 			StartedAt:  wf.Status.StartedAt.UTC(),
 			FinishedAt: wf.Status.FinishedAt.UTC(),
 			CreatedAt:  wf.CreationTimestamp.UTC(),
-		})
+		}
+
+		versionString, ok := wf.Labels[workflowTemplateVersionLabelKey]
+		if ok {
+			versionNumber, err := strconv.Atoi(versionString)
+			if err == nil {
+				execution.WorkflowTemplate = &WorkflowTemplate{
+					Version: int32(versionNumber),
+				}
+			} else {
+				log.WithFields(log.Fields{
+					"Namespace":            namespace,
+					"WorkflowTemplateUID":  workflowTemplateUID,
+					"WorkflowExecutionUID": wf.UID,
+					"Error":                "Unable to get workflow template version",
+				}).Error("Unable to get workflow template version")
+			}
+		}
+
+		workflows = append(workflows, execution)
 	}
 
 	return
@@ -914,25 +956,6 @@ func (c *Client) GetWorkflowExecutionLabels(namespace, name, prefix string) (lab
 	return
 }
 
-// prefix is the label prefix.
-// e.g. prefix/my-label-key: my-label-value
-func (c *Client) GetWorkflowTemplateLabels(namespace, name, prefix string) (labels map[string]string, err error) {
-	wf, err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Get(name, metav1.GetOptions{})
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"Name":      name,
-			"Error":     err.Error(),
-		}).Error("Workflow Template not found.")
-		return nil, util.NewUserError(codes.NotFound, "Workflow Template not found.")
-	}
-
-	labels = label.FilterByPrefix(prefix, wf.Labels)
-	labels = label.RemovePrefix(prefix, labels)
-
-	return
-}
-
 func (c *Client) DeleteWorkflowExecutionLabel(namespace, name string, keysToDelete ...string) (labels map[string]string, err error) {
 	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
@@ -1000,7 +1023,7 @@ func (c *Client) SetWorkflowExecutionLabels(namespace, name, prefix string, keyV
 // we delete all labels with that prefix and set the new ones
 // e.g. prefix/my-label-key: my-label-value
 func (c *Client) SetWorkflowTemplateLabels(namespace, name, prefix string, keyValues map[string]string, deleteOld bool) (workflowLabels map[string]string, err error) {
-	wf, err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Get(name, metav1.GetOptions{})
+	wf, err := c.getArgoWorkflowTemplate(namespace, name, "latest")
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,

@@ -1224,7 +1224,7 @@
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       },
       "post": {
@@ -1254,7 +1254,7 @@
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       }
     },
@@ -1281,10 +1281,17 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       },
       "post": {
@@ -1320,7 +1327,7 @@
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       },
       "put": {
@@ -1356,7 +1363,7 @@
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       }
     },
@@ -1392,7 +1399,7 @@
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       }
     },
@@ -1429,7 +1436,7 @@
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       }
     },
@@ -1459,7 +1466,7 @@
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       }
     },
@@ -1502,7 +1509,7 @@
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       }
     },
@@ -1545,7 +1552,7 @@
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       }
     },
@@ -1575,7 +1582,7 @@
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       }
     },
@@ -1612,7 +1619,7 @@
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       }
     },
@@ -1650,7 +1657,7 @@
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       }
     },
@@ -1695,7 +1702,7 @@
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       }
     }
@@ -2099,6 +2106,12 @@
         },
         "workflowTemplate": {
           "$ref": "#/definitions/WorkflowTemplate"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/KeyValue"
+          }
         }
       }
     },
@@ -2139,6 +2152,12 @@
         "isArchived": {
           "type": "boolean",
           "format": "boolean"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/KeyValue"
+          }
         }
       }
     },
