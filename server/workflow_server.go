@@ -59,7 +59,7 @@ func apiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecu
 }
 
 func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
-	return &api.WorkflowTemplate{
+	res := &api.WorkflowTemplate{
 		Uid:        wft.UID,
 		CreatedAt:  wft.CreatedAt.UTC().Format(time.RFC3339),
 		Name:       wft.Name,
@@ -67,14 +67,19 @@ func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 		Manifest:   wft.Manifest,
 		IsLatest:   wft.IsLatest,
 		IsArchived: wft.IsArchived,
-		Stats: &api.WorkflowExecutionStatisticReport{
+	}
+
+	if wft.WorkflowExecutionStatisticReport != nil {
+		res.Stats = &api.WorkflowExecutionStatisticReport{
 			Total:        wft.WorkflowExecutionStatisticReport.Total,
 			LastExecuted: wft.WorkflowExecutionStatisticReport.LastExecuted.String(),
 			Running:      wft.WorkflowExecutionStatisticReport.Running,
 			Completed:    wft.WorkflowExecutionStatisticReport.Completed,
 			Failed:       wft.WorkflowExecutionStatisticReport.Failed,
-		},
+		}
 	}
+
+	return res
 }
 
 func mapToKeyValue(input map[string]string) []*api.KeyValue {
@@ -125,6 +130,7 @@ func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, req
 	if request.Statistics.WorkflowStatus == "Success" {
 		workflowOutcomeIsSuccess = true
 	}
+
 	/*
 	 The format from Argo needs to be parsed.
 	 It's not RFC3339

@@ -156,9 +156,12 @@ func (c *Client) workflowTemplatesSelectBuilder(namespace string) sq.SelectBuild
 }
 
 func (c *Client) getWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *WorkflowTemplate, err error) {
-	workflowTemplate = &WorkflowTemplate{}
+	workflowTemplate = &WorkflowTemplate{
+		WorkflowExecutionStatisticReport: &WorkflowExecutionStatisticReport{},
+	}
 
-	sb := c.workflowTemplatesSelectBuilder(namespace).Where(sq.Eq{"wt.uid": uid}).
+	sb := c.workflowTemplatesSelectBuilder(namespace).
+		Where(sq.Eq{"wt.uid": uid}).
 		Columns("wtv.manifest").
 		OrderBy("wtv.version desc").
 		Limit(1)
