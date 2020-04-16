@@ -82,8 +82,7 @@ func (s *WorkflowServer) CreateWorkflowExecution(ctx context.Context, req *api.C
 func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, request *api.AddWorkflowExecutionStatisticRequest) (*empty.Empty, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
 	workflowOutcomeIsSuccess := false
-	// todo - Succeeded ?
-	if request.Statistics.WorkflowStatus == "Success" {
+	if request.Statistics.WorkflowStatus == "Succeeded" {
 		workflowOutcomeIsSuccess = true
 	}
 
