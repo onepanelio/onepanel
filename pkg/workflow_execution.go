@@ -378,41 +378,30 @@ func (c *Client) AddWorkflowExecutionStatistic(namespace, name string, workflowT
 		return err
 	}
 	defer tx.Rollback()
+
+	insertMap := sq.Eq{
+		"workflow_template_id": workflowTemplateID,
+		"name":                 name,
+		"namespace":            namespace,
+		"created_at":           createdAt.UTC(),
+	}
+
 	if workflowOutcomeIsSuccess {
-		_, err := sb.Insert("workflow_executions").
-			SetMap(sq.Eq{
-				"workflow_template_id": workflowTemplateID,
-				"name":                 name,
-				"namespace":            namespace,
-				"created_at":           createdAt.UTC(),
-				"finished_at":          time.Now().UTC(),
-			}).RunWith(tx).Exec()
-		if err != nil {
-			return err
-		}
-		err = tx.Commit()
-		if err != nil {
-			return err
-		}
-		return err
+		insertMap["finished_at"] = time.Now().UTC()
 	} else {
-		_, err := sb.Insert("workflow_executions").
-			SetMap(sq.Eq{
-				"workflow_template_id": workflowTemplateID,
-				"name":                 name,
-				"namespace":            namespace,
-				"created_at":           createdAt.UTC(),
-				"failed_at":            time.Now().UTC(),
-			}).RunWith(tx).Exec()
-		if err != nil {
-			return err
-		}
-		err = tx.Commit()
-		if err != nil {
-			return err
-		}
+		insertMap["failed_at"] = time.Now().UTC()
+	}
+
+	_, err = sb.Insert("workflow_executions").
+		SetMap(insertMap).RunWith(tx).Exec()
+	if err != nil {
 		return err
 	}
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return err
 }
 
 func (c *Client) GetWorkflowExecution(namespace, name string) (workflow *WorkflowExecution, err error) {
