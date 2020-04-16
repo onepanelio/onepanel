@@ -415,6 +415,13 @@ func (c *Client) ListWorkflowTemplates(namespace string) (workflowTemplateVersio
 
 	for _, workflowTemplate := range workflowTemplateVersions {
 		err = c.GetWorkflowExecutionStatisticsForTemplate(workflowTemplate)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"Namespace": namespace,
+				"Error":     err.Error(),
+			}).Error("Unable to get Workflow Execution Statistic for Template.")
+			return nil, util.NewUserError(codes.NotFound, "Unable to get Workflow Execution Statistic for Template.")
+		}
 	}
 
 	return
