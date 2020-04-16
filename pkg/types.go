@@ -77,9 +77,9 @@ type WorkflowExecutionStatistic struct {
 	Name               string
 	Namespace          string
 	//Interface to support null values for timestamps, when scanning from db into structs
-	CreatedAt  interface{} `db:"created_at"`
-	FinishedAt interface{} `db:"finished_at"`
-	FailedAt   interface{} `db:"failed_at"`
+	CreatedAt  *time.Time `db:"created_at"`
+	FinishedAt *time.Time `db:"finished_at"`
+	FailedAt   *time.Time `db:"failed_at"`
 }
 
 func (wt *WorkflowTemplate) GetManifestBytes() []byte {
