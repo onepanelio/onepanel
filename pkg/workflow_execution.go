@@ -166,6 +166,7 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		}
 
 		addEnvToTemplate(&template, "ONEPANEL_API_URL", sysConfig["ONEPANEL_API_URL"])
+		addEnvToTemplate(&template, "ONEPANEL_HOST", sysConfig["ONEPANEL_HOST"])
 		addEnvToTemplate(&template, "PROVIDER_TYPE", sysConfig["PROVIDER_TYPE"])
 	}
 
