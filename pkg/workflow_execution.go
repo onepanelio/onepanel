@@ -1113,7 +1113,7 @@ func (c *Client) GetWorkflowExecutionStatisticsForTemplate(workflowTemplate *Wor
 	}
 	defer tx.Rollback()
 
-	query, args, err := sb.Select("name, created_at, finished_at").
+	query, args, err := sb.Select("name, created_at, finished_at, failed_at").
 		From("workflow_executions").Where(sq.Eq{"workflow_template_id": workflowTemplate.ID}).OrderBy("created_at DESC").ToSql()
 	if err != nil {
 		return err
@@ -1137,11 +1137,9 @@ func (c *Client) GetWorkflowExecutionStatisticsForTemplate(workflowTemplate *Wor
 	for _, workflowExecStat := range workflowExecStats {
 		if workflowExecStat.FailedAt != nil {
 			workflowTemplate.WorkflowExecutionStatisticReport.Failed++
-		}
-		if workflowExecStat.FinishedAt == nil {
+		} else if workflowExecStat.FinishedAt == nil {
 			workflowTemplate.WorkflowExecutionStatisticReport.Running++
-		}
-		if workflowExecStat.FinishedAt != nil {
+		} else if workflowExecStat.FinishedAt != nil {
 			workflowTemplate.WorkflowExecutionStatisticReport.Completed++
 		}
 	}
