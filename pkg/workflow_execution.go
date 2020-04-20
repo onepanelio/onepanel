@@ -237,8 +237,11 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateId *uint64, wf
 	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
 		return nil, err
 	}
-
-	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics(c, namespace, workflowTemplateId)
+	wfExecUid, err := uuid.GenerateUUID()
+	if err != nil {
+		return nil, err
+	}
+	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics(namespace, wfExecUid, workflowTemplateId)
 	if err != nil {
 		return nil, err
 	}
@@ -259,10 +262,6 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateId *uint64, wf
 
 	//Create an entry for workflow_executions statistic
 	//CURL code will hit the API endpoint that will update the db row
-	wfExecUid, err := uuid.GenerateUUID()
-	if err != nil {
-		return nil, err
-	}
 	err = c.InsertPreWorkflowExecutionStatistic(namespace, wfExecUid, int64(*workflowTemplateId), time.Now())
 	if err != nil {
 		return nil, err
@@ -1234,7 +1233,7 @@ func (c *Client) GetWorkflowExecutionStatisticsForTemplates(workflowTemplates ..
 Will build a template that makes a CURL request to the onepanel-core API,
 with statistics about the workflow that was just executed.
 */
-func GetExitHandlerWorkflowStatistics(client *Client, namespace string, workflowTemplateId *uint64) (workflowStepName, workflowStepTemplate, workflowStepWhen string, err error, wfv1Template wfv1.Template) {
+func GetExitHandlerWorkflowStatistics(namespace, uid string, workflowTemplateId *uint64) (workflowStepName, workflowStepTemplate, workflowStepWhen string, err error, wfv1Template wfv1.Template) {
 	workflowStepName = "workflow-statistics"
 	workflowStepTemplate = "workflow-statistics-template"
 	host := env.GetEnv("ONEPANEL_CORE_SERVICE_HOST", "")
@@ -1251,7 +1250,7 @@ func GetExitHandlerWorkflowStatistics(client *Client, namespace string, workflow
 
 	jsonRequestStruct := api.Statistics{
 		WorkflowStatus:     "{{workflow.status}}",
-		CreatedAt:          "{{workflow.creationTimestamp}}",
+		Uuid:               uid,
 		WorkflowTemplateId: int64(*workflowTemplateId),
 	}
 	jsonRequestBytes, err := json.Marshal(jsonRequestStruct)
