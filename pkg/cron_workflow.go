@@ -4,6 +4,7 @@ import (
 	"fmt"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	argojson "github.com/argoproj/pkg/json"
+	"github.com/hashicorp/go-uuid"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/label"
 	log "github.com/sirupsen/logrus"

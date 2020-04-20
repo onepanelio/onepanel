@@ -237,27 +237,14 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateId *uint64, wf
 	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
 		return nil, err
 	}
+
 	wfExecUid, err := uuid.GenerateUUID()
 	if err != nil {
 		return nil, err
 	}
-	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics(namespace, wfExecUid, workflowTemplateId)
+	err = InjectExitHandlerWorkflowExecutionStatistic(wf, namespace, wfExecUid, workflowTemplateId)
 	if err != nil {
 		return nil, err
-	}
-	if exitHandlerStepTemplate != "" {
-		exitHandler := wfv1.Template{
-			Name: "exit-handler",
-			Steps: []wfv1.ParallelSteps{
-				{
-					Steps: []wfv1.WorkflowStep{
-						{Name: exitHandlerStepName, Template: exitHandlerStepTemplate, When: exitHandlerStepWhen},
-					},
-				},
-			},
-		}
-		wf.Spec.OnExit = "exit-handler"
-		wf.Spec.Templates = append(wf.Spec.Templates, exitHandler, exitHandlerTemplate)
 	}
 
 	//Create an entry for workflow_executions statistic
@@ -1278,4 +1265,26 @@ func GetExitHandlerWorkflowStatistics(namespace, uid string, workflowTemplateId 
 		},
 	}
 	return
+}
+
+func InjectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace, wfExecUid string, workflowTemplateId *uint64) error {
+	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics(namespace, wfExecUid, workflowTemplateId)
+	if err != nil {
+		return err
+	}
+	if exitHandlerStepTemplate != "" {
+		exitHandler := wfv1.Template{
+			Name: "exit-handler",
+			Steps: []wfv1.ParallelSteps{
+				{
+					Steps: []wfv1.WorkflowStep{
+						{Name: exitHandlerStepName, Template: exitHandlerStepTemplate, When: exitHandlerStepWhen},
+					},
+				},
+			},
+		}
+		wf.Spec.OnExit = "exit-handler"
+		wf.Spec.Templates = append(wf.Spec.Templates, exitHandler, exitHandlerTemplate)
+	}
+	return nil
 }
