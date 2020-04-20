@@ -39,6 +39,7 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 			"uid":       uid,
 			"name":      workflowTemplate.Name,
 			"namespace": namespace,
+			"versions":  1,
 		}).
 		Suffix("RETURNING id").
 		RunWith(tx).
