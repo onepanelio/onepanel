@@ -86,17 +86,8 @@ func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, req
 		workflowOutcomeIsSuccess = true
 	}
 
-	/*
-	 The format from Argo needs to be parsed.
-	 It's not RFC3339
-	*/
-	layout := "2006-01-02 15:04:05 -0700 MST"
-	createdAt, err := time.Parse(layout, request.Statistics.CreatedAt)
-	if err != nil {
-		return &empty.Empty{}, err
-	}
-	err = client.AddWorkflowExecutionStatistic(request.Namespace, request.Name,
-		request.Statistics.WorkflowTemplateId, createdAt, workflowOutcomeIsSuccess)
+	err := client.FinishWorkflowExecutionStatisticViaExitHandler(request.Namespace, request.Name, request.Statistics.Uuid,
+		request.Statistics.WorkflowTemplateId, workflowOutcomeIsSuccess)
 	if err != nil {
 		return &empty.Empty{}, err
 	}

@@ -447,28 +447,27 @@ func (c *Client) DeletePreWorkflowExecutionStatistic(uid string) error {
 	return err
 }
 
-func (c *Client) AddWorkflowExecutionStatistic(namespace, name string, workflowTemplateID int64, createdAt time.Time, workflowOutcomeIsSuccess bool) (err error) {
+func (c *Client) FinishWorkflowExecutionStatisticViaExitHandler(namespace, name, uid string, workflowTemplateID int64, workflowOutcomeIsSuccess bool) (err error) {
 	tx, err := c.DB.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	insertMap := sq.Eq{
+	updateMap := sq.Eq{
 		"workflow_template_id": workflowTemplateID,
 		"name":                 name,
 		"namespace":            namespace,
-		"created_at":           createdAt.UTC(),
 	}
 
 	if workflowOutcomeIsSuccess {
-		insertMap["finished_at"] = time.Now().UTC()
+		updateMap["finished_at"] = time.Now().UTC()
 	} else {
-		insertMap["failed_at"] = time.Now().UTC()
+		updateMap["failed_at"] = time.Now().UTC()
 	}
 
-	_, err = sb.Insert("workflow_executions").
-		SetMap(insertMap).RunWith(tx).Exec()
+	_, err = sb.Update("workflow_executions").
+		SetMap(updateMap).Where(sq.Eq{"uid": uid}).RunWith(tx).Exec()
 	if err != nil {
 		return err
 	}
