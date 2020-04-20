@@ -154,12 +154,13 @@ message WorkflowTemplate {
     string uid = 2;
     string name = 3;
     int32 version = 4;
-    string manifest = 5;
-    bool isLatest = 6;
-    bool isArchived = 7;
-    repeated KeyValue labels = 8;
+    int32 versions = 5;
+    string manifest = 6;
+    bool isLatest = 7;
+    bool isArchived = 8;
+    repeated KeyValue labels = 9;
 
-    WorkflowExecutionStatisticReport stats = 9;
+    WorkflowExecutionStatisticReport stats = 10;
 }
 
 message GetWorkflowTemplateLabelsRequest {

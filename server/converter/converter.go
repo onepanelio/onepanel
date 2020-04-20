@@ -16,3 +16,16 @@ func APIKeyValueToLabel(apiKeyValues []*api.KeyValue) map[string]string {
 
 	return result
 }
+
+func MappingToKeyValue(mapping map[string]string) []*api.KeyValue {
+	keyValues := make([]*api.KeyValue, 0)
+
+	for key, value := range mapping {
+		keyValues = append(keyValues, &api.KeyValue{
+			Key:   key,
+			Value: value,
+		})
+	}
+
+	return keyValues
+}

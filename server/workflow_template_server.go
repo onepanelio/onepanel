@@ -29,9 +29,11 @@ func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 		CreatedAt:  wft.CreatedAt.UTC().Format(time.RFC3339),
 		Name:       wft.Name,
 		Version:    wft.Version,
+		Versions:   wft.Versions,
 		Manifest:   manifest,
 		IsLatest:   wft.IsLatest,
 		IsArchived: wft.IsArchived,
+		Labels:     converter.MappingToKeyValue(wft.Labels),
 	}
 
 	if wft.WorkflowExecutionStatisticReport != nil {
