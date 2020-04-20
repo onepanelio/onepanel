@@ -368,24 +368,13 @@ func (c *Client) updateCronWorkflow(namespace string, name string, workflowTempl
 	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
 		return nil, err
 	}
-
-	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics(c, namespace, workflowTemplateId)
+	wfExecUid, err := uuid.GenerateUUID()
 	if err != nil {
 		return nil, err
 	}
-	if exitHandlerStepTemplate != "" {
-		exitHandler := wfv1.Template{
-			Name: "exit-handler",
-			Steps: []wfv1.ParallelSteps{
-				{
-					Steps: []wfv1.WorkflowStep{
-						{Name: exitHandlerStepName, Template: exitHandlerStepTemplate, When: exitHandlerStepWhen},
-					},
-				},
-			},
-		}
-		wf.Spec.OnExit = "exit-handler"
-		wf.Spec.Templates = append(wf.Spec.Templates, exitHandler, exitHandlerTemplate)
+	err = InjectExitHandlerWorkflowExecutionStatistic(wf, namespace, wfExecUid, workflowTemplateId)
+	if err != nil {
+		return nil, err
 	}
 
 	cwf.Spec.WorkflowSpec = wf.Spec
@@ -456,25 +445,11 @@ func (c *Client) createCronWorkflow(namespace string, workflowTemplateId *uint64
 	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
 		return nil, err
 	}
-
-	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics(c, namespace, workflowTemplateId)
+	wfExecUid, err := uuid.GenerateUUID()
 	if err != nil {
 		return nil, err
 	}
-	if exitHandlerStepTemplate != "" {
-		exitHandler := wfv1.Template{
-			Name: "exit-handler",
-			Steps: []wfv1.ParallelSteps{
-				{
-					Steps: []wfv1.WorkflowStep{
-						{Name: exitHandlerStepName, Template: exitHandlerStepTemplate, When: exitHandlerStepWhen},
-					},
-				},
-			},
-		}
-		wf.Spec.OnExit = "exit-handler"
-		wf.Spec.Templates = append(wf.Spec.Templates, exitHandler, exitHandlerTemplate)
-	}
+	err = InjectExitHandlerWorkflowExecutionStatistic(wf, namespace, wfExecUid, workflowTemplateId)
 
 	cwf.Spec.WorkflowSpec = wf.Spec
 	cwf.Spec.WorkflowMetadata = &wf.ObjectMeta
