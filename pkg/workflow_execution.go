@@ -8,6 +8,7 @@ import (
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/ghodss/yaml"
+	"github.com/hashicorp/go-uuid"
 	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/pkg/util/label"
 	"io"
@@ -256,8 +257,20 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateId *uint64, wf
 		wf.Spec.Templates = append(wf.Spec.Templates, exitHandler, exitHandlerTemplate)
 	}
 
+	//Create an entry for workflow_executions statistic
+	//CURL code will hit the API endpoint that will update the db row
+	wfExecUid, err := uuid.GenerateUUID()
+	if err != nil {
+		return nil, err
+	}
+	err = c.InsertPreWorkflowExecutionStatistic(namespace, wfExecUid, int64(*workflowTemplateId), time.Now())
+	if err != nil {
+		return nil, err
+	}
 	createdWorkflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
 	if err != nil {
+		//Remove the workflow execution statistic entry, because this workflow never ran
+
 		return nil, err
 	}
 
@@ -370,6 +383,32 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	workflow.WorkflowTemplate.Manifest = ""
 
 	return workflow, nil
+}
+
+func (c *Client) InsertPreWorkflowExecutionStatistic(namespace, uid string, workflowTemplateID int64, createdAt time.Time) error {
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	insertMap := sq.Eq{
+		"workflow_template_id": workflowTemplateID,
+		"uid":                  uid,
+		"namespace":            namespace,
+		"created_at":           createdAt.UTC(),
+	}
+
+	_, err = sb.Insert("workflow_executions").
+		SetMap(insertMap).RunWith(tx).Exec()
+	if err != nil {
+		return err
+	}
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return err
 }
 
 func (c *Client) AddWorkflowExecutionStatistic(namespace, name string, workflowTemplateID int64, createdAt time.Time, workflowOutcomeIsSuccess bool) (err error) {
