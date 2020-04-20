@@ -262,6 +262,10 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateId *uint64, wf
 		}
 		return nil, err
 	}
+	err = c.AddNameToWorkflowExecutionStatisticPostCreation(createdWorkflow.Name, wfExecUid)
+	if err != nil {
+		return nil, err
+	}
 
 	return
 }
@@ -384,12 +388,36 @@ func (c *Client) InsertPreWorkflowExecutionStatistic(namespace, uid string, work
 	insertMap := sq.Eq{
 		"workflow_template_id": workflowTemplateID,
 		"uid":                  uid,
+		"name":                 uid,
 		"namespace":            namespace,
 		"created_at":           createdAt.UTC(),
 	}
 
 	_, err = sb.Insert("workflow_executions").
 		SetMap(insertMap).RunWith(tx).Exec()
+	if err != nil {
+		return err
+	}
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+func (c *Client) AddNameToWorkflowExecutionStatisticPostCreation(name, uid string) error {
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	updateMap := sq.Eq{
+		"name": name,
+	}
+
+	_, err = sb.Update("workflow_executions").
+		SetMap(updateMap).Where(sq.Eq{"uid": uid}).RunWith(tx).Exec()
 	if err != nil {
 		return err
 	}
