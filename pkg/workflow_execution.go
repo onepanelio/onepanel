@@ -270,7 +270,10 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateId *uint64, wf
 	createdWorkflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
 	if err != nil {
 		//Remove the workflow execution statistic entry, because this workflow never ran
-
+		err = c.DeletePreWorkflowExecutionStatistic(wfExecUid)
+		if err != nil {
+			return nil, err
+		}
 		return nil, err
 	}
 
@@ -401,6 +404,25 @@ func (c *Client) InsertPreWorkflowExecutionStatistic(namespace, uid string, work
 
 	_, err = sb.Insert("workflow_executions").
 		SetMap(insertMap).RunWith(tx).Exec()
+	if err != nil {
+		return err
+	}
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+func (c *Client) DeletePreWorkflowExecutionStatistic(uid string) error {
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = sb.Delete("workflow_executions").Where(
+		sq.Eq{"uid": uid}).RunWith(tx).Exec()
 	if err != nil {
 		return err
 	}
