@@ -7,7 +7,7 @@ import (
 )
 
 func TestParseServicePorts(t *testing.T) {
-	template := `
+	template := []byte(`
 - name: http
   port: 80
   protocol: TCP
@@ -16,7 +16,7 @@ func TestParseServicePorts(t *testing.T) {
   port: 443
   protocol: TCP
   targetPort: 443
-`
+`)
 
 	servicePorts, err := parseServicePorts(template)
 	assert.Nil(t, err)
@@ -25,8 +25,20 @@ func TestParseServicePorts(t *testing.T) {
 	assert.Equal(t, servicePorts[1].Name, "https")
 }
 
+func TestParseServicePortsInvalid(t *testing.T) {
+	template := []byte(`
+- name: http
+  port: 80
+  invalid: TCP
+  targetPort: 80
+`)
+
+	_, err := parseServicePorts(template)
+	assert.NotNil(t, err)
+}
+
 func TestParseHTTPRoutes(t *testing.T) {
-	template := `
+	template := []byte(`
 - match:
   - uri:
       prefix: /
@@ -41,7 +53,7 @@ func TestParseHTTPRoutes(t *testing.T) {
   - destination:
       port:
         number: 443
-`
+`)
 
 	httpRoutes, err := parseHTTPRoutes(template)
 	assert.Nil(t, err)
@@ -50,24 +62,52 @@ func TestParseHTTPRoutes(t *testing.T) {
 	assert.Equal(t, httpRoutes[1].Route[0].Destination.Port.GetNumber(), uint32(443))
 }
 
+func TestParseHTTPRoutesInvalid(t *testing.T) {
+	template := []byte(`
+- match:
+  - invalid:
+      prefix: /
+  route:
+  - destination:
+      port:
+        number: 80
+`)
+
+	_, err := parseHTTPRoutes(template)
+	assert.NotNil(t, err)
+}
+
 func TestParseVolumeClaims(t *testing.T) {
-	template := `
+	template := []byte(`
 - metadata:
     name: data
   spec:
     accessModes: ["ReadWriteOnce"]
     storageClassName: default
-- metadata:
-    name: db
-`
+`)
 
 	volumeClaims, err := parseVolumeClaims(template)
 	assert.Nil(t, err)
 	assert.NotEmpty(t, volumeClaims)
 }
 
+func TestParseVolumeClaimsInvalid(t *testing.T) {
+	template := []byte(`
+- metadata:
+    name: data
+  invalid:
+    accessModes: ["ReadWriteOnce"]
+    storageClassName: default
+- metadata:
+    name: db
+`)
+
+	_, err := parseVolumeClaims(template)
+	assert.NotNil(t, err)
+}
+
 func TestParseContainers(t *testing.T) {
-	template := `
+	template := []byte(`
 - name: http
   image: nginxdemos/hello
   ports:
@@ -84,7 +124,7 @@ func TestParseContainers(t *testing.T) {
   volumeMounts:
   - name: data
     mountPath: /data
-`
+`)
 
 	containers, err := parseContainers(template)
 	assert.Nil(t, err)
@@ -94,16 +134,16 @@ func TestParseContainers(t *testing.T) {
 }
 
 func TestParseContainersInvalid(t *testing.T) {
-	template := `
+	template := []byte(`
 - name: https
   image: nginxdemos/hello
-  pors:
+  invalid:
   - containerPort: 443
     name: http
   volumeMounts:
   - name: data
     mountPath: /data
-`
+`)
 
 	_, err := parseContainers(template)
 	assert.NotNil(t, err)
