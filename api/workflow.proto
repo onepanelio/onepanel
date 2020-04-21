@@ -103,6 +103,13 @@ service WorkflowService {
             body: "statistics"
         };
     }
+
+    rpc CronStartWorkflowExecutionStatistic (CronStartWorkflowExecutionStatisticRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/cron_start_statistics/{workflowTemplateId}"
+        };
+    }
+
 }
 
 message CreateWorkflowExecutionRequest {    
@@ -230,4 +237,10 @@ message AddWorkflowExecutionStatisticRequest {
     string namespace = 1;
     string name = 2;
     Statistics statistics = 3;
+}
+
+message CronStartWorkflowExecutionStatisticRequest {
+    string namespace = 1;
+    string uid = 2;
+    int64 workflowTemplateId = 3;
 }

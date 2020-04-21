@@ -94,6 +94,15 @@ func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, req
 	return &empty.Empty{}, nil
 }
 
+func (s *WorkflowServer) CronStartWorkflowExecutionStatistic(ctx context.Context, request *api.CronStartWorkflowExecutionStatisticRequest) (*empty.Empty, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	err := client.CronStartWorkflowExecutionStatisticInsert(request.Namespace, request.Uid, request.WorkflowTemplateId)
+	if err != nil {
+		return &empty.Empty{}, err
+	}
+	return &empty.Empty{}, nil
+}
+
 func (s *WorkflowServer) GetWorkflowExecution(ctx context.Context, req *api.GetWorkflowExecutionRequest) (*api.WorkflowExecution, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Name)
