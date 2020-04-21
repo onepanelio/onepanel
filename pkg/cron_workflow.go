@@ -376,6 +376,10 @@ func (c *Client) updateCronWorkflow(namespace string, name string, workflowTempl
 	if err != nil {
 		return nil, err
 	}
+	err = InjectInitHandlerWorkflowExecutionStatistic(wf, namespace, wfExecUid, int64(*workflowTemplateId))
+	if err != nil {
+		return nil, err
+	}
 
 	cwf.Spec.WorkflowSpec = wf.Spec
 	cwf.Spec.WorkflowMetadata = &wf.ObjectMeta
@@ -450,7 +454,13 @@ func (c *Client) createCronWorkflow(namespace string, workflowTemplateId *uint64
 		return nil, err
 	}
 	err = InjectExitHandlerWorkflowExecutionStatistic(wf, namespace, wfExecUid, workflowTemplateId)
-
+	if err != nil {
+		return nil, err
+	}
+	err = InjectInitHandlerWorkflowExecutionStatistic(wf, namespace, wfExecUid, int64(*workflowTemplateId))
+	if err != nil {
+		return nil, err
+	}
 	cwf.Spec.WorkflowSpec = wf.Spec
 	cwf.Spec.WorkflowMetadata = &wf.ObjectMeta
 
