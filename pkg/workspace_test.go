@@ -105,7 +105,6 @@ func TestParseContainersInvalid(t *testing.T) {
     mountPath: /data
 `
 
-	containers, err := parseContainers(template)
+	_, err := parseContainers(template)
 	assert.NotNil(t, err)
-	assert.Empty(t, containers)
 }
