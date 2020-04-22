@@ -86,7 +86,7 @@ func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, req
 		workflowOutcomeIsSuccess = true
 	}
 
-	err := client.FinishWorkflowExecutionStatisticViaExitHandler(request.Namespace, request.Name, request.Statistics.Uuid,
+	err := client.FinishWorkflowExecutionStatisticViaExitHandler(request.Namespace, request.Name,
 		request.Statistics.WorkflowTemplateId, workflowOutcomeIsSuccess)
 	if err != nil {
 		return &empty.Empty{}, err
@@ -96,7 +96,7 @@ func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, req
 
 func (s *WorkflowServer) CronStartWorkflowExecutionStatistic(ctx context.Context, request *api.CronStartWorkflowExecutionStatisticRequest) (*empty.Empty, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
-	err := client.CronStartWorkflowExecutionStatisticInsert(request.Namespace, request.Uid, request.WorkflowTemplateId)
+	err := client.CronStartWorkflowExecutionStatisticInsert(request.Namespace, request.Name, request.WorkflowTemplateId)
 	if err != nil {
 		return &empty.Empty{}, err
 	}
