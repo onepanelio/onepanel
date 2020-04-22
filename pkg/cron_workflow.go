@@ -4,7 +4,6 @@ import (
 	"fmt"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	argojson "github.com/argoproj/pkg/json"
-	"github.com/hashicorp/go-uuid"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/label"
 	log "github.com/sirupsen/logrus"
@@ -363,20 +362,14 @@ func (c *Client) updateCronWorkflow(namespace string, name string, workflowTempl
 	if opts.Labels != nil {
 		cwf.ObjectMeta.Labels = *opts.Labels
 	}
-
-	//todo move this earlier in the process
 	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
 		return nil, err
 	}
-	wfExecUid, err := uuid.GenerateUUID()
+	err = InjectExitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
 	if err != nil {
 		return nil, err
 	}
-	err = InjectExitHandlerWorkflowExecutionStatistic(wf, namespace, wfExecUid, workflowTemplateId)
-	if err != nil {
-		return nil, err
-	}
-	err = InjectInitHandlerWorkflowExecutionStatistic(wf, namespace, wfExecUid, int64(*workflowTemplateId))
+	err = InjectInitHandlerWorkflowExecutionStatistic(wf, namespace, int64(*workflowTemplateId))
 	if err != nil {
 		return nil, err
 	}
@@ -444,20 +437,14 @@ func (c *Client) createCronWorkflow(namespace string, workflowTemplateId *uint64
 	if opts.Labels != nil {
 		cwf.ObjectMeta.Labels = *opts.Labels
 	}
-
-	//todo move this earlier in the process
 	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
 		return nil, err
 	}
-	wfExecUid, err := uuid.GenerateUUID()
+	err = InjectExitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
 	if err != nil {
 		return nil, err
 	}
-	err = InjectExitHandlerWorkflowExecutionStatistic(wf, namespace, wfExecUid, workflowTemplateId)
-	if err != nil {
-		return nil, err
-	}
-	err = InjectInitHandlerWorkflowExecutionStatistic(wf, namespace, wfExecUid, int64(*workflowTemplateId))
+	err = InjectInitHandlerWorkflowExecutionStatistic(wf, namespace, int64(*workflowTemplateId))
 	if err != nil {
 		return nil, err
 	}

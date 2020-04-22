@@ -8,7 +8,6 @@ import (
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/ghodss/yaml"
-	"github.com/hashicorp/go-uuid"
 	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/pkg/util/label"
 	"io"
@@ -238,31 +237,19 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateId *uint64, wf
 		return nil, err
 	}
 
-	wfExecUid, err := uuid.GenerateUUID()
-	if err != nil {
-		return nil, err
-	}
-	err = InjectExitHandlerWorkflowExecutionStatistic(wf, namespace, wfExecUid, workflowTemplateId)
+	err = InjectExitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
 	if err != nil {
 		return nil, err
 	}
 
-	//Create an entry for workflow_executions statistic
-	//CURL code will hit the API endpoint that will update the db row
-	err = c.InsertPreWorkflowExecutionStatistic(namespace, wfExecUid, int64(*workflowTemplateId), time.Now())
-	if err != nil {
-		return nil, err
-	}
 	createdWorkflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
 	if err != nil {
-		//Remove the workflow execution statistic entry, because this workflow never ran
-		err = c.DeletePreWorkflowExecutionStatistic(wfExecUid)
-		if err != nil {
-			return nil, err
-		}
+
 		return nil, err
 	}
-	err = c.AddNameToWorkflowExecutionStatisticPostCreation(createdWorkflow.Name, wfExecUid)
+	//Create an entry for workflow_executions statistic
+	//CURL code will hit the API endpoint that will update the db row
+	err = c.InsertPreWorkflowExecutionStatistic(namespace, createdWorkflow.Name, int64(*workflowTemplateId), time.Now())
 	if err != nil {
 		return nil, err
 	}
@@ -394,48 +381,6 @@ func (c *Client) InsertPreWorkflowExecutionStatistic(namespace, name string, wor
 
 	_, err = sb.Insert("workflow_executions").
 		SetMap(insertMap).RunWith(tx).Exec()
-	if err != nil {
-		return err
-	}
-	err = tx.Commit()
-	if err != nil {
-		return err
-	}
-	return err
-}
-
-func (c *Client) AddNameToWorkflowExecutionStatisticPostCreation(name, uid string) error {
-	tx, err := c.DB.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	updateMap := sq.Eq{
-		"name": name,
-	}
-
-	_, err = sb.Update("workflow_executions").
-		SetMap(updateMap).Where(sq.Eq{"uid": uid}).RunWith(tx).Exec()
-	if err != nil {
-		return err
-	}
-	err = tx.Commit()
-	if err != nil {
-		return err
-	}
-	return err
-}
-
-func (c *Client) DeletePreWorkflowExecutionStatistic(uid string) error {
-	tx, err := c.DB.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	_, err = sb.Delete("workflow_executions").Where(
-		sq.Eq{"uid": uid}).RunWith(tx).Exec()
 	if err != nil {
 		return err
 	}
