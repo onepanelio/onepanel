@@ -400,3 +400,13 @@ func FilePathToExtension(path string) string {
 
 	return path[dotIndex+1:]
 }
+
+type WorkspaceTemplate struct {
+	ParametersManifest         string
+	VolumeClaimsManifest       string
+	ContainersManifest         string
+	PortsManifest              string
+	RoutesManifest             string
+	AdditionalWorkflowManifest string
+	WorkflowTemplate           WorkflowTemplate
+}

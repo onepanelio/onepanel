@@ -39,8 +39,11 @@ require (
 	k8s.io/apimachinery v0.16.7-beta.0
 	k8s.io/client-go v0.16.4
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	k8s.io/code-generator v0.16.7-beta.0 // indirect
+=======
+>>>>>>> workspace_template logic
 	sigs.k8s.io/yaml v1.2.0
 >>>>>>> use a diff yaml lib
 )
