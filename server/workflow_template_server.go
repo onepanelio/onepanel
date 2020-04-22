@@ -19,18 +19,13 @@ func NewWorkflowTemplateServer() *WorkflowTemplateServer {
 }
 
 func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
-	manifest, err := wft.FormatManifest()
-	if err != nil {
-		manifest = ""
-	}
-
 	res := &api.WorkflowTemplate{
 		Uid:        wft.UID,
 		CreatedAt:  wft.CreatedAt.UTC().Format(time.RFC3339),
 		Name:       wft.Name,
 		Version:    wft.Version,
 		Versions:   wft.Versions,
-		Manifest:   manifest,
+		Manifest:   wft.Manifest,
 		IsLatest:   wft.IsLatest,
 		IsArchived: wft.IsArchived,
 		Labels:     converter.MappingToKeyValue(wft.Labels),
@@ -39,7 +34,7 @@ func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 	if wft.WorkflowExecutionStatisticReport != nil {
 		res.Stats = &api.WorkflowExecutionStatisticReport{
 			Total:        wft.WorkflowExecutionStatisticReport.Total,
-			LastExecuted: wft.WorkflowExecutionStatisticReport.LastExecuted.String(),
+			LastExecuted: wft.WorkflowExecutionStatisticReport.LastExecuted.Format(time.RFC3339),
 			Running:      wft.WorkflowExecutionStatisticReport.Running,
 			Completed:    wft.WorkflowExecutionStatisticReport.Completed,
 			Failed:       wft.WorkflowExecutionStatisticReport.Failed,

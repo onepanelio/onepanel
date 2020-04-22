@@ -61,8 +61,8 @@ type WorkflowTemplate struct {
 	UID                              string
 	Name                             string
 	Manifest                         string
-	Version                          int32
-	Versions                         int32 `db:"versions"`
+	Version                          int64
+	Versions                         int64 `db:"versions"`
 	IsLatest                         bool
 	IsArchived                       bool `db:"is_archived"`
 	ArgoWorkflowTemplate             *wfv1.WorkflowTemplate
@@ -77,6 +77,14 @@ type WorkflowExecutionStatisticReport struct {
 	Running            int32
 	Completed          int32
 	Failed             int32
+}
+
+type WorkflowTemplateVersion struct {
+	ID        uint64
+	Version   int64
+	IsLatest  bool `db:"is_latest"`
+	Manifest  string
+	CreatedAt time.Time `db:"created_at"`
 }
 
 type WorkflowExecutionStatistic struct {

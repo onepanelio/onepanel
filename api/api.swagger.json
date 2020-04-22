@@ -30,12 +30,6 @@
             "schema": {
               "properties": {}
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -61,12 +55,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/ListNamespacesResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -104,12 +92,6 @@
             "schema": {
               "$ref": "#/definitions/Namespace"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -135,12 +117,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/CronWorkflow"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -174,12 +150,6 @@
             "schema": {
               "$ref": "#/definitions/CronWorkflow"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -207,12 +177,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/CronWorkflow"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -251,12 +215,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/ListCronWorkflowsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -302,12 +260,6 @@
             "schema": {
               "$ref": "#/definitions/GetLabelsResponse"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -335,12 +287,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/GetLabelsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -377,12 +323,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/GetLabelsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -422,12 +362,6 @@
             "schema": {
               "$ref": "#/definitions/GetLabelsResponse"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -464,12 +398,6 @@
             "schema": {
               "properties": {}
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -499,12 +427,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/ListCronWorkflowsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -550,12 +472,6 @@
             "schema": {
               "$ref": "#/definitions/ListSecretsResponse"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -577,12 +493,6 @@
             "description": "A successful response.",
             "schema": {
               "properties": {}
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -616,12 +526,6 @@
             "schema": {
               "$ref": "#/definitions/Secret"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -649,12 +553,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/DeleteSecretResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -686,12 +584,6 @@
             "schema": {
               "$ref": "#/definitions/SecretExistsResponse"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -721,12 +613,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/AddSecretKeyValueResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -763,12 +649,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/UpdateSecretKeyValueResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -808,12 +688,6 @@
             "schema": {
               "$ref": "#/definitions/DeleteSecretKeyResponse"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -849,12 +723,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/ListWorkflowExecutionsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -897,18 +765,13 @@
         ]
       },
       "post": {
+        "summary": "Creates a Workflow",
         "operationId": "CreateWorkflowExecution",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/WorkflowExecution"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -942,12 +805,6 @@
             "schema": {
               "$ref": "#/definitions/WorkflowExecution"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -977,12 +834,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/ArtifactResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -1019,12 +870,6 @@
             "description": "A successful response.",
             "schema": {
               "properties": {}
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -1063,12 +908,6 @@
             "schema": {
               "$ref": "#/definitions/ListFilesResponse"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -1105,12 +944,6 @@
             "schema": {
               "$ref": "#/definitions/GetLabelsResponse"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -1138,12 +971,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/GetLabelsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -1180,12 +1007,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/GetLabelsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -1225,12 +1046,6 @@
             "schema": {
               "$ref": "#/definitions/GetLabelsResponse"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -1265,22 +1080,7 @@
           "200": {
             "description": "A successful response.(streaming responses)",
             "schema": {
-              "type": "object",
-              "properties": {
-                "result": {
-                  "$ref": "#/definitions/LogEntry"
-                },
-                "error": {
-                  "$ref": "#/definitions/grpc.gateway.runtime.StreamError"
-                }
-              },
-              "title": "Stream result of LogEntry"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+              "$ref": "#/x-stream-definitions/LogEntry"
             }
           }
         },
@@ -1324,12 +1124,6 @@
             "schema": {
               "$ref": "#/definitions/GetWorkflowExecutionMetricsResponse"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -1366,12 +1160,6 @@
             "schema": {
               "$ref": "#/definitions/WorkflowExecution"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -1401,12 +1189,6 @@
             "description": "A successful response.",
             "schema": {
               "properties": {}
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -1446,12 +1228,6 @@
             "schema": {
               "properties": {}
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -1480,22 +1256,7 @@
           "200": {
             "description": "A successful response.(streaming responses)",
             "schema": {
-              "type": "object",
-              "properties": {
-                "result": {
-                  "$ref": "#/definitions/WorkflowExecution"
-                },
-                "error": {
-                  "$ref": "#/definitions/grpc.gateway.runtime.StreamError"
-                }
-              },
-              "title": "Stream result of WorkflowExecution"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+              "$ref": "#/x-stream-definitions/WorkflowExecution"
             }
           }
         },
@@ -1527,12 +1288,6 @@
             "schema": {
               "$ref": "#/definitions/ListWorkflowTemplatesResponse"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -1554,12 +1309,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/WorkflowTemplate"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -1593,12 +1342,6 @@
             "schema": {
               "$ref": "#/definitions/GetLabelsResponse"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -1618,8 +1361,8 @@
             "name": "version",
             "in": "query",
             "required": false,
-            "type": "integer",
-            "format": "int32"
+            "type": "string",
+            "format": "int64"
           },
           {
             "name": "stats.total",
@@ -1668,12 +1411,6 @@
             "schema": {
               "$ref": "#/definitions/GetLabelsResponse"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -1709,12 +1446,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/GetLabelsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -1754,12 +1485,6 @@
             "schema": {
               "$ref": "#/definitions/GetLabelsResponse"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -1796,12 +1521,6 @@
             "schema": {
               "$ref": "#/definitions/WorkflowTemplate"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -1821,8 +1540,8 @@
             "name": "version",
             "in": "query",
             "required": false,
-            "type": "integer",
-            "format": "int32"
+            "type": "string",
+            "format": "int64"
           }
         ],
         "tags": [
@@ -1838,12 +1557,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/ArchiveWorkflowTemplateResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -1875,12 +1588,6 @@
             "schema": {
               "$ref": "#/definitions/WorkflowTemplate"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -1906,8 +1613,8 @@
             "name": "version",
             "in": "query",
             "required": false,
-            "type": "integer",
-            "format": "int32"
+            "type": "string",
+            "format": "int64"
           }
         ],
         "tags": [
@@ -1923,12 +1630,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/WorkflowTemplate"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -1955,8 +1656,8 @@
             "name": "version",
             "in": "path",
             "required": true,
-            "type": "integer",
-            "format": "int32"
+            "type": "string",
+            "format": "int64"
           }
         ],
         "tags": [
@@ -1972,12 +1673,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/ListWorkflowTemplateVersionsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -2009,12 +1704,6 @@
             "schema": {
               "$ref": "#/definitions/WorkflowTemplate"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -2034,8 +1723,8 @@
             "name": "version",
             "in": "path",
             "required": true,
-            "type": "integer",
-            "format": "int32"
+            "type": "string",
+            "format": "int64"
           }
         ],
         "tags": [
@@ -2051,12 +1740,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/WorkflowTemplate"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -2096,12 +1779,6 @@
             "schema": {
               "$ref": "#/definitions/WorkflowTemplate"
             }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
           }
         },
         "parameters": [
@@ -2121,8 +1798,8 @@
             "name": "workflowTemplate.version",
             "in": "path",
             "required": true,
-            "type": "integer",
-            "format": "int32"
+            "type": "string",
+            "format": "int64"
           },
           {
             "name": "body",
@@ -2607,12 +2284,12 @@
           "type": "string"
         },
         "version": {
-          "type": "integer",
-          "format": "int32"
+          "type": "string",
+          "format": "int64"
         },
         "versions": {
-          "type": "integer",
-          "format": "int32"
+          "type": "string",
+          "format": "int64"
         },
         "manifest": {
           "type": "string"
@@ -2651,27 +2328,6 @@
       },
       "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(&foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := &pb.Foo{...}\n     any, err := ptypes.MarshalAny(foo)\n     ...\n     foo := &pb.Foo{}\n     if err := ptypes.UnmarshalAny(any, foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": <string>,\n      \"lastName\": <string>\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
     },
-    "grpc.gateway.runtime.Error": {
-      "type": "object",
-      "properties": {
-        "error": {
-          "type": "string"
-        },
-        "code": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "message": {
-          "type": "string"
-        },
-        "details": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/google.protobuf.Any"
-          }
-        }
-      }
-    },
     "grpc.gateway.runtime.StreamError": {
       "type": "object",
       "properties": {
@@ -2696,6 +2352,32 @@
           }
         }
       }
+    }
+  },
+  "x-stream-definitions": {
+    "LogEntry": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/LogEntry"
+        },
+        "error": {
+          "$ref": "#/definitions/grpc.gateway.runtime.StreamError"
+        }
+      },
+      "title": "Stream result of LogEntry"
+    },
+    "WorkflowExecution": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/WorkflowExecution"
+        },
+        "error": {
+          "$ref": "#/definitions/grpc.gateway.runtime.StreamError"
+        }
+      },
+      "title": "Stream result of WorkflowExecution"
     }
   },
   "securityDefinitions": {

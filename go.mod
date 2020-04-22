@@ -17,7 +17,7 @@ require (
 	github.com/gorilla/handlers v1.4.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway v1.14.3
-	github.com/hashicorp/go-uuid v1.0.2 // indirect
+	github.com/hashicorp/go-uuid v1.0.2
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/lib/pq v1.3.0
@@ -32,8 +32,8 @@ require (
 	github.com/ziutek/mymysql v1.5.4 // indirect
 	google.golang.org/genproto v0.0.0-20200413115906-b5235f65be36
 	google.golang.org/grpc v1.28.0
-	gopkg.in/yaml.v2 v2.2.8
 	google.golang.org/protobuf v1.21.0
+	gopkg.in/yaml.v2 v2.2.8
 	k8s.io/api v0.16.4
 	k8s.io/apimachinery v0.16.7-beta.0
 	k8s.io/client-go v0.16.4

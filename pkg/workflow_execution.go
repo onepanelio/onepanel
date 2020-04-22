@@ -473,7 +473,7 @@ func (c *Client) GetWorkflowExecution(namespace, name string) (workflow *Workflo
 		}).Error("Invalid version number.")
 		return nil, util.NewUserError(codes.InvalidArgument, "Invalid version number.")
 	}
-	workflowTemplate, err := c.GetWorkflowTemplate(namespace, uid, int32(version))
+	workflowTemplate, err := c.GetWorkflowTemplate(namespace, uid, version)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -551,10 +551,10 @@ func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflow
 
 		versionString, ok := wf.Labels[workflowTemplateVersionLabelKey]
 		if ok {
-			versionNumber, err := strconv.Atoi(versionString)
+			versionNumber, err := strconv.ParseInt(versionString, 10, 64)
 			if err == nil {
 				execution.WorkflowTemplate = &WorkflowTemplate{
-					Version: int32(versionNumber),
+					Version: versionNumber,
 				}
 			} else {
 				log.WithFields(log.Fields{
@@ -1207,7 +1207,10 @@ func (c *Client) GetWorkflowExecutionStatisticsForTemplates(workflowTemplates ..
 	}
 
 	for _, workflowTemplate := range workflowTemplates {
-		workflowTemplate.WorkflowExecutionStatisticReport = resultMapping[workflowTemplate.ID]
+		resultMap, ok := resultMapping[workflowTemplate.ID]
+		if ok {
+			workflowTemplate.WorkflowExecutionStatisticReport = resultMap
+		}
 	}
 
 	return

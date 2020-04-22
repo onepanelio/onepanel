@@ -365,6 +365,7 @@ func (c *Client) updateCronWorkflow(namespace string, name string, workflowTempl
 	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
 		return nil, err
 	}
+
 	err = InjectExitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
 	if err != nil {
 		return nil, err
@@ -448,6 +449,7 @@ func (c *Client) createCronWorkflow(namespace string, workflowTemplateId *uint64
 	if err != nil {
 		return nil, err
 	}
+
 	cwf.Spec.WorkflowSpec = wf.Spec
 	cwf.Spec.WorkflowMetadata = &wf.ObjectMeta
 
