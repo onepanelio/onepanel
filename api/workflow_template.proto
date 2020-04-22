@@ -103,14 +103,14 @@ message UpdateWorkflowTemplateVersionRequest {
 message GetWorkflowTemplateRequest {
     string namespace = 1;
     string uid = 2;
-    int32 version = 3;
+    int64 version = 3;
 }
 
 message CloneWorkflowTemplateRequest {
     string namespace = 1;
     string uid = 2;
     string name = 3;
-    int32 version = 4;
+    int64 version = 4;
 }
 
 message ListWorkflowTemplateVersionsRequest {
@@ -141,19 +141,31 @@ message ArchiveWorkflowTemplateResponse {
     WorkflowTemplate workflowTemplate = 1;
 }
 
+message WorkflowExecutionStatisticReport {
+    int32 total = 1;
+    string lastExecuted = 2;
+    int32 running = 3;
+    int32 completed = 4;
+    int32 failed = 5;
+}
+
 message WorkflowTemplate {
     string createdAt = 1;
     string uid = 2;
     string name = 3;
-    int32 version = 4;
-    string manifest = 5;
-    bool isLatest = 6;
-    bool isArchived = 7;
-    repeated KeyValue labels = 8;
+    int64 version = 4;
+    int64 versions = 5;
+    string manifest = 6;
+    bool isLatest = 7;
+    bool isArchived = 8;
+    repeated KeyValue labels = 9;
+
+    WorkflowExecutionStatisticReport stats = 10;
 }
 
 message GetWorkflowTemplateLabelsRequest {
     string namespace = 1;
     string name = 2;
-    int32 version = 3;
+    int64 version = 3;
+    WorkflowExecutionStatisticReport stats = 8;
 }

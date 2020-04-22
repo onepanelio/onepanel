@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	sq "github.com/Masterminds/squirrel"
 	"github.com/ghodss/yaml"
+	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/pkg/util/label"
 	"io"
 	"io/ioutil"
@@ -190,7 +192,7 @@ func addEnvToTemplate(template *wfv1.Template, key string, value string) {
 	}
 }
 
-func (c *Client) createWorkflow(namespace string, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (createdWorkflow *wfv1.Workflow, err error) {
+func (c *Client) createWorkflow(namespace string, workflowTemplateId *uint64, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (createdWorkflow *wfv1.Workflow, err error) {
 	if opts == nil {
 		opts = &WorkflowExecutionOptions{}
 	}
@@ -235,7 +237,19 @@ func (c *Client) createWorkflow(namespace string, wf *wfv1.Workflow, opts *Workf
 		return nil, err
 	}
 
+	err = InjectExitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
+	if err != nil {
+		return nil, err
+	}
+
 	createdWorkflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
+	if err != nil {
+
+		return nil, err
+	}
+	//Create an entry for workflow_executions statistic
+	//CURL code will hit the API endpoint that will update the db row
+	err = c.InsertPreWorkflowExecutionStatistic(namespace, createdWorkflow.Name, int64(*workflowTemplateId), time.Now())
 	if err != nil {
 		return nil, err
 	}
@@ -318,7 +332,7 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 
 	var createdWorkflows []*wfv1.Workflow
 	for _, wf := range workflows {
-		createdWorkflow, err := c.createWorkflow(namespace, &wf, opts)
+		createdWorkflow, err := c.createWorkflow(namespace, &workflowTemplate.ID, &wf, opts)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"Namespace": namespace,
@@ -351,6 +365,89 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	return workflow, nil
 }
 
+func (c *Client) InsertPreWorkflowExecutionStatistic(namespace, name string, workflowTemplateID int64, createdAt time.Time) error {
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	insertMap := sq.Eq{
+		"workflow_template_id": workflowTemplateID,
+		"name":                 name,
+		"namespace":            namespace,
+		"created_at":           createdAt.UTC(),
+	}
+
+	_, err = sb.Insert("workflow_executions").
+		SetMap(insertMap).RunWith(tx).Exec()
+	if err != nil {
+		return err
+	}
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+func (c *Client) FinishWorkflowExecutionStatisticViaExitHandler(namespace, name string, workflowTemplateID int64, workflowOutcomeIsSuccess bool) (err error) {
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	updateMap := sq.Eq{
+		"workflow_template_id": workflowTemplateID,
+		"name":                 name,
+		"namespace":            namespace,
+	}
+
+	if workflowOutcomeIsSuccess {
+		updateMap["finished_at"] = time.Now().UTC()
+	} else {
+		updateMap["failed_at"] = time.Now().UTC()
+	}
+
+	_, err = sb.Update("workflow_executions").
+		SetMap(updateMap).Where(sq.Eq{"name": name}).RunWith(tx).Exec()
+	if err != nil {
+		return err
+	}
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+func (c *Client) CronStartWorkflowExecutionStatisticInsert(namespace, name string, workflowTemplateID int64) (err error) {
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	insertMap := sq.Eq{
+		"workflow_template_id": workflowTemplateID,
+		"name":                 name,
+		"namespace":            namespace,
+		"created_at":           time.Now().UTC(),
+	}
+
+	_, err = sb.Insert("workflow_executions").
+		SetMap(insertMap).RunWith(tx).Exec()
+	if err != nil {
+		return err
+	}
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return err
+}
+
 func (c *Client) GetWorkflowExecution(namespace, name string) (workflow *WorkflowExecution, err error) {
 	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
@@ -376,7 +473,7 @@ func (c *Client) GetWorkflowExecution(namespace, name string) (workflow *Workflo
 		}).Error("Invalid version number.")
 		return nil, util.NewUserError(codes.InvalidArgument, "Invalid version number.")
 	}
-	workflowTemplate, err := c.GetWorkflowTemplate(namespace, uid, int32(version))
+	workflowTemplate, err := c.GetWorkflowTemplate(namespace, uid, version)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -454,10 +551,10 @@ func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflow
 
 		versionString, ok := wf.Labels[workflowTemplateVersionLabelKey]
 		if ok {
-			versionNumber, err := strconv.Atoi(versionString)
+			versionNumber, err := strconv.ParseInt(versionString, 10, 64)
 			if err == nil {
 				execution.WorkflowTemplate = &WorkflowTemplate{
-					Version: int32(versionNumber),
+					Version: versionNumber,
 				}
 			} else {
 				log.WithFields(log.Fields{
@@ -1051,4 +1148,191 @@ func (c *Client) SetWorkflowTemplateLabels(namespace, name, prefix string, keyVa
 	filteredMap = label.RemovePrefix(prefix, filteredMap)
 
 	return filteredMap, nil
+}
+
+func (c *Client) GetWorkflowExecutionStatisticsForTemplates(workflowTemplates ...*WorkflowTemplate) (err error) {
+	if len(workflowTemplates) == 0 {
+		return errors.New("GetWorkflowExecutionStatisticsForTemplates requires at least 1 id")
+	}
+
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	whereIn := "workflow_template_id IN (?"
+	for i := range workflowTemplates {
+		if i == 0 {
+			continue
+		}
+
+		whereIn += ",?"
+	}
+	whereIn += ")"
+
+	ids := make([]interface{}, len(workflowTemplates))
+	for i, workflowTemplate := range workflowTemplates {
+		ids[i] = workflowTemplate.ID
+	}
+
+	defer tx.Rollback()
+
+	statsSelect := `
+		workflow_template_id,
+		MAX(created_at) last_executed,
+		COUNT(*) FILTER (WHERE finished_At IS NULL AND failed_at IS NULL) running,
+		COUNT(*) FILTER (WHERE finished_at IS NOT NULL) completed,
+		COUNT(*) FILTER (WHERE failed_at IS NOT NULL) failed,
+		COUNT(*) total`
+
+	query, args, err := sb.Select(statsSelect).
+		From("workflow_executions").
+		Where(whereIn, ids...).
+		GroupBy("workflow_template_id").
+		ToSql()
+
+	if err != nil {
+		return err
+	}
+	result := make([]*WorkflowExecutionStatisticReport, 0)
+	err = c.DB.Select(&result, query, args...)
+	if err != nil {
+		return err
+	}
+
+	resultMapping := make(map[uint64]*WorkflowExecutionStatisticReport)
+	for i := range result {
+		report := result[i]
+		resultMapping[report.WorkflowTemplateId] = report
+	}
+
+	for _, workflowTemplate := range workflowTemplates {
+		resultMap, ok := resultMapping[workflowTemplate.ID]
+		if ok {
+			workflowTemplate.WorkflowExecutionStatisticReport = resultMap
+		}
+	}
+
+	return
+}
+
+/**
+Will build a template that makes a CURL request to the onepanel-core API,
+with statistics about the workflow that was just executed.
+*/
+func GetExitHandlerWorkflowStatistics(namespace string, workflowTemplateId *uint64) (workflowStepName, workflowStepTemplate, workflowStepWhen string, err error, wfv1Template wfv1.Template) {
+	workflowStepName = "workflow-statistics"
+	workflowStepTemplate = "workflow-statistics-template"
+	host := env.GetEnv("ONEPANEL_CORE_SERVICE_HOST", "")
+	if host == "" {
+		err = errors.New("ONEPANEL_CORE_SERVICE_HOST is empty.")
+		return
+	}
+	port := env.GetEnv("ONEPANEL_CORE_SERVICE_PORT", "")
+	if port == "" {
+		err = errors.New("ONEPANEL_CORE_SERVICE_PORT is empty.")
+		return
+	}
+	curlEndpoint := fmt.Sprintf("http://%s:%s/apis/v1beta1/%s/workflow_executions/{{workflow.name}}/statistics", host, port, namespace)
+
+	jsonRequestStruct := api.Statistics{
+		WorkflowStatus:     "{{workflow.status}}",
+		WorkflowTemplateId: int64(*workflowTemplateId),
+	}
+	jsonRequestBytes, err := json.Marshal(jsonRequestStruct)
+	if err != nil {
+		return "", "", "", err, wfv1.Template{}
+	}
+	jsonRequestStr := string(jsonRequestBytes)
+	curlJSONBody := fmt.Sprintf("--data '%s'", jsonRequestStr)
+
+	token, err := GetBearerToken(namespace)
+	if err != nil {
+		return "", "", "", err, wfv1.Template{}
+	}
+
+	wfv1Template = wfv1.Template{
+		Name: workflowStepTemplate,
+		Container: &corev1.Container{
+			Image:   "curlimages/curl",
+			Command: []string{"sh", "-c"},
+			Args: []string{
+				"curl '" + curlEndpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
+					"-H 'Authorization: Bearer " + token + "' " +
+					curlJSONBody + " --compressed",
+			},
+		},
+	}
+	return
+}
+
+func GetInitContainerForCronWorkflow(templateCorrespondingToEntryPoint *wfv1.Template, namespace string, workflowTemplateId int64) (err error) {
+	host := env.GetEnv("ONEPANEL_CORE_SERVICE_HOST", "")
+	if host == "" {
+		err = errors.New("ONEPANEL_CORE_SERVICE_HOST is empty.")
+		return
+	}
+	port := env.GetEnv("ONEPANEL_CORE_SERVICE_PORT", "")
+	if port == "" {
+		err = errors.New("ONEPANEL_CORE_SERVICE_PORT is empty.")
+		return
+	}
+	curlEndpoint := fmt.Sprintf("http://%s:%s/apis/v1beta1/%s/workflow_executions/{{workflow.name}}/cron_start_statistics/%d", host, port, namespace, workflowTemplateId)
+
+	token, err := GetBearerToken(namespace)
+	if err != nil {
+		return err
+	}
+
+	initContainer := wfv1.UserContainer{
+		Container: corev1.Container{
+			Name:    "cron-init-container",
+			Image:   "curlimages/curl",
+			Command: []string{"sh", "-c"},
+			Args: []string{
+				"curl '" + curlEndpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
+					"-H 'Authorization: Bearer " + token + "' ",
+			}}}
+
+	templateCorrespondingToEntryPoint.InitContainers = append(templateCorrespondingToEntryPoint.InitContainers, initContainer)
+	return
+}
+
+func InjectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace string, workflowTemplateId *uint64) error {
+	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics(namespace, workflowTemplateId)
+	if err != nil {
+		return err
+	}
+	if exitHandlerStepTemplate != "" {
+		exitHandler := wfv1.Template{
+			Name: "exit-handler",
+			Steps: []wfv1.ParallelSteps{
+				{
+					Steps: []wfv1.WorkflowStep{
+						{Name: exitHandlerStepName, Template: exitHandlerStepTemplate, When: exitHandlerStepWhen},
+					},
+				},
+			},
+		}
+		wf.Spec.OnExit = "exit-handler"
+		wf.Spec.Templates = append(wf.Spec.Templates, exitHandler, exitHandlerTemplate)
+	}
+	return nil
+}
+
+func InjectInitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace string, workflowTemplateId int64) error {
+	//Find the template that matches this entrypoint name
+	//Add the init container to that Template
+	var templateToUse *wfv1.Template
+	for idx := range wf.Spec.Templates {
+		if wf.Spec.Templates[idx].Name == wf.Spec.Entrypoint {
+			templateToUse = &wf.Spec.Templates[idx]
+			break
+		}
+	}
+	err := GetInitContainerForCronWorkflow(templateToUse, namespace, workflowTemplateId)
+	if err != nil {
+		return err
+	}
+	return nil
 }

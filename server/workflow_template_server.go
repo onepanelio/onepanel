@@ -19,20 +19,29 @@ func NewWorkflowTemplateServer() *WorkflowTemplateServer {
 }
 
 func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
-	manifest, err := wft.FormatManifest()
-	if err != nil {
-		manifest = ""
-	}
-
-	return &api.WorkflowTemplate{
+	res := &api.WorkflowTemplate{
 		Uid:        wft.UID,
 		CreatedAt:  wft.CreatedAt.UTC().Format(time.RFC3339),
 		Name:       wft.Name,
 		Version:    wft.Version,
-		Manifest:   manifest,
+		Versions:   wft.Versions,
+		Manifest:   wft.Manifest,
 		IsLatest:   wft.IsLatest,
 		IsArchived: wft.IsArchived,
+		Labels:     converter.MappingToKeyValue(wft.Labels),
 	}
+
+	if wft.WorkflowExecutionStatisticReport != nil {
+		res.Stats = &api.WorkflowExecutionStatisticReport{
+			Total:        wft.WorkflowExecutionStatisticReport.Total,
+			LastExecuted: wft.WorkflowExecutionStatisticReport.LastExecuted.Format(time.RFC3339),
+			Running:      wft.WorkflowExecutionStatisticReport.Running,
+			Completed:    wft.WorkflowExecutionStatisticReport.Completed,
+			Failed:       wft.WorkflowExecutionStatisticReport.Failed,
+		}
+	}
+
+	return res
 }
 
 func mapToKeyValue(input map[string]string) []*api.KeyValue {

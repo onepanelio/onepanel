@@ -79,6 +79,30 @@ func (s *WorkflowServer) CreateWorkflowExecution(ctx context.Context, req *api.C
 	return apiWorkflowExecution(wf), nil
 }
 
+func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, request *api.AddWorkflowExecutionStatisticRequest) (*empty.Empty, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	workflowOutcomeIsSuccess := false
+	if request.Statistics.WorkflowStatus == "Succeeded" {
+		workflowOutcomeIsSuccess = true
+	}
+
+	err := client.FinishWorkflowExecutionStatisticViaExitHandler(request.Namespace, request.Name,
+		request.Statistics.WorkflowTemplateId, workflowOutcomeIsSuccess)
+	if err != nil {
+		return &empty.Empty{}, err
+	}
+	return &empty.Empty{}, nil
+}
+
+func (s *WorkflowServer) CronStartWorkflowExecutionStatistic(ctx context.Context, request *api.CronStartWorkflowExecutionStatisticRequest) (*empty.Empty, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	err := client.CronStartWorkflowExecutionStatisticInsert(request.Namespace, request.Name, request.WorkflowTemplateId)
+	if err != nil {
+		return &empty.Empty{}, err
+	}
+	return &empty.Empty{}, nil
+}
+
 func (s *WorkflowServer) GetWorkflowExecution(ctx context.Context, req *api.GetWorkflowExecutionRequest) (*api.WorkflowExecution, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Name)

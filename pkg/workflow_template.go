@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
@@ -14,7 +15,6 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/label"
-	"github.com/onepanelio/core/pkg/util/number"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,6 +34,8 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 	}
 	defer tx.Rollback()
 
+	versionUnix := time.Now().Unix()
+
 	err = sb.Insert("workflow_templates").
 		SetMap(sq.Eq{
 			"uid":       uid,
@@ -47,20 +49,20 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, err
 	}
 
-	argoWft, err := createArgoWorkflowTemplate(workflowTemplate, "1")
-
-	parametersMap, err := workflowTemplate.GetParametersKeyString()
+	_, err = sb.Insert("workflow_template_versions").
+		SetMap(sq.Eq{
+			"workflow_template_id": workflowTemplate.ID,
+			"version":              versionUnix,
+			"is_latest":            true,
+			"manifest":             workflowTemplate.Manifest,
+		}).
+		RunWith(tx).
+		Exec()
 	if err != nil {
 		return nil, err
 	}
 
-	if argoWft.Annotations == nil {
-		argoWft.Annotations = make(map[string]string)
-	}
-	for key, value := range parametersMap {
-		argoWft.Annotations[key] = value
-	}
-
+	argoWft, err := createArgoWorkflowTemplate(workflowTemplate, versionUnix)
 	argoWft, err = c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Create(argoWft)
 	if err != nil {
 		return nil, err
@@ -86,10 +88,33 @@ func (c *Client) workflowTemplatesSelectBuilder(namespace string) sq.SelectBuild
 	return sb
 }
 
-func (c *Client) getWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *WorkflowTemplate, err error) {
-	workflowTemplate = &WorkflowTemplate{}
+func (c *Client) workflowTemplatesVersionSelectBuilder(namespace string) sq.SelectBuilder {
+	sb := sb.Select("wtv.id", "wtv.version", "wtv.is_latest", "wtv.manifest", "wtv.created_at").
+		From("workflow_template_versions wtv").
+		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
+		Where(sq.Eq{
+			"wt.namespace": namespace,
+		})
 
-	sb := c.workflowTemplatesSelectBuilder(namespace).Where(sq.Eq{"wt.uid": uid})
+	return sb
+}
+
+func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (workflowTemplate *WorkflowTemplate, err error) {
+	workflowTemplate = &WorkflowTemplate{
+		WorkflowExecutionStatisticReport: &WorkflowExecutionStatisticReport{},
+	}
+
+	sb := c.workflowTemplatesSelectBuilder(namespace).
+		Column("wtv.manifest").
+		Join("workflow_template_versions wtv ON wt.id = wtv.workflow_template_id").
+		Where(sq.Eq{"wt.uid": uid})
+
+	if version == 0 {
+		sb = sb.Where(sq.Eq{"wtv.is_latest": true})
+	} else {
+		sb = sb.Where(sq.Eq{"wtv.version": version})
+	}
+
 	query, args, err := sb.ToSql()
 	if err != nil {
 		return
@@ -113,25 +138,19 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int32) (work
 	if err != nil {
 		return nil, err
 	}
-
-	manifest, err := yaml.Marshal(argoWft)
-	if err != nil {
-		return nil, err
-	}
-	workflowTemplate.Manifest = string(manifest)
 	workflowTemplate.ArgoWorkflowTemplate = argoWft
 
-	templateVersion, err := strconv.Atoi(argoWft.Labels["onepanel.io/version"])
+	templateVersion, err := strconv.ParseInt(argoWft.Labels[label.Version], 10, 64)
 	if err != nil {
 		return nil, err
 	}
 
-	workflowTemplate.Version = int32(templateVersion)
+	workflowTemplate.Version = templateVersion
 
-	return
+	return workflowTemplate, nil
 }
 
-func (c *Client) getWorkflowTemplateByName(namespace, name string, version int32) (workflowTemplate *WorkflowTemplate, err error) {
+func (c *Client) getWorkflowTemplateByName(namespace, name string, version int64) (workflowTemplate *WorkflowTemplate, err error) {
 	workflowTemplate = &WorkflowTemplate{}
 
 	sb := c.workflowTemplatesSelectBuilder(namespace).Where(sq.Eq{"wt.name": name}).
@@ -165,8 +184,18 @@ func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTe
 		return nil, err
 	}
 
+	dbVersions, err := c.listDbWorkflowTemplateVersions(namespace, uid)
+	if err != nil {
+		return nil, err
+	}
+
+	mapByVersion := make(map[int64]*WorkflowTemplateVersion)
+	for _, dbVersion := range dbVersions {
+		mapByVersion[dbVersion.Version] = dbVersion
+	}
+
 	for _, argoTemplate := range *argoTemplates {
-		version, versionErr := strconv.Atoi(argoTemplate.Labels[label.Version])
+		version, versionErr := strconv.ParseInt(argoTemplate.Labels[label.Version], 10, 64)
 		if versionErr != nil {
 			return nil, versionErr
 		}
@@ -176,20 +205,20 @@ func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTe
 			isLatest = true
 		}
 
-		manifest, err := yaml.Marshal(argoTemplate)
-		if err != nil {
-			return nil, err
-		}
+		dbVersion := mapByVersion[version]
+
+		labels := label.FilterByPrefix(label.TagPrefix, argoTemplate.Labels)
 
 		newItem := WorkflowTemplate{
 			ID:         template.ID,
 			CreatedAt:  argoTemplate.CreationTimestamp.Time,
 			UID:        template.UID,
 			Name:       template.Name,
-			Manifest:   string(manifest),
-			Version:    int32(version),
+			Manifest:   dbVersion.Manifest,
+			Version:    version,
 			IsLatest:   isLatest,
 			IsArchived: template.IsArchived,
+			Labels:     labels,
 		}
 
 		workflowTemplateVersions = append(workflowTemplateVersions, &newItem)
@@ -202,7 +231,10 @@ func (c *Client) listWorkflowTemplates(namespace string) (workflowTemplateVersio
 	workflowTemplateVersions = []*WorkflowTemplate{}
 
 	query, args, err := c.workflowTemplatesSelectBuilder(namespace).
-		Options("DISTINCT ON (wt.id) wt.id,").
+		Column("COUNT(wtv.*) versions").
+		Options("DISTINCT ON (wt.id)").
+		Join("workflow_template_versions wtv ON wtv.workflow_template_id = wt.id").
+		GroupBy("wt.id", "wt.created_at", "wt.uid", "wt.name", "wt.is_archived").
 		Where(sq.Eq{
 			"wt.is_archived": false,
 		}).
@@ -281,6 +313,51 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
 	}
 
+	versionUnix := time.Now().Unix()
+
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	wftSb := c.workflowTemplatesSelectBuilder(namespace).Where(sq.Eq{"wt.uid": workflowTemplate.UID})
+	query, args, err := wftSb.ToSql()
+	if err != nil {
+		return nil, err
+	}
+	workflowTemplateDb := &WorkflowTemplate{}
+	if err = c.DB.Get(workflowTemplateDb, query, args...); err != nil {
+		return nil, err
+	}
+
+	_, err = sb.Update("workflow_template_versions").
+		Set("is_latest", false).
+		Where(sq.Eq{
+			"workflow_template_id": workflowTemplateDb.ID,
+		}).
+		RunWith(tx).
+		Exec()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = sb.Insert("workflow_template_versions").
+		SetMap(sq.Eq{
+			"workflow_template_id": workflowTemplateDb.ID,
+			"version":              versionUnix,
+			"is_latest":            true,
+			"manifest":             workflowTemplate.Manifest,
+		}).
+		RunWith(tx).
+		Exec()
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
 	latest, err := c.getArgoWorkflowTemplate(namespace, workflowTemplate.UID, "latest")
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -292,15 +369,13 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 		return nil, err
 	}
 
-	incrementedVersion, err := number.IncrementStringInt(latest.Labels[label.Version])
-
 	delete(latest.Labels, label.VersionLatest)
 
 	if _, err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Update(latest); err != nil {
 		return nil, err
 	}
 
-	updatedTemplate, err := createArgoWorkflowTemplate(workflowTemplate, incrementedVersion)
+	updatedTemplate, err := createArgoWorkflowTemplate(workflowTemplate, versionUnix)
 	if err != nil {
 		return nil, err
 	}
@@ -329,7 +404,7 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 }
 
 // If version is 0, it returns the latest.
-func (c *Client) GetWorkflowTemplate(namespace, uid string, version int32) (workflowTemplate *WorkflowTemplate, err error) {
+func (c *Client) GetWorkflowTemplate(namespace, uid string, version int64) (workflowTemplate *WorkflowTemplate, err error) {
 	workflowTemplate, err = c.getWorkflowTemplate(namespace, uid, version)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -346,7 +421,7 @@ func (c *Client) GetWorkflowTemplate(namespace, uid string, version int32) (work
 	return
 }
 
-func (c *Client) GetWorkflowTemplateByName(namespace, name string, version int32) (workflowTemplate *WorkflowTemplate, err error) {
+func (c *Client) GetWorkflowTemplateByName(namespace, name string, version int64) (workflowTemplate *WorkflowTemplate, err error) {
 	workflowTemplate, err = c.getWorkflowTemplateByName(namespace, name, version)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -387,6 +462,27 @@ func (c *Client) ListWorkflowTemplates(namespace string) (workflowTemplateVersio
 		return nil, util.NewUserError(codes.NotFound, "Workflow templates not found.")
 	}
 
+	err = c.GetWorkflowExecutionStatisticsForTemplates(workflowTemplateVersions...)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Error":     err.Error(),
+		}).Error("Unable to get Workflow Execution Statistic for Templates.")
+		return nil, util.NewUserError(codes.NotFound, "Unable to get Workflow Execution Statistic for Templates.")
+	}
+	for _, workflowTemplate := range workflowTemplateVersions {
+		labels, err := c.GetWorkflowTemplateLabels(namespace, workflowTemplate.UID, label.TagPrefix, workflowTemplate.Version)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"Namespace": namespace,
+				"Error":     err.Error(),
+			}).Error("Unable to get GetWorkflowTemplateLabels for Templates.")
+			continue
+		}
+
+		workflowTemplate.Labels = labels
+	}
+
 	return
 }
 
@@ -419,7 +515,7 @@ func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, 
 	return
 }
 
-func createArgoWorkflowTemplate(workflowTemplate *WorkflowTemplate, version string) (*v1alpha1.WorkflowTemplate, error) {
+func createArgoWorkflowTemplate(workflowTemplate *WorkflowTemplate, version int64) (*v1alpha1.WorkflowTemplate, error) {
 	var argoWft *v1alpha1.WorkflowTemplate
 	var jsonOpts []argojson.JSONOpt
 	jsonOpts = append(jsonOpts, argojson.DisallowUnknownFields)
@@ -442,7 +538,7 @@ func createArgoWorkflowTemplate(workflowTemplate *WorkflowTemplate, version stri
 	labels := map[string]string{
 		label.WorkflowTemplate:    worfklowTemplateName,
 		label.WorkflowTemplateUid: workflowTemplate.UID,
-		label.Version:             version,
+		label.Version:             fmt.Sprintf("%v", version),
 		label.VersionLatest:       "true",
 	}
 
@@ -494,10 +590,28 @@ func (c *Client) listArgoWorkflowTemplates(namespace, workflowTemplateUid string
 	return &templates, nil
 }
 
+func (c *Client) listDbWorkflowTemplateVersions(namespace, workflowTemplateUid string) ([]*WorkflowTemplateVersion, error) {
+	versions := make([]*WorkflowTemplateVersion, 0)
+
+	sb := c.workflowTemplatesVersionSelectBuilder(namespace)
+	sb.Where(sq.Eq{"wt.uid": workflowTemplateUid})
+
+	sql, args, err := sb.ToSql()
+	if err != nil {
+		return versions, err
+	}
+
+	if err := c.DB.Select(&versions, sql, args...); err != nil {
+		return versions, err
+	}
+
+	return versions, nil
+}
+
 // prefix is the label prefix.
 // e.g. prefix/my-label-key: my-label-value
 // if version is 0, latest is used.
-func (c *Client) GetWorkflowTemplateLabels(namespace, name, prefix string, version int32) (labels map[string]string, err error) {
+func (c *Client) GetWorkflowTemplateLabels(namespace, name, prefix string, version int64) (labels map[string]string, err error) {
 	versionAsString := "latest"
 	if version != 0 {
 		versionAsString = fmt.Sprintf("%v", version)

@@ -436,7 +436,7 @@ func request_WorkflowTemplateService_GetWorkflowTemplate_1(ctx context.Context, 
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "version")
 	}
 
-	protoReq.Version, err = runtime.Int32(val)
+	protoReq.Version, err = runtime.Int64(val)
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "version", err)
@@ -485,7 +485,7 @@ func local_request_WorkflowTemplateService_GetWorkflowTemplate_1(ctx context.Con
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "version")
 	}
 
-	protoReq.Version, err = runtime.Int32(val)
+	protoReq.Version, err = runtime.Int64(val)
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "version", err)
@@ -788,7 +788,7 @@ func request_WorkflowTemplateService_CloneWorkflowTemplate_1(ctx context.Context
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "version")
 	}
 
-	protoReq.Version, err = runtime.Int32(val)
+	protoReq.Version, err = runtime.Int64(val)
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "version", err)
@@ -848,7 +848,7 @@ func local_request_WorkflowTemplateService_CloneWorkflowTemplate_1(ctx context.C
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "version")
 	}
 
-	protoReq.Version, err = runtime.Int32(val)
+	protoReq.Version, err = runtime.Int64(val)
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "version", err)

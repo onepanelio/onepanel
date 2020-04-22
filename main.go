@@ -47,7 +47,7 @@ func main() {
 	}
 
 	databaseDataSourceName := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
-		config["databaseHost"], config["databaseUsername"], config["databasePassword"], config["databaseName"])
+		"localhost", "admin", "admin", "onepanel-core")
 	db := sqlx.MustConnect(config["databaseDriverName"], databaseDataSourceName)
 	if err := goose.Run("up", db.DB, "db"); err != nil {
 		log.Fatalf("Failed to run database migrations: %v", err)
@@ -59,7 +59,7 @@ func main() {
 
 func startRPCServer(db *v1.DB, kubeConfig *v1.Config) {
 	log.Printf("Starting RPC server on port %v", *rpcPort)
-	lis, err := net.Listen("tcp", *rpcPort)
+	lis, err := net.Listen("tcp", "0.0.0.0"+*rpcPort)
 	if err != nil {
 		log.Fatalf("Failed to start RPC listener: %v", err)
 	}
