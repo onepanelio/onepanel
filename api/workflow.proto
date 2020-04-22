@@ -106,7 +106,7 @@ service WorkflowService {
 
     rpc CronStartWorkflowExecutionStatistic (CronStartWorkflowExecutionStatisticRequest) returns (google.protobuf.Empty) {
         option (google.api.http) = {
-            get: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/cron_start_statistics/{workflowTemplateId}"
+            get: "/apis/v1beta1/{namespace}/workflow_executions/{name}/cron_start_statistics/{workflowTemplateId}"
         };
     }
 
@@ -229,8 +229,7 @@ message ListFilesResponse {
 
 message Statistics {
     string workflowStatus = 1;
-    string uuid = 2;
-    int64 workflowTemplateId = 3;
+    int64 workflowTemplateId = 2;
 }
 
 message AddWorkflowExecutionStatisticRequest {
@@ -241,6 +240,6 @@ message AddWorkflowExecutionStatisticRequest {
 
 message CronStartWorkflowExecutionStatisticRequest {
     string namespace = 1;
-    string uid = 2;
+    string name = 2;
     int64 workflowTemplateId = 3;
 }
