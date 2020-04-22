@@ -18,7 +18,7 @@ type Workspace struct {
 
 type WorkspaceSpec struct {
 	Parameters   []Parameter                    `json:"parameters" protobuf:"bytes,1,opt,name=parameters"`
-	volumeClaims []corev1.PersistentVolumeClaim `json:"volumeClaims" protobuf:"bytes,2,opt,name=volumeClaims"`
+	VolumeClaims []corev1.PersistentVolumeClaim `json:"volumeClaims" protobuf:"bytes,2,opt,name=volumeClaims"`
 	Containers   []corev1.Container             `json:"containers" protobuf:"bytes,3,opt,name=containers"`
 	Ports        []corev1.ServicePort           `json:"ports" protobuf:"bytes,4,opt,name=ports"`
 	Routes       []networking.HTTPRoute         `json:"routes" protobuf:"bytes,5,opt,name=routes"`

@@ -418,3 +418,13 @@ type ArtifactRepositoryS3Config struct {
 		Key string
 	}
 }
+
+type WorkspaceTemplate struct {
+	ParametersManifest         string
+	VolumeClaimsManifest       string
+	ContainersManifest         string
+	PortsManifest              string
+	RoutesManifest             string
+	AdditionalWorkflowManifest string
+	WorkflowTemplate           WorkflowTemplate
+}
