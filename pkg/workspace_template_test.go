@@ -67,7 +67,7 @@ var (
 )
 
 func TestParseServicePorts(t *testing.T) {
-	servicePorts, err := parseServicePorts(portsManifest)
+	servicePorts, err := parsePorts(portsManifest)
 	assert.Nil(t, err)
 	assert.NotEmpty(t, servicePorts)
 	assert.Equal(t, servicePorts[0].Name, "http")
@@ -82,12 +82,12 @@ func TestParseServicePortsInvalid(t *testing.T) {
   targetPort: 80
 `
 
-	_, err := parseServicePorts(template)
+	_, err := parsePorts(template)
 	assert.NotNil(t, err)
 }
 
 func TestParseHTTPRoutes(t *testing.T) {
-	httpRoutes, err := parseHTTPRoutes(routesManifest)
+	httpRoutes, err := parseRoutes(routesManifest)
 	assert.Nil(t, err)
 	assert.NotEmpty(t, httpRoutes)
 	assert.Equal(t, httpRoutes[0].Match[0].Uri.GetPrefix(), "/")
@@ -105,7 +105,7 @@ func TestParseHTTPRoutesInvalid(t *testing.T) {
         number: 80
 `
 
-	_, err := parseHTTPRoutes(template)
+	_, err := parseRoutes(template)
 	assert.NotNil(t, err)
 }
 
