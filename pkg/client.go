@@ -17,12 +17,12 @@ import (
 )
 
 const (
-	artifactRepositoryEndpointKey       = "artifactRepositoryEndpoint"
-	artifactRepositoryBucketKey         = "artifactRepositoryBucket"
-	artifactRepositoryRegionKey         = "artifactRepositoryRegion"
-	artifactRepositoryInSecureKey       = "artifactRepositoryInsecure"
-	artifactRepositoryAccessKeyValueKey = "artifactRepositoryAccessKey"
-	artifactRepositorySecretKeyValueKey = "artifactRepositorySecretKey"
+	artifactRepositoryEndpointKey       = "artifactRepositoryS3Endpoint"
+	artifactRepositoryBucketKey         = "artifactRepositoryS3Bucket"
+	artifactRepositoryRegionKey         = "artifactRepositoryS3Region"
+	artifactRepositoryInsecureKey       = "artifactRepositoryS3Insecure"
+	artifactRepositoryAccessKeyValueKey = "artifactRepositoryS3AccessKey"
+	artifactRepositorySecretKeyValueKey = "artifactRepositoryS3SecretKey"
 )
 
 type Config = rest.Config
