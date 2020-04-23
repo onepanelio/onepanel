@@ -58,7 +58,7 @@ var (
   - name: data
     mountPath: /data
 `
-	workspaceTemplateManifest = WorkspaceTemplate{
+	workspaceTemplate = WorkspaceTemplate{
 		VolumeClaimsManifest: volumeClaimsManifest,
 		ContainersManifest:   containersManifest,
 		PortsManifest:        portsManifest,
@@ -157,7 +157,7 @@ func TestParseContainersInvalid(t *testing.T) {
 func TestCreateWorkspaceTemplate(t *testing.T) {
 	c := NewTestClient(mockSystemSecret, mockSystemConfigMap)
 
-	if err := c.CreateWorkspaceTemplate("rush", workspaceTemplateManifest); err != nil {
+	if err := c.CreateWorkspaceTemplate("rush", workspaceTemplate); err != nil {
 		t.Error(err)
 	}
 }
