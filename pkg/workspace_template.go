@@ -74,7 +74,7 @@ func createServiceManifest(portsManifest string) (serviceManifest string, err er
 	return
 }
 
-func createVirtualServiceManifest(routesManifest string) (virtualServiceManifest string, err error) {
+func createVirtualServiceManifest(routesManifest string, config map[string]string) (virtualServiceManifest string, err error) {
 	httpRoutes, err := parseRoutes(routesManifest)
 	if err != nil {
 		return
@@ -101,8 +101,7 @@ func createVirtualServiceManifest(routesManifest string) (virtualServiceManifest
 		networking.VirtualService{
 			Http:     httpRoutes,
 			Gateways: []string{"istio-system/ingressgateway"},
-			// TODO: This should be generated when workspace is launched
-			//Hosts: []string{"{{workflow.parameters.name}}-{{workflow.namespace}}.{{}}"},
+			Hosts:    []string{"{{workflow.parameters.name}}-{{workflow.namespace}}." + config["ONEPANEL_HOST"]},
 		},
 	}
 
@@ -115,13 +114,13 @@ func createVirtualServiceManifest(routesManifest string) (virtualServiceManifest
 	return
 }
 
-func createStatefulSetManifest(containersManifest string) (statefulSetManifest string, err error) {
+func createStatefulSetManifest(containersManifest string, config map[string]string) (statefulSetManifest string, err error) {
 	containers, err := parseContainers(containersManifest)
 	if err != nil {
 		return
 	}
 
-	volumeClaims := []corev1.PersistentVolumeClaim{}
+	var volumeClaims []corev1.PersistentVolumeClaim
 	volumeClaimsMapped := make(map[string]bool)
 	for _, c := range containers {
 		for _, v := range c.VolumeMounts {
@@ -173,10 +172,9 @@ func createStatefulSetManifest(containersManifest string) (statefulSetManifest s
 					},
 				},
 				Spec: corev1.PodSpec{
-					// TODO: This should be generated when workspace is launched
-					//NodeSelector: map[string]string{
-					//	"{{}}": "{{workflow.parameters.node-pool}}",
-					//},
+					NodeSelector: map[string]string{
+						config["applicationNodePoolLabel"]: "{{workflow.parameters.node-pool}}",
+					},
 					Containers: containers,
 				},
 			},
@@ -254,18 +252,23 @@ func unmarshalWorkflowTemplate(serviceManifest, virtualServiceManifest, containe
 
 // CreateWorkspaceTemplate creates a template for Workspaces
 func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate WorkspaceTemplate) (err error) {
+	config, err := c.GetSystemConfig()
+	if err != nil {
+		return
+	}
+
 	//parameters := workspaceTemplate.Spec.Parameters
 	serviceManifest, err := createServiceManifest(workspaceTemplate.PortsManifest)
 	if err != nil {
 		return
 	}
 
-	virtualServiceManifest, err := createVirtualServiceManifest(workspaceTemplate.RoutesManifest)
+	virtualServiceManifest, err := createVirtualServiceManifest(workspaceTemplate.RoutesManifest, config)
 	if err != nil {
 		return
 	}
 
-	containersManifest, err := createStatefulSetManifest(workspaceTemplate.ContainersManifest)
+	containersManifest, err := createStatefulSetManifest(workspaceTemplate.ContainersManifest, config)
 	if err != nil {
 		return
 	}
