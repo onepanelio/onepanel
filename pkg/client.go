@@ -3,6 +3,7 @@ package v1
 import (
 	"encoding/base64"
 	"errors"
+	"github.com/ghodss/yaml"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"regexp"
 	"strconv"
@@ -101,6 +102,15 @@ func (c *Client) GetNamespaceConfig(namespace string) (config map[string]string,
 		return
 	}
 	config = configMap.Data
+	s3Conf := ArtifactRepositoryS3Config{}
+
+	err = yaml.Unmarshal([]byte(configMap.Data["artifactRepository"]), &s3Conf)
+	config[artifactRepositoryEndpointKey] = s3Conf.S3.Endpoint
+	config[artifactRepositoryBucketKey] = s3Conf.S3.Bucket
+	config[artifactRepositoryRegionKey] = s3Conf.S3.Region
+	config[artifactRepositoryInsecureKey] = s3Conf.S3.Insecure
+	config[artifactRepositoryAccessKeyValueKey] = s3Conf.S3.AccessKeySecret.Key
+	config[artifactRepositorySecretKeyValueKey] = s3Conf.S3.SecretKeySecret.Key
 
 	secret, err := c.GetSecret(namespace, "onepanel")
 	if err != nil {
