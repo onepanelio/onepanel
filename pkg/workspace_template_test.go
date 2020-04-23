@@ -2,6 +2,8 @@ package v1
 
 import (
 	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
 )
 
@@ -155,7 +157,21 @@ func TestParseContainersInvalid(t *testing.T) {
 }
 
 func TestCreateWorkspaceTemplate(t *testing.T) {
-	c := NewTestClient()
+	c := NewTestClient(&v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "onepanel",
+			Namespace: "onepanel",
+		},
+	}, &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "onepanel",
+			Namespace: "onepanel",
+		},
+		Data: map[string]string{
+			"ONEPANEL_HOST":            "app.demo.onepanel.site",
+			"applicationNodePoolLabel": "beta.kubernetes.io/instance-type",
+		},
+	})
 
 	if err := c.CreateWorkspaceTemplate("rush", workspaceTemplateManifest); err != nil {
 		t.Error(err)
