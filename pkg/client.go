@@ -129,7 +129,7 @@ func (c *Client) GetNamespaceConfig(namespace string) (config map[string]string,
 }
 
 func (c *Client) GetS3Client(namespace string, config map[string]string) (s3Client *s3.Client, err error) {
-	insecure, err := strconv.ParseBool(config[artifactRepositoryInSecureKey])
+	insecure, err := strconv.ParseBool(config[artifactRepositoryInsecureKey])
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
