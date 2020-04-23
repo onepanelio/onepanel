@@ -101,6 +101,8 @@ func createVirtualServiceManifest(routesManifest string) (virtualServiceManifest
 		networking.VirtualService{
 			Http:     httpRoutes,
 			Gateways: []string{"istio-system/ingressgateway"},
+			// TODO: This should be generated when workspace is launched
+			//Hosts: []string{"{{workflow.parameters.name}}-{{workflow.namespace}}.{{}}"},
 		},
 	}
 
@@ -120,8 +122,13 @@ func createStatefulSetManifest(containersManifest string) (statefulSetManifest s
 	}
 
 	volumeClaims := []corev1.PersistentVolumeClaim{}
+	volumeClaimsMapped := make(map[string]bool)
 	for _, c := range containers {
 		for _, v := range c.VolumeMounts {
+			if volumeClaimsMapped[v.Name] {
+				continue
+			}
+
 			volumeClaims = append(volumeClaims, corev1.PersistentVolumeClaim{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: v.Name,
@@ -133,11 +140,13 @@ func createStatefulSetManifest(containersManifest string) (statefulSetManifest s
 					StorageClassName: ptr.String("default"),
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
+							// TODO: Need to get this value from {{workflow.parameters.<volume-name>-size}}
 							"storage": resource.Quantity{},
 						},
 					},
 				},
 			})
+			volumeClaimsMapped[v.Name] = true
 		}
 	}
 
@@ -164,6 +173,10 @@ func createStatefulSetManifest(containersManifest string) (statefulSetManifest s
 					},
 				},
 				Spec: corev1.PodSpec{
+					// TODO: This should be generated when workspace is launched
+					//NodeSelector: map[string]string{
+					//	"{{}}": "{{workflow.parameters.node-pool}}",
+					//},
 					Containers: containers,
 				},
 			},
