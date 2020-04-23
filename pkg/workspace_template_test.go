@@ -155,7 +155,7 @@ func TestParseContainersInvalid(t *testing.T) {
 }
 
 func TestCreateWorkspaceTemplate(t *testing.T) {
-	c := NewTestClient(fakeSystemSecret, fakeSystemConfigMap)
+	c := NewTestClient(mockSystemSecret, mockSystemConfigMap)
 
 	if err := c.CreateWorkspaceTemplate("rush", workspaceTemplateManifest); err != nil {
 		t.Error(err)

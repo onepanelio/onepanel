@@ -8,14 +8,14 @@ import (
 )
 
 var (
-	fakeSystemSecret = &v1.Secret{
+	mockSystemSecret = &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "onepanel",
 			Namespace: "onepanel",
 		},
 	}
 
-	fakeSystemConfigMap = &v1.ConfigMap{
+	mockSystemConfigMap = &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "onepanel",
 			Namespace: "onepanel",
