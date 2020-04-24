@@ -8,7 +8,6 @@ import (
 	networking "istio.io/api/networking/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"log"
 	"sigs.k8s.io/yaml"
 )
 
@@ -227,12 +226,10 @@ func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate Wor
 		return
 	}
 
-	log.Print(string(workflowTemplateManifest))
-
-	//_, err = c.CreateWorkflowTemplate(namespace, &WorkflowTemplate{
-	//	Name:     "Test Workspace",
-	//	Manifest: string(workflowTemplateManifest),
-	//})
+	_, err = c.CreateWorkflowTemplate(namespace, &WorkflowTemplate{
+		Name:     "Test Workspace",
+		Manifest: string(workflowTemplateManifest),
+	})
 
 	return
 }
