@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func parseWorkflowSpec(template string) (workspaceSpec v1.WorkspaceSpec, err error) {
+func parseWorkspaceSpec(template string) (workspaceSpec v1.WorkspaceSpec, err error) {
 	err = yaml.UnmarshalStrict([]byte(template), &workspaceSpec)
 
 	return
@@ -202,7 +202,7 @@ func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate Wor
 	}
 
 	//parameters := workspaceTemplate.Spec.Parameters
-	workspaceSpec, err := parseWorkflowSpec(workspaceTemplate.Manifest)
+	workspaceSpec, err := parseWorkspaceSpec(workspaceTemplate.Manifest)
 	if err != nil {
 		return
 	}

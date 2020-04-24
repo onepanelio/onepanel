@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -58,93 +59,17 @@ routes:
 	}
 )
 
-//func TestParseServicePorts(t *testing.T) {
-//	servicePorts, err := parsePorts(portsManifest)
-//	assert.Nil(t, err)
-//	assert.NotEmpty(t, servicePorts)
-//	assert.Equal(t, servicePorts[0].Name, "http")
-//	assert.Equal(t, servicePorts[1].Name, "https")
-//}
-//
-//func TestParseServicePortsInvalid(t *testing.T) {
-//	template := `
-//- name: http
-//  port: 80
-//  invalid: TCP
-//  targetPort: 80
-//`
-//
-//	_, err := parsePorts(template)
-//	assert.NotNil(t, err)
-//}
-//
-//func TestParseHTTPRoutes(t *testing.T) {
-//	httpRoutes, err := parseRoutes(routesManifest)
-//	assert.Nil(t, err)
-//	assert.NotEmpty(t, httpRoutes)
-//	assert.Equal(t, httpRoutes[0].Match[0].Uri.GetPrefix(), "/")
-//	assert.Equal(t, httpRoutes[1].Route[0].Destination.Port.GetNumber(), uint32(443))
-//}
-//
-//func TestParseHTTPRoutesInvalid(t *testing.T) {
-//	template := `
-//- match:
-//  - invalid:
-//      prefix: /
-//  route:
-//  - destination:
-//      port:
-//        number: 80
-//`
-//
-//	_, err := parseRoutes(template)
-//	assert.NotNil(t, err)
-//}
-//
-//func TestParseVolumeClaims(t *testing.T) {
-//	volumeClaims, err := parseVolumeClaims(volumeClaimsManifest)
-//	assert.Nil(t, err)
-//	assert.NotEmpty(t, volumeClaims)
-//}
-//
-//func TestParseVolumeClaimsInvalid(t *testing.T) {
-//	template := `
-//- metadata:
-//    name: data
-//  invalid:
-//    accessModes: ["ReadWriteOnce"]
-//    storageClassName: default
-//- metadata:
-//    name: db
-//`
-//
-//	_, err := parseVolumeClaims(template)
-//	assert.NotNil(t, err)
-//}
-//
-//func TestParseContainers(t *testing.T) {
-//	containers, err := parseContainers(containersManifest)
-//	assert.Nil(t, err)
-//	assert.NotEmpty(t, containers)
-//	assert.Equal(t, containers[0].Ports[0].ContainerPort, int32(80))
-//	assert.Equal(t, containers[1].Ports[0].ContainerPort, int32(443))
-//}
-//
-//func TestParseContainersInvalid(t *testing.T) {
-//	template := `
-//- name: https
-//  image: nginxdemos/hello
-//  invalid:
-//  - containerPort: 443
-//    name: http
-//  volumeMounts:
-//  - name: data
-//    mountPath: /data
-//`
-//
-//	_, err := parseContainers(template)
-//	assert.NotNil(t, err)
-//}
+func TestParseWorkspaceSpec(t *testing.T) {
+	workspaceSpec, err := parseWorkspaceSpec(workspaceSpecManifest)
+	assert.Nil(t, err)
+	assert.NotEmpty(t, workspaceSpec)
+	assert.Equal(t, workspaceSpec.Ports[0].Name, "http")
+	assert.Equal(t, workspaceSpec.Ports[1].Name, "https")
+	assert.Equal(t, workspaceSpec.Routes[0].Match[0].Uri.GetPrefix(), "/")
+	assert.Equal(t, workspaceSpec.Routes[1].Route[0].Destination.Port.GetNumber(), uint32(443))
+	assert.Equal(t, workspaceSpec.Containers[0].Ports[0].ContainerPort, int32(80))
+	assert.Equal(t, workspaceSpec.Containers[1].Ports[0].ContainerPort, int32(443))
+}
 
 func TestCreateWorkspaceTemplate(t *testing.T) {
 	c := NewTestClient(mockSystemSecret, mockSystemConfigMap)
