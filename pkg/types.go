@@ -402,11 +402,6 @@ func FilePathToExtension(path string) string {
 }
 
 type WorkspaceTemplate struct {
-	ParametersManifest         string
-	VolumeClaimsManifest       string
-	ContainersManifest         string
-	PortsManifest              string
-	RoutesManifest             string
-	AdditionalWorkflowManifest string
-	WorkflowTemplate           WorkflowTemplate
+	Manifest         string
+	WorkflowTemplate WorkflowTemplate
 }
