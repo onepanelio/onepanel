@@ -17,3 +17,7 @@ type Parameter struct {
 	Type    string
 	Options []*ParameterOption
 }
+
+type Arguments struct {
+	Parameters []Parameter `json:"parameters" protobuf:"bytes,1,opt,name=parameters"`
+}

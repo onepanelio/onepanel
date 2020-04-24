@@ -2,6 +2,7 @@ package v1
 
 import (
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	v1 "github.com/onepanelio/core/pkg/apis/core/v1"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	networking "istio.io/api/networking/v1alpha3"
 	appsv1 "k8s.io/api/apps/v1"
@@ -12,43 +13,13 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func parsePorts(template string) (servicePorts []corev1.ServicePort, err error) {
-	if err = yaml.UnmarshalStrict([]byte(template), &servicePorts); err != nil {
-		return
-	}
+func parseWorkflowSpec(template string) (workspaceSpec v1.WorkspaceSpec, err error) {
+	err = yaml.UnmarshalStrict([]byte(template), &workspaceSpec)
 
 	return
 }
 
-func parseRoutes(template string) (HTTPRoutes []*networking.HTTPRoute, err error) {
-	if err = yaml.UnmarshalStrict([]byte(template), &HTTPRoutes); err != nil {
-		return
-	}
-
-	return
-}
-
-func parseVolumeClaims(template string) (persistentVolumeClaims []corev1.PersistentVolumeClaim, err error) {
-	if err = yaml.UnmarshalStrict([]byte(template), &persistentVolumeClaims); err != nil {
-		return
-	}
-
-	return
-}
-
-func parseContainers(template string) (containers []corev1.Container, err error) {
-	if err = yaml.UnmarshalStrict([]byte(template), &containers); err != nil {
-		return
-	}
-
-	return
-}
-
-func createServiceManifest(portsManifest string) (serviceManifest string, err error) {
-	servicePorts, err := parsePorts(portsManifest)
-	if err != nil {
-		return
-	}
+func createServiceManifest(servicePorts []corev1.ServicePort) (serviceManifest string, err error) {
 	service := corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -73,12 +44,7 @@ func createServiceManifest(portsManifest string) (serviceManifest string, err er
 	return
 }
 
-func createVirtualServiceManifest(routesManifest string, config map[string]string) (virtualServiceManifest string, err error) {
-	httpRoutes, err := parseRoutes(routesManifest)
-	if err != nil {
-		return
-	}
-
+func createVirtualServiceManifest(httpRoutes []*networking.HTTPRoute, config map[string]string) (virtualServiceManifest string, err error) {
 	for _, h := range httpRoutes {
 		for _, r := range h.Route {
 			r.Destination.Host = "{{workflow.parameters.name}}"
@@ -113,12 +79,7 @@ func createVirtualServiceManifest(routesManifest string, config map[string]strin
 	return
 }
 
-func createStatefulSetManifest(containersManifest string, config map[string]string) (statefulSetManifest string, err error) {
-	containers, err := parseContainers(containersManifest)
-	if err != nil {
-		return
-	}
-
+func createStatefulSetManifest(containers []corev1.Container, config map[string]string) (statefulSetManifest string, err error) {
 	var volumeClaims []corev1.PersistentVolumeClaim
 	volumeClaimsMapped := make(map[string]bool)
 	for _, c := range containers {
@@ -135,7 +96,7 @@ func createStatefulSetManifest(containersManifest string, config map[string]stri
 					AccessModes: []corev1.PersistentVolumeAccessMode{
 						"ReadWriteOnce",
 					},
-					StorageClassName: ptr.String("default"),
+					StorageClassName: ptr.String("onepanel"),
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
 							// TODO: Need to get this value from {{workflow.parameters.<volume-name>-size}}
@@ -190,10 +151,10 @@ func createStatefulSetManifest(containersManifest string, config map[string]stri
 	return
 }
 
-func unmarshalWorkflowTemplate(serviceManifest, virtualServiceManifest, containersManifest string) (workflowTemplateManifest string, err error) {
+func unmarshalWorkflowTemplate(arguments wfv1.Arguments, serviceManifest, virtualServiceManifest, containersManifest string) (workflowTemplateSpecManifest string, err error) {
 	workflowTemplateSpec := wfv1.WorkflowTemplateSpec{
 		WorkflowSpec: wfv1.WorkflowSpec{
-			Arguments: wfv1.Arguments{},
+			Arguments: arguments,
 			Templates: []wfv1.Template{
 				{
 					Name: "create-workspace",
@@ -242,7 +203,7 @@ func unmarshalWorkflowTemplate(serviceManifest, virtualServiceManifest, containe
 	if err != nil {
 		return
 	}
-	workflowTemplateManifest = string(workflowTemplateSpecManifestBytes)
+	workflowTemplateSpecManifest = string(workflowTemplateSpecManifestBytes)
 
 	return
 }
@@ -255,32 +216,39 @@ func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate Wor
 	}
 
 	//parameters := workspaceTemplate.Spec.Parameters
-	serviceManifest, err := createServiceManifest(workspaceTemplate.PortsManifest)
+	workspaceSpec, err := parseWorkflowSpec(workspaceTemplate.Manifest)
 	if err != nil {
 		return
 	}
 
-	virtualServiceManifest, err := createVirtualServiceManifest(workspaceTemplate.RoutesManifest, config)
+	serviceManifest, err := createServiceManifest(workspaceSpec.Ports)
 	if err != nil {
 		return
 	}
 
-	containersManifest, err := createStatefulSetManifest(workspaceTemplate.ContainersManifest, config)
+	virtualServiceManifest, err := createVirtualServiceManifest(workspaceSpec.Routes, config)
 	if err != nil {
 		return
 	}
 
-	workflowTemplateManifest, err := unmarshalWorkflowTemplate(serviceManifest, virtualServiceManifest, containersManifest)
+	containersManifest, err := createStatefulSetManifest(workspaceSpec.Containers, config)
+	if err != nil {
+		return
+	}
+
+	arguments := wfv1.Arguments{}
+
+	workflowTemplateManifest, err := unmarshalWorkflowTemplate(arguments, serviceManifest, virtualServiceManifest, containersManifest)
 	if err != nil {
 		return
 	}
 
 	log.Print(string(workflowTemplateManifest))
 
-	_, err = c.CreateWorkflowTemplate(namespace, &WorkflowTemplate{
-		Name:     "Test Workspace",
-		Manifest: string(workflowTemplateManifest),
-	})
+	//_, err = c.CreateWorkflowTemplate(namespace, &WorkflowTemplate{
+	//	Name:     "Test Workspace",
+	//	Manifest: string(workflowTemplateManifest),
+	//})
 
 	return
 }
