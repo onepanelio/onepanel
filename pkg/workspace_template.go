@@ -11,8 +11,45 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func parseWorkspaceSpec(template string) (workspaceSpec v1.WorkspaceSpec, err error) {
-	err = yaml.UnmarshalStrict([]byte(template), &workspaceSpec)
+func parseWorkspaceSpec(template string) (spec *v1.WorkspaceSpec, err error) {
+	err = yaml.UnmarshalStrict([]byte(template), &spec)
+
+	return
+}
+
+func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err error) {
+	if spec.Arguments == nil {
+		spec.Arguments = &v1.Arguments{
+			Parameters: []v1.Parameter{},
+		}
+	}
+
+	volumeClaimsMapped := make(map[string]bool)
+	for _, c := range spec.Containers {
+		for _, v := range c.VolumeMounts {
+			if volumeClaimsMapped[v.Name] {
+				continue
+			}
+
+			spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
+				Name: fmt.Sprintf("%v-volume-size", v.Name),
+				Type: "input.number",
+			})
+
+			volumeClaimsMapped[v.Name] = true
+		}
+	}
+
+	var options []*v1.ParameterOption
+	if err = yaml.Unmarshal([]byte(config["applicationNodePoolOptions"]), &options); err != nil {
+		return
+	}
+	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
+		Name:    "node-pool",
+		Value:   options[0].Value,
+		Type:    "select.select",
+		Options: options,
+	})
 
 	return
 }
@@ -89,7 +126,7 @@ func createStatefulSetManifest(containers []corev1.Container, config map[string]
 					"storageClassName": ptr.String("onepanel"),
 					"resources": map[string]interface{}{
 						"requests": map[string]string{
-							"storage": fmt.Sprintf("{{workflow.parameters.%v-size}}", v.Name),
+							"storage": fmt.Sprintf("{{workflow.parameters.%v-volume-size}}Mi", v.Name),
 						},
 					},
 				},
@@ -138,7 +175,7 @@ func createStatefulSetManifest(containers []corev1.Container, config map[string]
 	return
 }
 
-func unmarshalWorkflowTemplate(arguments v1.Arguments, serviceManifest, virtualServiceManifest, containersManifest string) (workflowTemplateSpecManifest string, err error) {
+func unmarshalWorkflowTemplate(arguments *v1.Arguments, serviceManifest, virtualServiceManifest, containersManifest string) (workflowTemplateSpecManifest string, err error) {
 	workflowTemplateSpec := map[string]interface{}{
 		"arguments": arguments,
 		"templates": []wfv1.Template{
@@ -200,9 +237,12 @@ func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate Wor
 		return
 	}
 
-	//parameters := workspaceTemplate.Spec.Parameters
 	workspaceSpec, err := parseWorkspaceSpec(workspaceTemplate.Manifest)
 	if err != nil {
+		return
+	}
+
+	if err = generateArguments(workspaceSpec, config); err != nil {
 		return
 	}
 

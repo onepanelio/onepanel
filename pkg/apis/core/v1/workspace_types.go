@@ -17,7 +17,7 @@ type Workspace struct {
 }
 
 type WorkspaceSpec struct {
-	Arguments  Arguments                  `json:"arguments" protobuf:"bytes,1,opt,name=arguments"`
+	Arguments  *Arguments                 `json:"arguments" protobuf:"bytes,1,opt,name=arguments"`
 	Containers []corev1.Container         `json:"containers" protobuf:"bytes,3,opt,name=containers"`
 	Ports      []corev1.ServicePort       `json:"ports" protobuf:"bytes,4,opt,name=ports"`
 	Routes     []*networking.HTTPRoute    `json:"routes" protobuf:"bytes,5,opt,name=routes"`
