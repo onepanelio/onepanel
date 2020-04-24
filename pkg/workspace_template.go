@@ -24,6 +24,22 @@ func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err er
 		}
 	}
 
+	// Resource action parameter
+	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
+		Name:     "name",
+		Type:     "input.text",
+		Value:    "name",
+		Required: true,
+	})
+
+	// Resource action parameter
+	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
+		Name:  "resource-action",
+		Value: "apply",
+		Type:  "input.hidden",
+	})
+
+	// Volume size parameters
 	volumeClaimsMapped := make(map[string]bool)
 	for _, c := range spec.Containers {
 		for _, v := range c.VolumeMounts {
@@ -32,23 +48,27 @@ func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err er
 			}
 
 			spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
-				Name: fmt.Sprintf("%v-volume-size", v.Name),
-				Type: "input.number",
+				Name:     fmt.Sprintf("%v-volume-size", v.Name),
+				Type:     "input.number",
+				Value:    "20480",
+				Required: true,
 			})
 
 			volumeClaimsMapped[v.Name] = true
 		}
 	}
 
+	// Node pool parameter and options
 	var options []*v1.ParameterOption
 	if err = yaml.Unmarshal([]byte(config["applicationNodePoolOptions"]), &options); err != nil {
 		return
 	}
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
-		Name:    "node-pool",
-		Value:   options[0].Value,
-		Type:    "select.select",
-		Options: options,
+		Name:     "node-pool",
+		Value:    options[0].Value,
+		Type:     "select.select",
+		Options:  options,
+		Required: true,
 	})
 
 	return
@@ -177,7 +197,8 @@ func createStatefulSetManifest(containers []corev1.Container, config map[string]
 
 func unmarshalWorkflowTemplate(arguments *v1.Arguments, serviceManifest, virtualServiceManifest, containersManifest string) (workflowTemplateSpecManifest string, err error) {
 	workflowTemplateSpec := map[string]interface{}{
-		"arguments": arguments,
+		"arguments":  arguments,
+		"entrypoint": "create-workspace",
 		"templates": []wfv1.Template{
 			{
 				Name: "create-workspace",
@@ -188,12 +209,14 @@ func unmarshalWorkflowTemplate(arguments *v1.Arguments, serviceManifest, virtual
 							Template: "create-service-resource",
 						},
 						{
-							Name:     "create-virtual-service",
-							Template: "create-virtual-service-resource",
+							Name:         "create-virtual-service",
+							Template:     "create-virtual-service-resource",
+							Dependencies: []string{"create-service"},
 						},
 						{
-							Name:     "create-stateful-set",
-							Template: "create-stateful-set-resource",
+							Name:         "create-stateful-set",
+							Template:     "create-stateful-set-resource",
+							Dependencies: []string{"create-virtual-service"},
 						},
 					},
 				},
@@ -201,21 +224,21 @@ func unmarshalWorkflowTemplate(arguments *v1.Arguments, serviceManifest, virtual
 			{
 				Name: "create-service-resource",
 				Resource: &wfv1.ResourceTemplate{
-					Action:   "{{workflow.parameters.action}}",
+					Action:   "{{workflow.parameters.resource-action}}",
 					Manifest: serviceManifest,
 				},
 			},
 			{
 				Name: "create-virtual-service-resource",
 				Resource: &wfv1.ResourceTemplate{
-					Action:   "{{workflow.parameters.action}}",
+					Action:   "{{workflow.parameters.resource-action}}",
 					Manifest: virtualServiceManifest,
 				},
 			},
 			{
 				Name: "create-stateful-set-resource",
 				Resource: &wfv1.ResourceTemplate{
-					Action:   "{{workflow.parameters.action}}",
+					Action:   "{{workflow.parameters.resource-action}}",
 					Manifest: containersManifest,
 				},
 			},
