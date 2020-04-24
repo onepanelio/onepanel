@@ -14,8 +14,8 @@ type ParameterOption struct {
 
 type Parameter struct {
 	wfv1.Parameter
-	Type    string
-	Options []*ParameterOption
+	Type    string             `json:"type" protobuf:"bytes,1,opt,name=type"`
+	Options []*ParameterOption `json:"options,omitempty" protobuf:"bytes,2,opt,name=options"`
 }
 
 type Arguments struct {
