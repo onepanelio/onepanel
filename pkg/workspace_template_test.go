@@ -7,11 +7,6 @@ import (
 
 var (
 	workspaceSpecManifest = `
-arguments:
-  parameters:
-    - name: description
-      value: description
-      type: textarea.textarea
 containers:
 - name: http
   image: nginxdemos/hello
