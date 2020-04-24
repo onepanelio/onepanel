@@ -58,7 +58,7 @@ func createVirtualServiceManifest(httpRoutes []*networking.HTTPRoute, config map
 		"spec": networking.VirtualService{
 			Http:     httpRoutes,
 			Gateways: []string{"istio-system/ingressgateway"},
-			Hosts:    []string{"{{workflow.parameters.name}}-{{workflow.namespace}}." + config["ONEPANEL_HOST"]},
+			Hosts:    []string{fmt.Sprintf("{{workflow.parameters.name}}-{{workflow.namespace}}.%v", config["ONEPANEL_HOST"])},
 		},
 	}
 	virtualServiceManifestBytes, err := yaml.Marshal(virtualService)
