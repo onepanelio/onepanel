@@ -1,13 +1,12 @@
 package v1
 
 import (
+	"fmt"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	v1 "github.com/onepanelio/core/pkg/apis/core/v1"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	networking "istio.io/api/networking/v1alpha3"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"sigs.k8s.io/yaml"
@@ -50,26 +49,18 @@ func createVirtualServiceManifest(httpRoutes []*networking.HTTPRoute, config map
 			r.Destination.Host = "{{workflow.parameters.name}}"
 		}
 	}
-
-	virtualService := struct {
-		metav1.TypeMeta
-		metav1.ObjectMeta
-		Spec networking.VirtualService `json:"spec"`
-	}{
-		metav1.TypeMeta{
-			APIVersion: "networking.istio.io/v1alpha3",
-			Kind:       "VirtualService",
-		},
-		metav1.ObjectMeta{
+	virtualService := map[string]interface{}{
+		"apiVersion": "networking.istio.io/v1alpha3",
+		"kind":       "VirtualService",
+		"metadata": metav1.ObjectMeta{
 			Name: "{{workflow.parameters.name}}",
 		},
-		networking.VirtualService{
+		"spec": networking.VirtualService{
 			Http:     httpRoutes,
 			Gateways: []string{"istio-system/ingressgateway"},
 			Hosts:    []string{"{{workflow.parameters.name}}-{{workflow.namespace}}." + config["ONEPANEL_HOST"]},
 		},
 	}
-
 	virtualServiceManifestBytes, err := yaml.Marshal(virtualService)
 	if err != nil {
 		return
@@ -80,7 +71,7 @@ func createVirtualServiceManifest(httpRoutes []*networking.HTTPRoute, config map
 }
 
 func createStatefulSetManifest(containers []corev1.Container, config map[string]string) (statefulSetManifest string, err error) {
-	var volumeClaims []corev1.PersistentVolumeClaim
+	var volumeClaims []map[string]interface{}
 	volumeClaimsMapped := make(map[string]bool)
 	for _, c := range containers {
 		for _, v := range c.VolumeMounts {
@@ -88,44 +79,42 @@ func createStatefulSetManifest(containers []corev1.Container, config map[string]
 				continue
 			}
 
-			volumeClaims = append(volumeClaims, corev1.PersistentVolumeClaim{
-				ObjectMeta: metav1.ObjectMeta{
+			volumeClaims = append(volumeClaims, map[string]interface{}{
+				"metadata": metav1.ObjectMeta{
 					Name: v.Name,
 				},
-				Spec: corev1.PersistentVolumeClaimSpec{
-					AccessModes: []corev1.PersistentVolumeAccessMode{
+				"spec": map[string]interface{}{
+					"accessModes": []corev1.PersistentVolumeAccessMode{
 						"ReadWriteOnce",
 					},
-					StorageClassName: ptr.String("onepanel"),
-					Resources: corev1.ResourceRequirements{
-						Requests: corev1.ResourceList{
-							// TODO: Need to get this value from {{workflow.parameters.<volume-name>-size}}
-							"storage": resource.Quantity{},
+					"storageClassName": ptr.String("onepanel"),
+					"resources": map[string]interface{}{
+						"requests": map[string]string{
+							"storage": fmt.Sprintf("{{workflow.parameters.%v-size}}", v.Name),
 						},
 					},
 				},
 			})
+
 			volumeClaimsMapped[v.Name] = true
 		}
 	}
 
-	statefulSet := appsv1.StatefulSet{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "apps/v1",
-			Kind:       "StatefulSet",
-		},
-		ObjectMeta: metav1.ObjectMeta{
+	statefulSet := map[string]interface{}{
+		"apiVersion": "apps/v1",
+		"kind":       "StatefulSet",
+		"metadata": metav1.ObjectMeta{
 			Name: "{{workflow.parameters.name}}",
 		},
-		Spec: appsv1.StatefulSetSpec{
-			Replicas:    ptr.Int32(1),
-			ServiceName: "{{workflow.parameters.name}}",
-			Selector: &metav1.LabelSelector{
+		"spec": map[string]interface{}{
+			"replicas":    1,
+			"serviceName": "{{workflow.parameters.name}}",
+			"selector": &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app": "{{workflow.parameters.name}}",
 				},
 			},
-			Template: corev1.PodTemplateSpec{
+			"template": corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
 						"app": "{{workflow.parameters.name}}",
@@ -138,10 +127,9 @@ func createStatefulSetManifest(containers []corev1.Container, config map[string]
 					Containers: containers,
 				},
 			},
-			VolumeClaimTemplates: volumeClaims,
+			"volumeClaimTemplates": volumeClaims,
 		},
 	}
-
 	statefulSetManifestBytes, err := yaml.Marshal(statefulSet)
 	if err != nil {
 		return
@@ -151,50 +139,48 @@ func createStatefulSetManifest(containers []corev1.Container, config map[string]
 	return
 }
 
-func unmarshalWorkflowTemplate(arguments wfv1.Arguments, serviceManifest, virtualServiceManifest, containersManifest string) (workflowTemplateSpecManifest string, err error) {
-	workflowTemplateSpec := wfv1.WorkflowTemplateSpec{
-		WorkflowSpec: wfv1.WorkflowSpec{
-			Arguments: arguments,
-			Templates: []wfv1.Template{
-				{
-					Name: "create-workspace",
-					DAG: &wfv1.DAGTemplate{
-						Tasks: []wfv1.DAGTask{
-							{
-								Name:     "create-service",
-								Template: "create-service-resource",
-							},
-							{
-								Name:     "create-virtual-service",
-								Template: "create-virtual-service-resource",
-							},
-							{
-								Name:     "create-stateful-set",
-								Template: "create-stateful-set-resource",
-							},
+func unmarshalWorkflowTemplate(arguments v1.Arguments, serviceManifest, virtualServiceManifest, containersManifest string) (workflowTemplateSpecManifest string, err error) {
+	workflowTemplateSpec := map[string]interface{}{
+		"arguments": arguments,
+		"templates": []wfv1.Template{
+			{
+				Name: "create-workspace",
+				DAG: &wfv1.DAGTemplate{
+					Tasks: []wfv1.DAGTask{
+						{
+							Name:     "create-service",
+							Template: "create-service-resource",
+						},
+						{
+							Name:     "create-virtual-service",
+							Template: "create-virtual-service-resource",
+						},
+						{
+							Name:     "create-stateful-set",
+							Template: "create-stateful-set-resource",
 						},
 					},
 				},
-				{
-					Name: "create-service-resource",
-					Resource: &wfv1.ResourceTemplate{
-						Action:   "{{workflow.parameters.action}}",
-						Manifest: serviceManifest,
-					},
+			},
+			{
+				Name: "create-service-resource",
+				Resource: &wfv1.ResourceTemplate{
+					Action:   "{{workflow.parameters.action}}",
+					Manifest: serviceManifest,
 				},
-				{
-					Name: "create-virtual-service-resource",
-					Resource: &wfv1.ResourceTemplate{
-						Action:   "{{workflow.parameters.action}}",
-						Manifest: virtualServiceManifest,
-					},
+			},
+			{
+				Name: "create-virtual-service-resource",
+				Resource: &wfv1.ResourceTemplate{
+					Action:   "{{workflow.parameters.action}}",
+					Manifest: virtualServiceManifest,
 				},
-				{
-					Name: "create-stateful-set-resource",
-					Resource: &wfv1.ResourceTemplate{
-						Action:   "{{workflow.parameters.action}}",
-						Manifest: containersManifest,
-					},
+			},
+			{
+				Name: "create-stateful-set-resource",
+				Resource: &wfv1.ResourceTemplate{
+					Action:   "{{workflow.parameters.action}}",
+					Manifest: containersManifest,
 				},
 			},
 		},
@@ -236,9 +222,7 @@ func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate Wor
 		return
 	}
 
-	arguments := wfv1.Arguments{}
-
-	workflowTemplateManifest, err := unmarshalWorkflowTemplate(arguments, serviceManifest, virtualServiceManifest, containersManifest)
+	workflowTemplateManifest, err := unmarshalWorkflowTemplate(workspaceSpec.Arguments, serviceManifest, virtualServiceManifest, containersManifest)
 	if err != nil {
 		return
 	}
