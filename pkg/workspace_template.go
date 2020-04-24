@@ -3,13 +3,12 @@ package v1
 import (
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/onepanelio/core/pkg/util/ptr"
-	"k8s.io/apimachinery/pkg/api/resource"
-	"log"
-
 	networking "istio.io/api/networking/v1alpha3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"log"
 	"sigs.k8s.io/yaml"
 )
 
@@ -192,60 +191,58 @@ func createStatefulSetManifest(containersManifest string, config map[string]stri
 }
 
 func unmarshalWorkflowTemplate(serviceManifest, virtualServiceManifest, containersManifest string) (workflowTemplateManifest string, err error) {
-	workflowTemplate := wfv1.WorkflowTemplate{
-		Spec: wfv1.WorkflowTemplateSpec{
-			WorkflowSpec: wfv1.WorkflowSpec{
-				Arguments: wfv1.Arguments{},
-				Templates: []wfv1.Template{
-					{
-						Name: "create-workspace",
-						DAG: &wfv1.DAGTemplate{
-							Tasks: []wfv1.DAGTask{
-								{
-									Name:     "create-service",
-									Template: "create-service-resource",
-								},
-								{
-									Name:     "create-virtual-service",
-									Template: "create-virtual-service-resource",
-								},
-								{
-									Name:     "create-stateful-set",
-									Template: "create-stateful-set-resource",
-								},
+	workflowTemplateSpec := wfv1.WorkflowTemplateSpec{
+		WorkflowSpec: wfv1.WorkflowSpec{
+			Arguments: wfv1.Arguments{},
+			Templates: []wfv1.Template{
+				{
+					Name: "create-workspace",
+					DAG: &wfv1.DAGTemplate{
+						Tasks: []wfv1.DAGTask{
+							{
+								Name:     "create-service",
+								Template: "create-service-resource",
+							},
+							{
+								Name:     "create-virtual-service",
+								Template: "create-virtual-service-resource",
+							},
+							{
+								Name:     "create-stateful-set",
+								Template: "create-stateful-set-resource",
 							},
 						},
 					},
-					{
-						Name: "create-service-resource",
-						Resource: &wfv1.ResourceTemplate{
-							Action:   "{{workflow.parameters.action}}",
-							Manifest: serviceManifest,
-						},
+				},
+				{
+					Name: "create-service-resource",
+					Resource: &wfv1.ResourceTemplate{
+						Action:   "{{workflow.parameters.action}}",
+						Manifest: serviceManifest,
 					},
-					{
-						Name: "create-virtual-service-resource",
-						Resource: &wfv1.ResourceTemplate{
-							Action:   "{{workflow.parameters.action}}",
-							Manifest: virtualServiceManifest,
-						},
+				},
+				{
+					Name: "create-virtual-service-resource",
+					Resource: &wfv1.ResourceTemplate{
+						Action:   "{{workflow.parameters.action}}",
+						Manifest: virtualServiceManifest,
 					},
-					{
-						Name: "create-stateful-set-resource",
-						Resource: &wfv1.ResourceTemplate{
-							Action:   "{{workflow.parameters.action}}",
-							Manifest: containersManifest,
-						},
+				},
+				{
+					Name: "create-stateful-set-resource",
+					Resource: &wfv1.ResourceTemplate{
+						Action:   "{{workflow.parameters.action}}",
+						Manifest: containersManifest,
 					},
 				},
 			},
 		},
 	}
-	workflowTemplateManifestBytes, err := yaml.Marshal(workflowTemplate)
+	workflowTemplateSpecManifestBytes, err := yaml.Marshal(workflowTemplateSpec)
 	if err != nil {
 		return
 	}
-	workflowTemplateManifest = string(workflowTemplateManifestBytes)
+	workflowTemplateManifest = string(workflowTemplateSpecManifestBytes)
 
 	return
 }
@@ -278,11 +275,12 @@ func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate Wor
 		return
 	}
 
-	//_, err = c.CreateWorkflowTemplate(namespace, &WorkflowTemplate{
-	//	Name: "test",
-	//	Manifest: string(workflowManifest),
-	//})
 	log.Print(string(workflowTemplateManifest))
+
+	_, err = c.CreateWorkflowTemplate(namespace, &WorkflowTemplate{
+		Name:     "Test Workspace",
+		Manifest: string(workflowTemplateManifest),
+	})
 
 	return
 }
