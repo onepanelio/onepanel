@@ -31,6 +31,7 @@ require (
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20200122045848-3419fae592fc
 	google.golang.org/genproto v0.0.0-20200413115906-b5235f65be36
 	google.golang.org/grpc v1.28.0
+	google.golang.org/protobuf v1.21.0
 	gopkg.in/yaml.v2 v2.2.8
 	istio.io/api v0.0.0-20200107183329-ed4b507c54e1
 	k8s.io/api v0.16.4
