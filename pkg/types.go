@@ -420,6 +420,9 @@ type ArtifactRepositoryS3Config struct {
 }
 
 type WorkspaceTemplate struct {
+	UID              string
+	Name             string
+	Version          int64
 	Manifest         string
 	WorkflowTemplate WorkflowTemplate
 }

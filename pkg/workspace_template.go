@@ -26,7 +26,7 @@ func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err er
 
 	// Resource action parameter
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
-		Name:     "name",
+		Name:     "op-name",
 		Type:     "input.text",
 		Value:    "name",
 		Required: true,
@@ -34,7 +34,7 @@ func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err er
 
 	// Resource action parameter
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
-		Name:  "resource-action",
+		Name:  "op-resource-action",
 		Value: "apply",
 		Type:  "input.hidden",
 	})
@@ -48,7 +48,7 @@ func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err er
 			}
 
 			spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
-				Name:     fmt.Sprintf("%v-volume-size", v.Name),
+				Name:     fmt.Sprintf("op-%v-volume-size", v.Name),
 				Type:     "input.number",
 				Value:    "20480",
 				Required: true,
@@ -64,7 +64,7 @@ func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err er
 		return
 	}
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
-		Name:     "node-pool",
+		Name:     "op-node-pool",
 		Value:    options[0].Value,
 		Type:     "select.select",
 		Options:  options,
@@ -81,12 +81,12 @@ func createServiceManifest(servicePorts []corev1.ServicePort) (serviceManifest s
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "{{workflow.parameters.name}}",
+			Name: "{{workflow.parameters.op-name}}",
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: servicePorts,
 			Selector: map[string]string{
-				"app": "{{workflow.parameters.name}}",
+				"app": "{{workflow.parameters.op-name}}",
 			},
 		},
 	}
@@ -102,19 +102,19 @@ func createServiceManifest(servicePorts []corev1.ServicePort) (serviceManifest s
 func createVirtualServiceManifest(httpRoutes []*networking.HTTPRoute, config map[string]string) (virtualServiceManifest string, err error) {
 	for _, h := range httpRoutes {
 		for _, r := range h.Route {
-			r.Destination.Host = "{{workflow.parameters.name}}"
+			r.Destination.Host = "{{workflow.parameters.op-name}}"
 		}
 	}
 	virtualService := map[string]interface{}{
 		"apiVersion": "networking.istio.io/v1alpha3",
 		"kind":       "VirtualService",
 		"metadata": metav1.ObjectMeta{
-			Name: "{{workflow.parameters.name}}",
+			Name: "{{workflow.parameters.op-name}}",
 		},
 		"spec": networking.VirtualService{
 			Http:     httpRoutes,
 			Gateways: []string{"istio-system/ingressgateway"},
-			Hosts:    []string{fmt.Sprintf("{{workflow.parameters.name}}-{{workflow.namespace}}.%v", config["ONEPANEL_HOST"])},
+			Hosts:    []string{fmt.Sprintf("{{workflow.parameters.op-name}}-{{workflow.namespace}}.%v", config["ONEPANEL_HOST"])},
 		},
 	}
 	virtualServiceManifestBytes, err := yaml.Marshal(virtualService)
@@ -146,7 +146,7 @@ func createStatefulSetManifest(containers []corev1.Container, config map[string]
 					"storageClassName": ptr.String("onepanel"),
 					"resources": map[string]interface{}{
 						"requests": map[string]string{
-							"storage": fmt.Sprintf("{{workflow.parameters.%v-volume-size}}Mi", v.Name),
+							"storage": fmt.Sprintf("{{workflow.parameters.op-%v-volume-size}}Mi", v.Name),
 						},
 					},
 				},
@@ -160,25 +160,25 @@ func createStatefulSetManifest(containers []corev1.Container, config map[string]
 		"apiVersion": "apps/v1",
 		"kind":       "StatefulSet",
 		"metadata": metav1.ObjectMeta{
-			Name: "{{workflow.parameters.name}}",
+			Name: "{{workflow.parameters.op-name}}",
 		},
 		"spec": map[string]interface{}{
 			"replicas":    1,
-			"serviceName": "{{workflow.parameters.name}}",
+			"serviceName": "{{workflow.parameters.op-name}}",
 			"selector": &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": "{{workflow.parameters.name}}",
+					"app": "{{workflow.parameters.op-name}}",
 				},
 			},
 			"template": corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": "{{workflow.parameters.name}}",
+						"app": "{{workflow.parameters.op-name}}",
 					},
 				},
 				Spec: corev1.PodSpec{
 					NodeSelector: map[string]string{
-						config["applicationNodePoolLabel"]: "{{workflow.parameters.node-pool}}",
+						config["applicationNodePoolLabel"]: "{{workflow.parameters.op-node-pool}}",
 					},
 					Containers: containers,
 				},
@@ -224,21 +224,21 @@ func unmarshalWorkflowTemplate(arguments *v1.Arguments, serviceManifest, virtual
 			{
 				Name: "create-service-resource",
 				Resource: &wfv1.ResourceTemplate{
-					Action:   "{{workflow.parameters.resource-action}}",
+					Action:   "{{workflow.parameters.op-resource-action}}",
 					Manifest: serviceManifest,
 				},
 			},
 			{
 				Name: "create-virtual-service-resource",
 				Resource: &wfv1.ResourceTemplate{
-					Action:   "{{workflow.parameters.resource-action}}",
+					Action:   "{{workflow.parameters.op-resource-action}}",
 					Manifest: virtualServiceManifest,
 				},
 			},
 			{
 				Name: "create-stateful-set-resource",
 				Resource: &wfv1.ResourceTemplate{
-					Action:   "{{workflow.parameters.resource-action}}",
+					Action:   "{{workflow.parameters.op-resource-action}}",
 					Manifest: containersManifest,
 				},
 			},
@@ -290,7 +290,7 @@ func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate Wor
 	}
 
 	_, err = c.CreateWorkflowTemplate(namespace, &WorkflowTemplate{
-		Name:     "Test Workspace",
+		Name:     workspaceTemplate.Name,
 		Manifest: string(workflowTemplateManifest),
 	})
 
