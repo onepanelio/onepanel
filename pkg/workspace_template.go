@@ -322,45 +322,45 @@ metadata:
 }
 
 // CreateWorkspaceTemplate creates a template for Workspaces
-func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate WorkspaceTemplate) (err error) {
+func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate *WorkspaceTemplate) (*WorkspaceTemplate, error) {
 	config, err := c.GetSystemConfig()
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	workspaceSpec, err := parseWorkspaceSpec(workspaceTemplate.Manifest)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	if err = generateArguments(workspaceSpec, config); err != nil {
-		return
+		return nil, err
 	}
 
 	serviceManifest, err := createServiceManifest(workspaceSpec)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	virtualServiceManifest, err := createVirtualServiceManifest(workspaceSpec, config)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	containersManifest, err := createStatefulSetManifest(workspaceSpec, config)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	workflowTemplateManifest, err := unmarshalWorkflowTemplate(workspaceSpec, serviceManifest, virtualServiceManifest, containersManifest)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	_, err = c.CreateWorkflowTemplate(namespace, &WorkflowTemplate{
+	workspaceTemplate.WorkflowTemplate, err = c.CreateWorkflowTemplate(namespace, &WorkflowTemplate{
 		Name:     workspaceTemplate.Name,
 		Manifest: string(workflowTemplateManifest),
 	})
 
-	return
+	return workspaceTemplate, nil
 }

@@ -21,15 +21,16 @@ func (s *WorkspaceTemplateServer) CreateWorkspaceTemplate(ctx context.Context, r
 		return nil, err
 	}
 
-	workspaceTemplate := v1.WorkspaceTemplate{
+	workspaceTemplate := &v1.WorkspaceTemplate{
 		Name:     req.WorkspaceTemplate.Name,
 		Manifest: req.WorkspaceTemplate.Manifest,
 	}
-
-	err = client.CreateWorkspaceTemplate(req.Namespace, workspaceTemplate)
+	workspaceTemplate, err = client.CreateWorkspaceTemplate(req.Namespace, workspaceTemplate)
 	if err != nil {
 		return nil, err
 	}
+
+	req.WorkspaceTemplate.WorkflowTemplate = apiWorkflowTemplate(workspaceTemplate.WorkflowTemplate)
 
 	return req.WorkspaceTemplate, nil
 }
