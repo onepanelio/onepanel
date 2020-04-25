@@ -81,7 +81,7 @@ func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err er
 	return
 }
 
-func createServiceManifest(servicePorts []corev1.ServicePort) (serviceManifest string, err error) {
+func createServiceManifest(spec *v1.WorkspaceSpec) (serviceManifest string, err error) {
 	service := corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -91,7 +91,7 @@ func createServiceManifest(servicePorts []corev1.ServicePort) (serviceManifest s
 			Name: "{{workflow.parameters.op-name}}",
 		},
 		Spec: corev1.ServiceSpec{
-			Ports: servicePorts,
+			Ports: spec.Ports,
 			Selector: map[string]string{
 				"app": "{{workflow.parameters.op-name}}",
 			},
@@ -106,8 +106,8 @@ func createServiceManifest(servicePorts []corev1.ServicePort) (serviceManifest s
 	return
 }
 
-func createVirtualServiceManifest(httpRoutes []*networking.HTTPRoute, config map[string]string) (virtualServiceManifest string, err error) {
-	for _, h := range httpRoutes {
+func createVirtualServiceManifest(spec *v1.WorkspaceSpec, config map[string]string) (virtualServiceManifest string, err error) {
+	for _, h := range spec.Routes {
 		for _, r := range h.Route {
 			r.Destination.Host = "{{workflow.parameters.op-name}}"
 		}
@@ -119,7 +119,7 @@ func createVirtualServiceManifest(httpRoutes []*networking.HTTPRoute, config map
 			Name: "{{workflow.parameters.op-name}}",
 		},
 		"spec": networking.VirtualService{
-			Http:     httpRoutes,
+			Http:     spec.Routes,
 			Gateways: []string{"istio-system/ingressgateway"},
 			Hosts:    []string{fmt.Sprintf("{{workflow.parameters.op-name}}-{{workflow.namespace}}.%v", config["ONEPANEL_HOST"])},
 		},
@@ -133,10 +133,10 @@ func createVirtualServiceManifest(httpRoutes []*networking.HTTPRoute, config map
 	return
 }
 
-func createStatefulSetManifest(containers []corev1.Container, config map[string]string) (statefulSetManifest string, err error) {
+func createStatefulSetManifest(workspaceSpec *v1.WorkspaceSpec, config map[string]string) (statefulSetManifest string, err error) {
 	var volumeClaims []map[string]interface{}
 	volumeClaimsMapped := make(map[string]bool)
-	for _, c := range containers {
+	for _, c := range workspaceSpec.Containers {
 		for _, v := range c.VolumeMounts {
 			if volumeClaimsMapped[v.Name] {
 				continue
@@ -187,7 +187,7 @@ func createStatefulSetManifest(containers []corev1.Container, config map[string]
 					NodeSelector: map[string]string{
 						config["applicationNodePoolLabel"]: "{{workflow.parameters.op-node-pool}}",
 					},
-					Containers: containers,
+					Containers: workspaceSpec.Containers,
 				},
 			},
 			"volumeClaimTemplates": volumeClaims,
@@ -202,9 +202,30 @@ func createStatefulSetManifest(containers []corev1.Container, config map[string]
 	return
 }
 
-func unmarshalWorkflowTemplate(arguments *v1.Arguments, serviceManifest, virtualServiceManifest, containersManifest string) (workflowTemplateSpecManifest string, err error) {
+func unmarshalWorkflowTemplate(spec *v1.WorkspaceSpec, serviceManifest, virtualServiceManifest, containersManifest string) (workflowTemplateSpecManifest string, err error) {
+	var volumeClaimItems []wfv1.Item
+	volumeClaimsMapped := make(map[string]bool)
+	for _, c := range spec.Containers {
+		for _, v := range c.VolumeMounts {
+			if volumeClaimsMapped[v.Name] {
+				continue
+			}
+
+			volumeClaimItems = append(volumeClaimItems, wfv1.Item{Type: wfv1.String, StrVal: v.Name})
+
+			volumeClaimsMapped[v.Name] = true
+		}
+	}
+
+	deletePVCManifest := `apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{inputs.parameters.op-pvc-name}}-{{workflow.parameters.op-name}}-0
+`
+
+	// TODO: Consider storing this as a Go template in a "settings" database table
 	workflowTemplateSpec := map[string]interface{}{
-		"arguments":  arguments,
+		"arguments":  spec.Arguments,
 		"entrypoint": "workspace",
 		"templates": []wfv1.Template{
 			{
@@ -239,12 +260,13 @@ func unmarshalWorkflowTemplate(arguments *v1.Arguments, serviceManifest, virtual
 							Arguments: wfv1.Arguments{
 								Parameters: []wfv1.Parameter{
 									{
-										Name:  "pvc-name",
+										Name:  "op-pvc-name",
 										Value: ptr.String("{{item}}"),
 									},
 								},
 							},
-							When: "{{workflow.parameters.op-workspace-action}} == delete",
+							When:      "{{workflow.parameters.op-workspace-action}} == delete",
+							WithItems: volumeClaimItems,
 						},
 					},
 				},
@@ -280,9 +302,12 @@ func unmarshalWorkflowTemplate(arguments *v1.Arguments, serviceManifest, virtual
 			},
 			{
 				Name: "delete-pvc-resource",
+				Inputs: wfv1.Inputs{
+					Parameters: []wfv1.Parameter{{Name: "op-pvc-name"}},
+				},
 				Resource: &wfv1.ResourceTemplate{
 					Action:   "{{workflow.parameters.op-resource-action}}",
-					Manifest: "",
+					Manifest: deletePVCManifest,
 				},
 			},
 		},
@@ -312,22 +337,22 @@ func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate Wor
 		return
 	}
 
-	serviceManifest, err := createServiceManifest(workspaceSpec.Ports)
+	serviceManifest, err := createServiceManifest(workspaceSpec)
 	if err != nil {
 		return
 	}
 
-	virtualServiceManifest, err := createVirtualServiceManifest(workspaceSpec.Routes, config)
+	virtualServiceManifest, err := createVirtualServiceManifest(workspaceSpec, config)
 	if err != nil {
 		return
 	}
 
-	containersManifest, err := createStatefulSetManifest(workspaceSpec.Containers, config)
+	containersManifest, err := createStatefulSetManifest(workspaceSpec, config)
 	if err != nil {
 		return
 	}
 
-	workflowTemplateManifest, err := unmarshalWorkflowTemplate(workspaceSpec.Arguments, serviceManifest, virtualServiceManifest, containersManifest)
+	workflowTemplateManifest, err := unmarshalWorkflowTemplate(workspaceSpec, serviceManifest, virtualServiceManifest, containersManifest)
 	if err != nil {
 		return
 	}
