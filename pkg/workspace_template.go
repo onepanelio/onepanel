@@ -39,6 +39,26 @@ func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err er
 		Type:  "input.hidden",
 	})
 
+	// Workspace action
+	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
+		Name:  "op-workspace-action",
+		Value: "create",
+		Type:  "input.hidden",
+	})
+
+	// Node pool parameter and options
+	var options []*v1.ParameterOption
+	if err = yaml.Unmarshal([]byte(config["applicationNodePoolOptions"]), &options); err != nil {
+		return
+	}
+	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
+		Name:     "op-node-pool",
+		Value:    options[0].Value,
+		Type:     "select.select",
+		Options:  options,
+		Required: true,
+	})
+
 	// Volume size parameters
 	volumeClaimsMapped := make(map[string]bool)
 	for _, c := range spec.Containers {
@@ -57,19 +77,6 @@ func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err er
 			volumeClaimsMapped[v.Name] = true
 		}
 	}
-
-	// Node pool parameter and options
-	var options []*v1.ParameterOption
-	if err = yaml.Unmarshal([]byte(config["applicationNodePoolOptions"]), &options); err != nil {
-		return
-	}
-	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
-		Name:     "op-node-pool",
-		Value:    options[0].Value,
-		Type:     "select.select",
-		Options:  options,
-		Required: true,
-	})
 
 	return
 }
@@ -198,48 +205,84 @@ func createStatefulSetManifest(containers []corev1.Container, config map[string]
 func unmarshalWorkflowTemplate(arguments *v1.Arguments, serviceManifest, virtualServiceManifest, containersManifest string) (workflowTemplateSpecManifest string, err error) {
 	workflowTemplateSpec := map[string]interface{}{
 		"arguments":  arguments,
-		"entrypoint": "create-workspace",
+		"entrypoint": "workspace",
 		"templates": []wfv1.Template{
 			{
-				Name: "create-workspace",
+				Name: "workspace",
 				DAG: &wfv1.DAGTemplate{
 					Tasks: []wfv1.DAGTask{
 						{
-							Name:     "create-service",
-							Template: "create-service-resource",
+							Name:     "service",
+							Template: "service-resource",
 						},
 						{
-							Name:         "create-virtual-service",
-							Template:     "create-virtual-service-resource",
-							Dependencies: []string{"create-service"},
+							Name:         "virtual-service",
+							Template:     "virtual-service-resource",
+							Dependencies: []string{"service"},
 						},
 						{
-							Name:         "create-stateful-set",
-							Template:     "create-stateful-set-resource",
-							Dependencies: []string{"create-virtual-service"},
+							Name:         "stateful-set",
+							Template:     "stateful-set-resource",
+							Dependencies: []string{"virtual-service"},
+							When:         "{{workflow.parameters.op-workspace-action}} == create || {{workflow.parameters.op-workspace-action}} == update",
+						},
+						{
+							Name:         "delete-stateful-set",
+							Template:     "delete-stateful-set-resource",
+							Dependencies: []string{"virtual-service"},
+							When:         "{{workflow.parameters.op-workspace-action}} == pause || {{workflow.parameters.op-workspace-action}} == delete",
+						},
+						{
+							Name:         "delete-pvc",
+							Template:     "delete-pvc-resource",
+							Dependencies: []string{"delete-stateful-set"},
+							Arguments: wfv1.Arguments{
+								Parameters: []wfv1.Parameter{
+									{
+										Name:  "pvc-name",
+										Value: ptr.String("{{item}}"),
+									},
+								},
+							},
+							When: "{{workflow.parameters.op-workspace-action}} == delete",
 						},
 					},
 				},
 			},
 			{
-				Name: "create-service-resource",
+				Name: "service-resource",
 				Resource: &wfv1.ResourceTemplate{
 					Action:   "{{workflow.parameters.op-resource-action}}",
 					Manifest: serviceManifest,
 				},
 			},
 			{
-				Name: "create-virtual-service-resource",
+				Name: "virtual-service-resource",
 				Resource: &wfv1.ResourceTemplate{
 					Action:   "{{workflow.parameters.op-resource-action}}",
 					Manifest: virtualServiceManifest,
 				},
 			},
 			{
-				Name: "create-stateful-set-resource",
+				Name: "stateful-set-resource",
+				Resource: &wfv1.ResourceTemplate{
+					Action:           "{{workflow.parameters.op-resource-action}}",
+					Manifest:         containersManifest,
+					SuccessCondition: "status.readyReplicas > 0",
+				},
+			},
+			{
+				Name: "delete-stateful-set-resource",
 				Resource: &wfv1.ResourceTemplate{
 					Action:   "{{workflow.parameters.op-resource-action}}",
 					Manifest: containersManifest,
+				},
+			},
+			{
+				Name: "delete-pvc-resource",
+				Resource: &wfv1.ResourceTemplate{
+					Action:   "{{workflow.parameters.op-resource-action}}",
+					Manifest: "",
 				},
 			},
 		},
