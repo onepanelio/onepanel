@@ -424,5 +424,5 @@ type WorkspaceTemplate struct {
 	Name             string
 	Version          int64
 	Manifest         string
-	WorkflowTemplate WorkflowTemplate
+	WorkflowTemplate *WorkflowTemplate
 }
