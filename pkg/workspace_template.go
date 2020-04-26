@@ -32,21 +32,21 @@ func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err er
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
 		Name:     "op-name",
 		Type:     "input.text",
-		Value:    "name",
+		Value:    ptr.String("name"),
 		Required: true,
 	})
 
 	// Resource action parameter
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
 		Name:  "op-resource-action",
-		Value: "apply",
+		Value: ptr.String("apply"),
 		Type:  "input.hidden",
 	})
 
 	// Workspace action
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
 		Name:  "op-workspace-action",
-		Value: "create",
+		Value: ptr.String("create"),
 		Type:  "input.hidden",
 	})
 
@@ -57,7 +57,7 @@ func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err er
 	}
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
 		Name:     "op-node-pool",
-		Value:    options[0].Value,
+		Value:    ptr.String(options[0].Value),
 		Type:     "select.select",
 		Options:  options,
 		Required: true,
@@ -74,7 +74,7 @@ func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err er
 			spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
 				Name:     fmt.Sprintf("op-%v-volume-size", v.Name),
 				Type:     "input.number",
-				Value:    "20480",
+				Value:    ptr.String("20480"),
 				Required: true,
 			})
 
