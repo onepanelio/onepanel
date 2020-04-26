@@ -411,16 +411,7 @@ func (c *Client) getWorkspaceTemplateByName(namespace, name string) (workspaceTe
 	return
 }
 
-// CreateWorkspaceTemplate creates a template for Workspaces
-func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate *WorkspaceTemplate) (*WorkspaceTemplate, error) {
-	existingWorkspaceTemplate, err := c.getWorkspaceTemplateByName(namespace, workspaceTemplate.Name)
-	if err != nil {
-		return nil, err
-	}
-	if existingWorkspaceTemplate != nil {
-		return nil, util.NewUserError(codes.AlreadyExists, "Workspace template already exists.")
-	}
-
+func (c *Client) generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *WorkspaceTemplate) (workflowTemplate *WorkflowTemplate, err error) {
 	config, err := c.GetSystemConfig()
 	if err != nil {
 		return nil, err
@@ -455,10 +446,40 @@ func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 		return nil, err
 	}
 
-	workspaceTemplate.WorkflowTemplate = &WorkflowTemplate{
+	workflowTemplate = &WorkflowTemplate{
 		Name:     workspaceTemplate.Name,
 		Manifest: string(workflowTemplateManifest),
 	}
+
+	return workflowTemplate, nil
+}
+
+// GetWorkspaceTemplateWorkflowTemplate generates and returns a workflowTemplate for a given workspaceTemplate manifest
+func (c *Client) GetWorkspaceTemplateWorkflowTemplate(workspaceTemplate *WorkspaceTemplate) (*WorkspaceTemplate, error) {
+	workflowTemplate, err := c.generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate)
+	if err != nil {
+		return nil, err
+	}
+	workspaceTemplate.WorkflowTemplate = workflowTemplate
+
+	return workspaceTemplate, nil
+}
+
+// CreateWorkspaceTemplate creates a template for Workspaces
+func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate *WorkspaceTemplate) (*WorkspaceTemplate, error) {
+	existingWorkspaceTemplate, err := c.getWorkspaceTemplateByName(namespace, workspaceTemplate.Name)
+	if err != nil {
+		return nil, err
+	}
+	if existingWorkspaceTemplate != nil {
+		return nil, util.NewUserError(codes.AlreadyExists, "Workspace template already exists.")
+	}
+
+	workspaceTemplate.WorkflowTemplate, err = c.generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate)
+	if err != nil {
+		return nil, err
+	}
+
 	workspaceTemplate, err = c.createWorkspaceTemplate(namespace, workspaceTemplate)
 	if err != nil {
 		return nil, err
