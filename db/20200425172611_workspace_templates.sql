@@ -5,7 +5,6 @@ CREATE TABLE workspace_templates
     uid                     varchar(36) UNIQUE NOT NULL CHECK(uid <> ''),
     name                    text NOT NULL CHECK(name <> ''),
     namespace               varchar(36) NOT NULL,
-    is_archived             boolean DEFAULT false,
 
     workflow_template_id    integer NOT NULL REFERENCES workflow_templates ON DELETE CASCADE,
 

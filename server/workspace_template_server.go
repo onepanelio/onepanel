@@ -5,17 +5,19 @@ import (
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/server/auth"
+	"time"
 )
 
 type WorkspaceTemplateServer struct{}
 
 func apiWorkspaceTemplate(wt *v1.WorkspaceTemplate) *api.WorkspaceTemplate {
 	res := &api.WorkspaceTemplate{
-		Uid:      wt.UID,
-		Name:     wt.Name,
-		Version:  wt.Version,
-		Manifest: wt.Manifest,
-		//CreatedAt: wt.CreatedAt.UTC().Format(time.RFC3339),
+		Uid:       wt.UID,
+		Name:      wt.Name,
+		Version:   wt.Version,
+		Manifest:  wt.Manifest,
+		IsLatest:  wt.IsLatest,
+		CreatedAt: wt.CreatedAt.UTC().Format(time.RFC3339),
 	}
 
 	if wt.WorkflowTemplate != nil {

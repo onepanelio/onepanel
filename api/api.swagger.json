@@ -2690,6 +2690,10 @@
         "manifest": {
           "type": "string"
         },
+        "isLatest": {
+          "type": "boolean",
+          "format": "boolean"
+        },
         "createdAt": {
           "type": "string"
         },
