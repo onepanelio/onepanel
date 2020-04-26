@@ -2,13 +2,28 @@ package server
 
 import (
 	"context"
-
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/server/auth"
 )
 
 type WorkspaceTemplateServer struct{}
+
+func apiWorkspaceTemplate(wt *v1.WorkspaceTemplate) *api.WorkspaceTemplate {
+	res := &api.WorkspaceTemplate{
+		Uid:      wt.UID,
+		Name:     wt.Name,
+		Version:  wt.Version,
+		Manifest: wt.Manifest,
+		//CreatedAt: wt.CreatedAt.UTC().Format(time.RFC3339),
+	}
+
+	if wt.WorkflowTemplate != nil {
+		res.WorkflowTemplate = apiWorkflowTemplate(wt.WorkflowTemplate)
+	}
+
+	return res
+}
 
 func NewWorkspaceTemplateServer() *WorkspaceTemplateServer {
 	return &WorkspaceTemplateServer{}
@@ -30,7 +45,7 @@ func (s *WorkspaceTemplateServer) CreateWorkspaceTemplate(ctx context.Context, r
 		return nil, err
 	}
 
-	req.WorkspaceTemplate.WorkflowTemplate = apiWorkflowTemplate(workspaceTemplate.WorkflowTemplate)
+	req.WorkspaceTemplate = apiWorkspaceTemplate(workspaceTemplate)
 
 	return req.WorkspaceTemplate, nil
 }

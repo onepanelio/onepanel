@@ -2,6 +2,7 @@ package v1
 
 import (
 	"fmt"
+	sq "github.com/Masterminds/squirrel"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	v1 "github.com/onepanelio/core/pkg/apis/core/v1"
 	"github.com/onepanelio/core/pkg/util/ptr"
@@ -321,6 +322,59 @@ metadata:
 	return
 }
 
+func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *WorkspaceTemplate) (*WorkspaceTemplate, error) {
+	uid, err := workspaceTemplate.GenerateUID()
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	workspaceTemplate.WorkflowTemplate, err = c.CreateWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate)
+	if err != nil {
+		return nil, err
+	}
+
+	err = sb.Insert("workspace_templates").
+		SetMap(sq.Eq{
+			"uid":       uid,
+			"name":      workspaceTemplate.Name,
+			"namespace": namespace,
+		}).
+		Suffix("RETURNING id").
+		RunWith(tx).
+		QueryRow().Scan(&workspaceTemplate.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = sb.Insert("workspace_template_versions").
+		SetMap(sq.Eq{
+			"workspace_template_id": workspaceTemplate.ID,
+			"version":               workspaceTemplate.WorkflowTemplate.Version,
+			"is_latest":             true,
+			"manifest":              workspaceTemplate.Manifest,
+		}).
+		RunWith(tx).
+		Exec()
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		//if err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Delete(workspaceTemplate.WorkflowTemplate.Name, &metav1.DeleteOptions{}); err != nil {
+		//	log.Printf("Unable to delete argo workflow template")
+		//}
+		return nil, err
+	}
+
+	return workspaceTemplate, nil
+}
+
 // CreateWorkspaceTemplate creates a template for Workspaces
 func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate *WorkspaceTemplate) (*WorkspaceTemplate, error) {
 	config, err := c.GetSystemConfig()
@@ -357,10 +411,14 @@ func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 		return nil, err
 	}
 
-	workspaceTemplate.WorkflowTemplate, err = c.CreateWorkflowTemplate(namespace, &WorkflowTemplate{
+	workspaceTemplate.WorkflowTemplate = &WorkflowTemplate{
 		Name:     workspaceTemplate.Name,
 		Manifest: string(workflowTemplateManifest),
-	})
+	}
+	workspaceTemplate, err = c.createWorkspaceTemplate(namespace, workspaceTemplate)
+	if err != nil {
+		return nil, err
+	}
 
 	return workspaceTemplate, nil
 }

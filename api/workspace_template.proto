@@ -27,6 +27,7 @@ message WorkspaceTemplate {
     string name = 2;
     int64 version = 3;
     string manifest = 4;
-    WorkflowTemplate workflowTemplate = 5;
+    string createdAt = 5;
+    WorkflowTemplate workflowTemplate = 6;
 }
 
