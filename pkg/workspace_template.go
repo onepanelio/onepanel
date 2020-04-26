@@ -339,36 +339,39 @@ func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 		return nil, err
 	}
 
+	workspaceTemplate.Version = workspaceTemplate.WorkflowTemplate.Version
+
 	err = sb.Insert("workspace_templates").
 		SetMap(sq.Eq{
-			"uid":       uid,
-			"name":      workspaceTemplate.Name,
-			"namespace": namespace,
+			"uid":                  uid,
+			"name":                 workspaceTemplate.Name,
+			"namespace":            namespace,
+			"workflow_template_id": workspaceTemplate.WorkflowTemplate.ID,
 		}).
 		Suffix("RETURNING id").
 		RunWith(tx).
 		QueryRow().Scan(&workspaceTemplate.ID)
 	if err != nil {
+		_, err := c.archiveWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID)
 		return nil, err
 	}
 
 	_, err = sb.Insert("workspace_template_versions").
 		SetMap(sq.Eq{
-			"workspace_template_id": workspaceTemplate.ID,
-			"version":               workspaceTemplate.WorkflowTemplate.Version,
+			"version":               workspaceTemplate.Version,
 			"is_latest":             true,
 			"manifest":              workspaceTemplate.Manifest,
+			"workspace_template_id": workspaceTemplate.ID,
 		}).
 		RunWith(tx).
 		Exec()
 	if err != nil {
+		_, err := c.archiveWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID)
 		return nil, err
 	}
 
 	if err = tx.Commit(); err != nil {
-		//if err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Delete(workspaceTemplate.WorkflowTemplate.Name, &metav1.DeleteOptions{}); err != nil {
-		//	log.Printf("Unable to delete argo workflow template")
-		//}
+		_, err := c.archiveWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID)
 		return nil, err
 	}
 

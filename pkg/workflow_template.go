@@ -73,6 +73,8 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, err
 	}
 
+	workflowTemplate.Version = versionUnix
+
 	return workflowTemplate, nil
 }
 
