@@ -1,11 +1,14 @@
 package v1
 
 import (
+	"database/sql"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	v1 "github.com/onepanelio/core/pkg/apis/core/v1"
+	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/ptr"
+	"google.golang.org/grpc/codes"
 	networking "istio.io/api/networking/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -340,6 +343,7 @@ func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	}
 
 	workspaceTemplate.Version = workspaceTemplate.WorkflowTemplate.Version
+	workspaceTemplate.IsLatest = true
 
 	err = sb.Insert("workspace_templates").
 		SetMap(sq.Eq{
@@ -348,38 +352,75 @@ func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 			"namespace":            namespace,
 			"workflow_template_id": workspaceTemplate.WorkflowTemplate.ID,
 		}).
-		Suffix("RETURNING id").
+		Suffix("RETURNING id, created_at").
 		RunWith(tx).
-		QueryRow().Scan(&workspaceTemplate.ID)
+		QueryRow().Scan(&workspaceTemplate.ID, &workspaceTemplate.CreatedAt)
 	if err != nil {
-		_, err := c.archiveWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID)
+		_, err := c.ArchiveWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID)
 		return nil, err
 	}
 
 	_, err = sb.Insert("workspace_template_versions").
 		SetMap(sq.Eq{
 			"version":               workspaceTemplate.Version,
-			"is_latest":             true,
+			"is_latest":             workspaceTemplate.IsLatest,
 			"manifest":              workspaceTemplate.Manifest,
 			"workspace_template_id": workspaceTemplate.ID,
 		}).
 		RunWith(tx).
 		Exec()
 	if err != nil {
-		_, err := c.archiveWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID)
+		_, err := c.ArchiveWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID)
 		return nil, err
 	}
 
 	if err = tx.Commit(); err != nil {
-		_, err := c.archiveWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID)
+		_, err := c.ArchiveWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID)
 		return nil, err
 	}
 
 	return workspaceTemplate, nil
 }
 
+func (c *Client) workspaceTemplatesSelectBuilder(namespace string) sq.SelectBuilder {
+	sb := sb.Select("wt.id", "wt.created_at", "wt.uid", "wt.name").
+		From("workspace_templates wt").
+		Where(sq.Eq{
+			"wt.namespace": namespace,
+		})
+
+	return sb
+}
+
+func (c *Client) getWorkspaceTemplateByName(namespace, name string) (workspaceTemplate *WorkspaceTemplate, err error) {
+	workspaceTemplate = &WorkspaceTemplate{}
+
+	sb := c.workspaceTemplatesSelectBuilder(namespace).
+		Where(sq.Eq{"wt.name": name}).
+		Limit(1)
+	query, args, err := sb.ToSql()
+	if err != nil {
+		return
+	}
+
+	if err = c.DB.Get(workspaceTemplate, query, args...); err == sql.ErrNoRows {
+		err = nil
+		workspaceTemplate = nil
+	}
+
+	return
+}
+
 // CreateWorkspaceTemplate creates a template for Workspaces
 func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate *WorkspaceTemplate) (*WorkspaceTemplate, error) {
+	existingWorkspaceTemplate, err := c.getWorkspaceTemplateByName(namespace, workspaceTemplate.Name)
+	if err != nil {
+		return nil, err
+	}
+	if existingWorkspaceTemplate != nil {
+		return nil, util.NewUserError(codes.AlreadyExists, "Workspace template already exists.")
+	}
+
 	config, err := c.GetSystemConfig()
 	if err != nil {
 		return nil, err

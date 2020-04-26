@@ -407,6 +407,7 @@ type WorkspaceTemplate struct {
 	Name             string
 	Version          int64
 	Manifest         string
+	IsLatest         bool
 	CreatedAt        time.Time `db:"created_at"`
 	WorkflowTemplate *WorkflowTemplate
 }
