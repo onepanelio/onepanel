@@ -2690,6 +2690,9 @@
         "manifest": {
           "type": "string"
         },
+        "createdAt": {
+          "type": "string"
+        },
         "workflowTemplate": {
           "$ref": "#/definitions/WorkflowTemplate"
         }
