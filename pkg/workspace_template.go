@@ -226,96 +226,104 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{inputs.parameters.op-pvc-name}}-{{workflow.parameters.op-name}}-0
 `
+	templates := []wfv1.Template{
+		{
+			Name: "workspace",
+			DAG: &wfv1.DAGTemplate{
+				Tasks: []wfv1.DAGTask{
+					{
+						Name:     "service",
+						Template: "service-resource",
+					},
+					{
+						Name:         "virtual-service",
+						Template:     "virtual-service-resource",
+						Dependencies: []string{"service"},
+					},
+					{
+						Name:         "stateful-set",
+						Template:     "stateful-set-resource",
+						Dependencies: []string{"virtual-service"},
+						When:         "{{workflow.parameters.op-workspace-action}} == create || {{workflow.parameters.op-workspace-action}} == update",
+					},
+					{
+						Name:         "delete-stateful-set",
+						Template:     "delete-stateful-set-resource",
+						Dependencies: []string{"virtual-service"},
+						When:         "{{workflow.parameters.op-workspace-action}} == pause || {{workflow.parameters.op-workspace-action}} == delete",
+					},
+					{
+						Name:         "delete-pvc",
+						Template:     "delete-pvc-resource",
+						Dependencies: []string{"delete-stateful-set"},
+						Arguments: wfv1.Arguments{
+							Parameters: []wfv1.Parameter{
+								{
+									Name:  "op-pvc-name",
+									Value: ptr.String("{{item}}"),
+								},
+							},
+						},
+						When:      "{{workflow.parameters.op-workspace-action}} == delete",
+						WithItems: volumeClaimItems,
+					},
+				},
+			},
+		},
+		{
+			Name: "service-resource",
+			Resource: &wfv1.ResourceTemplate{
+				Action:   "{{workflow.parameters.op-resource-action}}",
+				Manifest: serviceManifest,
+			},
+		},
+		{
+			Name: "virtual-service-resource",
+			Resource: &wfv1.ResourceTemplate{
+				Action:   "{{workflow.parameters.op-resource-action}}",
+				Manifest: virtualServiceManifest,
+			},
+		},
+		{
+			Name: "stateful-set-resource",
+			Resource: &wfv1.ResourceTemplate{
+				Action:           "{{workflow.parameters.op-resource-action}}",
+				Manifest:         containersManifest,
+				SuccessCondition: "status.readyReplicas > 0",
+			},
+		},
+		{
+			Name: "delete-stateful-set-resource",
+			Resource: &wfv1.ResourceTemplate{
+				Action:   "{{workflow.parameters.op-resource-action}}",
+				Manifest: containersManifest,
+			},
+		},
+		{
+			Name: "delete-pvc-resource",
+			Inputs: wfv1.Inputs{
+				Parameters: []wfv1.Parameter{{Name: "op-pvc-name"}},
+			},
+			Resource: &wfv1.ResourceTemplate{
+				Action:   "{{workflow.parameters.op-resource-action}}",
+				Manifest: deletePVCManifest,
+			},
+		},
+	}
+	if spec.PostExecutionWorkflow != nil {
+		templates = append(templates, spec.PostExecutionWorkflow.Templates...)
+	}
 
 	// TODO: Consider storing this as a Go template in a "settings" database table
 	workflowTemplateSpec := map[string]interface{}{
 		"arguments":  spec.Arguments,
 		"entrypoint": "workspace",
-		"templates": []wfv1.Template{
-			{
-				Name: "workspace",
-				DAG: &wfv1.DAGTemplate{
-					Tasks: []wfv1.DAGTask{
-						{
-							Name:     "service",
-							Template: "service-resource",
-						},
-						{
-							Name:         "virtual-service",
-							Template:     "virtual-service-resource",
-							Dependencies: []string{"service"},
-						},
-						{
-							Name:         "stateful-set",
-							Template:     "stateful-set-resource",
-							Dependencies: []string{"virtual-service"},
-							When:         "{{workflow.parameters.op-workspace-action}} == create || {{workflow.parameters.op-workspace-action}} == update",
-						},
-						{
-							Name:         "delete-stateful-set",
-							Template:     "delete-stateful-set-resource",
-							Dependencies: []string{"virtual-service"},
-							When:         "{{workflow.parameters.op-workspace-action}} == pause || {{workflow.parameters.op-workspace-action}} == delete",
-						},
-						{
-							Name:         "delete-pvc",
-							Template:     "delete-pvc-resource",
-							Dependencies: []string{"delete-stateful-set"},
-							Arguments: wfv1.Arguments{
-								Parameters: []wfv1.Parameter{
-									{
-										Name:  "op-pvc-name",
-										Value: ptr.String("{{item}}"),
-									},
-								},
-							},
-							When:      "{{workflow.parameters.op-workspace-action}} == delete",
-							WithItems: volumeClaimItems,
-						},
-					},
-				},
-			},
-			{
-				Name: "service-resource",
-				Resource: &wfv1.ResourceTemplate{
-					Action:   "{{workflow.parameters.op-resource-action}}",
-					Manifest: serviceManifest,
-				},
-			},
-			{
-				Name: "virtual-service-resource",
-				Resource: &wfv1.ResourceTemplate{
-					Action:   "{{workflow.parameters.op-resource-action}}",
-					Manifest: virtualServiceManifest,
-				},
-			},
-			{
-				Name: "stateful-set-resource",
-				Resource: &wfv1.ResourceTemplate{
-					Action:           "{{workflow.parameters.op-resource-action}}",
-					Manifest:         containersManifest,
-					SuccessCondition: "status.readyReplicas > 0",
-				},
-			},
-			{
-				Name: "delete-stateful-set-resource",
-				Resource: &wfv1.ResourceTemplate{
-					Action:   "{{workflow.parameters.op-resource-action}}",
-					Manifest: containersManifest,
-				},
-			},
-			{
-				Name: "delete-pvc-resource",
-				Inputs: wfv1.Inputs{
-					Parameters: []wfv1.Parameter{{Name: "op-pvc-name"}},
-				},
-				Resource: &wfv1.ResourceTemplate{
-					Action:   "{{workflow.parameters.op-resource-action}}",
-					Manifest: deletePVCManifest,
-				},
-			},
-		},
+		"templates":  templates,
 	}
+	if spec.PostExecutionWorkflow != nil {
+		workflowTemplateSpec["onExit"] = spec.PostExecutionWorkflow.Entrypoint
+	}
+
 	workflowTemplateSpecManifestBytes, err := yaml.Marshal(workflowTemplateSpec)
 	if err != nil {
 		return
