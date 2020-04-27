@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/go-uuid"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"regexp"
 	"strconv"
@@ -48,9 +49,15 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, err
 	}
 
+	versionUid, err := uuid.GenerateUUID()
+	if err != nil {
+		return nil, err
+	}
+
 	workflowTemplateVersion := WorkflowTemplateVersion{}
 	err = sb.Insert("workflow_template_versions").
 		SetMap(sq.Eq{
+			"uid":                  versionUid,
 			"workflow_template_id": workflowTemplate.ID,
 			"version":              versionUnix,
 			"is_latest":            true,
@@ -74,6 +81,11 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 	}
 
 	argoWft, err := createArgoWorkflowTemplate(workflowTemplate, versionUnix)
+	if err != nil {
+		return nil, err
+	}
+
+	argoWft.Labels[label.WorkflowTemplateVersionUid] = versionUid
 	argoWft, err = c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Create(argoWft)
 	if err != nil {
 		return nil, err
@@ -419,10 +431,15 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 		return nil, err
 	}
 
+	uid, err := uuid.GenerateUUID()
+	if err != nil {
+		return nil, err
+	}
 	workflowTemplateVersionId := uint64(0)
 	err = sb.Insert("workflow_template_versions").
 		SetMap(sq.Eq{
 			"workflow_template_id": workflowTemplateDb.ID,
+			"uid":                  uid,
 			"version":              versionUnix,
 			"is_latest":            true,
 			"manifest":             workflowTemplate.Manifest,
@@ -470,6 +487,7 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 	updatedTemplate.TypeMeta = v1.TypeMeta{}
 	updatedTemplate.ObjectMeta.ResourceVersion = ""
 	updatedTemplate.ObjectMeta.SetSelfLink("")
+	updatedTemplate.Labels[label.WorkflowTemplateVersionUid] = uid
 
 	parametersMap, err := workflowTemplate.GetParametersKeyString()
 	if err != nil {
