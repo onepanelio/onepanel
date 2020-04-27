@@ -275,6 +275,17 @@ func (c *Client) ValidateWorkflowExecution(namespace string, manifest []byte) (e
 		if err != nil {
 			return
 		}
+
+		// Check that entrypoint and onExit templates are DAGs
+		for _, t := range wf.Spec.Templates {
+			if t.Name == wf.Spec.Entrypoint && t.DAG == nil {
+				return errors.New("\"entrypoint\" template should be a DAG")
+			}
+
+			if wf.Spec.OnExit != "" && t.Name == wf.Spec.OnExit && t.DAG == nil {
+				return errors.New("\"onExit\" template should be a DAG")
+			}
+		}
 	}
 
 	return
