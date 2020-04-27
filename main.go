@@ -85,12 +85,12 @@ func startRPCServer(db *v1.DB, kubeConfig *v1.Config) {
 		grpc_middleware.ChainUnaryServer(
 			grpc_logrus.UnaryServerInterceptor(logEntry),
 			grpc_recovery.UnaryServerInterceptor(recoveryOpts...),
-			auth.AuthUnaryInterceptor(kubeConfig, db)),
+			auth.UnaryInterceptor(kubeConfig, db)),
 	), grpc.StreamInterceptor(
 		grpc_middleware.ChainStreamServer(
 			grpc_logrus.StreamServerInterceptor(logEntry),
 			grpc_recovery.StreamServerInterceptor(recoveryOpts...),
-			auth.AuthStreamingInterceptor(kubeConfig, db)),
+			auth.StreamingInterceptor(kubeConfig, db)),
 	))
 	api.RegisterWorkflowTemplateServiceServer(s, server.NewWorkflowTemplateServer())
 	api.RegisterCronWorkflowServiceServer(s, server.NewCronWorkflowServer())

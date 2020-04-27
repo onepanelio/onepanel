@@ -81,7 +81,7 @@ func IsAuthorized(c *v1.Client, namespace, verb, group, resource, name string) (
 	return
 }
 
-func AuthUnaryInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerInterceptor {
+func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		if info.FullMethod == "/api.AuthService/IsValidToken" {
 			md, ok := metadata.FromIncomingContext(ctx)
@@ -113,7 +113,7 @@ func AuthUnaryInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerInte
 	}
 }
 
-func AuthStreamingInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.StreamServerInterceptor {
+func StreamingInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.StreamServerInterceptor {
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
 		ctx, err := getClient(ss.Context(), kubeConfig, db)
 		if err != nil {
