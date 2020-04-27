@@ -13,6 +13,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	TypeWorkflowTemplate        string = "workflow_template"
+	TypeWorkflowTemplateVersion string = "workflow_template_version"
+	TypeWorkflowExecution       string = "workflow_execution"
+	TypeCronWorkflow            string = "cron_workflow"
+)
+
 type Namespace struct {
 	Name   string
 	Labels map[string]string
@@ -41,18 +48,64 @@ type Metric struct {
 
 type CronWorkflow struct {
 	ID                         uint64
-	CreatedAt                  time.Time `db:"created_at"`
+	CreatedAt                  time.Time  `db:"created_at"`
+	ModifiedAt                 *time.Time `db:"modified_at"`
 	UID                        string
 	Name                       string
 	GenerateName               string
 	Schedule                   string
 	Timezone                   string
 	Suspend                    bool
-	ConcurrencyPolicy          string
-	StartingDeadlineSeconds    *int64
-	SuccessfulJobsHistoryLimit *int32
-	FailedJobsHistoryLimit     *int32
+	ConcurrencyPolicy          string `db:"concurrency_policy"`
+	StartingDeadlineSeconds    *int64 `db:"starting_deadline_seconds"`
+	SuccessfulJobsHistoryLimit *int32 `db:"successful_jobs_history_limit"`
+	FailedJobsHistoryLimit     *int32 `db:"failed_jobs_history_limit"`
 	WorkflowExecution          *WorkflowExecution
+	WorkflowSpec               string `db:"workflow_spec"`
+	Labels                     []*Label
+	Version                    int64
+	WorkflowTemplateVersionId  uint64 `db:"workflow_template_version_id"`
+}
+
+func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]WorkflowExecutionParameter, error) {
+	var parameters []WorkflowExecutionParameter
+
+	mappedData := make(map[string]interface{})
+
+	if err := yaml.Unmarshal([]byte(cw.WorkflowSpec), mappedData); err != nil {
+		return nil, err
+	}
+
+	arguments, ok := mappedData["arguments"]
+	if !ok {
+		return parameters, nil
+	}
+
+	argumentsMap := arguments.(map[interface{}]interface{})
+	parametersRaw, ok := argumentsMap["parameters"]
+	if !ok {
+		return parameters, nil
+	}
+
+	parametersArray, ok := parametersRaw.([]interface{})
+	for _, parameter := range parametersArray {
+		paramMap, ok := parameter.(map[interface{}]interface{})
+		if !ok {
+			continue
+		}
+
+		name := paramMap["name"].(string)
+		value := paramMap["value"].(string)
+
+		workflowParameter := WorkflowExecutionParameter{
+			Name:  name,
+			Value: &value,
+		}
+
+		parameters = append(parameters, workflowParameter)
+	}
+
+	return parameters, nil
 }
 
 type WorkflowTemplate struct {
@@ -62,12 +115,22 @@ type WorkflowTemplate struct {
 	Name                             string
 	Manifest                         string
 	Version                          int64
-	Versions                         int64 `db:"versions"`
+	Versions                         int64 `db:"versions"` // How many versions there are of this template total.
 	IsLatest                         bool
 	IsArchived                       bool `db:"is_archived"`
 	ArgoWorkflowTemplate             *wfv1.WorkflowTemplate
 	Labels                           map[string]string
 	WorkflowExecutionStatisticReport *WorkflowExecutionStatisticReport
+	WorkflowTemplateVersionId        uint64 `db:"workflow_template_version_id"` // Reference to the associated workflow template version.
+}
+
+type Label struct {
+	ID         uint64
+	CreatedAt  time.Time `db:"created_at"`
+	Key        string
+	Value      string
+	Resource   string
+	ResourceId uint64 `db:"resource_id"`
 }
 
 type WorkflowExecutionStatisticReport struct {
@@ -293,17 +356,6 @@ func (wt *WorkflowTemplate) AddWorkflowTemplateParametersFromAnnotations(spec ma
 	arguments["parameters"] = parameters
 }
 
-const (
-	WorfklowPending   WorkflowExecutionPhase = "Pending"
-	WorfklowRunning   WorkflowExecutionPhase = "Running"
-	WorfklowSucceeded WorkflowExecutionPhase = "Succeeded"
-	WorfklowSkipped   WorkflowExecutionPhase = "Skipped"
-	WorfklowFailed    WorkflowExecutionPhase = "Failed"
-	WorfklowError     WorkflowExecutionPhase = "Error"
-)
-
-type WorkflowExecutionPhase string
-
 type WorkflowExecution struct {
 	ID               uint64
 	CreatedAt        time.Time `db:"created_at"`
@@ -312,10 +364,10 @@ type WorkflowExecution struct {
 	GenerateName     string
 	Parameters       []WorkflowExecutionParameter
 	Manifest         string
-	Phase            WorkflowExecutionPhase
-	StartedAt        time.Time
-	FinishedAt       time.Time
-	WorkflowTemplate *WorkflowTemplate
+	Phase            wfv1.NodePhase
+	StartedAt        *time.Time        `db:"started_at"`
+	FinishedAt       *time.Time        `db:"finished_at"`
+	WorkflowTemplate *WorkflowTemplate `db:"workflow_template"`
 	Labels           map[string]string
 }
 
@@ -399,4 +451,34 @@ func FilePathToExtension(path string) string {
 	}
 
 	return path[dotIndex+1:]
+}
+
+func WorkflowTemplatesToIds(workflowTemplates []*WorkflowTemplate) (ids []uint64) {
+	mappedIds := make(map[uint64]bool)
+
+	// This is to make sure we don't have duplicates
+	for _, workflowTemplate := range workflowTemplates {
+		mappedIds[workflowTemplate.ID] = true
+	}
+
+	for id := range mappedIds {
+		ids = append(ids, id)
+	}
+
+	return
+}
+
+func WorkflowTemplatesToVersionIds(workflowTemplates []*WorkflowTemplate) (ids []uint64) {
+	mappedIds := make(map[uint64]bool)
+
+	// This is to make sure we don't have duplicates
+	for _, workflowTemplate := range workflowTemplates {
+		mappedIds[workflowTemplate.WorkflowTemplateVersionId] = true
+	}
+
+	for id := range mappedIds {
+		ids = append(ids, id)
+	}
+
+	return
 }

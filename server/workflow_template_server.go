@@ -6,6 +6,7 @@ import (
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util/label"
+	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/onepanelio/core/server/converter"
 	"strings"
@@ -208,7 +209,8 @@ func (s *WorkflowTemplateServer) ListWorkflowTemplates(ctx context.Context, req 
 		return nil, err
 	}
 
-	workflowTemplates, err := client.ListWorkflowTemplates(req.Namespace)
+	paginator := pagination.NewRequest(req.Page, req.PageSize)
+	workflowTemplates, err := client.ListWorkflowTemplates(req.Namespace, &paginator)
 	if err != nil {
 		return nil, err
 	}
@@ -218,9 +220,17 @@ func (s *WorkflowTemplateServer) ListWorkflowTemplates(ctx context.Context, req 
 		apiWorkflowTemplates = append(apiWorkflowTemplates, apiWorkflowTemplate(wtv))
 	}
 
+	count, err := client.CountWorkflowTemplates(req.Namespace)
+	if err != nil {
+		return nil, err
+	}
+
 	return &api.ListWorkflowTemplatesResponse{
 		Count:             int32(len(apiWorkflowTemplates)),
 		WorkflowTemplates: apiWorkflowTemplates,
+		Page:              int32(paginator.Page),
+		Pages:             paginator.CalculatePages(count),
+		TotalCount:        int32(count),
 	}, nil
 }
 
@@ -276,7 +286,19 @@ func (s *WorkflowTemplateServer) AddWorkflowTemplateLabels(ctx context.Context, 
 		keyValues[item.Key] = item.Value
 	}
 
-	labels, err := client.SetWorkflowTemplateLabels(req.Namespace, req.Name, "tags.onepanel.io/", keyValues, false)
+	labels, err := client.SetWorkflowTemplateLabels(req.Namespace, req.Name, label.TagPrefix, keyValues, false)
+	if err != nil {
+		return nil, err
+	}
+
+	workflowTemplateVersion, err := client.GetWorkflowTemplateVersionDb(req.Namespace, req.Name, "latest")
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = client.InsertLabelsBuilder(v1.TypeWorkflowTemplateVersion, workflowTemplateVersion.ID, keyValues).
+		RunWith(client.DB.DB).
+		Exec()
 	if err != nil {
 		return nil, err
 	}

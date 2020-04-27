@@ -125,11 +125,16 @@ message ListWorkflowTemplateVersionsResponse {
 
 message ListWorkflowTemplatesRequest {
     string namespace = 1;
+    int32 pageSize = 2;
+    int32 page = 3;
 }
 
 message ListWorkflowTemplatesResponse {
     int32 count = 1;
     repeated WorkflowTemplate workflowTemplates = 2;
+    int32 page = 3;
+    int32 pages = 4;
+    int32 totalCount = 5;
 }
 
 message ArchiveWorkflowTemplateRequest {

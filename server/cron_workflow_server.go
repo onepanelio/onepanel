@@ -5,10 +5,10 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
+	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/onepanelio/core/server/converter"
-	"math"
 )
 
 type CronWorkflowServer struct{}
@@ -255,11 +255,8 @@ func (c *CronWorkflowServer) ListCronWorkflows(ctx context.Context, req *api.Lis
 		return nil, err
 	}
 
-	if req.PageSize <= 0 {
-		req.PageSize = 15
-	}
-
-	cronWorkflows, err := client.ListCronWorkflows(req.Namespace, req.WorkflowTemplateUid)
+	paginator := pagination.NewRequest(req.Page, req.PageSize)
+	cronWorkflows, err := client.ListCronWorkflows(req.Namespace, req.WorkflowTemplateUid, &paginator)
 	if err != nil {
 		return nil, err
 	}
@@ -268,27 +265,17 @@ func (c *CronWorkflowServer) ListCronWorkflows(ctx context.Context, req *api.Lis
 		apiCronWorkflows = append(apiCronWorkflows, apiCronWorkflow(cwf))
 	}
 
-	pages := int32(math.Ceil(float64(len(apiCronWorkflows)) / float64(req.PageSize)))
-	if req.Page > pages {
-		req.Page = pages
-	}
-
-	if req.Page <= 0 {
-		req.Page = 1
-	}
-
-	start := (req.Page - 1) * req.PageSize
-	end := start + req.PageSize
-	if end >= int32(len(apiCronWorkflows)) {
-		end = int32(len(apiCronWorkflows))
+	count, err := client.CountCronWorkflows(req.Namespace, req.WorkflowTemplateUid)
+	if err != nil {
+		return nil, err
 	}
 
 	return &api.ListCronWorkflowsResponse{
-		Count:         end - start,
-		CronWorkflows: apiCronWorkflows[start:end],
-		Page:          req.Page,
-		Pages:         pages,
-		TotalCount:    int32(len(apiCronWorkflows)),
+		Count:         int32(len(apiCronWorkflows)),
+		CronWorkflows: apiCronWorkflows,
+		Page:          int32(paginator.Page),
+		Pages:         paginator.CalculatePages(count),
+		TotalCount:    int32(count),
 	}, nil
 }
 

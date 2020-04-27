@@ -1296,6 +1296,20 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
           }
         ],
         "tags": [
@@ -2106,6 +2120,18 @@
           "items": {
             "$ref": "#/definitions/WorkflowTemplate"
           }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pages": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },

@@ -107,7 +107,6 @@ message ListCronWorkflowsResponse {
     int32 totalCount = 5;
 }
 
-
 message CronWorkflow {
     string name = 1;
     string schedule = 2;

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/onepanelio/core/pkg/util/pagination"
 	"regexp"
 	"strconv"
 	"strings"
@@ -49,17 +50,29 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, err
 	}
 
-	_, err = sb.Insert("workflow_template_versions").
+	workflowTemplateVersion := WorkflowTemplateVersion{}
+	err = sb.Insert("workflow_template_versions").
 		SetMap(sq.Eq{
 			"workflow_template_id": workflowTemplate.ID,
 			"version":              versionUnix,
 			"is_latest":            true,
 			"manifest":             workflowTemplate.Manifest,
 		}).
+		Suffix("RETURNING id").
 		RunWith(tx).
-		Exec()
+		QueryRow().Scan(&workflowTemplateVersion.ID)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(workflowTemplate.Labels) > 0 {
+		_, err = c.InsertLabelsBuilder(TypeWorkflowTemplateVersion, workflowTemplateVersion.ID, workflowTemplate.Labels).
+			RunWith(tx).
+			Exec()
+
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	argoWft, err := createArgoWorkflowTemplate(workflowTemplate, versionUnix)
@@ -99,13 +112,58 @@ func (c *Client) workflowTemplatesVersionSelectBuilder(namespace string) sq.Sele
 	return sb
 }
 
+func (c *Client) GetWorkflowTemplateDb(namespace, name string) (workflowTemplate *WorkflowTemplate, err error) {
+	query, args, err := c.workflowTemplatesSelectBuilder(namespace).
+		Where(sq.Eq{
+			"name": name,
+		}).
+		ToSql()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := c.DB.Get(workflowTemplate, query, args...); err != nil {
+		return nil, err
+	}
+
+	return
+}
+
+// "latest" will get you the latest version
+func (c *Client) GetWorkflowTemplateVersionDb(namespace, name, version string) (workflowTemplateVersion *WorkflowTemplateVersion, err error) {
+	whereMap := sq.Eq{
+		"wt.name": name,
+	}
+
+	if version == "latest" {
+		whereMap["wtv.is_latest"] = "true"
+	} else {
+		whereMap["wtv.version"] = version
+	}
+
+	query, args, err := c.workflowTemplatesVersionSelectBuilder(namespace).
+		Where(whereMap).
+		ToSql()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := c.DB.Get(workflowTemplateVersion, query, args...); err != nil {
+		return nil, err
+	}
+
+	return
+}
+
 func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (workflowTemplate *WorkflowTemplate, err error) {
 	workflowTemplate = &WorkflowTemplate{
 		WorkflowExecutionStatisticReport: &WorkflowExecutionStatisticReport{},
 	}
 
 	sb := c.workflowTemplatesSelectBuilder(namespace).
-		Column("wtv.manifest").
+		Columns("wtv.manifest", "wtv.id workflow_template_version_id").
 		Join("workflow_template_versions wtv ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{"wt.uid": uid})
 
@@ -121,12 +179,7 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (work
 	}
 
 	if err = c.DB.Get(workflowTemplate, query, args...); err == sql.ErrNoRows {
-		err = nil
-		workflowTemplate = nil
-	}
-
-	if workflowTemplate == nil {
-		return workflowTemplate, nil
+		return nil, nil
 	}
 
 	versionAsString := "latest"
@@ -146,6 +199,13 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (work
 	}
 
 	workflowTemplate.Version = templateVersion
+
+	labelsMap, err := c.GetDbLabelsMapped(TypeWorkflowTemplateVersion, workflowTemplate.WorkflowTemplateVersionId)
+	if err != nil {
+		return workflowTemplate, err
+	}
+
+	workflowTemplate.Labels = labelsMap[workflowTemplate.WorkflowTemplateVersionId]
 
 	return workflowTemplate, nil
 }
@@ -227,23 +287,40 @@ func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTe
 	return
 }
 
-func (c *Client) listWorkflowTemplates(namespace string) (workflowTemplateVersions []*WorkflowTemplate, err error) {
+func (c *Client) listWorkflowTemplates(namespace string, paginator *pagination.PaginationRequest) (workflowTemplateVersions []*WorkflowTemplate, err error) {
 	workflowTemplateVersions = []*WorkflowTemplate{}
 
-	query, args, err := c.workflowTemplatesSelectBuilder(namespace).
-		Column("COUNT(wtv.*) versions").
-		Options("DISTINCT ON (wt.id)").
+	sb := c.workflowTemplatesSelectBuilder(namespace).
+		Column("COUNT(wtv.*) versions, MAX(wtv.id) workflow_template_version_id").
 		Join("workflow_template_versions wtv ON wtv.workflow_template_id = wt.id").
 		GroupBy("wt.id", "wt.created_at", "wt.uid", "wt.name", "wt.is_archived").
 		Where(sq.Eq{
 			"wt.is_archived": false,
 		}).
-		OrderBy("wt.id desc").ToSql()
+		OrderBy("wt.created_at DESC")
+
+	sb = *paginator.ApplyToSelect(&sb)
+	query, args, err := sb.ToSql()
 	if err != nil {
 		return
 	}
 
 	err = c.DB.Select(&workflowTemplateVersions, query, args...)
+
+	return
+}
+
+func (c *Client) CountWorkflowTemplates(namespace string) (count int, err error) {
+	err = sb.Select("COUNT( DISTINCT( wt.id ))").
+		From("workflow_templates wt").
+		Join("workflow_template_versions wtv ON wtv.workflow_template_id = wt.id").
+		Where(sq.Eq{
+			"wt.namespace":   namespace,
+			"wt.is_archived": false,
+		}).
+		RunWith(c.DB.DB).
+		QueryRow().
+		Scan(&count)
 
 	return
 }
@@ -342,18 +419,28 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 		return nil, err
 	}
 
-	_, err = sb.Insert("workflow_template_versions").
+	workflowTemplateVersionId := uint64(0)
+	err = sb.Insert("workflow_template_versions").
 		SetMap(sq.Eq{
 			"workflow_template_id": workflowTemplateDb.ID,
 			"version":              versionUnix,
 			"is_latest":            true,
 			"manifest":             workflowTemplate.Manifest,
 		}).
+		Suffix("RETURNING id").
+		RunWith(tx).
+		QueryRow().Scan(&workflowTemplateVersionId)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = c.InsertLabelsBuilder(TypeWorkflowTemplateVersion, workflowTemplateVersionId, workflowTemplate.Labels).
 		RunWith(tx).
 		Exec()
 	if err != nil {
 		return nil, err
 	}
+
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
@@ -452,8 +539,8 @@ func (c *Client) ListWorkflowTemplateVersions(namespace, uid string) (workflowTe
 	return
 }
 
-func (c *Client) ListWorkflowTemplates(namespace string) (workflowTemplateVersions []*WorkflowTemplate, err error) {
-	workflowTemplateVersions, err = c.listWorkflowTemplates(namespace)
+func (c *Client) ListWorkflowTemplates(namespace string, paginator *pagination.PaginationRequest) (workflowTemplateVersions []*WorkflowTemplate, err error) {
+	workflowTemplateVersions, err = c.listWorkflowTemplates(namespace, paginator)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -470,17 +557,18 @@ func (c *Client) ListWorkflowTemplates(namespace string) (workflowTemplateVersio
 		}).Error("Unable to get Workflow Execution Statistic for Templates.")
 		return nil, util.NewUserError(codes.NotFound, "Unable to get Workflow Execution Statistic for Templates.")
 	}
-	for _, workflowTemplate := range workflowTemplateVersions {
-		labels, err := c.GetWorkflowTemplateLabels(namespace, workflowTemplate.UID, label.TagPrefix, workflowTemplate.Version)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"Namespace": namespace,
-				"Error":     err.Error(),
-			}).Error("Unable to get GetWorkflowTemplateLabels for Templates.")
-			continue
-		}
 
-		workflowTemplate.Labels = labels
+	labelsMap, err := c.GetDbLabelsMapped(TypeWorkflowTemplateVersion, WorkflowTemplatesToVersionIds(workflowTemplateVersions)...)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Error":     err.Error(),
+		}).Error("Unable to get Workflow Template Labels")
+		return nil, err
+	}
+
+	for _, workflowTemplate := range workflowTemplateVersions {
+		workflowTemplate.Labels = labelsMap[workflowTemplate.WorkflowTemplateVersionId]
 	}
 
 	return

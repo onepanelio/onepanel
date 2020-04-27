@@ -2,10 +2,12 @@ package server
 
 import (
 	"context"
+	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/onepanelio/core/pkg/util"
+	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/server/converter"
 	"google.golang.org/grpc/codes"
-	"math"
+	argov1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sort"
 	"strings"
 	"time"
@@ -36,10 +38,10 @@ func apiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecu
 		Manifest:  wf.Manifest,
 	}
 
-	if !wf.StartedAt.IsZero() {
+	if wf.StartedAt != nil && !wf.StartedAt.IsZero() {
 		workflow.StartedAt = wf.StartedAt.Format(time.RFC3339)
 	}
-	if !wf.FinishedAt.IsZero() {
+	if wf.FinishedAt != nil && !wf.FinishedAt.IsZero() {
 		workflow.FinishedAt = wf.FinishedAt.Format(time.RFC3339)
 	}
 
@@ -81,19 +83,27 @@ func (s *WorkflowServer) CreateWorkflowExecution(ctx context.Context, req *api.C
 
 func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, request *api.AddWorkflowExecutionStatisticRequest) (*empty.Empty, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
-	workflowOutcomeIsSuccess := false
+	phase := v1alpha1.NodeFailed
 	if request.Statistics.WorkflowStatus == "Succeeded" {
-		workflowOutcomeIsSuccess = true
+		phase = v1alpha1.NodeSucceeded
 	}
 
-	err := client.FinishWorkflowExecutionStatisticViaExitHandler(request.Namespace, request.Name,
-		request.Statistics.WorkflowTemplateId, workflowOutcomeIsSuccess)
+	workflow, err := client.ArgoprojV1alpha1().Workflows(request.Namespace).Get(request.Name, argov1.GetOptions{})
+	if err != nil {
+		return &empty.Empty{}, err
+	}
+
+	err = client.FinishWorkflowExecutionStatisticViaExitHandler(request.Namespace, request.Name,
+		request.Statistics.WorkflowTemplateId, phase, workflow.Status.StartedAt.UTC())
 	if err != nil {
 		return &empty.Empty{}, err
 	}
 	return &empty.Empty{}, nil
 }
 
+// @todo we should not pass in an id into the request.
+// instead pass in the cron workflow uid, we can load the cron workflow from db that way and get
+// all required data.
 func (s *WorkflowServer) CronStartWorkflowExecutionStatistic(ctx context.Context, request *api.CronStartWorkflowExecutionStatisticRequest) (*empty.Empty, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
 	err := client.CronStartWorkflowExecutionStatisticInsert(request.Namespace, request.Name, request.WorkflowTemplateId)
@@ -213,11 +223,8 @@ func (s *WorkflowServer) ListWorkflowExecutions(ctx context.Context, req *api.Li
 		return nil, err
 	}
 
-	if req.PageSize <= 0 {
-		req.PageSize = 15
-	}
-
-	workflows, err := client.ListWorkflowExecutions(req.Namespace, req.WorkflowTemplateUid, req.WorkflowTemplateVersion)
+	paginator := pagination.NewRequest(req.Page, req.PageSize)
+	workflows, err := client.ListWorkflowExecutions(req.Namespace, req.WorkflowTemplateUid, req.WorkflowTemplateVersion, &paginator)
 	if err != nil {
 		return nil, err
 	}
@@ -227,27 +234,17 @@ func (s *WorkflowServer) ListWorkflowExecutions(ctx context.Context, req *api.Li
 		apiWorkflowExecutions = append(apiWorkflowExecutions, apiWorkflowExecution(wf))
 	}
 
-	pages := int32(math.Ceil(float64(len(apiWorkflowExecutions)) / float64(req.PageSize)))
-	if req.Page > pages {
-		req.Page = pages
-	}
-
-	if req.Page <= 0 {
-		req.Page = 1
-	}
-
-	start := (req.Page - 1) * req.PageSize
-	end := start + req.PageSize
-	if end >= int32(len(apiWorkflowExecutions)) {
-		end = int32(len(apiWorkflowExecutions))
+	count, err := client.CountWorkflowExecutions(req.Namespace, req.WorkflowTemplateUid, req.WorkflowTemplateVersion)
+	if err != nil {
+		return nil, err
 	}
 
 	return &api.ListWorkflowExecutionsResponse{
-		Count:              end - start,
-		WorkflowExecutions: apiWorkflowExecutions[start:end],
-		Page:               req.Page,
-		Pages:              pages,
-		TotalCount:         int32(len(apiWorkflowExecutions)),
+		Count:              int32(len(apiWorkflowExecutions)),
+		WorkflowExecutions: apiWorkflowExecutions,
+		Page:               int32(paginator.Page),
+		Pages:              paginator.CalculatePages(count),
+		TotalCount:         int32(count),
 	}, nil
 }
 

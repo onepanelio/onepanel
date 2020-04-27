@@ -2,15 +2,17 @@ package v1
 
 import (
 	"fmt"
+	sq "github.com/Masterminds/squirrel"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	argojson "github.com/argoproj/pkg/json"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/label"
+	"github.com/onepanelio/core/pkg/util/pagination"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
+	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"regexp"
-	"sort"
 	"strings"
 )
 
@@ -162,6 +164,32 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 		// Manifests could get big, don't return them in this case.
 		cronWorkflow.WorkflowExecution.WorkflowTemplate.Manifest = ""
 
+		workflowSpec, err := yaml.Marshal(argoCreatedCronWorkflow.Spec.WorkflowSpec)
+		if err != nil {
+			return nil, err
+		}
+		_, err = sb.Insert("cron_workflows").
+			SetMap(sq.Eq{
+				"uid":                           cronWorkflow.UID,
+				"name":                          cronWorkflow.Name,
+				"workflow_template_version_id":  workflowTemplate.WorkflowTemplateVersionId,
+				"schedule":                      cronWorkflow.Schedule,
+				"timezone":                      cronWorkflow.Timezone,
+				"suspend":                       cronWorkflow.Suspend,
+				"concurrency_policy":            cronWorkflow.ConcurrencyPolicy,
+				"starting_deadline_seconds":     cronWorkflow.StartingDeadlineSeconds,
+				"successful_jobs_history_limit": cronWorkflow.SuccessfulJobsHistoryLimit,
+				"failed_jobs_history_limit":     cronWorkflow.FailedJobsHistoryLimit,
+				"workflow_spec":                 workflowSpec,
+			}).
+			Suffix("RETURNING id").
+			RunWith(c.DB.DB).
+			Exec()
+
+		if err != nil {
+			return nil, err
+		}
+
 		return cronWorkflow, nil
 	}
 	return nil, nil
@@ -261,53 +289,42 @@ func (c *Client) DeleteCronWorkflowLabel(namespace, name string, keysToDelete ..
 	return wf.Labels, nil
 }
 
-func (c *Client) ListCronWorkflows(namespace, workflowTemplateUID string) (cronWorkflows []*CronWorkflow, err error) {
-	listOptions := ListOptions{}
-	if workflowTemplateUID != "" {
-		listOptions.LabelSelector = "onepanel.io/workflow-template-uid=" + workflowTemplateUID
-	}
-	cronWorkflowList, err := c.ArgoprojV1alpha1().CronWorkflows(namespace).List(listOptions)
+func (c *Client) ListCronWorkflows(namespace, workflowTemplateUID string, pagination *pagination.PaginationRequest) (cronWorkflows []*CronWorkflow, err error) {
+	sb := c.cronWorkflowSelectBuilder(namespace, workflowTemplateUID).
+		OrderBy("cw.created_at DESC")
+
+	sb = *pagination.ApplyToSelect(&sb)
+	query, args, err := sb.ToSql()
+
 	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"Error":     err.Error(),
-		}).Error("CronWorkflows not found.")
-		return nil, util.NewUserError(codes.NotFound, "CronWorkflows not found.")
+		return nil, err
 	}
-	cwfs := cronWorkflowList.Items
-	sort.Slice(cwfs, func(i, j int) bool {
-		ith := cwfs[i].CreationTimestamp.Time
-		jth := cwfs[j].CreationTimestamp.Time
-		//Most recent first
-		return ith.After(jth)
-	})
 
-	for _, cwf := range cwfs {
-		var parameters []WorkflowExecutionParameter
+	if err := c.DB.Select(&cronWorkflows, query, args...); err != nil {
+		return nil, err
+	}
 
-		for _, param := range cwf.Spec.WorkflowSpec.Arguments.Parameters {
-			parameters = append(parameters, WorkflowExecutionParameter{
-				Name:  param.Name,
-				Value: param.Value,
-			})
+	for _, cwf := range cronWorkflows {
+		parameters, err := cwf.GetParametersFromWorkflowSpec()
+		if err != nil {
+			continue
 		}
 
-		cronWorkflows = append(cronWorkflows, &CronWorkflow{
-			CreatedAt:                  cwf.CreationTimestamp.UTC(),
-			UID:                        string(cwf.ObjectMeta.UID),
-			Name:                       cwf.Name,
-			Schedule:                   cwf.Spec.Schedule,
-			Timezone:                   cwf.Spec.Timezone,
-			Suspend:                    cwf.Spec.Suspend,
-			ConcurrencyPolicy:          string(cwf.Spec.ConcurrencyPolicy),
-			StartingDeadlineSeconds:    cwf.Spec.StartingDeadlineSeconds,
-			SuccessfulJobsHistoryLimit: cwf.Spec.SuccessfulJobsHistoryLimit,
-			FailedJobsHistoryLimit:     cwf.Spec.FailedJobsHistoryLimit,
-			WorkflowExecution: &WorkflowExecution{
-				Parameters: parameters,
-			},
-		})
+		cwf.WorkflowExecution = &WorkflowExecution{
+			Parameters: parameters,
+		}
 	}
+
+	return
+}
+
+func (c *Client) CountCronWorkflows(namespace, workflowTemplateUID string) (count int, err error) {
+	err = c.cronWorkflowSelectBuilderNoColumns(namespace, workflowTemplateUID).
+		Columns("COUNT(*)").
+		RunWith(c.DB.DB).
+		QueryRow().
+		Scan(&count)
+
 	return
 }
 
@@ -434,6 +451,7 @@ func (c *Client) createCronWorkflow(namespace string, workflowTemplateId *uint64
 			newParams = append(newParams, param)
 		}
 		cwf.Spec.WorkflowSpec.Arguments.Parameters = newParams
+		wf.Spec.Arguments.Parameters = newParams
 	}
 	if opts.Labels != nil {
 		cwf.ObjectMeta.Labels = *opts.Labels
@@ -471,7 +489,46 @@ func (c *Client) createCronWorkflow(namespace string, workflowTemplateId *uint64
 }
 
 func (c *Client) TerminateCronWorkflow(namespace, name string) (err error) {
+	query, args, err := sb.Select().
+		Columns("cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.workflow_template_version_id").
+		Columns("cw.schedule", "cw.timezone", "cw.suspend", "cw.concurrency_policy", "cw.starting_deadline_seconds").
+		Columns("cw.successful_jobs_history_limit", "cw.failed_jobs_history_limit", "cw.workflow_spec", "wtv.version").
+		From("cron_workflows cw").
+		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
+		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
+		Where(sq.Eq{
+			"wt.namespace": namespace,
+			"cw.name":      name,
+		}).
+		ToSql()
+
+	cronWorkflow := &CronWorkflow{}
+	if err := c.DB.Get(cronWorkflow, query, args...); err != nil {
+		return err
+	}
+
+	query = `DELETE FROM workflow_executions
+			 WHERE cron_workflow_id = $1`
+
+	if _, err := c.DB.Exec(query, cronWorkflow.ID); err != nil {
+		return err
+	}
+
+	query = `DELETE FROM cron_workflows 
+			  USING workflow_template_versions, workflow_templates
+			  WHERE cron_workflows.workflow_template_version_id = workflow_template_versions.id 
+			   AND workflow_template_versions.workflow_template_id = workflow_templates.id 
+			   AND workflow_templates.namespace = $1 
+			   AND cron_workflows.name = $2`
+	if _, err := c.DB.Exec(query, namespace, name); err != nil {
+		return err
+	}
+
 	err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Delete(name, nil)
+	if err != nil && strings.Contains(err.Error(), "not found") {
+		err = nil
+	}
+
 	return
 }
 
@@ -486,4 +543,26 @@ func unmarshalCronWorkflows(cwfBytes []byte, strict bool) (cwfs wfv1.CronWorkflo
 		return cwf, nil
 	}
 	return
+}
+
+func (c *Client) cronWorkflowSelectBuilder(namespace string, workflowTemplateUid string) sq.SelectBuilder {
+	sb := c.cronWorkflowSelectBuilderNoColumns(namespace, workflowTemplateUid).
+		Columns("cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.workflow_template_version_id").
+		Columns("cw.schedule", "cw.timezone", "cw.suspend", "cw.concurrency_policy", "cw.starting_deadline_seconds").
+		Columns("cw.successful_jobs_history_limit", "cw.failed_jobs_history_limit", "cw.workflow_spec", "wtv.version")
+
+	return sb
+}
+
+func (c *Client) cronWorkflowSelectBuilderNoColumns(namespace string, workflowTemplateUid string) sq.SelectBuilder {
+	sb := sb.Select().
+		From("cron_workflows cw").
+		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
+		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
+		Where(sq.Eq{
+			"wt.namespace": namespace,
+			"wt.uid":       workflowTemplateUid,
+		})
+
+	return sb
 }
