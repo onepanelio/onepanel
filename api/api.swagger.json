@@ -1828,6 +1828,39 @@
           "WorkflowTemplateService"
         ]
       }
+    },
+    "/apis/v1beta1/{namespace}/workspace_templates": {
+      "post": {
+        "summary": "Creates a Workflow",
+        "operationId": "CreateWorkspaceTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkspaceTemplate"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WorkspaceTemplate"
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceTemplateService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -2336,6 +2369,34 @@
         },
         "stats": {
           "$ref": "#/definitions/WorkflowExecutionStatisticReport"
+        }
+      }
+    },
+    "WorkspaceTemplate": {
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string",
+          "format": "int64"
+        },
+        "manifest": {
+          "type": "string"
+        },
+        "isLatest": {
+          "type": "boolean",
+          "format": "boolean"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "workflowTemplate": {
+          "$ref": "#/definitions/WorkflowTemplate"
         }
       }
     },

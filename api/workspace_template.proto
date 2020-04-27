@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package api;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "workflow_template.proto";
+import "label.proto";
+
+service WorkspaceTemplateService {
+    // Creates a Workflow
+    rpc CreateWorkspaceTemplate (CreateWorkspaceTemplateRequest) returns (WorkspaceTemplate) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/{namespace}/workspace_templates"
+            body: "workspaceTemplate"
+        };
+    }
+}
+
+message CreateWorkspaceTemplateRequest {
+    string namespace = 1;
+    WorkspaceTemplate workspaceTemplate = 2;
+}
+
+message WorkspaceTemplate {
+    string uid = 1;
+    string name = 2;
+    int64 version = 3;
+    string manifest = 4;
+    bool isLatest = 5;
+    string createdAt = 6;
+    WorkflowTemplate workflowTemplate = 7;
+}
+

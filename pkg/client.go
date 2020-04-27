@@ -3,6 +3,7 @@ package v1
 import (
 	"encoding/base64"
 	"errors"
+	sq "github.com/Masterminds/squirrel"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"regexp"
 	"strconv"
@@ -28,6 +29,8 @@ const (
 type Config = rest.Config
 
 type DB = sqlx.DB
+
+var sb = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
 type Client struct {
 	kubernetes.Interface

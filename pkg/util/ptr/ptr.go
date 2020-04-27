@@ -6,6 +6,10 @@ func Bool(value bool) *bool {
 	return &value
 }
 
+func Int32(value int32) *int32 {
+	return &value
+}
+
 func Uint64(value uint64) *uint64 {
 	return &value
 }

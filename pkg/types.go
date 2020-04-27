@@ -2,6 +2,7 @@ package v1
 
 import (
 	"encoding/json"
+	v1 "github.com/onepanelio/core/pkg/apis/core/v1"
 	"github.com/onepanelio/core/pkg/util/mapping"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -371,10 +372,8 @@ type WorkflowExecution struct {
 	Labels           map[string]string
 }
 
-type WorkflowExecutionParameter struct {
-	Name  string
-	Value *string
-}
+// TODO: Using an alias so we can refactor out WorkflowExecutionParameter
+type WorkflowExecutionParameter = v1.Parameter
 
 type ListOptions = metav1.ListOptions
 
@@ -481,4 +480,25 @@ func WorkflowTemplatesToVersionIds(workflowTemplates []*WorkflowTemplate) (ids [
 	}
 
 	return
+}
+
+type WorkspaceTemplate struct {
+	ID               uint64
+	UID              string
+	Name             string
+	Version          int64
+	Manifest         string
+	IsLatest         bool
+	CreatedAt        time.Time `db:"created_at"`
+	WorkflowTemplate *WorkflowTemplate
+}
+
+func (wt *WorkspaceTemplate) GenerateUID() (string, error) {
+	uid, err := uuid.NewRandom()
+	if err != nil {
+		return "", err
+	}
+	wt.UID = uid.String()
+
+	return wt.UID, nil
 }

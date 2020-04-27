@@ -21,8 +21,6 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var sb = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-
 func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
 	uid, err := workflowTemplate.GenerateUID()
 	if err != nil {
@@ -87,6 +85,8 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		}
 		return nil, err
 	}
+
+	workflowTemplate.Version = versionUnix
 
 	return workflowTemplate, nil
 }
