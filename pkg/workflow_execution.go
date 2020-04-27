@@ -1232,9 +1232,7 @@ func (c *Client) GetWorkflowExecutionStatisticsForTemplates(workflowTemplates ..
 Will build a template that makes a CURL request to the onepanel-core API,
 with statistics about the workflow that was just executed.
 */
-func GetExitHandlerWorkflowStatistics(namespace string, workflowTemplateId *uint64) (workflowStepName, workflowStepTemplate, workflowStepWhen string, err error, wfv1Template wfv1.Template) {
-	workflowStepName = "workflow-statistics"
-	workflowStepTemplate = "workflow-statistics-template"
+func getExitHandlerWorkflowStatistics(namespace string, workflowTemplateId *uint64) (statsTemplate *wfv1.Template, err error) {
 	host := env.GetEnv("ONEPANEL_CORE_SERVICE_HOST", "")
 	if host == "" {
 		err = errors.New("ONEPANEL_CORE_SERVICE_HOST is empty.")
@@ -1253,18 +1251,18 @@ func GetExitHandlerWorkflowStatistics(namespace string, workflowTemplateId *uint
 	}
 	jsonRequestBytes, err := json.Marshal(jsonRequestStruct)
 	if err != nil {
-		return "", "", "", err, wfv1.Template{}
+		return nil, err
 	}
 	jsonRequestStr := string(jsonRequestBytes)
 	curlJSONBody := fmt.Sprintf("--data '%s'", jsonRequestStr)
 
 	token, err := GetBearerToken(namespace)
 	if err != nil {
-		return "", "", "", err, wfv1.Template{}
+		return nil, err
 	}
 
-	wfv1Template = wfv1.Template{
-		Name: workflowStepTemplate,
+	statsTemplate = &wfv1.Template{
+		Name: "workflow-statistics",
 		Container: &corev1.Container{
 			Image:   "curlimages/curl",
 			Command: []string{"sh", "-c"},
@@ -1311,16 +1309,16 @@ func GetInitContainerForCronWorkflow(templateCorrespondingToEntryPoint *wfv1.Tem
 }
 
 func InjectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace string, workflowTemplateId *uint64) error {
-	exitHandlerStepName, exitHandlerStepTemplate, exitHandlerStepWhen, err, exitHandlerTemplate := GetExitHandlerWorkflowStatistics(namespace, workflowTemplateId)
+	statsTemplate, err := getExitHandlerWorkflowStatistics(namespace, workflowTemplateId)
 	if err != nil {
 		return err
 	}
 
 	dagTask := wfv1.DAGTask{
-		Name: exitHandlerStepName, Template: exitHandlerStepTemplate, When: exitHandlerStepWhen,
+		Name:     statsTemplate.Name,
+		Template: statsTemplate.Name,
 	}
-
-	wf.Spec.Templates = append(wf.Spec.Templates, exitHandlerTemplate)
+	wf.Spec.Templates = append(wf.Spec.Templates, *statsTemplate)
 	if wf.Spec.OnExit != "" {
 		for _, t := range wf.Spec.Templates {
 			if t.Name == wf.Spec.OnExit {
