@@ -3,6 +3,7 @@ package v1
 import (
 	"encoding/base64"
 	"errors"
+	"github.com/ghodss/yaml"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"regexp"
 	"strconv"
@@ -17,12 +18,12 @@ import (
 )
 
 const (
-	artifactRepositoryEndpointKey       = "artifactRepositoryEndpoint"
-	artifactRepositoryBucketKey         = "artifactRepositoryBucket"
-	artifactRepositoryRegionKey         = "artifactRepositoryRegion"
-	artifactRepositoryInSecureKey       = "artifactRepositoryInsecure"
-	artifactRepositoryAccessKeyValueKey = "artifactRepositoryAccessKey"
-	artifactRepositorySecretKeyValueKey = "artifactRepositorySecretKey"
+	artifactRepositoryEndpointKey       = "artifactRepositoryS3Endpoint"
+	artifactRepositoryBucketKey         = "artifactRepositoryS3Bucket"
+	artifactRepositoryRegionKey         = "artifactRepositoryS3Region"
+	artifactRepositoryInsecureKey       = "artifactRepositoryS3Insecure"
+	artifactRepositoryAccessKeyValueKey = "artifactRepositoryS3AccessKey"
+	artifactRepositorySecretKeyValueKey = "artifactRepositoryS3SecretKey"
 )
 
 type Config = rest.Config
@@ -101,6 +102,15 @@ func (c *Client) GetNamespaceConfig(namespace string) (config map[string]string,
 		return
 	}
 	config = configMap.Data
+	s3Conf := ArtifactRepositoryS3Config{}
+
+	err = yaml.Unmarshal([]byte(configMap.Data["artifactRepository"]), &s3Conf)
+	config[artifactRepositoryEndpointKey] = s3Conf.S3.Endpoint
+	config[artifactRepositoryBucketKey] = s3Conf.S3.Bucket
+	config[artifactRepositoryRegionKey] = s3Conf.S3.Region
+	config[artifactRepositoryInsecureKey] = s3Conf.S3.Insecure
+	config[artifactRepositoryAccessKeyValueKey] = s3Conf.S3.AccessKeySecret.Key
+	config[artifactRepositorySecretKeyValueKey] = s3Conf.S3.SecretKeySecret.Key
 
 	secret, err := c.GetSecret(namespace, "onepanel")
 	if err != nil {
@@ -119,7 +129,7 @@ func (c *Client) GetNamespaceConfig(namespace string) (config map[string]string,
 }
 
 func (c *Client) GetS3Client(namespace string, config map[string]string) (s3Client *s3.Client, err error) {
-	insecure, err := strconv.ParseBool(config[artifactRepositoryInSecureKey])
+	insecure, err := strconv.ParseBool(config[artifactRepositoryInsecureKey])
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,

@@ -400,3 +400,21 @@ func FilePathToExtension(path string) string {
 
 	return path[dotIndex+1:]
 }
+
+type ArtifactRepositoryS3Config struct {
+	S3 struct {
+		Bucket          string
+		Endpoint        string
+		Insecure        string
+		Region          string
+		AccessKeySecret struct {
+			Name string
+			Key  string
+		}
+		SecretKeySecret struct {
+			Name string
+			Key  string
+		}
+		Key string
+	}
+}
