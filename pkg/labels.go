@@ -43,6 +43,7 @@ func (c *Client) GetDbLabels(resource string, ids ...uint64) (labels []*Label, e
 		Where(sq.Eq{
 			"resource": resource,
 		}).
+		OrderBy("key").
 		ToSql()
 
 	if err != nil {

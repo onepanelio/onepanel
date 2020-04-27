@@ -558,6 +558,15 @@ func (c *Client) ListWorkflowTemplates(namespace string, paginator *pagination.P
 		return nil, util.NewUserError(codes.NotFound, "Unable to get Workflow Execution Statistic for Templates.")
 	}
 
+	err = c.GetCronWorkflowStatisticsForTemplates(workflowTemplateVersions...)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Error":     err.Error(),
+		}).Error("Unable to get Cron Workflow Statistic for Templates.")
+		return nil, util.NewUserError(codes.NotFound, "Unable to get Cron Workflow Statistic for Templates.")
+	}
+
 	labelsMap, err := c.GetDbLabelsMapped(TypeWorkflowTemplateVersion, WorkflowTemplatesToVersionIds(workflowTemplateVersions)...)
 	if err != nil {
 		log.WithFields(log.Fields{

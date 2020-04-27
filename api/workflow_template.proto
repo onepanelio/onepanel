@@ -154,6 +154,10 @@ message WorkflowExecutionStatisticReport {
     int32 failed = 5;
 }
 
+message CronWorkflowStatisticsReport {
+    int32 total = 1;
+}
+
 message WorkflowTemplate {
     string createdAt = 1;
     string uid = 2;
@@ -166,6 +170,8 @@ message WorkflowTemplate {
     repeated KeyValue labels = 9;
 
     WorkflowExecutionStatisticReport stats = 10;
+    CronWorkflowStatisticsReport cronStats = 11;
+
 }
 
 message GetWorkflowTemplateLabelsRequest {

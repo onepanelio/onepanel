@@ -122,6 +122,7 @@ type WorkflowTemplate struct {
 	ArgoWorkflowTemplate             *wfv1.WorkflowTemplate
 	Labels                           map[string]string
 	WorkflowExecutionStatisticReport *WorkflowExecutionStatisticReport
+	CronWorkflowsStatisticsReport    *CronWorkflowStatisticReport
 	WorkflowTemplateVersionId        uint64 `db:"workflow_template_version_id"` // Reference to the associated workflow template version.
 }
 
@@ -141,6 +142,11 @@ type WorkflowExecutionStatisticReport struct {
 	Running            int32
 	Completed          int32
 	Failed             int32
+}
+
+type CronWorkflowStatisticReport struct {
+	WorkflowTemplateId uint64 `db:"workflow_template_id"`
+	Total              int32
 }
 
 type WorkflowTemplateVersion struct {

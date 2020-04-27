@@ -566,3 +566,66 @@ func (c *Client) cronWorkflowSelectBuilderNoColumns(namespace string, workflowTe
 
 	return sb
 }
+
+func (c *Client) GetCronWorkflowStatisticsForTemplates(workflowTemplates ...*WorkflowTemplate) (err error) {
+	if len(workflowTemplates) == 0 {
+		return nil
+	}
+
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	whereIn := "wtv.workflow_template_id IN (?"
+	for i := range workflowTemplates {
+		if i == 0 {
+			continue
+		}
+
+		whereIn += ",?"
+	}
+	whereIn += ")"
+
+	ids := make([]interface{}, len(workflowTemplates))
+	for i, workflowTemplate := range workflowTemplates {
+		ids[i] = workflowTemplate.ID
+	}
+
+	defer tx.Rollback()
+
+	statsSelect := `
+		workflow_template_id,
+		COUNT(*) total`
+
+	query, args, err := sb.Select(statsSelect).
+		From("cron_workflows cw").
+		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
+		Where(whereIn, ids...).
+		GroupBy("wtv.workflow_template_id").
+		ToSql()
+
+	if err != nil {
+		return err
+	}
+	result := make([]*CronWorkflowStatisticReport, 0)
+	err = c.DB.Select(&result, query, args...)
+	if err != nil {
+		return err
+	}
+
+	resultMapping := make(map[uint64]*CronWorkflowStatisticReport)
+	for i := range result {
+		report := result[i]
+		resultMapping[report.WorkflowTemplateId] = report
+	}
+
+	for _, workflowTemplate := range workflowTemplates {
+		resultMap, ok := resultMapping[workflowTemplate.ID]
+		if ok {
+			workflowTemplate.CronWorkflowsStatisticsReport = resultMap
+		}
+	}
+
+	return
+}

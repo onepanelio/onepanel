@@ -42,6 +42,12 @@ func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 		}
 	}
 
+	if wft.CronWorkflowsStatisticsReport != nil {
+		res.CronStats = &api.CronWorkflowStatisticsReport{
+			Total: wft.CronWorkflowsStatisticsReport.Total,
+		}
+	}
+
 	return res
 }
 

@@ -1926,6 +1926,15 @@
         }
       }
     },
+    "CronWorkflowStatisticsReport": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "DeleteSecretKeyResponse": {
       "type": "object",
       "properties": {
@@ -2369,6 +2378,9 @@
         },
         "stats": {
           "$ref": "#/definitions/WorkflowExecutionStatisticReport"
+        },
+        "cronStats": {
+          "$ref": "#/definitions/CronWorkflowStatisticsReport"
         }
       }
     },
