@@ -1315,19 +1315,34 @@ func InjectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace st
 	if err != nil {
 		return err
 	}
-	if exitHandlerStepTemplate != "" {
-		exitHandler := wfv1.Template{
+
+	dagTask := wfv1.DAGTask{
+		Name: exitHandlerStepName, Template: exitHandlerStepTemplate, When: exitHandlerStepWhen,
+	}
+
+	wf.Spec.Templates = append(wf.Spec.Templates, exitHandlerTemplate)
+	if wf.Spec.OnExit != "" {
+		for _, t := range wf.Spec.Templates {
+			if t.Name == wf.Spec.OnExit {
+				lasTaskIndex := len(t.DAG.Tasks) - 1
+				dagTask.Dependencies = []string{t.DAG.Tasks[lasTaskIndex].Name}
+
+				t.DAG.Tasks = append(t.DAG.Tasks, dagTask)
+
+				break
+			}
+		}
+	} else {
+		exitHandlerDAG := wfv1.Template{
 			Name: "exit-handler",
-			Steps: []wfv1.ParallelSteps{
-				{
-					Steps: []wfv1.WorkflowStep{
-						{Name: exitHandlerStepName, Template: exitHandlerStepTemplate, When: exitHandlerStepWhen},
-					},
+			DAG: &wfv1.DAGTemplate{
+				Tasks: []wfv1.DAGTask{
+					dagTask,
 				},
 			},
 		}
 		wf.Spec.OnExit = "exit-handler"
-		wf.Spec.Templates = append(wf.Spec.Templates, exitHandler, exitHandlerTemplate)
+		wf.Spec.Templates = append(wf.Spec.Templates, exitHandlerDAG)
 	}
 	return nil
 }
