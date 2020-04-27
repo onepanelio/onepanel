@@ -234,12 +234,12 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateId *uint64, wf
 		wf.ObjectMeta.Labels = *opts.Labels
 	}
 
-	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
+	err = InjectExitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
+	if err != nil {
 		return nil, err
 	}
 
-	err = InjectExitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
-	if err != nil {
+	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
 		return nil, err
 	}
 
