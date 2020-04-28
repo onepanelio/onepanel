@@ -1267,9 +1267,12 @@ func getExitHandlerWorkflowStatistics(namespace string, workflowTemplateId *uint
 			Image:   "curlimages/curl",
 			Command: []string{"sh", "-c"},
 			Args: []string{
-				"curl '" + curlEndpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
-					"-H 'Authorization: Bearer " + token + "' " +
+				"curl -s -o /dev/null -w \"%{http_code}\" '" + curlEndpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
+					"-H 'Authorization: Bearer '\"$SERVICE_ACCOUNT_TOKEN\"'' " +
 					curlJSONBody + " --compressed",
+			},
+			Env: []corev1.EnvVar{
+				{Name: "SERVICE_ACCOUNT_TOKEN", Value: token},
 			},
 		},
 	}
