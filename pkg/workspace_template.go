@@ -267,6 +267,11 @@ metadata:
 						When:      "{{workflow.parameters.sys-workspace-action}} == delete",
 						WithItems: volumeClaimItems,
 					},
+					{
+						Name:         spec.PostExecutionWorkflow.Entrypoint,
+						Template:     spec.PostExecutionWorkflow.Entrypoint,
+						Dependencies: []string{"stateful-set", "delete-stateful-set"},
+					},
 				},
 			},
 		},
@@ -319,9 +324,6 @@ metadata:
 		"arguments":  spec.Arguments,
 		"entrypoint": "workspace",
 		"templates":  templates,
-	}
-	if spec.PostExecutionWorkflow != nil {
-		workflowTemplateSpec["onExit"] = spec.PostExecutionWorkflow.Entrypoint
 	}
 
 	workflowTemplateSpecManifestBytes, err := yaml.Marshal(workflowTemplateSpec)
