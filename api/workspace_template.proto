@@ -4,6 +4,7 @@ package api;
 
 import "google/api/annotations.proto";
 import "workflow_template.proto";
+import "google/protobuf/empty.proto";
 
 service WorkspaceTemplateService {
     // Creates a Workflow

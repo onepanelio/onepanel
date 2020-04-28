@@ -81,20 +81,21 @@ func (s *WorkflowServer) CreateWorkflowExecution(ctx context.Context, req *api.C
 	return apiWorkflowExecution(wf), nil
 }
 
-func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, request *api.AddWorkflowExecutionStatisticRequest) (*empty.Empty, error) {
+func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, req *api.AddWorkflowExecutionStatisticRequest) (*empty.Empty, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
 	phase := v1alpha1.NodeFailed
-	if request.Statistics.WorkflowStatus == "Succeeded" {
+	if req.Statistics.WorkflowStatus == "Succeeded" {
 		phase = v1alpha1.NodeSucceeded
 	}
 
-	workflow, err := client.ArgoprojV1alpha1().Workflows(request.Namespace).Get(request.Name, argov1.GetOptions{})
+	workflow, err := client.ArgoprojV1alpha1().Workflows(req.Namespace).Get(req.Name, argov1.GetOptions{})
 	if err != nil {
 		return &empty.Empty{}, err
 	}
 
-	err = client.FinishWorkflowExecutionStatisticViaExitHandler(request.Namespace, request.Name,
-		request.Statistics.WorkflowTemplateId, phase, workflow.Status.StartedAt.UTC())
+	err = client.FinishWorkflowExecutionStatisticViaExitHandler(req.Namespace, req.Name,
+		req.Statistics.WorkflowTemplateId, phase, workflow.Status.StartedAt.UTC())
+
 	if err != nil {
 		return &empty.Empty{}, err
 	}
@@ -104,12 +105,18 @@ func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, req
 // @todo we should not pass in an id into the request.
 // instead pass in the cron workflow uid, we can load the cron workflow from db that way and get
 // all required data.
-func (s *WorkflowServer) CronStartWorkflowExecutionStatistic(ctx context.Context, request *api.CronStartWorkflowExecutionStatisticRequest) (*empty.Empty, error) {
+func (s *WorkflowServer) CronStartWorkflowExecutionStatistic(ctx context.Context, req *api.CronStartWorkflowExecutionStatisticRequest) (*empty.Empty, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
-	err := client.CronStartWorkflowExecutionStatisticInsert(request.Namespace, request.Name, request.WorkflowTemplateId)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Name)
+	if err != nil || !allowed {
+		return &empty.Empty{}, err
+	}
+
+	err = client.CronStartWorkflowExecutionStatisticInsert(req.Namespace, req.Name, req.WorkflowTemplateId)
 	if err != nil {
 		return &empty.Empty{}, err
 	}
+
 	return &empty.Empty{}, nil
 }
 

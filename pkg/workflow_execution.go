@@ -170,7 +170,8 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		}
 
 		addEnvToTemplate(&template, "ONEPANEL_API_URL", sysConfig["ONEPANEL_API_URL"])
-		addEnvToTemplate(&template, "ONEPANEL_HOST", sysConfig["ONEPANEL_HOST"])
+		addEnvToTemplate(&template, "ONEPANEL_FQDN", sysConfig["ONEPANEL_FQDN"])
+		addEnvToTemplate(&template, "ONEPANEL_DOMAIN", sysConfig["ONEPANEL_DOMAIN"])
 		addEnvToTemplate(&template, "PROVIDER_TYPE", sysConfig["PROVIDER_TYPE"])
 	}
 
@@ -235,12 +236,12 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateId uint64, wor
 		wf.ObjectMeta.Labels = *opts.Labels
 	}
 
-	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
+	err = InjectExitHandlerWorkflowExecutionStatistic(wf, namespace, &workflowTemplateId)
+	if err != nil {
 		return nil, err
 	}
 
-	err = InjectExitHandlerWorkflowExecutionStatistic(wf, namespace, &workflowTemplateId)
-	if err != nil {
+	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
 		return nil, err
 	}
 
@@ -1282,9 +1283,12 @@ func getExitHandlerWorkflowStatistics(namespace string, workflowTemplateId *uint
 			Image:   "curlimages/curl",
 			Command: []string{"sh", "-c"},
 			Args: []string{
-				"curl '" + curlEndpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
-					"-H 'Authorization: Bearer " + token + "' " +
+				"curl -s -o /dev/null -w \"%{http_code}\" '" + curlEndpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
+					"-H 'Authorization: Bearer '\"$SERVICE_ACCOUNT_TOKEN\"'' " +
 					curlJSONBody + " --compressed",
+			},
+			Env: []corev1.EnvVar{
+				{Name: "SERVICE_ACCOUNT_TOKEN", Value: token},
 			},
 		},
 	}

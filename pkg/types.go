@@ -424,17 +424,22 @@ type File struct {
 	Directory    bool
 }
 
-func FilePathToName(path string) string {
-	if strings.HasSuffix(path, "/") {
-		path = path[:len(path)-1]
+type ArtifactRepositoryS3Config struct {
+	S3 struct {
+		Bucket          string
+		Endpoint        string
+		Insecure        string
+		Region          string
+		AccessKeySecret struct {
+			Name string
+			Key  string
+		}
+		SecretKeySecret struct {
+			Name string
+			Key  string
+		}
+		Key string
 	}
-
-	lastSlashIndex := strings.LastIndex(path, "/")
-	if lastSlashIndex < 0 {
-		return path
-	}
-
-	return path[lastSlashIndex+1:]
 }
 
 // Given a path, returns the parent path, asssuming a '/' delimitor
@@ -474,6 +479,19 @@ func FilePathToExtension(path string) string {
 	}
 
 	return path[dotIndex+1:]
+}
+
+func FilePathToName(path string) string {
+	if strings.HasSuffix(path, "/") {
+		path = path[:len(path)-1]
+	}
+
+	lastSlashIndex := strings.LastIndex(path, "/")
+	if lastSlashIndex < 0 {
+		return path
+	}
+
+	return path[lastSlashIndex+1:]
 }
 
 func WorkflowTemplatesToIds(workflowTemplates []*WorkflowTemplate) (ids []uint64) {

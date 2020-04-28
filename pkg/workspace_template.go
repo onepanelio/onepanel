@@ -30,7 +30,7 @@ func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err er
 
 	// Resource action parameter
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
-		Name:     "op-name",
+		Name:     "sys-name",
 		Type:     "input.text",
 		Value:    ptr.String("name"),
 		Required: true,
@@ -38,14 +38,14 @@ func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err er
 
 	// Resource action parameter
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
-		Name:  "op-resource-action",
+		Name:  "sys-resource-action",
 		Value: ptr.String("apply"),
 		Type:  "input.hidden",
 	})
 
 	// Workspace action
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
-		Name:  "op-workspace-action",
+		Name:  "sys-workspace-action",
 		Value: ptr.String("create"),
 		Type:  "input.hidden",
 	})
@@ -56,7 +56,7 @@ func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err er
 		return
 	}
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
-		Name:     "op-node-pool",
+		Name:     "sys-node-pool",
 		Value:    ptr.String(options[0].Value),
 		Type:     "select.select",
 		Options:  options,
@@ -72,7 +72,7 @@ func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err er
 			}
 
 			spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
-				Name:     fmt.Sprintf("op-%v-volume-size", v.Name),
+				Name:     fmt.Sprintf("sys-%v-volume-size", v.Name),
 				Type:     "input.number",
 				Value:    ptr.String("20480"),
 				Required: true,
@@ -92,12 +92,12 @@ func createServiceManifest(spec *v1.WorkspaceSpec) (serviceManifest string, err 
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "{{workflow.parameters.op-name}}",
+			Name: "{{workflow.parameters.sys-name}}",
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: spec.Ports,
 			Selector: map[string]string{
-				"app": "{{workflow.parameters.op-name}}",
+				"app": "{{workflow.parameters.sys-name}}",
 			},
 		},
 	}
@@ -113,19 +113,19 @@ func createServiceManifest(spec *v1.WorkspaceSpec) (serviceManifest string, err 
 func createVirtualServiceManifest(spec *v1.WorkspaceSpec, config map[string]string) (virtualServiceManifest string, err error) {
 	for _, h := range spec.Routes {
 		for _, r := range h.Route {
-			r.Destination.Host = "{{workflow.parameters.op-name}}"
+			r.Destination.Host = "{{workflow.parameters.sys-name}}"
 		}
 	}
 	virtualService := map[string]interface{}{
 		"apiVersion": "networking.istio.io/v1alpha3",
 		"kind":       "VirtualService",
 		"metadata": metav1.ObjectMeta{
-			Name: "{{workflow.parameters.op-name}}",
+			Name: "{{workflow.parameters.sys-name}}",
 		},
 		"spec": networking.VirtualService{
 			Http:     spec.Routes,
 			Gateways: []string{"istio-system/ingressgateway"},
-			Hosts:    []string{fmt.Sprintf("{{workflow.parameters.op-name}}-{{workflow.namespace}}.%v", config["ONEPANEL_HOST"])},
+			Hosts:    []string{fmt.Sprintf("{{workflow.parameters.sys-name}}-{{workflow.namespace}}.%v", config["ONEPANEL_DOMAIN"])},
 		},
 	}
 	virtualServiceManifestBytes, err := yaml.Marshal(virtualService)
@@ -157,7 +157,7 @@ func createStatefulSetManifest(workspaceSpec *v1.WorkspaceSpec, config map[strin
 					"storageClassName": ptr.String("onepanel"),
 					"resources": map[string]interface{}{
 						"requests": map[string]string{
-							"storage": fmt.Sprintf("{{workflow.parameters.op-%v-volume-size}}Mi", v.Name),
+							"storage": fmt.Sprintf("{{workflow.parameters.sys-%v-volume-size}}Mi", v.Name),
 						},
 					},
 				},
@@ -171,25 +171,25 @@ func createStatefulSetManifest(workspaceSpec *v1.WorkspaceSpec, config map[strin
 		"apiVersion": "apps/v1",
 		"kind":       "StatefulSet",
 		"metadata": metav1.ObjectMeta{
-			Name: "{{workflow.parameters.op-name}}",
+			Name: "{{workflow.parameters.sys-name}}",
 		},
 		"spec": map[string]interface{}{
 			"replicas":    1,
-			"serviceName": "{{workflow.parameters.op-name}}",
+			"serviceName": "{{workflow.parameters.sys-name}}",
 			"selector": &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": "{{workflow.parameters.op-name}}",
+					"app": "{{workflow.parameters.sys-name}}",
 				},
 			},
 			"template": corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": "{{workflow.parameters.op-name}}",
+						"app": "{{workflow.parameters.sys-name}}",
 					},
 				},
 				Spec: corev1.PodSpec{
 					NodeSelector: map[string]string{
-						config["applicationNodePoolLabel"]: "{{workflow.parameters.op-node-pool}}",
+						config["applicationNodePoolLabel"]: "{{workflow.parameters.sys-node-pool}}",
 					},
 					Containers: workspaceSpec.Containers,
 				},
@@ -224,7 +224,7 @@ func unmarshalWorkflowTemplate(spec *v1.WorkspaceSpec, serviceManifest, virtualS
 	deletePVCManifest := `apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{inputs.parameters.op-pvc-name}}-{{workflow.parameters.op-name}}-0
+  name: {{inputs.parameters.sys-pvc-name}}-{{workflow.parameters.sys-name}}-0
 `
 	templates := []wfv1.Template{
 		{
@@ -244,13 +244,13 @@ metadata:
 						Name:         "stateful-set",
 						Template:     "stateful-set-resource",
 						Dependencies: []string{"virtual-service"},
-						When:         "{{workflow.parameters.op-workspace-action}} == create || {{workflow.parameters.op-workspace-action}} == update",
+						When:         "{{workflow.parameters.sys-workspace-action}} == create || {{workflow.parameters.sys-workspace-action}} == update",
 					},
 					{
 						Name:         "delete-stateful-set",
 						Template:     "delete-stateful-set-resource",
 						Dependencies: []string{"virtual-service"},
-						When:         "{{workflow.parameters.op-workspace-action}} == pause || {{workflow.parameters.op-workspace-action}} == delete",
+						When:         "{{workflow.parameters.sys-workspace-action}} == pause || {{workflow.parameters.sys-workspace-action}} == delete",
 					},
 					{
 						Name:         "delete-pvc",
@@ -259,13 +259,18 @@ metadata:
 						Arguments: wfv1.Arguments{
 							Parameters: []wfv1.Parameter{
 								{
-									Name:  "op-pvc-name",
+									Name:  "sys-pvc-name",
 									Value: ptr.String("{{item}}"),
 								},
 							},
 						},
-						When:      "{{workflow.parameters.op-workspace-action}} == delete",
+						When:      "{{workflow.parameters.sys-workspace-action}} == delete",
 						WithItems: volumeClaimItems,
+					},
+					{
+						Name:         spec.PostExecutionWorkflow.Entrypoint,
+						Template:     spec.PostExecutionWorkflow.Entrypoint,
+						Dependencies: []string{"stateful-set", "delete-stateful-set"},
 					},
 				},
 			},
@@ -273,21 +278,21 @@ metadata:
 		{
 			Name: "service-resource",
 			Resource: &wfv1.ResourceTemplate{
-				Action:   "{{workflow.parameters.op-resource-action}}",
+				Action:   "{{workflow.parameters.sys-resource-action}}",
 				Manifest: serviceManifest,
 			},
 		},
 		{
 			Name: "virtual-service-resource",
 			Resource: &wfv1.ResourceTemplate{
-				Action:   "{{workflow.parameters.op-resource-action}}",
+				Action:   "{{workflow.parameters.sys-resource-action}}",
 				Manifest: virtualServiceManifest,
 			},
 		},
 		{
 			Name: "stateful-set-resource",
 			Resource: &wfv1.ResourceTemplate{
-				Action:           "{{workflow.parameters.op-resource-action}}",
+				Action:           "{{workflow.parameters.sys-resource-action}}",
 				Manifest:         containersManifest,
 				SuccessCondition: "status.readyReplicas > 0",
 			},
@@ -295,17 +300,17 @@ metadata:
 		{
 			Name: "delete-stateful-set-resource",
 			Resource: &wfv1.ResourceTemplate{
-				Action:   "{{workflow.parameters.op-resource-action}}",
+				Action:   "{{workflow.parameters.sys-resource-action}}",
 				Manifest: containersManifest,
 			},
 		},
 		{
 			Name: "delete-pvc-resource",
 			Inputs: wfv1.Inputs{
-				Parameters: []wfv1.Parameter{{Name: "op-pvc-name"}},
+				Parameters: []wfv1.Parameter{{Name: "sys-pvc-name"}},
 			},
 			Resource: &wfv1.ResourceTemplate{
-				Action:   "{{workflow.parameters.op-resource-action}}",
+				Action:   "{{workflow.parameters.sys-resource-action}}",
 				Manifest: deletePVCManifest,
 			},
 		},
@@ -319,9 +324,6 @@ metadata:
 		"arguments":  spec.Arguments,
 		"entrypoint": "workspace",
 		"templates":  templates,
-	}
-	if spec.PostExecutionWorkflow != nil {
-		workflowTemplateSpec["onExit"] = spec.PostExecutionWorkflow.Entrypoint
 	}
 
 	workflowTemplateSpecManifestBytes, err := yaml.Marshal(workflowTemplateSpec)
