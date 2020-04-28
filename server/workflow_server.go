@@ -106,7 +106,7 @@ func (s *WorkflowServer) CronStartWorkflowExecutionStatistic(ctx context.Context
 		return &empty.Empty{}, err
 	}
 
-	err = client.CronStartWorkflowExecutionStatisticInsert(req.Namespace, req.Name, req.WorkflowTemplateId)
+	err = client.CronStartWorkflowExecutionStatisticInsert(req.Namespace, req.Name, req.Statistics.WorkflowTemplateId)
 	if err != nil {
 		return &empty.Empty{}, err
 	}
