@@ -10,6 +10,8 @@ const (
 	WorkflowTemplate           = OnepanelPrefix + "workflow-template"
 	WorkflowTemplateUid        = OnepanelPrefix + "workflow-template-uid"
 	WorkflowTemplateVersionUid = OnepanelPrefix + "workflow-template-version-uid"
+	WorkflowUid                = OnepanelPrefix + "workflow-uid"
+	CronWorkflowUid            = OnepanelPrefix + "cron-workflow-uid"
 	Version                    = OnepanelPrefix + "version"
 	VersionLatest              = OnepanelPrefix + "version-latest"
 )

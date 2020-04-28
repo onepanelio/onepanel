@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
-	"github.com/onepanelio/core/pkg/util/label"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/onepanelio/core/server/converter"
@@ -257,106 +256,4 @@ func (s *WorkflowTemplateServer) ArchiveWorkflowTemplate(ctx context.Context, re
 			IsArchived: archived,
 		},
 	}, nil
-}
-
-func (s *WorkflowTemplateServer) GetWorkflowTemplateLabels(ctx context.Context, req *api.GetWorkflowTemplateLabelsRequest) (*api.GetLabelsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflowtemplates", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	labels, err := client.GetWorkflowTemplateLabels(req.Namespace, req.Name, label.TagPrefix, req.Version)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := &api.GetLabelsResponse{
-		Labels: mapToKeyValue(labels),
-	}
-
-	return resp, nil
-}
-
-// Adds any labels that are not yet associated to the workflow execution.
-// If the label already exists, overwrites it.
-func (s *WorkflowTemplateServer) AddWorkflowTemplateLabels(ctx context.Context, req *api.AddLabelsRequest) (*api.GetLabelsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "workflowtemplates", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	keyValues := make(map[string]string)
-	for _, item := range req.Labels.Items {
-		keyValues[item.Key] = item.Value
-	}
-
-	labels, err := client.SetWorkflowTemplateLabels(req.Namespace, req.Name, label.TagPrefix, keyValues, false)
-	if err != nil {
-		return nil, err
-	}
-
-	workflowTemplateVersion, err := client.GetWorkflowTemplateVersionDb(req.Namespace, req.Name, "latest")
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = client.InsertLabelsBuilder(v1.TypeWorkflowTemplateVersion, workflowTemplateVersion.ID, keyValues).
-		RunWith(client.DB.DB).
-		Exec()
-	if err != nil {
-		return nil, err
-	}
-
-	resp := &api.GetLabelsResponse{
-		Labels: mapToKeyValue(labels),
-	}
-
-	return resp, nil
-}
-
-// Deletes all of the old labels and adds the new ones.
-func (s *WorkflowTemplateServer) ReplaceWorkflowTemplateLabels(ctx context.Context, req *api.ReplaceLabelsRequest) (*api.GetLabelsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "workflowtemplates", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	keyValues := make(map[string]string)
-	for _, item := range req.Labels.Items {
-		keyValues[item.Key] = item.Value
-	}
-
-	labels, err := client.SetWorkflowTemplateLabels(req.Namespace, req.Name, "tags.onepanel.io/", keyValues, true)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := &api.GetLabelsResponse{
-		Labels: mapToKeyValue(labels),
-	}
-
-	return resp, nil
-}
-
-func (s *WorkflowTemplateServer) DeleteWorkflowTemplateLabel(ctx context.Context, req *api.DeleteLabelRequest) (*api.GetLabelsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "argoproj.io", "workflowtemplates", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	keyToDelete := "tags.onepanel.io/" + req.Key
-	labels, err := client.DeleteWorkflowTemplateLabel(req.Namespace, req.Name, keyToDelete)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := &api.GetLabelsResponse{
-		Labels: mapToKeyValue(labels),
-	}
-
-	return resp, nil
 }

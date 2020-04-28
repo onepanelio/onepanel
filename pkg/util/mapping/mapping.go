@@ -7,6 +7,26 @@ import (
 
 type Mapping map[interface{}]interface{}
 
+func PluckKeys(input map[interface{}]interface{}) []interface{} {
+	result := make([]interface{}, 0)
+
+	for key := range input {
+		result = append(result, key)
+	}
+
+	return result
+}
+
+func PluckKeysStr(input map[string]string) []*string {
+	result := make([]*string, 0)
+
+	for key := range input {
+		result = append(result, &key)
+	}
+
+	return result
+}
+
 func New() Mapping {
 	return make(Mapping)
 }

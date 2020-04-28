@@ -4,8 +4,13 @@
 package api
 
 import (
+	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
+	_ "google.golang.org/genproto/googleapis/api/annotations"
+	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -108,8 +113,9 @@ func (m *Labels) GetItems() []*KeyValue {
 
 type AddLabelsRequest struct {
 	Namespace            string   `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Labels               *Labels  `protobuf:"bytes,3,opt,name=labels,proto3" json:"labels,omitempty"`
+	Resource             string   `protobuf:"bytes,2,opt,name=resource,proto3" json:"resource,omitempty"`
+	Uid                  string   `protobuf:"bytes,3,opt,name=uid,proto3" json:"uid,omitempty"`
+	Labels               *Labels  `protobuf:"bytes,4,opt,name=labels,proto3" json:"labels,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -147,9 +153,16 @@ func (m *AddLabelsRequest) GetNamespace() string {
 	return ""
 }
 
-func (m *AddLabelsRequest) GetName() string {
+func (m *AddLabelsRequest) GetResource() string {
 	if m != nil {
-		return m.Name
+		return m.Resource
+	}
+	return ""
+}
+
+func (m *AddLabelsRequest) GetUid() string {
+	if m != nil {
+		return m.Uid
 	}
 	return ""
 }
@@ -163,8 +176,9 @@ func (m *AddLabelsRequest) GetLabels() *Labels {
 
 type ReplaceLabelsRequest struct {
 	Namespace            string   `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Labels               *Labels  `protobuf:"bytes,3,opt,name=labels,proto3" json:"labels,omitempty"`
+	Resource             string   `protobuf:"bytes,2,opt,name=resource,proto3" json:"resource,omitempty"`
+	Uid                  string   `protobuf:"bytes,3,opt,name=uid,proto3" json:"uid,omitempty"`
+	Labels               *Labels  `protobuf:"bytes,4,opt,name=labels,proto3" json:"labels,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -202,9 +216,16 @@ func (m *ReplaceLabelsRequest) GetNamespace() string {
 	return ""
 }
 
-func (m *ReplaceLabelsRequest) GetName() string {
+func (m *ReplaceLabelsRequest) GetResource() string {
 	if m != nil {
-		return m.Name
+		return m.Resource
+	}
+	return ""
+}
+
+func (m *ReplaceLabelsRequest) GetUid() string {
+	if m != nil {
+		return m.Uid
 	}
 	return ""
 }
@@ -218,7 +239,8 @@ func (m *ReplaceLabelsRequest) GetLabels() *Labels {
 
 type GetLabelsRequest struct {
 	Namespace            string   `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Resource             string   `protobuf:"bytes,2,opt,name=resource,proto3" json:"resource,omitempty"`
+	Uid                  string   `protobuf:"bytes,3,opt,name=uid,proto3" json:"uid,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -256,9 +278,16 @@ func (m *GetLabelsRequest) GetNamespace() string {
 	return ""
 }
 
-func (m *GetLabelsRequest) GetName() string {
+func (m *GetLabelsRequest) GetResource() string {
 	if m != nil {
-		return m.Name
+		return m.Resource
+	}
+	return ""
+}
+
+func (m *GetLabelsRequest) GetUid() string {
+	if m != nil {
+		return m.Uid
 	}
 	return ""
 }
@@ -304,8 +333,9 @@ func (m *GetLabelsResponse) GetLabels() []*KeyValue {
 
 type DeleteLabelRequest struct {
 	Namespace            string   `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Key                  string   `protobuf:"bytes,3,opt,name=key,proto3" json:"key,omitempty"`
+	Resource             string   `protobuf:"bytes,2,opt,name=resource,proto3" json:"resource,omitempty"`
+	Uid                  string   `protobuf:"bytes,3,opt,name=uid,proto3" json:"uid,omitempty"`
+	Key                  string   `protobuf:"bytes,4,opt,name=key,proto3" json:"key,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -343,9 +373,16 @@ func (m *DeleteLabelRequest) GetNamespace() string {
 	return ""
 }
 
-func (m *DeleteLabelRequest) GetName() string {
+func (m *DeleteLabelRequest) GetResource() string {
 	if m != nil {
-		return m.Name
+		return m.Resource
+	}
+	return ""
+}
+
+func (m *DeleteLabelRequest) GetUid() string {
+	if m != nil {
+		return m.Uid
 	}
 	return ""
 }
@@ -370,21 +407,221 @@ func init() {
 func init() { proto.RegisterFile("label.proto", fileDescriptor_6100d2b5ae808f16) }
 
 var fileDescriptor_6100d2b5ae808f16 = []byte{
-	// 247 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x92, 0x3f, 0x4f, 0xc3, 0x30,
-	0x10, 0xc5, 0x15, 0x4c, 0x23, 0x7a, 0x11, 0x52, 0x38, 0x75, 0xf0, 0xc0, 0x10, 0xb9, 0x42, 0xca,
-	0x42, 0x86, 0xb0, 0xb1, 0x21, 0x55, 0x62, 0x80, 0xc9, 0x03, 0x62, 0x75, 0xdb, 0x1b, 0x2c, 0x9c,
-	0xc6, 0x60, 0x17, 0xa9, 0xdf, 0x1e, 0xf9, 0x4f, 0x03, 0x03, 0x13, 0x48, 0xdd, 0xee, 0xee, 0xc9,
-	0xef, 0x77, 0xe7, 0x3b, 0xa8, 0x8c, 0x5a, 0x93, 0xe9, 0xec, 0xc7, 0xe8, 0x47, 0x64, 0xca, 0x6a,
-	0xd1, 0xc3, 0xc5, 0x13, 0x1d, 0x5e, 0x94, 0xd9, 0x13, 0xd6, 0xc0, 0xde, 0xe8, 0xc0, 0x8b, 0xa6,
-	0x68, 0xe7, 0x32, 0x84, 0xb8, 0x80, 0xd9, 0x67, 0x90, 0xf8, 0x59, 0xac, 0xa5, 0x44, 0xdc, 0x42,
-	0xf9, 0x1c, 0x7c, 0x1c, 0x2e, 0x61, 0xa6, 0x3d, 0x0d, 0x8e, 0x17, 0x0d, 0x6b, 0xab, 0xfe, 0xb2,
-	0x53, 0x56, 0x77, 0x47, 0x3f, 0x99, 0x34, 0xa1, 0xa1, 0x7e, 0xd8, 0x6e, 0xd3, 0x0b, 0x49, 0xef,
-	0x7b, 0x72, 0x1e, 0xaf, 0x61, 0xbe, 0x53, 0x03, 0x39, 0xab, 0x36, 0x94, 0x81, 0xdf, 0x05, 0x44,
-	0x38, 0x0f, 0x49, 0xa6, 0xc6, 0x18, 0x97, 0x50, 0xc6, 0xe6, 0x1d, 0x67, 0x4d, 0xd1, 0x56, 0x7d,
-	0x15, 0x59, 0xd9, 0x35, 0x4b, 0x62, 0x80, 0x85, 0x24, 0x6b, 0xd4, 0x86, 0x4e, 0x82, 0x5b, 0x41,
-	0xfd, 0x48, 0xfe, 0x9f, 0x28, 0x71, 0x0f, 0x57, 0x3f, 0x5c, 0x9c, 0x1d, 0x77, 0x8e, 0xf0, 0x66,
-	0xe2, 0xff, 0xfa, 0xb5, 0xc7, 0x0e, 0x5e, 0x01, 0x57, 0x64, 0xc8, 0xa7, 0x79, 0xff, 0x3e, 0x6e,
-	0x5e, 0x3d, 0x9b, 0x56, 0xbf, 0x2e, 0xe3, 0x91, 0xdc, 0x7d, 0x05, 0x00, 0x00, 0xff, 0xff, 0xef,
-	0xc9, 0xad, 0xce, 0x33, 0x02, 0x00, 0x00,
+	// 434 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x94, 0x41, 0x6b, 0xd4, 0x40,
+	0x14, 0xc7, 0x49, 0x77, 0xbb, 0x74, 0x5f, 0x2c, 0xac, 0x8f, 0xaa, 0x31, 0xf4, 0xb0, 0xa4, 0x08,
+	0x8b, 0xe0, 0x0e, 0x9b, 0x1e, 0xa4, 0xf5, 0x20, 0x05, 0xc1, 0x83, 0x9e, 0x22, 0x78, 0x14, 0x66,
+	0x93, 0x47, 0x19, 0x9a, 0x66, 0x62, 0x66, 0xb2, 0xb0, 0x84, 0x20, 0x28, 0xe2, 0xc9, 0x93, 0x1f,
+	0xcd, 0xaf, 0xe0, 0x07, 0x91, 0xcc, 0x24, 0xb1, 0xae, 0x2d, 0x52, 0x64, 0xf1, 0xb6, 0xf3, 0xde,
+	0x66, 0x7e, 0xbf, 0xf7, 0xf2, 0x27, 0xe0, 0xa6, 0x7c, 0x49, 0xe9, 0x3c, 0x2f, 0xa4, 0x96, 0x38,
+	0xe0, 0xb9, 0xf0, 0x0f, 0xcf, 0xa5, 0x3c, 0x4f, 0x89, 0xf1, 0x5c, 0x30, 0x9e, 0x65, 0x52, 0x73,
+	0x2d, 0x64, 0xa6, 0xec, 0x5f, 0x82, 0x10, 0xf6, 0x5e, 0xd1, 0xfa, 0x2d, 0x4f, 0x4b, 0xc2, 0x09,
+	0x0c, 0x2e, 0x68, 0xed, 0x39, 0x53, 0x67, 0x36, 0x8e, 0x9a, 0x9f, 0x78, 0x00, 0xbb, 0xab, 0xa6,
+	0xe5, 0xed, 0x98, 0x9a, 0x3d, 0x04, 0x4f, 0x60, 0xf4, 0xba, 0xa1, 0x28, 0x3c, 0x82, 0x5d, 0xa1,
+	0xe9, 0x52, 0x79, 0xce, 0x74, 0x30, 0x73, 0xc3, 0xfd, 0x39, 0xcf, 0xc5, 0xbc, 0xbb, 0x2f, 0xb2,
+	0xbd, 0xe0, 0x93, 0x03, 0x93, 0xb3, 0x24, 0xb1, 0x8f, 0x44, 0xf4, 0xbe, 0x24, 0xa5, 0xf1, 0x10,
+	0xc6, 0x19, 0xbf, 0x24, 0x95, 0xf3, 0x98, 0x5a, 0xe2, 0xaf, 0x02, 0xfa, 0xb0, 0x57, 0x90, 0x92,
+	0x65, 0x11, 0x77, 0xe8, 0xfe, 0xdc, 0x58, 0x96, 0x22, 0xf1, 0x06, 0xd6, 0xb2, 0x14, 0x09, 0x1e,
+	0xc1, 0xc8, 0x4c, 0xad, 0xbc, 0xe1, 0xd4, 0x99, 0xb9, 0xa1, 0x6b, 0x34, 0x5a, 0x5e, 0xdb, 0x0a,
+	0xbe, 0x38, 0x70, 0x10, 0x51, 0x9e, 0xf2, 0x98, 0xfe, 0xb3, 0xc9, 0x3b, 0x98, 0xbc, 0x24, 0xbd,
+	0x35, 0x89, 0xe0, 0x14, 0xee, 0x5e, 0xb9, 0x5f, 0xe5, 0x32, 0x53, 0x84, 0x8f, 0x7a, 0xb3, 0x6b,
+	0x5f, 0x55, 0xe7, 0x56, 0x00, 0xbe, 0xa0, 0x94, 0xb4, 0xdd, 0xd1, 0x36, 0x56, 0xd4, 0x86, 0x6c,
+	0xd8, 0x87, 0x2c, 0xfc, 0x3a, 0x84, 0x3b, 0x06, 0xf7, 0x86, 0x8a, 0x95, 0x88, 0x09, 0x4b, 0x18,
+	0xf7, 0x03, 0xe0, 0x3d, 0x23, 0xba, 0xb9, 0x30, 0xff, 0xfe, 0x66, 0xd9, 0xce, 0x19, 0x9c, 0x7c,
+	0xfc, 0xfe, 0xe3, 0xdb, 0xce, 0x31, 0x2e, 0x9a, 0xbc, 0x2b, 0xb6, 0x5a, 0x2c, 0x49, 0xf3, 0x05,
+	0xab, 0x7a, 0xdd, 0x9a, 0x55, 0x9d, 0x5d, 0xcd, 0xaa, 0x52, 0x24, 0x35, 0xb3, 0xb3, 0x63, 0x0d,
+	0xe3, 0x3e, 0xa6, 0x2d, 0x76, 0x33, 0xb6, 0x37, 0x62, 0xcf, 0x0c, 0xf6, 0x59, 0x70, 0x7b, 0xec,
+	0x69, 0xbb, 0x7a, 0xfc, 0xec, 0xc0, 0xfe, 0x6f, 0x01, 0xc5, 0x87, 0x06, 0x76, 0x5d, 0x68, 0xff,
+	0xe6, 0xe1, 0xff, 0x83, 0xc7, 0x07, 0x70, 0xaf, 0x44, 0x00, 0x1f, 0x18, 0xd2, 0x9f, 0xa1, 0xb8,
+	0x51, 0xe1, 0xb9, 0x51, 0x38, 0x79, 0xfc, 0xf4, 0xd6, 0x0a, 0xac, 0xba, 0xa0, 0x75, 0xbd, 0x1c,
+	0x99, 0x2f, 0xd3, 0xf1, 0xcf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x7f, 0x89, 0xee, 0x20, 0xcb, 0x04,
+	0x00, 0x00,
+}
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConn
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion4
+
+// LabelServiceClient is the client API for LabelService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type LabelServiceClient interface {
+	GetLabels(ctx context.Context, in *GetLabelsRequest, opts ...grpc.CallOption) (*GetLabelsResponse, error)
+	AddLabels(ctx context.Context, in *AddLabelsRequest, opts ...grpc.CallOption) (*GetLabelsResponse, error)
+	ReplaceLabels(ctx context.Context, in *ReplaceLabelsRequest, opts ...grpc.CallOption) (*GetLabelsResponse, error)
+	DeleteLabel(ctx context.Context, in *DeleteLabelRequest, opts ...grpc.CallOption) (*GetLabelsResponse, error)
+}
+
+type labelServiceClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewLabelServiceClient(cc *grpc.ClientConn) LabelServiceClient {
+	return &labelServiceClient{cc}
+}
+
+func (c *labelServiceClient) GetLabels(ctx context.Context, in *GetLabelsRequest, opts ...grpc.CallOption) (*GetLabelsResponse, error) {
+	out := new(GetLabelsResponse)
+	err := c.cc.Invoke(ctx, "/api.LabelService/GetLabels", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *labelServiceClient) AddLabels(ctx context.Context, in *AddLabelsRequest, opts ...grpc.CallOption) (*GetLabelsResponse, error) {
+	out := new(GetLabelsResponse)
+	err := c.cc.Invoke(ctx, "/api.LabelService/AddLabels", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *labelServiceClient) ReplaceLabels(ctx context.Context, in *ReplaceLabelsRequest, opts ...grpc.CallOption) (*GetLabelsResponse, error) {
+	out := new(GetLabelsResponse)
+	err := c.cc.Invoke(ctx, "/api.LabelService/ReplaceLabels", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *labelServiceClient) DeleteLabel(ctx context.Context, in *DeleteLabelRequest, opts ...grpc.CallOption) (*GetLabelsResponse, error) {
+	out := new(GetLabelsResponse)
+	err := c.cc.Invoke(ctx, "/api.LabelService/DeleteLabel", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// LabelServiceServer is the server API for LabelService service.
+type LabelServiceServer interface {
+	GetLabels(context.Context, *GetLabelsRequest) (*GetLabelsResponse, error)
+	AddLabels(context.Context, *AddLabelsRequest) (*GetLabelsResponse, error)
+	ReplaceLabels(context.Context, *ReplaceLabelsRequest) (*GetLabelsResponse, error)
+	DeleteLabel(context.Context, *DeleteLabelRequest) (*GetLabelsResponse, error)
+}
+
+// UnimplementedLabelServiceServer can be embedded to have forward compatible implementations.
+type UnimplementedLabelServiceServer struct {
+}
+
+func (*UnimplementedLabelServiceServer) GetLabels(ctx context.Context, req *GetLabelsRequest) (*GetLabelsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLabels not implemented")
+}
+func (*UnimplementedLabelServiceServer) AddLabels(ctx context.Context, req *AddLabelsRequest) (*GetLabelsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddLabels not implemented")
+}
+func (*UnimplementedLabelServiceServer) ReplaceLabels(ctx context.Context, req *ReplaceLabelsRequest) (*GetLabelsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReplaceLabels not implemented")
+}
+func (*UnimplementedLabelServiceServer) DeleteLabel(ctx context.Context, req *DeleteLabelRequest) (*GetLabelsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteLabel not implemented")
+}
+
+func RegisterLabelServiceServer(s *grpc.Server, srv LabelServiceServer) {
+	s.RegisterService(&_LabelService_serviceDesc, srv)
+}
+
+func _LabelService_GetLabels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLabelsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LabelServiceServer).GetLabels(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.LabelService/GetLabels",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LabelServiceServer).GetLabels(ctx, req.(*GetLabelsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LabelService_AddLabels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddLabelsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LabelServiceServer).AddLabels(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.LabelService/AddLabels",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LabelServiceServer).AddLabels(ctx, req.(*AddLabelsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LabelService_ReplaceLabels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReplaceLabelsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LabelServiceServer).ReplaceLabels(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.LabelService/ReplaceLabels",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LabelServiceServer).ReplaceLabels(ctx, req.(*ReplaceLabelsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LabelService_DeleteLabel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteLabelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LabelServiceServer).DeleteLabel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.LabelService/DeleteLabel",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LabelServiceServer).DeleteLabel(ctx, req.(*DeleteLabelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _LabelService_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "api.LabelService",
+	HandlerType: (*LabelServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetLabels",
+			Handler:    _LabelService_GetLabels_Handler,
+		},
+		{
+			MethodName: "AddLabels",
+			Handler:    _LabelService_AddLabels_Handler,
+		},
+		{
+			MethodName: "ReplaceLabels",
+			Handler:    _LabelService_ReplaceLabels_Handler,
+		},
+		{
+			MethodName: "DeleteLabel",
+			Handler:    _LabelService_DeleteLabel_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "label.proto",
 }

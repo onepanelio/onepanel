@@ -8,6 +8,7 @@ import (
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/ghodss/yaml"
+	"github.com/hashicorp/go-uuid"
 	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/pkg/util/label"
 	"github.com/onepanelio/core/pkg/util/pagination"
@@ -248,9 +249,11 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateId uint64, wor
 
 		return nil, err
 	}
+
+	uid := wf.Labels[label.WorkflowUid]
 	//Create an entry for workflow_executions statistic
 	//CURL code will hit the API endpoint that will update the db row
-	err = c.InsertPreWorkflowExecutionStatistic(namespace, createdWorkflow.Name, int64(workflowTemplateId), workflowTemplateVersionId, createdWorkflow.CreationTimestamp.UTC())
+	err = c.InsertPreWorkflowExecutionStatistic(namespace, createdWorkflow.Name, workflowTemplateVersionId, createdWorkflow.CreationTimestamp.UTC(), uid)
 	if err != nil {
 		return nil, err
 	}
@@ -314,11 +317,17 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 		})
 	}
 
+	workflowUid, err := uuid.GenerateUUID()
+	if err != nil {
+		return nil, err
+	}
+
 	if opts.Labels == nil {
 		opts.Labels = &map[string]string{}
 	}
 	(*opts.Labels)[workflowTemplateUIDLabelKey] = workflowTemplate.UID
 	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
+	(*opts.Labels)[label.WorkflowUid] = workflowUid
 	label.MergeLabelsPrefix(*opts.Labels, workflow.Labels, label.TagPrefix)
 
 	//UX will prevent multiple workflows
@@ -377,7 +386,7 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	return workflow, nil
 }
 
-func (c *Client) InsertPreWorkflowExecutionStatistic(namespace, name string, workflowTemplateID int64, workflowTemplateVersionId uint64, createdAt time.Time) error {
+func (c *Client) InsertPreWorkflowExecutionStatistic(namespace, name string, workflowTemplateVersionId uint64, createdAt time.Time, uid string) error {
 	tx, err := c.DB.Begin()
 	if err != nil {
 		return err
@@ -385,6 +394,7 @@ func (c *Client) InsertPreWorkflowExecutionStatistic(namespace, name string, wor
 	defer tx.Rollback()
 
 	insertMap := sq.Eq{
+		"uid":                          uid,
 		"workflow_template_version_id": workflowTemplateVersionId,
 		"name":                         name,
 		"namespace":                    namespace,
@@ -483,6 +493,24 @@ func (c *Client) CronStartWorkflowExecutionStatisticInsert(namespace, name strin
 }
 
 func (c *Client) GetWorkflowExecution(namespace, name string) (workflow *WorkflowExecution, err error) {
+	workflow = &WorkflowExecution{}
+
+	query, args, err := sb.Select("we.uid", "we.name", "we.phase", "we.started_at", "we.finished_at").
+		From("workflow_executions we").
+		Join("workflow_template_versions wtv ON wtv.id = we.workflow_template_version_id").
+		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
+		Where(sq.Eq{
+			"wt.namespace": namespace,
+			"we.name":      name,
+		}).
+		ToSql()
+	if err != nil {
+		return nil, err
+	}
+	if err := c.DB.Get(workflow, query, args...); err != nil {
+		return nil, err
+	}
+
 	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -527,16 +555,9 @@ func (c *Client) GetWorkflowExecution(namespace, name string) (workflow *Workflo
 		}).Error("Invalid status.")
 		return nil, util.NewUserError(codes.InvalidArgument, "Invalid status.")
 	}
-	workflow = &WorkflowExecution{
-		UID:              string(wf.UID),
-		CreatedAt:        wf.CreationTimestamp.UTC(),
-		Name:             wf.Name,
-		Phase:            wf.Status.Phase,
-		StartedAt:        ptr.Time(wf.Status.StartedAt.UTC()),
-		FinishedAt:       ptr.Time(wf.Status.FinishedAt.UTC()),
-		Manifest:         string(manifest),
-		WorkflowTemplate: workflowTemplate,
-	}
+
+	workflow.Manifest = string(manifest)
+	workflow.WorkflowTemplate = workflowTemplate
 
 	return
 }

@@ -21,6 +21,21 @@ const (
 	TypeCronWorkflow            string = "cron_workflow"
 )
 
+func TypeToTableName(value string) string {
+	switch value {
+	case TypeWorkflowTemplate:
+		return "workflow_templates"
+	case TypeWorkflowTemplateVersion:
+		return "workflow_template_versions"
+	case TypeWorkflowExecution:
+		return "workflow_executions"
+	case TypeCronWorkflow:
+		return "cron_workflows"
+	}
+
+	return ""
+}
+
 type Namespace struct {
 	Name   string
 	Labels map[string]string
@@ -151,6 +166,7 @@ type CronWorkflowStatisticReport struct {
 
 type WorkflowTemplateVersion struct {
 	ID        uint64
+	UID       string
 	Version   int64
 	IsLatest  bool `db:"is_latest"`
 	Manifest  string

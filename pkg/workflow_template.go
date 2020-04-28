@@ -114,7 +114,7 @@ func (c *Client) workflowTemplatesSelectBuilder(namespace string) sq.SelectBuild
 }
 
 func (c *Client) workflowTemplatesVersionSelectBuilder(namespace string) sq.SelectBuilder {
-	sb := sb.Select("wtv.id", "wtv.version", "wtv.is_latest", "wtv.manifest", "wtv.created_at").
+	sb := sb.Select("wtv.id", "wtv.uid", "wtv.version", "wtv.is_latest", "wtv.manifest", "wtv.created_at").
 		From("workflow_template_versions wtv").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{
@@ -245,6 +245,7 @@ func (c *Client) getWorkflowTemplateByName(namespace, name string, version int64
 	return
 }
 
+// @todo clean up this method to only use db.
 func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTemplateVersions []*WorkflowTemplate, err error) {
 	template, err := c.GetWorkflowTemplate(namespace, uid, 0)
 	if err != nil {
@@ -284,7 +285,7 @@ func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTe
 		newItem := WorkflowTemplate{
 			ID:         template.ID,
 			CreatedAt:  argoTemplate.CreationTimestamp.Time,
-			UID:        template.UID,
+			UID:        dbVersion.UID,
 			Name:       template.Name,
 			Manifest:   dbVersion.Manifest,
 			Version:    version,
