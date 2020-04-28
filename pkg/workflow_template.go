@@ -245,53 +245,34 @@ func (c *Client) getWorkflowTemplateByName(namespace, name string, version int64
 	return
 }
 
-// @todo clean up this method to only use db.
 func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTemplateVersions []*WorkflowTemplate, err error) {
-	template, err := c.GetWorkflowTemplate(namespace, uid, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	argoTemplates, err := c.listArgoWorkflowTemplates(namespace, uid)
-	if err != nil {
-		return nil, err
-	}
-
 	dbVersions, err := c.listDbWorkflowTemplateVersions(namespace, uid)
 	if err != nil {
 		return nil, err
 	}
 
-	mapByVersion := make(map[int64]*WorkflowTemplateVersion)
-	for _, dbVersion := range dbVersions {
-		mapByVersion[dbVersion.Version] = dbVersion
+	labelsMap, err := c.GetDbLabelsMapped(TypeWorkflowTemplateVersion, WorkflowTemplateVersionsToIds(dbVersions)...)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Error":     err.Error(),
+		}).Error("Unable to get Workflow Template Version Labels")
+		return nil, err
 	}
 
-	for _, argoTemplate := range *argoTemplates {
-		version, versionErr := strconv.ParseInt(argoTemplate.Labels[label.Version], 10, 64)
-		if versionErr != nil {
-			return nil, versionErr
-		}
-
-		isLatest := false
-		if _, ok := argoTemplate.Labels[label.VersionLatest]; ok {
-			isLatest = true
-		}
-
-		dbVersion := mapByVersion[version]
-
-		labels := label.FilterByPrefix(label.TagPrefix, argoTemplate.Labels)
+	for _, version := range dbVersions {
+		version.Labels = labelsMap[version.ID]
 
 		newItem := WorkflowTemplate{
-			ID:         template.ID,
-			CreatedAt:  argoTemplate.CreationTimestamp.Time,
-			UID:        dbVersion.UID,
-			Name:       template.Name,
-			Manifest:   dbVersion.Manifest,
-			Version:    version,
-			IsLatest:   isLatest,
-			IsArchived: template.IsArchived,
-			Labels:     labels,
+			ID:         version.WorkflowTemplate.ID,
+			CreatedAt:  version.CreatedAt.UTC(),
+			UID:        version.UID,
+			Name:       version.WorkflowTemplate.Name,
+			Manifest:   version.Manifest,
+			Version:    version.Version,
+			IsLatest:   version.IsLatest,
+			IsArchived: version.WorkflowTemplate.IsArchived,
+			Labels:     version.Labels,
 		}
 
 		workflowTemplateVersions = append(workflowTemplateVersions, &newItem)
@@ -709,15 +690,18 @@ func (c *Client) listArgoWorkflowTemplates(namespace, workflowTemplateUid string
 func (c *Client) listDbWorkflowTemplateVersions(namespace, workflowTemplateUid string) ([]*WorkflowTemplateVersion, error) {
 	versions := make([]*WorkflowTemplateVersion, 0)
 
-	sb := c.workflowTemplatesVersionSelectBuilder(namespace)
-	sb.Where(sq.Eq{"wt.uid": workflowTemplateUid})
+	sb := c.workflowTemplatesVersionSelectBuilder(namespace).
+		Columns(`wt.id "workflow_template.id"`, `wt.created_at "workflow_template.created_at"`).
+		Columns(`wt.name "workflow_template.name"`, `wt.is_archived "workflow_template.is_archived"`).
+		Where(sq.Eq{"wt.uid": workflowTemplateUid}).
+		OrderBy("wtv.created_at DESC")
 
-	sql, args, err := sb.ToSql()
+	query, args, err := sb.ToSql()
 	if err != nil {
 		return versions, err
 	}
 
-	if err := c.DB.Select(&versions, sql, args...); err != nil {
+	if err := c.DB.Select(&versions, query, args...); err != nil {
 		return versions, err
 	}
 

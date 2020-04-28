@@ -165,12 +165,14 @@ type CronWorkflowStatisticReport struct {
 }
 
 type WorkflowTemplateVersion struct {
-	ID        uint64
-	UID       string
-	Version   int64
-	IsLatest  bool `db:"is_latest"`
-	Manifest  string
-	CreatedAt time.Time `db:"created_at"`
+	ID               uint64
+	UID              string
+	Version          int64
+	IsLatest         bool `db:"is_latest"`
+	Manifest         string
+	CreatedAt        time.Time         `db:"created_at"`
+	WorkflowTemplate *WorkflowTemplate `db:"workflow_template"`
+	Labels           map[string]string
 }
 
 type WorkflowExecutionStatistic struct {
@@ -495,6 +497,21 @@ func WorkflowTemplatesToVersionIds(workflowTemplates []*WorkflowTemplate) (ids [
 	// This is to make sure we don't have duplicates
 	for _, workflowTemplate := range workflowTemplates {
 		mappedIds[workflowTemplate.WorkflowTemplateVersionId] = true
+	}
+
+	for id := range mappedIds {
+		ids = append(ids, id)
+	}
+
+	return
+}
+
+func WorkflowTemplateVersionsToIds(resources []*WorkflowTemplateVersion) (ids []uint64) {
+	mappedIds := make(map[uint64]bool)
+
+	// This is to make sure we don't have duplicates
+	for _, resource := range resources {
+		mappedIds[resource.ID] = true
 	}
 
 	for id := range mappedIds {
