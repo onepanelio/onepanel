@@ -433,11 +433,13 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 		return nil, err
 	}
 
-	_, err = c.InsertLabelsBuilder(TypeWorkflowTemplateVersion, workflowTemplateVersionId, workflowTemplate.Labels).
-		RunWith(tx).
-		Exec()
-	if err != nil {
-		return nil, err
+	if len(workflowTemplate.Labels) != 0 {
+		_, err = c.InsertLabelsBuilder(TypeWorkflowTemplateVersion, workflowTemplateVersionId, workflowTemplate.Labels).
+			RunWith(tx).
+			Exec()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if err := tx.Commit(); err != nil {
