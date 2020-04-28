@@ -1233,12 +1233,12 @@ Will build a template that makes a CURL request to the onepanel-core API,
 with statistics about the workflow that was just executed.
 */
 func getExitHandlerWorkflowStatistics(namespace string, workflowTemplateId *uint64) (statsTemplate *wfv1.Template, err error) {
-	host := env.GetEnv("ONEPANEL_CORE_SERVICE_HOST", "")
+	host := env.GetEnv("ONEPANEL_CORE_SERVICE_HOST", "onepanel-core.onepanel.svc.cluster.local")
 	if host == "" {
 		err = errors.New("ONEPANEL_CORE_SERVICE_HOST is empty.")
 		return
 	}
-	port := env.GetEnv("ONEPANEL_CORE_SERVICE_PORT", "")
+	port := env.GetEnv("ONEPANEL_CORE_SERVICE_PORT", "80")
 	if port == "" {
 		err = errors.New("ONEPANEL_CORE_SERVICE_PORT is empty.")
 		return
@@ -1267,7 +1267,7 @@ func getExitHandlerWorkflowStatistics(namespace string, workflowTemplateId *uint
 			Image:   "curlimages/curl",
 			Command: []string{"sh", "-c"},
 			Args: []string{
-				"curl -s -o /dev/null -w \"%{http_code}\" '" + curlEndpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
+				"curl -s -o /dev/null -w '%{http_code}' '" + curlEndpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
 					"-H 'Authorization: Bearer '\"$SERVICE_ACCOUNT_TOKEN\"'' " +
 					curlJSONBody + " --compressed",
 			},
@@ -1279,13 +1279,13 @@ func getExitHandlerWorkflowStatistics(namespace string, workflowTemplateId *uint
 	return
 }
 
-func GetInitContainerForCronWorkflow(templateCorrespondingToEntryPoint *wfv1.Template, namespace string, workflowTemplateId int64) (err error) {
-	host := env.GetEnv("ONEPANEL_CORE_SERVICE_HOST", "")
+func getInitContainerForCronWorkflow(templateCorrespondingToEntryPoint *wfv1.Template, namespace string, workflowTemplateId int64) (err error) {
+	host := env.GetEnv("ONEPANEL_CORE_SERVICE_HOST", "onepanel-core.onepanel.svc.cluster.local")
 	if host == "" {
 		err = errors.New("ONEPANEL_CORE_SERVICE_HOST is empty.")
 		return
 	}
-	port := env.GetEnv("ONEPANEL_CORE_SERVICE_PORT", "")
+	port := env.GetEnv("ONEPANEL_CORE_SERVICE_PORT", "80")
 	if port == "" {
 		err = errors.New("ONEPANEL_CORE_SERVICE_PORT is empty.")
 		return
@@ -1303,9 +1303,13 @@ func GetInitContainerForCronWorkflow(templateCorrespondingToEntryPoint *wfv1.Tem
 			Image:   "curlimages/curl",
 			Command: []string{"sh", "-c"},
 			Args: []string{
-				"curl '" + curlEndpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
-					"-H 'Authorization: Bearer " + token + "' ",
-			}}}
+				"curl -s -o /dev/null -w '%{http_code}' '" + curlEndpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
+					"-H 'Authorization: Bearer '\"$SERVICE_ACCOUNT_TOKEN\"''",
+			},
+			Env: []corev1.EnvVar{
+				{Name: "SERVICE_ACCOUNT_TOKEN", Value: token},
+			},
+		}}
 
 	templateCorrespondingToEntryPoint.InitContainers = append(templateCorrespondingToEntryPoint.InitContainers, initContainer)
 	return
@@ -1351,14 +1355,14 @@ func InjectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace st
 func InjectInitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace string, workflowTemplateId int64) error {
 	//Find the template that matches this entrypoint name
 	//Add the init container to that Template
-	var templateToUse *wfv1.Template
-	for idx := range wf.Spec.Templates {
-		if wf.Spec.Templates[idx].Name == wf.Spec.Entrypoint {
-			templateToUse = &wf.Spec.Templates[idx]
+	var entryPointTemplate *wfv1.Template
+	for i := range wf.Spec.Templates {
+		if wf.Spec.Templates[i].Name == wf.Spec.Entrypoint {
+			entryPointTemplate = &wf.Spec.Templates[i]
 			break
 		}
 	}
-	err := GetInitContainerForCronWorkflow(templateToUse, namespace, workflowTemplateId)
+	err := getInitContainerForCronWorkflow(entryPointTemplate, namespace, workflowTemplateId)
 	if err != nil {
 		return err
 	}
