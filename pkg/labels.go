@@ -272,23 +272,13 @@ func (c *Client) GetDbLabels(resource string, ids ...uint64) (labels []*Label, e
 		return nil, err
 	}
 
-	whereIn := "resource_id IN (?"
-	for i := range ids {
-		if i == 0 {
-			continue
-		}
-
-		whereIn += ",?"
-	}
-	whereIn += ")"
-
 	defer tx.Rollback()
 
-	query, args, err := sb.Select("id", "key", "value", "resource", "resource_id").
+	query, args, err := sb.Select("id", "created_at", "key", "value", "resource", "resource_id").
 		From("labels").
-		Where(whereIn, ids).
 		Where(sq.Eq{
-			"resource": resource,
+			"resource_id": ids,
+			"resource":    resource,
 		}).
 		OrderBy("key").
 		ToSql()
@@ -297,13 +287,7 @@ func (c *Client) GetDbLabels(resource string, ids ...uint64) (labels []*Label, e
 		return nil, err
 	}
 
-	allArgs := make([]interface{}, 0)
-	for _, arg := range args[0].([]uint64) {
-		allArgs = append(allArgs, arg)
-	}
-	allArgs = append(allArgs, args[1])
-
-	err = c.DB.Select(&labels, query, allArgs...)
+	err = c.DB.Select(&labels, query, args...)
 	if err != nil {
 		return nil, err
 	}
