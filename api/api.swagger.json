@@ -1375,6 +1375,42 @@
       }
     },
     "/apis/v1beta1/{namespace}/workspace_templates": {
+      "get": {
+        "operationId": "ListWorkspaceTemplates",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListWorkspaceTemplatesResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "WorkspaceTemplateService"
+        ]
+      },
       "post": {
         "summary": "Creates a Workflow",
         "operationId": "CreateWorkspaceTemplate",
@@ -1868,6 +1904,33 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/WorkflowTemplate"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pages": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "ListWorkspaceTemplatesResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "workspaceTemplates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WorkspaceTemplate"
           }
         },
         "page": {

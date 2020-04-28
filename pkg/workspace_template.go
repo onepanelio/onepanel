@@ -7,6 +7,7 @@ import (
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	v1 "github.com/onepanelio/core/pkg/apis/core/v1"
 	"github.com/onepanelio/core/pkg/util"
+	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"google.golang.org/grpc/codes"
 	networking "istio.io/api/networking/v1alpha3"
@@ -496,4 +497,34 @@ func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	}
 
 	return workspaceTemplate, nil
+}
+
+func (c *Client) ListWorkspaceTemplates(namespace string, paginator *pagination.PaginationRequest) (workspaceTemplates []*WorkspaceTemplate, err error) {
+	workspaceTemplates = make([]*WorkspaceTemplate, 0)
+	sb := c.workspaceTemplatesSelectBuilder(namespace).
+		OrderBy("wt.created_at DESC")
+	paginator.ApplyToSelect(&sb)
+
+	query, args, err := sb.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := c.DB.Select(&workspaceTemplates, query, args...); err != nil {
+		return nil, err
+	}
+
+	return
+}
+
+func (c *Client) CountWorkspaceTemplates(namespace string) (count int, err error) {
+	err = sb.Select("count(*)").
+		From("workspace_templates wt").
+		Where(sq.Eq{
+			"wt.namespace": namespace,
+		}).RunWith(c.DB.DB).
+		QueryRow().
+		Scan(&count)
+
+	return
 }

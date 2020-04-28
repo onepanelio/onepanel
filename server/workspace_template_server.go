@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
+	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/server/auth"
 	"time"
 )
@@ -50,4 +51,36 @@ func (s *WorkspaceTemplateServer) CreateWorkspaceTemplate(ctx context.Context, r
 	req.WorkspaceTemplate = apiWorkspaceTemplate(workspaceTemplate)
 
 	return req.WorkspaceTemplate, nil
+}
+
+func (s *WorkspaceTemplateServer) ListWorkspaceTemplates(ctx context.Context, req *api.ListWorkspaceTemplatesRequest) (*api.ListWorkspaceTemplatesResponse, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflowtemplates", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	paginator := pagination.NewRequest(req.Page, req.PageSize)
+	workspaceTemplates, err := client.ListWorkspaceTemplates(req.Namespace, &paginator)
+	if err != nil {
+		return nil, err
+	}
+
+	apiWorkspaceTemplates := []*api.WorkspaceTemplate{}
+	for _, wtv := range workspaceTemplates {
+		apiWorkspaceTemplates = append(apiWorkspaceTemplates, apiWorkspaceTemplate(wtv))
+	}
+
+	count, err := client.CountWorkspaceTemplates(req.Namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.ListWorkspaceTemplatesResponse{
+		Count:              int32(len(apiWorkspaceTemplates)),
+		WorkspaceTemplates: apiWorkspaceTemplates,
+		Page:               int32(paginator.Page),
+		Pages:              paginator.CalculatePages(count),
+		TotalCount:         int32(count),
+	}, nil
 }
