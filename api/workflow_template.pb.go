@@ -844,7 +844,9 @@ func init() {
 	proto.RegisterType((*GetWorkflowTemplateLabelsRequest)(nil), "api.GetWorkflowTemplateLabelsRequest")
 }
 
-func init() { proto.RegisterFile("workflow_template.proto", fileDescriptor_b9a07547748a96e8) }
+func init() {
+	proto.RegisterFile("workflow_template.proto", fileDescriptor_b9a07547748a96e8)
+}
 
 var fileDescriptor_b9a07547748a96e8 = []byte{
 	// 946 bytes of a gzipped FileDescriptorProto
@@ -912,11 +914,11 @@ var fileDescriptor_b9a07547748a96e8 = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // WorkflowTemplateServiceClient is the client API for WorkflowTemplateService service.
 //
@@ -933,10 +935,10 @@ type WorkflowTemplateServiceClient interface {
 }
 
 type workflowTemplateServiceClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewWorkflowTemplateServiceClient(cc *grpc.ClientConn) WorkflowTemplateServiceClient {
+func NewWorkflowTemplateServiceClient(cc grpc.ClientConnInterface) WorkflowTemplateServiceClient {
 	return &workflowTemplateServiceClient{cc}
 }
 

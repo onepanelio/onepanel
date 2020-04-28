@@ -12,6 +12,15 @@ service AuthService {
             body: "token"
         };
     }
+
+    rpc IsWorkspaceAuthenticated(IsWorkspaceAuthenticatedRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            custom: {
+                kind: "head"
+                path: "/apis/v1beta1/auth/token"
+            }
+        };
+    }
 }
 
 message TokenWrapper {
@@ -20,4 +29,10 @@ message TokenWrapper {
 
 message IsValidTokenRequest {
     TokenWrapper token = 1;
+}
+
+message IsWorkspaceAuthenticatedRequest {
+    string method = 1;
+    string authority = 2;
+    string originalUri = 3;
 }

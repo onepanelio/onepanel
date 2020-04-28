@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
@@ -12,6 +13,10 @@ import (
 )
 
 type AuthServer struct{}
+
+func (a *AuthServer) IsWorkspaceAuthenticated(ctx context.Context, request *api.IsWorkspaceAuthenticatedRequest) (*empty.Empty, error) {
+	fmt.Printf("%+v\n", request)
+}
 
 func NewAuthServer() *AuthServer {
 	return &AuthServer{}

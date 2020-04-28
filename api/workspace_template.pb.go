@@ -165,7 +165,9 @@ func init() {
 	proto.RegisterType((*WorkspaceTemplate)(nil), "api.WorkspaceTemplate")
 }
 
-func init() { proto.RegisterFile("workspace_template.proto", fileDescriptor_1b00f4e2babeeb4c) }
+func init() {
+	proto.RegisterFile("workspace_template.proto", fileDescriptor_1b00f4e2babeeb4c)
+}
 
 var fileDescriptor_1b00f4e2babeeb4c = []byte{
 	// 358 bytes of a gzipped FileDescriptorProto
@@ -196,11 +198,11 @@ var fileDescriptor_1b00f4e2babeeb4c = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // WorkspaceTemplateServiceClient is the client API for WorkspaceTemplateService service.
 //
@@ -211,10 +213,10 @@ type WorkspaceTemplateServiceClient interface {
 }
 
 type workspaceTemplateServiceClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewWorkspaceTemplateServiceClient(cc *grpc.ClientConn) WorkspaceTemplateServiceClient {
+func NewWorkspaceTemplateServiceClient(cc grpc.ClientConnInterface) WorkspaceTemplateServiceClient {
 	return &workspaceTemplateServiceClient{cc}
 }
 

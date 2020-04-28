@@ -404,7 +404,9 @@ func init() {
 	proto.RegisterType((*DeleteLabelRequest)(nil), "api.DeleteLabelRequest")
 }
 
-func init() { proto.RegisterFile("label.proto", fileDescriptor_6100d2b5ae808f16) }
+func init() {
+	proto.RegisterFile("label.proto", fileDescriptor_6100d2b5ae808f16)
+}
 
 var fileDescriptor_6100d2b5ae808f16 = []byte{
 	// 434 bytes of a gzipped FileDescriptorProto
@@ -440,11 +442,11 @@ var fileDescriptor_6100d2b5ae808f16 = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // LabelServiceClient is the client API for LabelService service.
 //
@@ -457,10 +459,10 @@ type LabelServiceClient interface {
 }
 
 type labelServiceClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewLabelServiceClient(cc *grpc.ClientConn) LabelServiceClient {
+func NewLabelServiceClient(cc grpc.ClientConnInterface) LabelServiceClient {
 	return &labelServiceClient{cc}
 }
 
