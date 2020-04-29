@@ -26,5 +26,3 @@ docker-push:
 	docker push onepanel/core:$(COMMIT_HASH)
 
 docker: docker-build docker-push
-
-all: api
