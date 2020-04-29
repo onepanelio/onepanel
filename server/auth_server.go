@@ -16,6 +16,7 @@ type AuthServer struct{}
 
 func (a *AuthServer) IsWorkspaceAuthenticated(ctx context.Context, request *api.IsWorkspaceAuthenticatedRequest) (*empty.Empty, error) {
 	fmt.Printf("%+v\n", request)
+	return &empty.Empty{}, nil
 }
 
 func NewAuthServer() *AuthServer {
