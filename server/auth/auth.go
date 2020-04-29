@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/onepanelio/core/api"
 	"net/http"
 	"strings"
@@ -104,6 +105,26 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerIntercep
 			return handler(ctx, req)
 		}
 
+		// if you don't need the token,
+		if info.FullMethod == "/api.AuthService/IsWorkspaceAuthenticated" {
+			workspaceRequest, ok := req.(api.IsWorkspaceAuthenticatedRequest)
+			if !ok {
+				ctx = nil
+				return handler(ctx, req)
+			}
+
+			//todo ignore fqdn
+			//expected format: https://nginx-0--default.test-0.onepanel.site/
+			fmt.Printf("%+v", workspaceRequest)
+			if workspaceRequest.OriginalUri == "workspacerelated" {
+				//getClient, for kube, will require token auth
+				//set ctx
+			}
+
+			return handler(ctx, req)
+		}
+
+		// This guy checks for the token
 		ctx, err = getClient(ctx, kubeConfig, db)
 		if err != nil {
 			return
