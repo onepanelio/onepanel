@@ -7,7 +7,7 @@ import "workflow_template.proto";
 import "google/protobuf/empty.proto";
 
 service WorkspaceTemplateService {
-    // Creates a Workflow
+    // Creates a WorkspaceTemplate
     rpc CreateWorkspaceTemplate (CreateWorkspaceTemplateRequest) returns (WorkspaceTemplate) {
         option (google.api.http) = {
             post: "/apis/v1beta1/{namespace}/workspace_templates"
@@ -18,6 +18,14 @@ service WorkspaceTemplateService {
     rpc ListWorkspaceTemplates (ListWorkspaceTemplatesRequest) returns (ListWorkspaceTemplatesResponse) {
         option (google.api.http) = {
             get: "/apis/v1beta1/{namespace}/workspace_templates"
+            };
+    }
+
+    // Get the generated WorkflowTemplate for a WorkspaceTemplate
+    rpc GenerateWorkspaceTemplateWorkflowTemplate (GenerateWorkspaceTemplateWorkflowTemplateRequest) returns (WorkflowTemplate) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/{namespace}/workspace_templates/{uid}/workflow_template"
+            body: "workspaceTemplateManifest"
         };
     }
 }
@@ -49,5 +57,11 @@ message WorkspaceTemplate {
     bool isLatest = 5;
     string createdAt = 6;
     WorkflowTemplate workflowTemplate = 7;
+}
+
+message GenerateWorkspaceTemplateWorkflowTemplateRequest {
+    string namespace = 1;
+    string uid = 2;
+    string workspaceTemplateManifest = 3;
 }
 

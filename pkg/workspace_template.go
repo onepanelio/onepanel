@@ -31,10 +31,11 @@ func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err er
 
 	// Resource action parameter
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
-		Name:     "sys-name",
-		Type:     "input.text",
-		Value:    ptr.String("name"),
-		Required: true,
+		Name:        "sys-name",
+		Type:        "input.text",
+		Value:       ptr.String("name"),
+		DisplayName: ptr.String("Workspace name"),
+		Required:    true,
 	})
 
 	// Resource action parameter
@@ -57,11 +58,13 @@ func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err er
 		return
 	}
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
-		Name:     "sys-node-pool",
-		Value:    ptr.String(options[0].Value),
-		Type:     "select.select",
-		Options:  options,
-		Required: true,
+		Name:        "sys-node-pool",
+		Value:       ptr.String(options[0].Value),
+		Type:        "select.select",
+		Options:     options,
+		DisplayName: ptr.String("Node pool"),
+		Hint:        ptr.String("Name of node pool or group"),
+		Required:    true,
 	})
 
 	// Volume size parameters
@@ -73,10 +76,12 @@ func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err er
 			}
 
 			spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
-				Name:     fmt.Sprintf("sys-%v-volume-size", v.Name),
-				Type:     "input.number",
-				Value:    ptr.String("20480"),
-				Required: true,
+				Name:        fmt.Sprintf("sys-%v-volume-size", v.Name),
+				Type:        "input.number",
+				Value:       ptr.String("20480"),
+				DisplayName: ptr.String(fmt.Sprintf("Disk size for \"%v\"", v.Name)),
+				Hint:        ptr.String(fmt.Sprintf("Disk size in MB for volume mounted at `%v`", v.MountPath)),
+				Required:    true,
 			})
 
 			volumeClaimsMapped[v.Name] = true
@@ -465,15 +470,14 @@ func (c *Client) generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *Wo
 	return workflowTemplate, nil
 }
 
-// GetWorkspaceTemplateWorkflowTemplate generates and returns a workflowTemplate for a given workspaceTemplate manifest
-func (c *Client) GetWorkspaceTemplateWorkflowTemplate(workspaceTemplate *WorkspaceTemplate) (*WorkspaceTemplate, error) {
-	workflowTemplate, err := c.generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate)
+// CreateWorkspaceTemplateWorkflowTemplate generates and returns a workflowTemplate for a given workspaceTemplate manifest
+func (c *Client) GenerateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *WorkspaceTemplate) (workflowTemplate *WorkflowTemplate, err error) {
+	workflowTemplate, err = c.generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate)
 	if err != nil {
 		return nil, err
 	}
-	workspaceTemplate.WorkflowTemplate = workflowTemplate
 
-	return workspaceTemplate, nil
+	return workflowTemplate, nil
 }
 
 // CreateWorkspaceTemplate creates a template for Workspaces

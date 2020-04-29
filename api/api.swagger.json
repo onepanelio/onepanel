@@ -724,8 +724,8 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/workflow_executions/{name}/cron_start_statistics/{workflowTemplateId}": {
-      "get": {
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}/cron_start_statistics": {
+      "post": {
         "operationId": "CronStartWorkflowExecutionStatistic",
         "responses": {
           "200": {
@@ -749,11 +749,12 @@
             "type": "string"
           },
           {
-            "name": "workflowTemplateId",
-            "in": "path",
+            "name": "body",
+            "in": "body",
             "required": true,
-            "type": "string",
-            "format": "int64"
+            "schema": {
+              "$ref": "#/definitions/Statistics"
+            }
           }
         ],
         "tags": [
@@ -1412,7 +1413,7 @@
         ]
       },
       "post": {
-        "summary": "Creates a Workflow",
+        "summary": "Creates a WorkspaceTemplate",
         "operationId": "CreateWorkspaceTemplate",
         "responses": {
           "200": {
@@ -1435,6 +1436,45 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/WorkspaceTemplate"
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceTemplateService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workspace_templates/{uid}/workflow_template": {
+      "post": {
+        "summary": "Get the generated WorkflowTemplate for a WorkspaceTemplate",
+        "operationId": "GenerateWorkspaceTemplateWorkflowTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkflowTemplate"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
           }
         ],

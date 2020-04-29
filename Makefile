@@ -1,3 +1,5 @@
+COMMIT_HASH=$(shell git rev-parse --short HEAD)
+
 jq:
 	cat api/apidocs.swagger.json \
 		| jq 'walk( if type == "object" then with_entries( .key |= sub( "api\\."; "") ) else . end )' \
@@ -18,11 +20,9 @@ api: protoc jq
 
 docker-build:
 	docker build -t onepanel-core .
-	docker tag onepanel-core:latest onepanel/core:1.0.0-beta.1
+	docker tag onepanel-core:latest onepanel/core:$(COMMIT_HASH)
 
 docker-push:
-	docker push onepanel/core:1.0.0-beta.1
+	docker push onepanel/core:$(COMMIT_HASH)
 
-docker-all: docker-build docker-push
-
-all: api
+docker: docker-build docker-push

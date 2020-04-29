@@ -379,16 +379,16 @@ func (c *Client) updateCronWorkflow(namespace string, name string, workflowTempl
 	if opts.Labels != nil {
 		cwf.ObjectMeta.Labels = *opts.Labels
 	}
-	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
-		return nil, err
-	}
 
-	err = InjectExitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
+	err = injectExitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
 	if err != nil {
 		return nil, err
 	}
-	err = InjectInitHandlerWorkflowExecutionStatistic(wf, namespace, int64(*workflowTemplateId))
+	err = injectInitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
 	if err != nil {
+		return nil, err
+	}
+	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
 		return nil, err
 	}
 
@@ -456,11 +456,11 @@ func (c *Client) createCronWorkflow(namespace string, workflowTemplateId *uint64
 	if opts.Labels != nil {
 		cwf.ObjectMeta.Labels = *opts.Labels
 	}
-	err = InjectExitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
+	err = injectExitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
 	if err != nil {
 		return nil, err
 	}
-	err = InjectInitHandlerWorkflowExecutionStatistic(wf, namespace, int64(*workflowTemplateId))
+	err = injectInitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
 	if err != nil {
 		return nil, err
 	}

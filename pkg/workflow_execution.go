@@ -9,7 +9,6 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/ghodss/yaml"
 	"github.com/hashicorp/go-uuid"
-	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/pkg/util/label"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
@@ -236,7 +235,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateId uint64, wor
 		wf.ObjectMeta.Labels = *opts.Labels
 	}
 
-	err = InjectExitHandlerWorkflowExecutionStatistic(wf, namespace, &workflowTemplateId)
+	err = injectExitHandlerWorkflowExecutionStatistic(wf, namespace, &workflowTemplateId)
 	if err != nil {
 		return nil, err
 	}
@@ -473,7 +472,12 @@ func (c *Client) CronStartWorkflowExecutionStatisticInsert(namespace, name strin
 	}
 	defer tx.Rollback()
 
+	cronUid, err := uuid.GenerateUUID()
+	if err != nil {
+		return err
+	}
 	insertMap := sq.Eq{
+		"uid":                          cronUid,
 		"workflow_template_version_id": cronWorkflow.WorkflowTemplateVersionId,
 		"name":                         name,
 		"namespace":                    namespace,
@@ -1248,87 +1252,46 @@ func (c *Client) GetWorkflowExecutionStatisticsForTemplates(workflowTemplates ..
 Will build a template that makes a CURL request to the onepanel-core API,
 with statistics about the workflow that was just executed.
 */
-func getExitHandlerWorkflowStatistics(namespace string, workflowTemplateId *uint64) (statsTemplate *wfv1.Template, err error) {
-	host := env.GetEnv("ONEPANEL_CORE_SERVICE_HOST", "")
+func getWorkflowStatisticsCallerTemplate(namespace, path, templateName string, statistics map[string]interface{}) (template *wfv1.Template, err error) {
+	host := env.GetEnv("ONEPANEL_CORE_SERVICE_HOST", "onepanel-core.onepanel.svc.cluster.local")
 	if host == "" {
 		err = errors.New("ONEPANEL_CORE_SERVICE_HOST is empty.")
 		return
 	}
-	port := env.GetEnv("ONEPANEL_CORE_SERVICE_PORT", "")
+	port := env.GetEnv("ONEPANEL_CORE_SERVICE_PORT", "80")
 	if port == "" {
 		err = errors.New("ONEPANEL_CORE_SERVICE_PORT is empty.")
 		return
 	}
-	curlEndpoint := fmt.Sprintf("http://%s:%s/apis/v1beta1/%s/workflow_executions/{{workflow.name}}/statistics", host, port, namespace)
+	endpoint := fmt.Sprintf("http://%s:%s/apis/v1beta1/%s/workflow_executions/{{workflow.name}}/%v", host, port, namespace, path)
 
-	jsonRequestStruct := api.Statistics{
-		WorkflowStatus:     "{{workflow.status}}",
-		WorkflowTemplateId: int64(*workflowTemplateId),
-	}
-	jsonRequestBytes, err := json.Marshal(jsonRequestStruct)
+	statisticsBytes, err := json.Marshal(statistics)
 	if err != nil {
 		return nil, err
 	}
-	jsonRequestStr := string(jsonRequestBytes)
-	curlJSONBody := fmt.Sprintf("--data '%s'", jsonRequestStr)
+	body := fmt.Sprintf("--data '%s'", string(statisticsBytes))
 
-	token, err := GetBearerToken(namespace)
-	if err != nil {
-		return nil, err
-	}
-
-	statsTemplate = &wfv1.Template{
-		Name: "workflow-statistics",
+	template = &wfv1.Template{
+		Name: templateName,
 		Container: &corev1.Container{
 			Image:   "curlimages/curl",
 			Command: []string{"sh", "-c"},
 			Args: []string{
-				"curl -s -o /dev/null -w \"%{http_code}\" '" + curlEndpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
+				"SERVICE_ACCOUNT_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) && curl -s -o /dev/null -w '%{http_code}' '" + endpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
 					"-H 'Authorization: Bearer '\"$SERVICE_ACCOUNT_TOKEN\"'' " +
-					curlJSONBody + " --compressed",
-			},
-			Env: []corev1.EnvVar{
-				{Name: "SERVICE_ACCOUNT_TOKEN", Value: token},
+					body + " --compressed",
 			},
 		},
 	}
 	return
 }
 
-func GetInitContainerForCronWorkflow(templateCorrespondingToEntryPoint *wfv1.Template, namespace string, workflowTemplateId int64) (err error) {
-	host := env.GetEnv("ONEPANEL_CORE_SERVICE_HOST", "")
-	if host == "" {
-		err = errors.New("ONEPANEL_CORE_SERVICE_HOST is empty.")
-		return
+func injectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace string, workflowTemplateId *uint64) error {
+	statistics := map[string]interface{}{
+		"workflowStatus":     "{{workflow.status}}",
+		"workflowTemplateId": int64(*workflowTemplateId),
 	}
-	port := env.GetEnv("ONEPANEL_CORE_SERVICE_PORT", "")
-	if port == "" {
-		err = errors.New("ONEPANEL_CORE_SERVICE_PORT is empty.")
-		return
-	}
-	curlEndpoint := fmt.Sprintf("http://%s:%s/apis/v1beta1/%s/workflow_executions/{{workflow.name}}/cron_start_statistics/%d", host, port, namespace, workflowTemplateId)
-
-	token, err := GetBearerToken(namespace)
-	if err != nil {
-		return err
-	}
-
-	initContainer := wfv1.UserContainer{
-		Container: corev1.Container{
-			Name:    "cron-init-container",
-			Image:   "curlimages/curl",
-			Command: []string{"sh", "-c"},
-			Args: []string{
-				"curl '" + curlEndpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
-					"-H 'Authorization: Bearer " + token + "' ",
-			}}}
-
-	templateCorrespondingToEntryPoint.InitContainers = append(templateCorrespondingToEntryPoint.InitContainers, initContainer)
-	return
-}
-
-func InjectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace string, workflowTemplateId *uint64) error {
-	statsTemplate, err := getExitHandlerWorkflowStatistics(namespace, workflowTemplateId)
+	statsTemplate, err := getWorkflowStatisticsCallerTemplate(namespace, "statistics", "sys-send-exit-stats", statistics)
 	if err != nil {
 		return err
 	}
@@ -1361,23 +1324,38 @@ func InjectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace st
 		wf.Spec.OnExit = "exit-handler"
 		wf.Spec.Templates = append(wf.Spec.Templates, exitHandlerDAG)
 	}
+
 	return nil
 }
 
-func InjectInitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace string, workflowTemplateId int64) error {
-	//Find the template that matches this entrypoint name
-	//Add the init container to that Template
-	var templateToUse *wfv1.Template
-	for idx := range wf.Spec.Templates {
-		if wf.Spec.Templates[idx].Name == wf.Spec.Entrypoint {
-			templateToUse = &wf.Spec.Templates[idx]
-			break
-		}
+func injectInitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace string, workflowTemplateId *uint64) error {
+	statistics := map[string]interface{}{
+		"workflowTemplateId": int64(*workflowTemplateId),
 	}
-	err := GetInitContainerForCronWorkflow(templateToUse, namespace, workflowTemplateId)
+	containerTemplate, err := getWorkflowStatisticsCallerTemplate(namespace, "cron_start_statistics", "sys-send-init-stats", statistics)
 	if err != nil {
 		return err
 	}
+
+	wf.Spec.Templates = append(wf.Spec.Templates, *containerTemplate)
+	for i, t := range wf.Spec.Templates {
+		if t.Name == wf.Spec.Entrypoint {
+			// DAG is always required for entrypoint templates
+			if t.DAG != nil {
+				for j, task := range t.DAG.Tasks {
+					if task.Dependencies == nil {
+						wf.Spec.Templates[i].DAG.Tasks[j].Dependencies = []string{containerTemplate.Name}
+						wf.Spec.Templates[i].DAG.Tasks = append(t.DAG.Tasks, wfv1.DAGTask{
+							Name:     containerTemplate.Name,
+							Template: containerTemplate.Name,
+						})
+					}
+				}
+			}
+			break
+		}
+	}
+
 	return nil
 }
 
