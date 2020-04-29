@@ -8,7 +8,6 @@ import (
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/ghodss/yaml"
-	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/pkg/util/label"
 	"io"
 	"io/ioutil"
@@ -1232,7 +1231,7 @@ func (c *Client) GetWorkflowExecutionStatisticsForTemplates(workflowTemplates ..
 Will build a template that makes a CURL request to the onepanel-core API,
 with statistics about the workflow that was just executed.
 */
-func getWorkflowStatisticsExitHandlerTemplate(namespace string, workflowTemplateId *uint64) (statsTemplate *wfv1.Template, err error) {
+func getWorkflowStatisticsCallerTemplate(namespace, path, templateName string, statistics map[string]interface{}) (template *wfv1.Template, err error) {
 	host := env.GetEnv("ONEPANEL_CORE_SERVICE_HOST", "onepanel-core.onepanel.svc.cluster.local")
 	if host == "" {
 		err = errors.New("ONEPANEL_CORE_SERVICE_HOST is empty.")
@@ -1243,76 +1242,35 @@ func getWorkflowStatisticsExitHandlerTemplate(namespace string, workflowTemplate
 		err = errors.New("ONEPANEL_CORE_SERVICE_PORT is empty.")
 		return
 	}
-	curlEndpoint := fmt.Sprintf("http://%s:%s/apis/v1beta1/%s/workflow_executions/{{workflow.name}}/statistics", host, port, namespace)
+	endpoint := fmt.Sprintf("http://%s:%s/apis/v1beta1/%s/workflow_executions/{{workflow.name}}/%v", host, port, namespace, path)
 
-	jsonRequestStruct := api.Statistics{
-		WorkflowStatus:     "{{workflow.status}}",
-		WorkflowTemplateId: int64(*workflowTemplateId),
-	}
-	jsonRequestBytes, err := json.Marshal(jsonRequestStruct)
+	statisticsBytes, err := json.Marshal(statistics)
 	if err != nil {
 		return nil, err
 	}
-	jsonRequestStr := string(jsonRequestBytes)
-	curlJSONBody := fmt.Sprintf("--data '%s'", jsonRequestStr)
+	body := fmt.Sprintf("--data '%s'", string(statisticsBytes))
 
-	statsTemplate = &wfv1.Template{
-		Name: "sys-send-exit-stats",
+	template = &wfv1.Template{
+		Name: templateName,
 		Container: &corev1.Container{
 			Image:   "curlimages/curl",
 			Command: []string{"sh", "-c"},
 			Args: []string{
-				"SERVICE_ACCOUNT_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) && curl -s -o /dev/null -w '%{http_code}' '" + curlEndpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
+				"SERVICE_ACCOUNT_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) && curl -s -o /dev/null -w '%{http_code}' '" + endpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
 					"-H 'Authorization: Bearer '\"$SERVICE_ACCOUNT_TOKEN\"'' " +
-					curlJSONBody + " --compressed",
+					body + " --compressed",
 			},
 		},
 	}
 	return
 }
 
-func getCronWorkflowInitContainerTemplate(namespace string, workflowTemplateId *uint64) (containerTemplate *wfv1.Template, err error) {
-	host := env.GetEnv("ONEPANEL_CORE_SERVICE_HOST", "onepanel-core.onepanel.svc.cluster.local")
-	if host == "" {
-		err = errors.New("ONEPANEL_CORE_SERVICE_HOST is empty.")
-		return
-	}
-	port := env.GetEnv("ONEPANEL_CORE_SERVICE_PORT", "80")
-	if port == "" {
-		err = errors.New("ONEPANEL_CORE_SERVICE_PORT is empty.")
-		return
-	}
-	curlEndpoint := fmt.Sprintf("http://%s:%s/apis/v1beta1/%s/workflow_executions/{{workflow.name}}/cron_start_statistics/%d", host, port, namespace, workflowTemplateId)
-
-	jsonRequestStruct := api.Statistics{
-		WorkflowStatus:     "{{workflow.status}}",
-		WorkflowTemplateId: int64(*workflowTemplateId),
-	}
-	jsonRequestBytes, err := json.Marshal(jsonRequestStruct)
-	if err != nil {
-		return nil, err
-	}
-	jsonRequestStr := string(jsonRequestBytes)
-	curlJSONBody := fmt.Sprintf("--data '%s'", jsonRequestStr)
-
-	containerTemplate = &wfv1.Template{
-		Name: "sys-send-init-stats",
-		Container: &corev1.Container{
-			Name:    "cron-init-container",
-			Image:   "curlimages/curl",
-			Command: []string{"sh", "-c"},
-			Args: []string{
-				"SERVICE_ACCOUNT_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) && curl -s -o /dev/null -w '%{http_code}' '" + curlEndpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
-					"-H 'Authorization: Bearer '\"$SERVICE_ACCOUNT_TOKEN\"'' " +
-					curlJSONBody + " --compressed",
-			},
-		}}
-
-	return
-}
-
 func injectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace string, workflowTemplateId *uint64) error {
-	statsTemplate, err := getWorkflowStatisticsExitHandlerTemplate(namespace, workflowTemplateId)
+	statistics := map[string]interface{}{
+		"workflowStatus":     "{{workflow.status}}",
+		"workflowTemplateId": int64(*workflowTemplateId),
+	}
+	statsTemplate, err := getWorkflowStatisticsCallerTemplate(namespace, "statistics", "sys-send-exit-stats", statistics)
 	if err != nil {
 		return err
 	}
@@ -1350,7 +1308,10 @@ func injectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace st
 }
 
 func injectInitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace string, workflowTemplateId *uint64) error {
-	containerTemplate, err := getCronWorkflowInitContainerTemplate(namespace, workflowTemplateId)
+	statistics := map[string]interface{}{
+		"workflowTemplateId": int64(*workflowTemplateId),
+	}
+	containerTemplate, err := getWorkflowStatisticsCallerTemplate(namespace, "cron_start_statistics", "sys-send-init-stats", statistics)
 	if err != nil {
 		return err
 	}
