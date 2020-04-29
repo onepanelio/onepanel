@@ -1706,6 +1706,12 @@
         },
         "workflowExecution": {
           "$ref": "#/definitions/WorkflowExecution"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/KeyValue"
+          }
         }
       }
     },

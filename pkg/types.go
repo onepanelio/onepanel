@@ -78,7 +78,7 @@ type CronWorkflow struct {
 	FailedJobsHistoryLimit     *int32 `db:"failed_jobs_history_limit"`
 	WorkflowExecution          *WorkflowExecution
 	WorkflowSpec               string `db:"workflow_spec"`
-	Labels                     []*Label
+	Labels                     map[string]string
 	Version                    int64
 	WorkflowTemplateVersionId  uint64 `db:"workflow_template_version_id"`
 }
@@ -525,6 +525,21 @@ func WorkflowTemplatesToVersionIds(workflowTemplates []*WorkflowTemplate) (ids [
 }
 
 func WorkflowTemplateVersionsToIds(resources []*WorkflowTemplateVersion) (ids []uint64) {
+	mappedIds := make(map[uint64]bool)
+
+	// This is to make sure we don't have duplicates
+	for _, resource := range resources {
+		mappedIds[resource.ID] = true
+	}
+
+	for id := range mappedIds {
+		ids = append(ids, id)
+	}
+
+	return
+}
+
+func CronWorkflowsToIds(resources []*CronWorkflow) (ids []uint64) {
 	mappedIds := make(map[uint64]bool)
 
 	// This is to make sure we don't have duplicates

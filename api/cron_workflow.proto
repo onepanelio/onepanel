@@ -92,4 +92,6 @@ message CronWorkflow {
     int32 failedJobsHistoryLimit = 8;
 
     WorkflowExecution workflowExecution = 9;
+
+    repeated KeyValue labels = 10;
 }
