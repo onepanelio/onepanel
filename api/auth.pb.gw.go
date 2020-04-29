@@ -123,7 +123,7 @@ func RegisterAuthServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
-	mux.Handle("head", pattern_AuthService_IsWorkspaceAuthenticated_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("HEAD", pattern_AuthService_IsWorkspaceAuthenticated_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -204,7 +204,7 @@ func RegisterAuthServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
-	mux.Handle("head", pattern_AuthService_IsWorkspaceAuthenticated_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("HEAD", pattern_AuthService_IsWorkspaceAuthenticated_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)

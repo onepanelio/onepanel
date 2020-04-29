@@ -16,7 +16,7 @@ service AuthService {
     rpc IsWorkspaceAuthenticated(IsWorkspaceAuthenticatedRequest) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             custom: {
-                kind: "head"
+                kind: "HEAD"
                 path: "/apis/v1beta1/auth/token"
             }
         };
