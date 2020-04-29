@@ -87,6 +87,29 @@ func (c *Client) UpdateCronWorkflow(namespace string, name string, cronWorkflow 
 		// Manifests could get big, don't return them in this case.
 		cronWorkflow.WorkflowExecution.WorkflowTemplate.Manifest = ""
 
+		workflowSpec, err := yaml.Marshal(argoCreatedCronWorkflow.Spec.WorkflowSpec)
+		if err != nil {
+			return nil, err
+		}
+		_, err = sb.Update("cron_workflows").
+			SetMap(sq.Eq{
+				"schedule":                      cronWorkflow.Schedule,
+				"timezone":                      cronWorkflow.Timezone,
+				"suspend":                       cronWorkflow.Suspend,
+				"concurrency_policy":            cronWorkflow.ConcurrencyPolicy,
+				"starting_deadline_seconds":     cronWorkflow.StartingDeadlineSeconds,
+				"successful_jobs_history_limit": cronWorkflow.SuccessfulJobsHistoryLimit,
+				"failed_jobs_history_limit":     cronWorkflow.FailedJobsHistoryLimit,
+				"workflow_spec":                 workflowSpec,
+			}).
+			Suffix("RETURNING id").
+			RunWith(c.DB.DB).
+			Exec()
+
+		if err != nil {
+			return nil, err
+		}
+
 		return cronWorkflow, nil
 	}
 	return nil, nil
