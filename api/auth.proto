@@ -32,7 +32,8 @@ message IsValidTokenRequest {
 }
 
 message IsWorkspaceAuthenticatedRequest {
-    string method = 1;
-    string authority = 2;
-    string originalUri = 3;
+    string FQDN = 1;
+    string XOriginalMethod = 2;
+    string XOriginalAuthority = 3;
+    string XOriginalUri = 4;
 }
