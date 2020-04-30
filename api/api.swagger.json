@@ -170,7 +170,7 @@
           "CronWorkflowService"
         ]
       },
-      "post": {
+      "put": {
         "operationId": "UpdateCronWorkflow",
         "responses": {
           "200": {
@@ -226,7 +226,7 @@
             "type": "string"
           },
           {
-            "name": "workflow_template_uid",
+            "name": "workflow_template_name",
             "in": "query",
             "required": false,
             "type": "string"
@@ -281,7 +281,7 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/cron_workflows/{workflow_template_uid}": {
+    "/apis/v1beta1/{namespace}/cron_workflows/{workflow_template_name}": {
       "get": {
         "operationId": "ListCronWorkflows2",
         "responses": {
@@ -300,7 +300,7 @@
             "type": "string"
           },
           {
-            "name": "workflow_template_uid",
+            "name": "workflow_template_name",
             "in": "path",
             "required": true,
             "type": "string"
@@ -1679,30 +1679,8 @@
         "name": {
           "type": "string"
         },
-        "schedule": {
+        "manifest": {
           "type": "string"
-        },
-        "timezone": {
-          "type": "string"
-        },
-        "suspend": {
-          "type": "boolean",
-          "format": "boolean"
-        },
-        "concurrencyPolicy": {
-          "type": "string"
-        },
-        "startingDeadlineSeconds": {
-          "type": "string",
-          "format": "int64"
-        },
-        "successfulJobsHistoryLimit": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "failedJobsHistoryLimit": {
-          "type": "integer",
-          "format": "int32"
         },
         "workflowExecution": {
           "$ref": "#/definitions/WorkflowExecution"

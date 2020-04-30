@@ -63,24 +63,17 @@ type Metric struct {
 }
 
 type CronWorkflow struct {
-	ID                         uint64
-	CreatedAt                  time.Time  `db:"created_at"`
-	ModifiedAt                 *time.Time `db:"modified_at"`
-	UID                        string
-	Name                       string
-	GenerateName               string
-	Schedule                   string
-	Timezone                   string
-	Suspend                    bool
-	ConcurrencyPolicy          string `db:"concurrency_policy"`
-	StartingDeadlineSeconds    *int64 `db:"starting_deadline_seconds"`
-	SuccessfulJobsHistoryLimit *int32 `db:"successful_jobs_history_limit"`
-	FailedJobsHistoryLimit     *int32 `db:"failed_jobs_history_limit"`
-	WorkflowExecution          *WorkflowExecution
-	WorkflowSpec               string `db:"workflow_spec"`
-	Labels                     map[string]string
-	Version                    int64
-	WorkflowTemplateVersionId  uint64 `db:"workflow_template_version_id"`
+	ID                        uint64
+	CreatedAt                 time.Time  `db:"created_at"`
+	ModifiedAt                *time.Time `db:"modified_at"`
+	UID                       string
+	Name                      string
+	GenerateName              string
+	WorkflowExecution         *WorkflowExecution
+	Labels                    map[string]string
+	Version                   int64
+	WorkflowTemplateVersionId uint64 `db:"workflow_template_version_id"`
+	Manifest                  string
 }
 
 func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]WorkflowExecutionParameter, error) {
@@ -88,7 +81,8 @@ func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]WorkflowExecutionPara
 
 	mappedData := make(map[string]interface{})
 
-	if err := yaml.Unmarshal([]byte(cw.WorkflowSpec), mappedData); err != nil {
+	// todo workflow spec
+	if err := yaml.Unmarshal([]byte(cw.Manifest), mappedData); err != nil {
 		return nil, err
 	}
 
@@ -122,6 +116,29 @@ func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]WorkflowExecutionPara
 	}
 
 	return parameters, nil
+}
+
+func (cw *CronWorkflow) AddToManifestSpec(key, manifest string) error {
+	currentManifestMapping, err := mapping.NewFromYamlString(cw.Manifest)
+	if err != nil {
+		return err
+	}
+
+	additionalManifest, err := mapping.NewFromYamlString(manifest)
+	if err != nil {
+		return err
+	}
+
+	currentManifestMapping[key] = additionalManifest
+
+	updatedManifest, err := currentManifestMapping.ToYamlBytes()
+	if err != nil {
+		return err
+	}
+
+	cw.Manifest = string(updatedManifest)
+
+	return nil
 }
 
 type WorkflowTemplate struct {
@@ -254,6 +271,29 @@ func (wt *WorkflowTemplate) GenerateUID() (string, error) {
 	wt.UID = uid.String()
 
 	return wt.UID, nil
+}
+
+func (wt *WorkflowTemplate) UpdateManifestParameters(params []WorkflowExecutionParameter) error {
+	manifestMap, err := mapping.NewFromYamlString(wt.Manifest)
+	if err != nil {
+		return err
+	}
+
+	arguments, err := manifestMap.GetChildMap("arguments")
+	if err != nil {
+		return err
+	}
+
+	arguments["parameters"] = params
+
+	manifestBytes, err := manifestMap.ToYamlBytes()
+	if err != nil {
+		return err
+	}
+
+	wt.Manifest = string(manifestBytes)
+
+	return nil
 }
 
 func (wt *WorkflowTemplate) GetWorkflowManifestBytes() ([]byte, error) {

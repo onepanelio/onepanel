@@ -339,7 +339,7 @@ func local_request_CronWorkflowService_ListCronWorkflows_0(ctx context.Context, 
 }
 
 var (
-	filter_CronWorkflowService_ListCronWorkflows_1 = &utilities.DoubleArray{Encoding: map[string]int{"namespace": 0, "workflow_template_uid": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
+	filter_CronWorkflowService_ListCronWorkflows_1 = &utilities.DoubleArray{Encoding: map[string]int{"namespace": 0, "workflow_template_name": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
 )
 
 func request_CronWorkflowService_ListCronWorkflows_1(ctx context.Context, marshaler runtime.Marshaler, client CronWorkflowServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -364,15 +364,15 @@ func request_CronWorkflowService_ListCronWorkflows_1(ctx context.Context, marsha
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "namespace", err)
 	}
 
-	val, ok = pathParams["workflow_template_uid"]
+	val, ok = pathParams["workflow_template_name"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "workflow_template_uid")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "workflow_template_name")
 	}
 
-	protoReq.WorkflowTemplateUid, err = runtime.String(val)
+	protoReq.WorkflowTemplateName, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "workflow_template_uid", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "workflow_template_name", err)
 	}
 
 	if err := req.ParseForm(); err != nil {
@@ -409,15 +409,15 @@ func local_request_CronWorkflowService_ListCronWorkflows_1(ctx context.Context, 
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "namespace", err)
 	}
 
-	val, ok = pathParams["workflow_template_uid"]
+	val, ok = pathParams["workflow_template_name"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "workflow_template_uid")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "workflow_template_name")
 	}
 
-	protoReq.WorkflowTemplateUid, err = runtime.String(val)
+	protoReq.WorkflowTemplateName, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "workflow_template_uid", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "workflow_template_name", err)
 	}
 
 	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_CronWorkflowService_ListCronWorkflows_1); err != nil {
@@ -530,7 +530,7 @@ func RegisterCronWorkflowServiceHandlerServer(ctx context.Context, mux *runtime.
 
 	})
 
-	mux.Handle("POST", pattern_CronWorkflowService_UpdateCronWorkflow_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_CronWorkflowService_UpdateCronWorkflow_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -691,7 +691,7 @@ func RegisterCronWorkflowServiceHandlerClient(ctx context.Context, mux *runtime.
 
 	})
 
-	mux.Handle("POST", pattern_CronWorkflowService_UpdateCronWorkflow_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_CronWorkflowService_UpdateCronWorkflow_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -803,7 +803,7 @@ var (
 
 	pattern_CronWorkflowService_ListCronWorkflows_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"apis", "v1beta1", "namespace", "cron_workflows"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_CronWorkflowService_ListCronWorkflows_1 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"apis", "v1beta1", "namespace", "cron_workflows", "workflow_template_uid"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_CronWorkflowService_ListCronWorkflows_1 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"apis", "v1beta1", "namespace", "cron_workflows", "workflow_template_name"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_CronWorkflowService_TerminateCronWorkflow_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"apis", "v1beta1", "namespace", "cron_workflows", "name", "terminate"}, "", runtime.AssumeColonVerbOpt(true)))
 )

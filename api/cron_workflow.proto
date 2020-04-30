@@ -17,7 +17,7 @@ service CronWorkflowService {
 
     rpc UpdateCronWorkflow(UpdateCronWorkflowRequest) returns (CronWorkflow) {
         option (google.api.http) = {
-            post: "/apis/v1beta1/{namespace}/cron_workflow/{name}"
+            put: "/apis/v1beta1/{namespace}/cron_workflow/{name}"
             body: "cronWorkflow"
         };
     }
@@ -32,7 +32,7 @@ service CronWorkflowService {
         option (google.api.http) = {
             get: "/apis/v1beta1/{namespace}/cron_workflows"
             additional_bindings {
-				get: "/apis/v1beta1/{namespace}/cron_workflows/{workflow_template_uid}"
+				get: "/apis/v1beta1/{namespace}/cron_workflows/{workflow_template_name}"
 			}
         };
     }
@@ -44,20 +44,23 @@ service CronWorkflowService {
     }
 }
 
-message TerminateCronWorkflowRequest {
-    string namespace = 1;
-    string name = 2;
-}
+message CronWorkflow {
+    string name = 1;
+    string manifest = 2;
 
+    WorkflowExecution workflowExecution = 3;
 
-message GetCronWorkflowRequest {
-    string namespace = 1;
-    string name = 2;
+    repeated KeyValue labels = 4;
 }
 
 message CreateCronWorkflowRequest {
     string namespace = 1;
     CronWorkflow cronWorkflow = 2;
+}
+
+message GetCronWorkflowRequest {
+    string namespace = 1;
+    string name = 2;
 }
 
 message UpdateCronWorkflowRequest {
@@ -66,9 +69,14 @@ message UpdateCronWorkflowRequest {
     CronWorkflow cronWorkflow = 3;
 }
 
+message TerminateCronWorkflowRequest {
+    string namespace = 1;
+    string name = 2;
+}
+
 message ListCronWorkflowRequest {
     string namespace = 1;
-    string workflow_template_uid = 2;
+    string workflow_template_name = 2;
     int32 pageSize = 3;
     int32 page = 4;
 }
@@ -79,19 +87,4 @@ message ListCronWorkflowsResponse {
     int32 page = 3;
     int32 pages = 4;
     int32 totalCount = 5;
-}
-
-message CronWorkflow {
-    string name = 1;
-    string schedule = 2;
-    string timezone = 3;
-    bool suspend = 4;
-    string concurrencyPolicy = 5;
-    int64 startingDeadlineSeconds = 6;
-    int32 successfulJobsHistoryLimit = 7;
-    int32 failedJobsHistoryLimit = 8;
-
-    WorkflowExecution workflowExecution = 9;
-
-    repeated KeyValue labels = 10;
 }

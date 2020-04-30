@@ -23,24 +23,9 @@ func apiCronWorkflow(cwf *v1.CronWorkflow) (cronWorkflow *api.CronWorkflow) {
 	}
 
 	cronWorkflow = &api.CronWorkflow{
-		Name:              cwf.Name,
-		Schedule:          cwf.Schedule,
-		Timezone:          cwf.Timezone,
-		Suspend:           cwf.Suspend,
-		ConcurrencyPolicy: cwf.ConcurrencyPolicy,
-		Labels:            converter.MappingToKeyValue(cwf.Labels),
-	}
-
-	if cwf.StartingDeadlineSeconds != nil {
-		cronWorkflow.StartingDeadlineSeconds = *cwf.StartingDeadlineSeconds
-	}
-
-	if cwf.SuccessfulJobsHistoryLimit != nil {
-		cronWorkflow.SuccessfulJobsHistoryLimit = *cwf.SuccessfulJobsHistoryLimit
-	}
-
-	if cwf.FailedJobsHistoryLimit != nil {
-		cronWorkflow.FailedJobsHistoryLimit = *cwf.FailedJobsHistoryLimit
+		Name:     cwf.Name,
+		Labels:   converter.MappingToKeyValue(cwf.Labels),
+		Manifest: cwf.Manifest,
 	}
 
 	if cwf.WorkflowExecution != nil {
@@ -78,15 +63,9 @@ func (c *CronWorkflowServer) CreateCronWorkflow(ctx context.Context, req *api.Cr
 	}
 
 	cronWorkflow := v1.CronWorkflow{
-		Schedule:                   req.CronWorkflow.Schedule,
-		Timezone:                   req.CronWorkflow.Timezone,
-		Suspend:                    req.CronWorkflow.Suspend,
-		ConcurrencyPolicy:          req.CronWorkflow.ConcurrencyPolicy,
-		StartingDeadlineSeconds:    &req.CronWorkflow.StartingDeadlineSeconds,
-		SuccessfulJobsHistoryLimit: &req.CronWorkflow.SuccessfulJobsHistoryLimit,
-		FailedJobsHistoryLimit:     &req.CronWorkflow.FailedJobsHistoryLimit,
-		WorkflowExecution:          workflow,
-		Labels:                     converter.APIKeyValueToLabel(req.CronWorkflow.Labels),
+		WorkflowExecution: workflow,
+		Manifest:          req.CronWorkflow.Manifest,
+		Labels:            converter.APIKeyValueToLabel(req.CronWorkflow.Labels),
 	}
 
 	cwf, err := client.CreateCronWorkflow(req.Namespace, &cronWorkflow)
@@ -117,15 +96,9 @@ func (c *CronWorkflowServer) UpdateCronWorkflow(ctx context.Context, req *api.Up
 	}
 
 	cronWorkflow := v1.CronWorkflow{
-		Schedule:                   req.CronWorkflow.Schedule,
-		Timezone:                   req.CronWorkflow.Timezone,
-		Suspend:                    req.CronWorkflow.Suspend,
-		ConcurrencyPolicy:          req.CronWorkflow.ConcurrencyPolicy,
-		StartingDeadlineSeconds:    &req.CronWorkflow.StartingDeadlineSeconds,
-		SuccessfulJobsHistoryLimit: &req.CronWorkflow.SuccessfulJobsHistoryLimit,
-		FailedJobsHistoryLimit:     &req.CronWorkflow.FailedJobsHistoryLimit,
-		WorkflowExecution:          workflow,
-		Labels:                     converter.APIKeyValueToLabel(req.CronWorkflow.Labels),
+		WorkflowExecution: workflow,
+		Manifest:          req.CronWorkflow.Manifest,
+		Labels:            converter.APIKeyValueToLabel(req.CronWorkflow.Labels),
 	}
 
 	cwf, err := client.UpdateCronWorkflow(req.Namespace, req.Name, &cronWorkflow)
@@ -159,7 +132,7 @@ func (c *CronWorkflowServer) ListCronWorkflows(ctx context.Context, req *api.Lis
 	}
 
 	paginator := pagination.NewRequest(req.Page, req.PageSize)
-	cronWorkflows, err := client.ListCronWorkflows(req.Namespace, req.WorkflowTemplateUid, &paginator)
+	cronWorkflows, err := client.ListCronWorkflows(req.Namespace, req.WorkflowTemplateName, &paginator)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +141,7 @@ func (c *CronWorkflowServer) ListCronWorkflows(ctx context.Context, req *api.Lis
 		apiCronWorkflows = append(apiCronWorkflows, apiCronWorkflow(cwf))
 	}
 
-	count, err := client.CountCronWorkflows(req.Namespace, req.WorkflowTemplateUid)
+	count, err := client.CountCronWorkflows(req.Namespace, req.WorkflowTemplateName)
 	if err != nil {
 		return nil, err
 	}
