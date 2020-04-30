@@ -1059,7 +1059,7 @@ func filterOutCustomTypesFromManifest(manifest []byte) (result []byte, err error
 
 		// If the parameter does not have a value, skip it so argo doesn't try to process it and fail.
 		if _, hasValue := paramMap["value"]; !hasValue {
-			continue
+			paramMap["value"] = "<value>"
 		}
 
 		parametersToKeep = append(parametersToKeep, parameter)
