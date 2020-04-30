@@ -93,7 +93,7 @@ func (s WorkspaceTemplateServer) GenerateWorkspaceTemplateWorkflowTemplate(ctx c
 	}
 
 	workspaceTemplate := &v1.WorkspaceTemplate{
-		Manifest: req.WorkspaceTemplateManifest,
+		Manifest: req.WorkspaceTemplate.Manifest,
 	}
 	workflowTemplate, err := client.GenerateWorkspaceTemplateWorkflowTemplate(workspaceTemplate)
 
