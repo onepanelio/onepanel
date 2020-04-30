@@ -130,7 +130,7 @@ func createVirtualServiceManifest(spec *WorkspaceSpec, config map[string]string)
 		"spec": networking.VirtualService{
 			Http:     spec.Routes,
 			Gateways: []string{"istio-system/ingressgateway"},
-			Hosts:    []string{fmt.Sprintf("{{workflow.parameters.sys-name}}-{{workflow.namespace}}.%v", config["ONEPANEL_DOMAIN"])},
+			Hosts:    []string{fmt.Sprintf("{{workflow.parameters.sys-name}}--{{workflow.namespace}}.%v", config["ONEPANEL_DOMAIN"])},
 		},
 	}
 	virtualServiceManifestBytes, err := yaml.Marshal(virtualService)
