@@ -67,7 +67,7 @@ func (s *WorkflowServer) CreateWorkflowExecution(ctx context.Context, req *api.C
 		},
 	}
 	for _, param := range req.WorkflowExecution.Parameters {
-		workflow.Parameters = append(workflow.Parameters, v1.WorkflowExecutionParameter{
+		workflow.Parameters = append(workflow.Parameters, v1.Parameter{
 			Name:  param.Name,
 			Value: ptr.String(param.Value),
 		})

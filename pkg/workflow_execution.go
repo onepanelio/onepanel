@@ -310,7 +310,7 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
 	opts.GenerateName = strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`)) + "-"
 	for _, param := range workflow.Parameters {
-		opts.Parameters = append(opts.Parameters, WorkflowExecutionParameter{
+		opts.Parameters = append(opts.Parameters, Parameter{
 			Name:  param.Name,
 			Value: param.Value,
 		})

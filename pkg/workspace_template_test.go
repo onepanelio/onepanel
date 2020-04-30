@@ -65,11 +65,3 @@ func TestParseWorkspaceSpec(t *testing.T) {
 	assert.Equal(t, workspaceSpec.Containers[0].Ports[0].ContainerPort, int32(80))
 	assert.Equal(t, workspaceSpec.Containers[1].Ports[0].ContainerPort, int32(443))
 }
-
-func TestCreateWorkspaceTemplate(t *testing.T) {
-	c := NewTestClient(mockSystemSecret, mockSystemConfigMap)
-
-	if err := c.CreateWorkspaceTemplate("rush", workspaceTemplate); err != nil {
-		t.Error(err)
-	}
-}

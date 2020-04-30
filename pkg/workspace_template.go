@@ -5,7 +5,6 @@ import (
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	v1 "github.com/onepanelio/core/pkg/apis/core/v1"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
@@ -16,21 +15,21 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func parseWorkspaceSpec(template string) (spec *v1.WorkspaceSpec, err error) {
+func parseWorkspaceSpec(template string) (spec *WorkspaceSpec, err error) {
 	err = yaml.UnmarshalStrict([]byte(template), &spec)
 
 	return
 }
 
-func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err error) {
+func generateArguments(spec *WorkspaceSpec, config map[string]string) (err error) {
 	if spec.Arguments == nil {
-		spec.Arguments = &v1.Arguments{
-			Parameters: []v1.Parameter{},
+		spec.Arguments = &Arguments{
+			Parameters: []Parameter{},
 		}
 	}
 
 	// Resource action parameter
-	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
+	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
 		Name:        "sys-name",
 		Type:        "input.text",
 		Value:       ptr.String("name"),
@@ -39,25 +38,25 @@ func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err er
 	})
 
 	// Resource action parameter
-	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
+	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
 		Name:  "sys-resource-action",
 		Value: ptr.String("apply"),
 		Type:  "input.hidden",
 	})
 
 	// Workspace action
-	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
+	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
 		Name:  "sys-workspace-action",
 		Value: ptr.String("create"),
 		Type:  "input.hidden",
 	})
 
 	// Node pool parameter and options
-	var options []*v1.ParameterOption
+	var options []*ParameterOption
 	if err = yaml.Unmarshal([]byte(config["applicationNodePoolOptions"]), &options); err != nil {
 		return
 	}
-	spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
+	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
 		Name:        "sys-node-pool",
 		Value:       ptr.String(options[0].Value),
 		Type:        "select.select",
@@ -75,7 +74,7 @@ func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err er
 				continue
 			}
 
-			spec.Arguments.Parameters = append(spec.Arguments.Parameters, v1.Parameter{
+			spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
 				Name:        fmt.Sprintf("sys-%v-volume-size", v.Name),
 				Type:        "input.number",
 				Value:       ptr.String("20480"),
@@ -91,7 +90,7 @@ func generateArguments(spec *v1.WorkspaceSpec, config map[string]string) (err er
 	return
 }
 
-func createServiceManifest(spec *v1.WorkspaceSpec) (serviceManifest string, err error) {
+func createServiceManifest(spec *WorkspaceSpec) (serviceManifest string, err error) {
 	service := corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -116,7 +115,7 @@ func createServiceManifest(spec *v1.WorkspaceSpec) (serviceManifest string, err 
 	return
 }
 
-func createVirtualServiceManifest(spec *v1.WorkspaceSpec, config map[string]string) (virtualServiceManifest string, err error) {
+func createVirtualServiceManifest(spec *WorkspaceSpec, config map[string]string) (virtualServiceManifest string, err error) {
 	for _, h := range spec.Routes {
 		for _, r := range h.Route {
 			r.Destination.Host = "{{workflow.parameters.sys-name}}"
@@ -143,7 +142,7 @@ func createVirtualServiceManifest(spec *v1.WorkspaceSpec, config map[string]stri
 	return
 }
 
-func createStatefulSetManifest(workspaceSpec *v1.WorkspaceSpec, config map[string]string) (statefulSetManifest string, err error) {
+func createStatefulSetManifest(workspaceSpec *WorkspaceSpec, config map[string]string) (statefulSetManifest string, err error) {
 	var volumeClaims []map[string]interface{}
 	volumeClaimsMapped := make(map[string]bool)
 	for _, c := range workspaceSpec.Containers {
@@ -212,7 +211,7 @@ func createStatefulSetManifest(workspaceSpec *v1.WorkspaceSpec, config map[strin
 	return
 }
 
-func unmarshalWorkflowTemplate(spec *v1.WorkspaceSpec, serviceManifest, virtualServiceManifest, containersManifest string) (workflowTemplateSpecManifest string, err error) {
+func unmarshalWorkflowTemplate(spec *WorkspaceSpec, serviceManifest, virtualServiceManifest, containersManifest string) (workflowTemplateSpecManifest string, err error) {
 	var volumeClaimItems []wfv1.Item
 	volumeClaimsMapped := make(map[string]bool)
 	for _, c := range spec.Containers {

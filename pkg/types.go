@@ -2,7 +2,6 @@ package v1
 
 import (
 	"encoding/json"
-	v1 "github.com/onepanelio/core/pkg/apis/core/v1"
 	"github.com/onepanelio/core/pkg/util/mapping"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -83,8 +82,8 @@ type CronWorkflow struct {
 	WorkflowTemplateVersionId  uint64 `db:"workflow_template_version_id"`
 }
 
-func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]WorkflowExecutionParameter, error) {
-	var parameters []WorkflowExecutionParameter
+func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]Parameter, error) {
+	var parameters []Parameter
 
 	mappedData := make(map[string]interface{})
 
@@ -113,7 +112,7 @@ func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]WorkflowExecutionPara
 		name := paramMap["name"].(string)
 		value := paramMap["value"].(string)
 
-		workflowParameter := WorkflowExecutionParameter{
+		workflowParameter := Parameter{
 			Name:  name,
 			Value: &value,
 		}
@@ -387,7 +386,7 @@ type WorkflowExecution struct {
 	UID              string
 	Name             string
 	GenerateName     string
-	Parameters       []WorkflowExecutionParameter
+	Parameters       []Parameter
 	Manifest         string
 	Phase            wfv1.NodePhase
 	StartedAt        *time.Time        `db:"started_at"`
@@ -395,9 +394,6 @@ type WorkflowExecution struct {
 	WorkflowTemplate *WorkflowTemplate `db:"workflow_template"`
 	Labels           map[string]string
 }
-
-// TODO: Using an alias so we can refactor out WorkflowExecutionParameter
-type WorkflowExecutionParameter = v1.Parameter
 
 type ListOptions = metav1.ListOptions
 
@@ -407,7 +403,7 @@ type WorkflowExecutionOptions struct {
 	Name           string
 	GenerateName   string
 	Entrypoint     string
-	Parameters     []WorkflowExecutionParameter
+	Parameters     []Parameter
 	ServiceAccount string
 	Labels         *map[string]string
 	ListOptions    *ListOptions
