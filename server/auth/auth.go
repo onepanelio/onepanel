@@ -107,21 +107,23 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerIntercep
 
 		// if you don't need the token,
 		if info.FullMethod == "/api.AuthService/IsWorkspaceAuthenticated" {
-			workspaceRequest, ok := req.(api.IsWorkspaceAuthenticatedRequest)
+			md, ok := metadata.FromIncomingContext(ctx)
+			fmt.Printf("%+v\n", md) //todo remove
 			if !ok {
 				ctx = nil
 				return handler(ctx, req)
 			}
-
-			//todo ignore fqdn
+			xOriginalUri := md.Get("x-original-uri")[0]
+			fqdn := md.Get("fqdn")[0]
 			//expected format: https://nginx-0--default.test-0.onepanel.site/
-			fmt.Printf("%+v", workspaceRequest)
-			if workspaceRequest.OriginalUri == "workspacerelated" {
-				//getClient, for kube, will require token auth
-				//set ctx
-			}
+			if xOriginalUri != fqdn { //Ignore fully qualified domain uris
+				ctx, err = getClient(ctx, kubeConfig, db)
+				if err != nil {
+					return
+				}
 
-			return handler(ctx, req)
+				return handler(ctx, req)
+			}
 		}
 
 		// This guy checks for the token
