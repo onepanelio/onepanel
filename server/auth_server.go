@@ -9,18 +9,22 @@ import (
 	"github.com/onepanelio/core/server/auth"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
 type AuthServer struct{}
 
-func (a *AuthServer) IsWorkspaceAuthenticated(ctx context.Context, request *api.IsWorkspaceAuthenticatedRequest) (*empty.Empty, error) {
-	fmt.Printf("%+v\n", request)
-	return &empty.Empty{}, nil
-}
-
 func NewAuthServer() *AuthServer {
 	return &AuthServer{}
+}
+func (a *AuthServer) IsWorkspaceAuthenticated(ctx context.Context, request *api.IsWorkspaceAuthenticatedRequest) (*empty.Empty, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	fmt.Printf("%+v\n", md) //todo remove
+	if !ok {
+		return &empty.Empty{}, nil
+	}
+	return &empty.Empty{}, nil
 }
 
 func (a *AuthServer) IsValidToken(ctx context.Context, req *api.IsValidTokenRequest) (*empty.Empty, error) {
