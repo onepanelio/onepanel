@@ -428,6 +428,10 @@ func (c *Client) getWorkspaceTemplateByName(namespace, name string) (workspaceTe
 }
 
 func (c *Client) generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *WorkspaceTemplate) (workflowTemplate *WorkflowTemplate, err error) {
+	if workspaceTemplate == nil {
+		return nil, nil
+	}
+
 	config, err := c.GetSystemConfig()
 	if err != nil {
 		return nil, err
@@ -464,7 +468,7 @@ func (c *Client) generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *Wo
 
 	workflowTemplate = &WorkflowTemplate{
 		Name:     workspaceTemplate.Name,
-		Manifest: string(workflowTemplateManifest),
+		Manifest: workflowTemplateManifest,
 	}
 
 	return workflowTemplate, nil

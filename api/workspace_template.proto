@@ -18,14 +18,14 @@ service WorkspaceTemplateService {
     rpc ListWorkspaceTemplates (ListWorkspaceTemplatesRequest) returns (ListWorkspaceTemplatesResponse) {
         option (google.api.http) = {
             get: "/apis/v1beta1/{namespace}/workspace_templates"
-            };
+        };
     }
 
     // Get the generated WorkflowTemplate for a WorkspaceTemplate
     rpc GenerateWorkspaceTemplateWorkflowTemplate (GenerateWorkspaceTemplateWorkflowTemplateRequest) returns (WorkflowTemplate) {
         option (google.api.http) = {
             post: "/apis/v1beta1/{namespace}/workspace_templates/{uid}/workflow_template"
-            body: "workspaceTemplateManifest"
+            body: "workspaceTemplate"
         };
     }
 }
@@ -62,6 +62,6 @@ message WorkspaceTemplate {
 message GenerateWorkspaceTemplateWorkflowTemplateRequest {
     string namespace = 1;
     string uid = 2;
-    string workspaceTemplateManifest = 3;
+    WorkspaceTemplate workspaceTemplate = 3;
 }
 

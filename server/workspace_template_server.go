@@ -92,10 +92,22 @@ func (s WorkspaceTemplateServer) GenerateWorkspaceTemplateWorkflowTemplate(ctx c
 		return nil, err
 	}
 
+	if req.WorkspaceTemplate.Manifest == "" {
+		return &api.WorkflowTemplate{
+			Manifest: "",
+		}, nil
+	}
+
 	workspaceTemplate := &v1.WorkspaceTemplate{
-		Manifest: req.WorkspaceTemplateManifest,
+		Manifest: req.WorkspaceTemplate.Manifest,
 	}
 	workflowTemplate, err := client.GenerateWorkspaceTemplateWorkflowTemplate(workspaceTemplate)
+
+	if workflowTemplate == nil {
+		return &api.WorkflowTemplate{
+			Manifest: "",
+		}, nil
+	}
 
 	return apiWorkflowTemplate(workflowTemplate), nil
 }
