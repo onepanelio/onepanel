@@ -28,21 +28,23 @@ func injectWorkspaceParameterValues(workspace *Workspace, workspaceAction, resou
 	return
 }
 
-func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (err error) {
-	if err = injectWorkspaceParameterValues(workspace, "create", "apply"); err != nil {
-		return
+func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Workspace, error) {
+	if err := injectWorkspaceParameterValues(workspace, "create", "apply"); err != nil {
+		return nil, err
 	}
 
 	workflowTemplate, err := c.getWorkspaceTemplateWorkflowTemplate(namespace,
 		workspace.WorkspaceTemplate.UID, workspace.WorkspaceTemplate.Version)
 	if err != nil {
-		return util.NewUserError(codes.NotFound, "Workspace template not found.")
+		return nil, util.NewUserError(codes.NotFound, "Workspace template not found.")
 	}
 
-	_, err = c.CreateWorkflowExecution(namespace, &WorkflowExecution{
+	workflowExecution, err := c.CreateWorkflowExecution(namespace, &WorkflowExecution{
 		Parameters:       workspace.Parameters,
 		WorkflowTemplate: workflowTemplate,
 	})
 
-	return
+	workspace.UID = workflowExecution.UID
+
+	return workspace, nil
 }

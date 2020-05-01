@@ -16,8 +16,12 @@ service WorkspaceService {
 }
 
 message Workspace {
-	repeated Parameter parameters = 2;
-	WorkspaceTemplate workspaceTemplate = 3;
+	string uid = 1;
+	string name = 2;
+	int64 version = 3;
+	string createdAt = 4;
+	repeated Parameter parameters = 5;
+	WorkspaceTemplate workspaceTemplate = 6;
 }
 
 message CreateWorkspaceRequest {

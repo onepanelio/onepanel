@@ -2532,6 +2532,19 @@
     "Workspace": {
       "type": "object",
       "properties": {
+        "uid": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string",
+          "format": "int64"
+        },
+        "createdAt": {
+          "type": "string"
+        },
         "parameters": {
           "type": "array",
           "items": {
