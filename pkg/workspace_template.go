@@ -427,6 +427,30 @@ func (c *Client) getWorkspaceTemplateByName(namespace, name string) (workspaceTe
 	return
 }
 
+func (c *Client) getWorkspaceTemplateWorkflowTemplate(namespace, uid string, version int64) (workflowTemplate *WorkflowTemplate, err error) {
+	workflowTemplate = &WorkflowTemplate{}
+
+	query, args, err := sb.Select("wft.uid").
+		From("workspace_templates wt").
+		Join("workflow_templates wft ON wft.id = wt.workflow_template_id").
+		Where(sq.Eq{
+			"wt.uid":       uid,
+			"wt.namespace": namespace,
+		}).
+		Limit(1).ToSql()
+	if err != nil {
+		return
+	}
+
+	if err = c.DB.Get(workflowTemplate, query, args...); err == sql.ErrNoRows {
+		return
+	}
+
+	workflowTemplate, err = c.getWorkflowTemplate(namespace, workflowTemplate.UID, version)
+
+	return
+}
+
 func (c *Client) generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *WorkspaceTemplate) (workflowTemplate *WorkflowTemplate, err error) {
 	config, err := c.GetSystemConfig()
 	if err != nil {
