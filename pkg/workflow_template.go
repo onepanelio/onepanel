@@ -442,10 +442,6 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 		}
 	}
 
-	if err := tx.Commit(); err != nil {
-		return nil, err
-	}
-
 	latest, err := c.getArgoWorkflowTemplate(namespace, workflowTemplate.UID, "latest")
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -459,12 +455,18 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 
 	delete(latest.Labels, label.VersionLatest)
 
-	if _, err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Update(latest); err != nil {
+	latest, err = c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Update(latest)
+	if err != nil {
 		return nil, err
 	}
 
 	updatedTemplate, err := createArgoWorkflowTemplate(workflowTemplate, versionUnix)
 	if err != nil {
+		latest.Labels[label.VersionLatest] = "true"
+		if _, err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Update(latest); err != nil {
+			return nil, err
+		}
+
 		return nil, err
 	}
 
@@ -486,6 +488,10 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 	}
 
 	if _, err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Create(updatedTemplate); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 
