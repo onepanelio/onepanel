@@ -31,6 +31,7 @@ func injectWorkspaceParameterValues(workspace *Workspace, workspaceAction, resou
 	return
 }
 
+// CreateWorkspace creates a workspace by triggering the corresponding workflow
 func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Workspace, error) {
 	if err := injectWorkspaceParameterValues(workspace, "create", "apply"); err != nil {
 		return nil, err
