@@ -1444,6 +1444,36 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/workspace_templates/{name}/versions": {
+      "get": {
+        "operationId": "ListWorkspaceTemplateVersions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListWorkflowTemplateVersionsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceTemplateService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workspace_templates/{uid}/workflow_template": {
       "post": {
         "summary": "Get the generated WorkflowTemplate for a WorkspaceTemplate",

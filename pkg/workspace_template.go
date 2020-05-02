@@ -560,3 +560,42 @@ func (c *Client) CountWorkspaceTemplates(namespace string) (count int, err error
 
 	return
 }
+
+func (c *Client) ListWorkspaceWorkflowTemplateVersions(namespace, name string) (workflowTemplates []*WorkflowTemplate, err error) {
+	query, args, err := c.workflowTemplatesVersionSelectBuilder(namespace).
+		Columns(`wt.id "workflow_template.id"`, `wt.created_at "workflow_template.created_at"`).
+		Columns(`wt.name "workflow_template.name"`, `wt.is_archived "workflow_template.is_archived"`).
+		Join("workspace_templates wst ON wst.workflow_template_id = wt.id").
+		Where(sq.Eq{
+			"wst.name": name,
+		}).
+		OrderBy("wtv.created_at DESC").
+		ToSql()
+
+	if err != nil {
+		return nil, err
+	}
+
+	workflowTemplateVersions := make([]*WorkflowTemplateVersion, 0)
+	if err := c.DB.Select(&workflowTemplateVersions, query, args...); err != nil {
+		return nil, err
+	}
+
+	for _, version := range workflowTemplateVersions {
+		newItem := WorkflowTemplate{
+			ID:         version.WorkflowTemplate.ID,
+			CreatedAt:  version.CreatedAt.UTC(),
+			UID:        version.UID,
+			Name:       version.WorkflowTemplate.Name,
+			Manifest:   version.Manifest,
+			Version:    version.Version,
+			IsLatest:   version.IsLatest,
+			IsArchived: version.WorkflowTemplate.IsArchived,
+			Labels:     version.Labels,
+		}
+
+		workflowTemplates = append(workflowTemplates, &newItem)
+	}
+
+	return workflowTemplates, nil
+}
