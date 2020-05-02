@@ -433,6 +433,7 @@ func (c *Client) updateCronWorkflow(namespace string, name string, workflowTempl
 			newParams = append(newParams, param)
 		}
 		cwf.Spec.WorkflowSpec.Arguments.Parameters = newParams
+		wf.Spec.Arguments.Parameters = newParams
 	}
 	if opts.Labels != nil {
 		cwf.ObjectMeta.Labels = *opts.Labels
