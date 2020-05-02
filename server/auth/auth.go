@@ -113,10 +113,10 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerIntercep
 				ctx = nil
 				return handler(ctx, req)
 			}
-			xOriginalUri := md.Get("x-original-uri")[0]
+			xOriginalAuthority := md.Get("x-original-authority")[0]
 			fqdn := md.Get("fqdn")[0]
 			//expected format: https://nginx-0--default.test-0.onepanel.site/
-			if xOriginalUri != fqdn { //Ignore fully qualified domain uris
+			if xOriginalAuthority != fqdn { //Ignore fully qualified domain uris
 				ctx, err = getClient(ctx, kubeConfig, db)
 				if err != nil {
 					return
