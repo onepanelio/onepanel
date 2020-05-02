@@ -1483,6 +1483,38 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/workspaces": {
+      "post": {
+        "operationId": "CreateWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/Workspace"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Workspace"
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/{resource}/{uid}/labels": {
       "get": {
         "operationId": "GetLabels",
@@ -2005,6 +2037,17 @@
         }
       }
     },
+    "Parameter": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
     "Secret": {
       "type": "object",
       "properties": {
@@ -2084,7 +2127,7 @@
         "parameters": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/WorkflowExecutionParameter"
+            "$ref": "#/definitions/Parameter"
           }
         },
         "workflowTemplate": {
@@ -2095,17 +2138,6 @@
           "items": {
             "$ref": "#/definitions/KeyValue"
           }
-        }
-      }
-    },
-    "WorkflowExecutionParameter": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "value": {
-          "type": "string"
         }
       }
     },
@@ -2175,6 +2207,33 @@
         },
         "cronStats": {
           "$ref": "#/definitions/CronWorkflowStatisticsReport"
+        }
+      }
+    },
+    "Workspace": {
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string",
+          "format": "int64"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Parameter"
+          }
+        },
+        "workspaceTemplate": {
+          "$ref": "#/definitions/WorkspaceTemplate"
         }
       }
     },

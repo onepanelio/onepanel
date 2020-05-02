@@ -4,16 +4,22 @@ import (
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	networking "istio.io/api/networking/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"time"
 )
 
 // +genclient
 // +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type Workspace struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-	Spec              WorkspaceSpec `json:"spec" protobuf:"bytes,2,opt,name=spec"`
+	ID                uint64
+	UID               string
+	Name              string
+	Labels            map[string]string
+	Parameters        []Parameter
+	CreatedAt         time.Time  `db:"created_at"`
+	StartedAt         *time.Time `db:"started_at"`
+	PausedAt          *time.Time `db:"paused_at"`
+	WorkspaceTemplate *WorkspaceTemplate
 }
 
 type WorkspaceSpec struct {

@@ -42,7 +42,7 @@ func (c *Client) UpdateCronWorkflow(namespace string, name string, cronWorkflow 
 	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
 	opts.GenerateName = strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`)) + "-"
 	for _, param := range workflow.Parameters {
-		opts.Parameters = append(opts.Parameters, WorkflowExecutionParameter{
+		opts.Parameters = append(opts.Parameters, Parameter{
 			Name:  param.Name,
 			Value: param.Value,
 		})
@@ -164,7 +164,7 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
 	opts.GenerateName = strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`)) + "-"
 	for _, param := range workflow.Parameters {
-		opts.Parameters = append(opts.Parameters, WorkflowExecutionParameter{
+		opts.Parameters = append(opts.Parameters, Parameter{
 			Name:  param.Name,
 			Value: param.Value,
 		})

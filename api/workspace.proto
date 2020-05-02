@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package api;
+
+import "google/api/annotations.proto";
+import "workspace_template.proto";
+import "common.proto";
+
+service WorkspaceService {
+	rpc CreateWorkspace (CreateWorkspaceRequest) returns (Workspace) {
+		option (google.api.http) = {
+            post: "/apis/v1beta1/{namespace}/workspaces"
+            body: "workspace"
+        };
+	}
+}
+
+message Workspace {
+	string uid = 1;
+	string name = 2;
+	int64 version = 3;
+	string createdAt = 4;
+	repeated Parameter parameters = 5;
+	WorkspaceTemplate workspaceTemplate = 6;
+}
+
+message CreateWorkspaceRequest {
+	string namespace = 1;
+	Workspace workspace = 3;
+}

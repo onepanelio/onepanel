@@ -2,7 +2,6 @@ package v1
 
 import (
 	"encoding/json"
-	v1 "github.com/onepanelio/core/pkg/apis/core/v1"
 	"github.com/onepanelio/core/pkg/util/mapping"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -76,8 +75,8 @@ type CronWorkflow struct {
 	Manifest                  string
 }
 
-func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]WorkflowExecutionParameter, error) {
-	var parameters []WorkflowExecutionParameter
+func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]Parameter, error) {
+	var parameters []Parameter
 
 	mappedData := make(map[string]interface{})
 
@@ -107,7 +106,7 @@ func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]WorkflowExecutionPara
 		name := paramMap["name"].(string)
 		value := paramMap["value"].(string)
 
-		workflowParameter := WorkflowExecutionParameter{
+		workflowParameter := Parameter{
 			Name:  name,
 			Value: &value,
 		}
@@ -273,7 +272,7 @@ func (wt *WorkflowTemplate) GenerateUID() (string, error) {
 	return wt.UID, nil
 }
 
-func (wt *WorkflowTemplate) UpdateManifestParameters(params []WorkflowExecutionParameter) error {
+func (wt *WorkflowTemplate) UpdateManifestParameters(params []Parameter) error {
 	manifestMap, err := mapping.NewFromYamlString(wt.Manifest)
 	if err != nil {
 		return err
@@ -427,7 +426,7 @@ type WorkflowExecution struct {
 	UID              string
 	Name             string
 	GenerateName     string
-	Parameters       []WorkflowExecutionParameter
+	Parameters       []Parameter
 	Manifest         string
 	Phase            wfv1.NodePhase
 	StartedAt        *time.Time        `db:"started_at"`
@@ -435,9 +434,6 @@ type WorkflowExecution struct {
 	WorkflowTemplate *WorkflowTemplate `db:"workflow_template"`
 	Labels           map[string]string
 }
-
-// TODO: Using an alias so we can refactor out WorkflowExecutionParameter
-type WorkflowExecutionParameter = v1.Parameter
 
 type ListOptions = metav1.ListOptions
 
@@ -447,7 +443,7 @@ type WorkflowExecutionOptions struct {
 	Name           string
 	GenerateName   string
 	Entrypoint     string
-	Parameters     []WorkflowExecutionParameter
+	Parameters     []Parameter
 	ServiceAccount string
 	Labels         *map[string]string
 	ListOptions    *ListOptions
@@ -592,25 +588,4 @@ func CronWorkflowsToIds(resources []*CronWorkflow) (ids []uint64) {
 	}
 
 	return
-}
-
-type WorkspaceTemplate struct {
-	ID               uint64
-	UID              string
-	Name             string
-	Version          int64
-	Manifest         string
-	IsLatest         bool
-	CreatedAt        time.Time `db:"created_at"`
-	WorkflowTemplate *WorkflowTemplate
-}
-
-func (wt *WorkspaceTemplate) GenerateUID() (string, error) {
-	uid, err := uuid.NewRandom()
-	if err != nil {
-		return "", err
-	}
-	wt.UID = uid.String()
-
-	return wt.UID, nil
 }

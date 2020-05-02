@@ -7,6 +7,7 @@ import "google/protobuf/empty.proto";
 import "workflow_template.proto";
 import "metric.proto";
 import "label.proto";
+import "common.proto";
 
 service WorkflowService {
     // Creates a Workflow
@@ -165,17 +166,14 @@ message WorkflowExecution {
     string finishedAt = 6;
     string manifest = 7;
 
-    repeated WorkflowExecutionParameter parameters = 8;
+    repeated Parameter parameters = 8;
 
     WorkflowTemplate workflowTemplate = 9;
 
     repeated KeyValue labels = 10;
 }
 
-message WorkflowExecutionParameter {
-    string name = 1;
-    string value = 2;
-}
+
 
 message ArtifactResponse {
     bytes data = 1;

@@ -141,14 +141,14 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		})
 
 		// Always add output artifacts for metrics but make them optional
-		wf.Spec.Templates[i].Outputs.Artifacts = append(template.Outputs.Artifacts, wfv1.Artifact{
-			Name:     "sys-metrics",
-			Path:     "/tmp/sys-metrics.json",
-			Optional: true,
-			Archive: &wfv1.ArchiveStrategy{
-				None: &wfv1.NoneStrategy{},
-			},
-		})
+		//wf.Spec.Templates[i].Outputs.Artifacts = append(template.Outputs.Artifacts, wfv1.Artifact{
+		//	Name:     "sys-metrics",
+		//	Path:     "/tmp/sys-metrics.json",
+		//	Optional: true,
+		//	Archive: &wfv1.ArchiveStrategy{
+		//		None: &wfv1.NoneStrategy{},
+		//	},
+		//})
 
 		if !addSecretValsToTemplate {
 			continue
@@ -310,7 +310,7 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
 	opts.GenerateName = strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`)) + "-"
 	for _, param := range workflow.Parameters {
-		opts.Parameters = append(opts.Parameters, WorkflowExecutionParameter{
+		opts.Parameters = append(opts.Parameters, Parameter{
 			Name:  param.Name,
 			Value: param.Value,
 		})
@@ -1059,7 +1059,7 @@ func filterOutCustomTypesFromManifest(manifest []byte) (result []byte, err error
 
 		// If the parameter does not have a value, skip it so argo doesn't try to process it and fail.
 		if _, hasValue := paramMap["value"]; !hasValue {
-			continue
+			paramMap["value"] = "<value>"
 		}
 
 		parametersToKeep = append(parametersToKeep, parameter)

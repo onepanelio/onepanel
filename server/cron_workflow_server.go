@@ -31,7 +31,7 @@ func apiCronWorkflow(cwf *v1.CronWorkflow) (cronWorkflow *api.CronWorkflow) {
 	if cwf.WorkflowExecution != nil {
 		cronWorkflow.WorkflowExecution = GenApiWorkflowExecution(cwf.WorkflowExecution)
 		for _, param := range cwf.WorkflowExecution.Parameters {
-			convertedParam := &api.WorkflowExecutionParameter{
+			convertedParam := &api.Parameter{
 				Name:  param.Name,
 				Value: *param.Value,
 			}
@@ -56,7 +56,7 @@ func (c *CronWorkflowServer) CreateCronWorkflow(ctx context.Context, req *api.Cr
 		},
 	}
 	for _, param := range req.CronWorkflow.WorkflowExecution.Parameters {
-		workflow.Parameters = append(workflow.Parameters, v1.WorkflowExecutionParameter{
+		workflow.Parameters = append(workflow.Parameters, v1.Parameter{
 			Name:  param.Name,
 			Value: ptr.String(param.Value),
 		})
@@ -89,7 +89,7 @@ func (c *CronWorkflowServer) UpdateCronWorkflow(ctx context.Context, req *api.Up
 		},
 	}
 	for _, param := range req.CronWorkflow.WorkflowExecution.Parameters {
-		workflow.Parameters = append(workflow.Parameters, v1.WorkflowExecutionParameter{
+		workflow.Parameters = append(workflow.Parameters, v1.Parameter{
 			Name:  param.Name,
 			Value: ptr.String(param.Value),
 		})

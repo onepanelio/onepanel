@@ -339,23 +339,31 @@ func (c *Client) archiveWorkflowTemplate(namespace, uid string) (bool, error) {
 	return true, nil
 }
 
-func (c *Client) CreateWorkflowTemplate(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
+func (c *Client) validateWorkflowTemplate(namespace string, workflowTemplate *WorkflowTemplate) (err error) {
 	// validate workflow template
 	finalBytes, err := workflowTemplate.WrapSpec()
 	if err != nil {
-		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
+		return
 	}
-
-	if err := c.ValidateWorkflowExecution(namespace, finalBytes); err != nil {
+	err = c.ValidateWorkflowExecution(namespace, finalBytes)
+	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":        namespace,
 			"WorkflowTemplate": workflowTemplate,
 			"Error":            err.Error(),
 		}).Error("Workflow could not be validated.")
+	}
+
+	return
+}
+
+func (c *Client) CreateWorkflowTemplate(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
+	// validate workflow template
+	if err := c.validateWorkflowTemplate(namespace, workflowTemplate); err != nil {
 		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
 	}
 
-	workflowTemplate, err = c.createWorkflowTemplate(namespace, workflowTemplate)
+	workflowTemplate, err := c.createWorkflowTemplate(namespace, workflowTemplate)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":        namespace,
@@ -370,17 +378,7 @@ func (c *Client) CreateWorkflowTemplate(namespace string, workflowTemplate *Work
 
 func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
 	// validate workflow template
-	finalBytes, err := workflowTemplate.WrapSpec()
-	if err != nil {
-		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
-	}
-
-	if err := c.ValidateWorkflowExecution(namespace, finalBytes); err != nil {
-		log.WithFields(log.Fields{
-			"Namespace":        namespace,
-			"WorkflowTemplate": workflowTemplate,
-			"Error":            err.Error(),
-		}).Error("Workflow could not be validated.")
+	if err := c.validateWorkflowTemplate(namespace, workflowTemplate); err != nil {
 		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
 	}
 

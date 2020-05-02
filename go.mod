@@ -8,6 +8,7 @@ require (
 	github.com/Masterminds/squirrel v1.1.0
 	github.com/argoproj/argo v0.0.0-20200331233432-4d1175eb68f6
 	github.com/argoproj/pkg v0.0.0-20200318225345-d3be5f29b1a8
+	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535
 	github.com/elazarl/goproxy v0.0.0-20191011121108-aa519ddbe484 // indirect
 	github.com/evanphx/json-patch v4.5.0+incompatible // indirect
 	github.com/ghodss/yaml v1.0.0
