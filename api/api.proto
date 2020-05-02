@@ -37,8 +37,3 @@ option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
 		}
 	}
 };
-
-message Parameter {
-	string name = 1;
-	string value = 2;
-}

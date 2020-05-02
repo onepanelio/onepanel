@@ -7,31 +7,40 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func injectWorkspaceParameterValues(workspace *Workspace, workspaceAction, resourceAction string) (err error) {
-	for i, p := range workspace.Parameters {
+func injectWorkspaceParameterValues(parameters []Parameter, workspaceAction, resourceAction string) (workspace *Workspace, err error) {
+	workspace = &Workspace{}
+	for _, p := range parameters {
 		// TODO: This can be removed when we have validation on param level
 		if p.Name == "sys-name" {
-			if p.Value == nil || !validate.IsDNSHost(*p.Value) {
-				return util.NewUserError(codes.InvalidArgument, "Workspace name is not valid.")
+			if p.Value == nil {
+				return nil, util.NewUserError(codes.InvalidArgument, "Workspace name is required.")
 			}
-		}
-
-		if p.Name == "sys-workspace-action" {
-			workspace.Parameters[i].Value = ptr.String(workspaceAction)
-		}
-
-		if p.Name == "sys-resource-action" {
-			workspace.Parameters[i].Value = ptr.String(resourceAction)
+			if !validate.IsDNSHost(*p.Value) {
+				return nil, util.NewUserError(codes.InvalidArgument, "Workspace name is not valid.")
+			}
+			workspace.Name = *p.Value
 		}
 	}
+	parameters = append(parameters, Parameter{
+		Name:  "sys-workspace-action",
+		Value: ptr.String(workspaceAction),
+	}, Parameter{
+		Name:  "sys-resource-action",
+		Value: ptr.String(resourceAction),
+	})
+	workspace.Parameters = parameters
 
 	return
 }
 
 func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Workspace, error) {
-	if err := injectWorkspaceParameterValues(workspace, "create", "apply"); err != nil {
+	ws, err := injectWorkspaceParameterValues(workspace.Parameters, "create", "apply")
+	if err != nil {
 		return nil, err
 	}
+
+	workspace.Name = ws.Name
+	workspace.Parameters = ws.Parameters
 
 	workflowTemplate, err := c.getWorkspaceTemplateWorkflowTemplate(namespace,
 		workspace.WorkspaceTemplate.UID, workspace.WorkspaceTemplate.Version)

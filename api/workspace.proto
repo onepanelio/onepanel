@@ -4,7 +4,7 @@ package api;
 
 import "google/api/annotations.proto";
 import "workspace_template.proto";
-import "api.proto";
+import "common.proto";
 
 service WorkspaceService {
 	rpc CreateWorkspace (CreateWorkspaceRequest) returns (Workspace) {
