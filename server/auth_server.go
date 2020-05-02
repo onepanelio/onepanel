@@ -20,9 +20,25 @@ func NewAuthServer() *AuthServer {
 }
 func (a *AuthServer) IsWorkspaceAuthenticated(ctx context.Context, request *api.IsWorkspaceAuthenticatedRequest) (*empty.Empty, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
-	fmt.Printf("%+v\n", md) //todo remove
 	if !ok {
+		return &empty.Empty{}, errors.New("Error parsing headers.")
+	}
+	//Expected format: x-original-authority:[name--default.alexcluster.onepanel.io]
+	xOriginalAuth := md.Get("x-original-authority")[0]
+	fqdn := md.Get("fqdn")[0]
+	if xOriginalAuth == fqdn {
 		return &empty.Empty{}, nil
+	}
+	pos := strings.Index(xOriginalAuth, ".")
+	if pos == -1 {
+		return &empty.Empty{}, errors.New("Error parsing x-original-authority. No '.' character.")
+	}
+	workspaceAndNamespace := xOriginalAuth[0:pos]
+	pieces := strings.Split(workspaceAndNamespace, "--")
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, pieces[1], "create", "apps/v1", "statefulsets", pieces[0])
+	if err != nil || !allowed {
+		return &empty.Empty{}, err
 	}
 	return &empty.Empty{}, nil
 }
