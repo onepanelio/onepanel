@@ -252,7 +252,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateId uint64, wor
 	uid := wf.Labels[label.WorkflowUid]
 	//Create an entry for workflow_executions statistic
 	//CURL code will hit the API endpoint that will update the db row
-	newDbId, err = c.InsertPreWorkflowExecutionStatistic(namespace, createdWorkflow.Name, workflowTemplateVersionId, createdWorkflow.CreationTimestamp.UTC(), uid)
+	newDbId, err = c.insertPreWorkflowExecutionStatistic(namespace, createdWorkflow.Name, workflowTemplateVersionId, createdWorkflow.CreationTimestamp.UTC(), uid)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -397,7 +397,7 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	return workflow, nil
 }
 
-func (c *Client) InsertPreWorkflowExecutionStatistic(namespace, name string, workflowTemplateVersionId uint64, createdAt time.Time, uid string) (newId uint64, err error) {
+func (c *Client) insertPreWorkflowExecutionStatistic(namespace, name string, workflowTemplateVersionId uint64, createdAt time.Time, uid string) (newId uint64, err error) {
 	tx, err := c.DB.Begin()
 	if err != nil {
 		return 0, err
