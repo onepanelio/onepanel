@@ -7,11 +7,26 @@ import "workflow_template.proto";
 import "google/protobuf/empty.proto";
 
 service WorkspaceTemplateService {
+    // Get the generated WorkflowTemplate for a WorkspaceTemplate
+    rpc GenerateWorkspaceTemplateWorkflowTemplate (GenerateWorkspaceTemplateWorkflowTemplateRequest) returns (WorkflowTemplate) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/{namespace}/workspace_templates/{uid}/workflow_template"
+            body: "workspaceTemplate"
+        };
+    }
+
     // Creates a WorkspaceTemplate
     rpc CreateWorkspaceTemplate (CreateWorkspaceTemplateRequest) returns (WorkspaceTemplate) {
         option (google.api.http) = {
             post: "/apis/v1beta1/{namespace}/workspace_templates"
             body: "workspaceTemplate"
+        };
+    }
+
+    // Get a WorkspaceTemplate
+    rpc GetWorkspaceTemplate (GetWorkspaceTemplateRequest) returns (WorkspaceTemplate) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workspace_templates/{uid}"
         };
     }
 
@@ -26,19 +41,33 @@ service WorkspaceTemplateService {
             get: "/apis/v1beta1/{namespace}/workspace_templates/{name}/versions"
         };
     }
+}
 
-    // Get the generated WorkflowTemplate for a WorkspaceTemplate
-    rpc GenerateWorkspaceTemplateWorkflowTemplate (GenerateWorkspaceTemplateWorkflowTemplateRequest) returns (WorkflowTemplate) {
-        option (google.api.http) = {
-            post: "/apis/v1beta1/{namespace}/workspace_templates/{uid}/workflow_template"
-            body: "workspaceTemplate"
-        };
-    }
+message WorkspaceTemplate {
+    string uid = 1;
+    string name = 2;
+    int64 version = 3;
+    string manifest = 4;
+    bool isLatest = 5;
+    string createdAt = 6;
+    WorkflowTemplate workflowTemplate = 7;
+}
+
+message GenerateWorkspaceTemplateWorkflowTemplateRequest {
+    string namespace = 1;
+    string uid = 2;
+    WorkspaceTemplate workspaceTemplate = 3;
 }
 
 message CreateWorkspaceTemplateRequest {
     string namespace = 1;
     WorkspaceTemplate workspaceTemplate = 2;
+}
+
+message GetWorkspaceTemplateRequest {
+    string namespace = 1;
+    string uid = 2;
+    int64 version = 3;
 }
 
 message ListWorkspaceTemplatesRequest {
@@ -60,19 +89,4 @@ message ListWorkspaceTemplateVersionsRequest {
     string name = 2;
 }
 
-message WorkspaceTemplate {
-    string uid = 1;
-    string name = 2;
-    int64 version = 3;
-    string manifest = 4;
-    bool isLatest = 5;
-    string createdAt = 6;
-    WorkflowTemplate workflowTemplate = 7;
-}
-
-message GenerateWorkspaceTemplateWorkflowTemplateRequest {
-    string namespace = 1;
-    string uid = 2;
-    WorkspaceTemplate workspaceTemplate = 3;
-}
 
