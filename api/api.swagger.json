@@ -1706,42 +1706,6 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/workspace_templates/{name}/versions": {
-      "get": {
-        "operationId": "ListWorkspaceTemplateVersions",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/ListWorkflowTemplateVersionsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "WorkspaceTemplateService"
-        ]
-      }
-    },
     "/apis/v1beta1/{namespace}/workspace_templates/{uid}": {
       "get": {
         "operationId": "GetWorkspaceTemplate",
@@ -1778,6 +1742,42 @@
             "required": false,
             "type": "string",
             "format": "int64"
+          }
+        ],
+        "tags": [
+          "WorkspaceTemplateService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workspace_templates/{uid}/versions": {
+      "get": {
+        "operationId": "ListWorkspaceTemplateVersions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListWorkflowTemplateVersionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "tags": [

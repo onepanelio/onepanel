@@ -134,7 +134,7 @@ func (s *WorkspaceTemplateServer) ListWorkspaceTemplateVersions(ctx context.Cont
 		return nil, err
 	}
 
-	workflowTemplateVersions, err := client.ListWorkspaceWorkflowTemplateVersions(req.Namespace, req.Name)
+	workflowTemplateVersions, err := client.ListWorkspaceWorkflowTemplateVersions(req.Namespace, req.Uid)
 	if err != nil {
 		return nil, err
 	}

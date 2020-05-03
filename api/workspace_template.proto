@@ -38,7 +38,7 @@ service WorkspaceTemplateService {
 
     rpc ListWorkspaceTemplateVersions (ListWorkspaceTemplateVersionsRequest) returns (ListWorkflowTemplateVersionsResponse) {
         option (google.api.http) = {
-            get: "/apis/v1beta1/{namespace}/workspace_templates/{name}/versions"
+            get: "/apis/v1beta1/{namespace}/workspace_templates/{uid}/versions"
         };
     }
 }
@@ -86,7 +86,7 @@ message ListWorkspaceTemplatesResponse {
 
 message ListWorkspaceTemplateVersionsRequest {
     string namespace = 1;
-    string name = 2;
+    string uid = 2;
 }
 
 
