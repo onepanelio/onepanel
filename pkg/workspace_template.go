@@ -415,6 +415,15 @@ func (c *Client) workspaceTemplatesSelectBuilder(namespace string) sq.SelectBuil
 	return sb
 }
 
+func (c *Client) workspaceTemplateVersionsSelectBuilder(namespace string) sq.SelectBuilder {
+	sb := c.workspaceTemplatesSelectBuilder(namespace).
+		Columns("wtv.manifest", "wft.uid \"workflow_template.uid\"").
+		Join("workspace_template_versions wtv ON wtv.workspace_template_id = wt.id").
+		Join("workflow_templates wft ON wft.id = wt.workflow_template_id")
+
+	return sb
+}
+
 func (c *Client) getWorkspaceTemplateByName(namespace, name string) (workspaceTemplate *WorkspaceTemplate, err error) {
 	workspaceTemplate = &WorkspaceTemplate{}
 
@@ -437,10 +446,7 @@ func (c *Client) getWorkspaceTemplateByName(namespace, name string) (workspaceTe
 func (c *Client) getWorkspaceTemplate(namespace, uid string, version int64) (workspaceTemplate *WorkspaceTemplate, err error) {
 	workspaceTemplate = &WorkspaceTemplate{}
 
-	sb := c.workspaceTemplatesSelectBuilder(namespace).
-		Columns("wtv.manifest", "wft.uid \"workflow_template.uid\"").
-		Join("workspace_template_versions wtv ON wtv.workspace_template_id = wt.id").
-		Join("workflow_templates wft ON wft.id = wt.workflow_template_id").
+	sb := c.workspaceTemplateVersionsSelectBuilder(namespace).
 		Where(sq.Eq{
 			"wt.uid": uid,
 		}).
