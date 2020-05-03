@@ -451,10 +451,10 @@ func (c *Client) getWorkspaceTemplate(namespace, uid string, version int64) (wor
 			"wt.uid": uid,
 		}).
 		Limit(1)
-	if version > 0 {
-		sb = sb.Where(sq.Eq{"wtv.version": version})
-	} else {
+	if version == 0 {
 		sb = sb.Where(sq.Eq{"wtv.is_latest": true})
+	} else {
+		sb = sb.Where(sq.Eq{"wtv.version": version})
 	}
 	query, args, err := sb.ToSql()
 	if err != nil {
