@@ -437,14 +437,20 @@ func (c *Client) getWorkspaceTemplateByName(namespace, name string) (workspaceTe
 func (c *Client) getWorkspaceTemplate(namespace, uid string, version int64) (workspaceTemplate *WorkspaceTemplate, err error) {
 	workspaceTemplate = &WorkspaceTemplate{}
 
-	query, args, err := sb.Select("wt.id", "wft.uid \"workflow_template.uid\"").
-		From("workspace_templates wt").
+	sb := c.workspaceTemplatesSelectBuilder(namespace).
+		Columns("wtv.manifest", "wft.uid \"workflow_template.uid\"").
+		Join("workspace_template_versions wtv ON wtv.workspace_template_id = wt.id").
 		Join("workflow_templates wft ON wft.id = wt.workflow_template_id").
 		Where(sq.Eq{
-			"wt.uid":       uid,
-			"wt.namespace": namespace,
+			"wt.uid": uid,
 		}).
-		Limit(1).ToSql()
+		Limit(1)
+	if version > 0 {
+		sb.Where(sq.Eq{"wtv.version": version})
+	} else {
+		sb.Where(sq.Eq{"wtv.is_latest": true})
+	}
+	query, args, err := sb.ToSql()
 	if err != nil {
 		return
 	}
@@ -452,8 +458,6 @@ func (c *Client) getWorkspaceTemplate(namespace, uid string, version int64) (wor
 	if err = c.DB.Get(workspaceTemplate, query, args...); err == sql.ErrNoRows {
 		return
 	}
-
-	workspaceTemplate.WorkflowTemplate, err = c.getWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID, version)
 
 	return
 }
@@ -543,6 +547,21 @@ func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	return workspaceTemplate, nil
 }
 
+// GetWorkspaceTemplate return a workspaceTemplate and its corresponding workflowTemplate
+func (c *Client) GetWorkspaceTemplate(namespace, uid string, version int64) (workspaceTemplate *WorkspaceTemplate, err error) {
+	workspaceTemplate, err = c.getWorkspaceTemplate(namespace, uid, version)
+	if err != nil {
+		return nil, util.NewUserError(codes.NotFound, "Workspace template not found.")
+	}
+
+	workspaceTemplate.WorkflowTemplate, err = c.getWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID, version)
+	if err != nil {
+		return nil, util.NewUserError(codes.NotFound, "Workflow template was not found for this workspace template.")
+	}
+
+	return
+}
+
 func (c *Client) ListWorkspaceTemplates(namespace string, paginator *pagination.PaginationRequest) (workspaceTemplates []*WorkspaceTemplate, err error) {
 	workspaceTemplates = make([]*WorkspaceTemplate, 0)
 	sb := c.workspaceTemplatesSelectBuilder(namespace).
@@ -566,7 +585,7 @@ func (c *Client) CountWorkspaceTemplates(namespace string) (count int, err error
 		From("workspace_templates wt").
 		Where(sq.Eq{
 			"wt.namespace": namespace,
-		}).RunWith(c.DB.DB).
+		}).RunWith(c.DB).
 		QueryRow().
 		Scan(&count)
 

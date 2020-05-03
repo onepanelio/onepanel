@@ -77,7 +77,7 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 		return nil, err
 	}
 
-	workspaceTemplate, err := c.getWorkspaceTemplate(namespace,
+	workspaceTemplate, err := c.GetWorkspaceTemplate(namespace,
 		workspace.WorkspaceTemplate.UID, workspace.WorkspaceTemplate.Version)
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workspace template not found.")
