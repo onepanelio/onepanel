@@ -56,7 +56,6 @@ func (c *CronWorkflowServer) CreateCronWorkflow(ctx context.Context, req *api.Cr
 		},
 	}
 	for _, param := range req.CronWorkflow.WorkflowExecution.Parameters {
-
 		options := make([]*v1.ParameterOption, 0)
 		for _, option := range param.Options {
 			options = append(options, &v1.ParameterOption{
@@ -103,9 +102,22 @@ func (c *CronWorkflowServer) UpdateCronWorkflow(ctx context.Context, req *api.Up
 		},
 	}
 	for _, param := range req.CronWorkflow.WorkflowExecution.Parameters {
+		options := make([]*v1.ParameterOption, 0)
+		for _, option := range param.Options {
+			options = append(options, &v1.ParameterOption{
+				Name:  option.Name,
+				Value: option.Value,
+			})
+		}
+
 		workflow.Parameters = append(workflow.Parameters, v1.Parameter{
-			Name:  param.Name,
-			Value: ptr.String(param.Value),
+			Name:        param.Name,
+			Value:       ptr.String(param.Value),
+			Type:        param.Type,
+			DisplayName: &param.DisplayName,
+			Hint:        &param.Hint,
+			Options:     options,
+			Required:    param.Required,
 		})
 	}
 

@@ -10,7 +10,6 @@ import (
 	"github.com/onepanelio/core/pkg/util/pagination"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
-	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"regexp"
 	"strings"
@@ -52,6 +51,7 @@ func (c *Client) UpdateCronWorkflow(namespace string, name string, cronWorkflow 
 		return nil, err
 	}
 
+	rawCronManifest := cronWorkflow.Manifest
 	workflowTemplateManifest := workflowTemplate.GetManifestBytes()
 
 	if err := cronWorkflow.AddToManifestSpec("workflowSpec", string(workflowTemplateManifest)); err != nil {
@@ -65,7 +65,7 @@ func (c *Client) UpdateCronWorkflow(namespace string, name string, cronWorkflow 
 	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
 	var argoCronWorkflow wfv1.CronWorkflow
 	var argoCronWorkflowSpec wfv1.CronWorkflowSpec
-	if err := yaml.Unmarshal([]byte(cronWorkflow.Manifest), &argoCronWorkflowSpec); err != nil {
+	if err := argojson.UnmarshalStrict([]byte(rawCronManifest), &argoCronWorkflowSpec); err != nil {
 		return nil, err
 	}
 	argoCronWorkflow.Spec = argoCronWorkflowSpec
