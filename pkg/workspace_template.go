@@ -415,11 +415,13 @@ func (c *Client) workspaceTemplatesSelectBuilder(namespace string) sq.SelectBuil
 	return sb
 }
 
-func (c *Client) workspaceTemplateVersionsSelectBuilder(namespace string) sq.SelectBuilder {
+func (c *Client) workspaceTemplateVersionsSelectBuilder(namespace, uid string) sq.SelectBuilder {
 	sb := c.workspaceTemplatesSelectBuilder(namespace).
-		Columns("wtv.manifest", "wft.uid \"workflow_template.uid\"").
+		Columns("wtv.version", "wtv.manifest", "wftv.version \"workflow_template.version\"", "wftv.manifest \"workflow_template.manifest\"").
 		Join("workspace_template_versions wtv ON wtv.workspace_template_id = wt.id").
-		Join("workflow_templates wft ON wft.id = wt.workflow_template_id")
+		Join("workflow_templates wft ON wft.id = wt.workflow_template_id").
+		Join("workflow_template_versions wftv ON wftv.workflow_template_id = wft.id").
+		Where(sq.Eq{"wt.uid": uid})
 
 	return sb
 }
@@ -438,31 +440,6 @@ func (c *Client) getWorkspaceTemplateByName(namespace, name string) (workspaceTe
 	if err = c.DB.Get(workspaceTemplate, query, args...); err == sql.ErrNoRows {
 		err = nil
 		workspaceTemplate = nil
-	}
-
-	return
-}
-
-func (c *Client) getWorkspaceTemplate(namespace, uid string, version int64) (workspaceTemplate *WorkspaceTemplate, err error) {
-	workspaceTemplate = &WorkspaceTemplate{}
-
-	sb := c.workspaceTemplateVersionsSelectBuilder(namespace).
-		Where(sq.Eq{
-			"wt.uid": uid,
-		}).
-		Limit(1)
-	if version == 0 {
-		sb = sb.Where(sq.Eq{"wtv.is_latest": true})
-	} else {
-		sb = sb.Where(sq.Eq{"wtv.version": version})
-	}
-	query, args, err := sb.ToSql()
-	if err != nil {
-		return
-	}
-
-	if err = c.DB.Get(workspaceTemplate, query, args...); err == sql.ErrNoRows {
-		return
 	}
 
 	return
@@ -555,14 +532,26 @@ func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 
 // GetWorkspaceTemplate return a workspaceTemplate and its corresponding workflowTemplate
 func (c *Client) GetWorkspaceTemplate(namespace, uid string, version int64) (workspaceTemplate *WorkspaceTemplate, err error) {
-	workspaceTemplate, err = c.getWorkspaceTemplate(namespace, uid, version)
-	if err != nil {
-		return nil, util.NewUserError(codes.NotFound, "Workspace template not found.")
+	workspaceTemplate = &WorkspaceTemplate{}
+	sb := c.workspaceTemplateVersionsSelectBuilder(namespace, uid).
+		Limit(1)
+	if version == 0 {
+		sb = sb.Where(sq.Eq{
+			"wtv.is_latest":  true,
+			"wftv.is_latest": true,
+		})
+	} else {
+		sb = sb.Where(sq.Eq{
+			"wtv.version":  version,
+			"wftv.version": version,
+		})
 	}
-
-	workspaceTemplate.WorkflowTemplate, err = c.getWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID, version)
+	query, args, err := sb.ToSql()
 	if err != nil {
-		return nil, util.NewUserError(codes.NotFound, "Workflow template was not found for this workspace template.")
+		return
+	}
+	if err = c.DB.Get(workspaceTemplate, query, args...); err == sql.ErrNoRows {
+		return
 	}
 
 	return
@@ -581,6 +570,19 @@ func (c *Client) ListWorkspaceTemplates(namespace string, paginator *pagination.
 
 	if err := c.DB.Select(&workspaceTemplates, query, args...); err != nil {
 		return nil, err
+	}
+
+	return
+}
+
+func (c *Client) ListWorkspaceTemplateVersions(namespace, uid string) (workspaceTemplates []*WorkspaceTemplate, err error) {
+	sb := c.workspaceTemplateVersionsSelectBuilder(namespace, uid)
+	query, args, err := sb.ToSql()
+	if err != nil {
+		return
+	}
+	if err = c.DB.Select(workspaceTemplates, query, args...); err != nil {
+		return
 	}
 
 	return
