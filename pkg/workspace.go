@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/ptr"
@@ -8,7 +9,7 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func injectWorkspaceParameterValues(workspace *Workspace, workspaceAction, resourceAction string) (err error) {
+func injectWorkspaceParameterValues(namespace string, workspace *Workspace, workspaceAction, resourceAction string, config map[string]string) (err error) {
 	for _, p := range workspace.Parameters {
 		if p.Name == "sys-name" {
 			// TODO: These if statements can be removed when we have validation on param level
@@ -21,12 +22,16 @@ func injectWorkspaceParameterValues(workspace *Workspace, workspaceAction, resou
 			workspace.Name = *p.Value
 		}
 	}
+	host := fmt.Sprintf("%v--%v.%v", workspace.Name, namespace, config["ONEPANEL_DOMAIN"])
 	workspace.Parameters = append(workspace.Parameters, Parameter{
 		Name:  "sys-workspace-action",
 		Value: ptr.String(workspaceAction),
 	}, Parameter{
 		Name:  "sys-resource-action",
 		Value: ptr.String(resourceAction),
+	}, Parameter{
+		Name:  "sys-host",
+		Value: ptr.String(host),
 	})
 
 	return
@@ -63,7 +68,12 @@ func (c *Client) createWorkspace(namespace string, workspace *Workspace) (*Works
 
 // CreateWorkspace creates a workspace by triggering the corresponding workflow
 func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Workspace, error) {
-	if err := injectWorkspaceParameterValues(workspace, "create", "apply"); err != nil {
+	config, err := c.GetSystemConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := injectWorkspaceParameterValues(namespace, workspace, "create", "apply", config); err != nil {
 		return nil, err
 	}
 

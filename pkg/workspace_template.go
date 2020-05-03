@@ -39,16 +39,22 @@ func generateArguments(spec *WorkspaceSpec, config map[string]string) (err error
 		Required:    true,
 	})
 
+	// TODO: These can be removed when lint validation of workflows work
 	// Resource action parameter
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
 		Name:  "sys-resource-action",
 		Value: ptr.String("apply"),
 		Type:  "input.hidden",
 	})
-
 	// Workspace action
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
 		Name:  "sys-workspace-action",
+		Value: ptr.String(config["ONEPANEL_DOMAIN"]),
+		Type:  "input.hidden",
+	})
+	// Host
+	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
+		Name:  "sys-host",
 		Value: ptr.String("create"),
 		Type:  "input.hidden",
 	})
@@ -117,7 +123,7 @@ func createServiceManifest(spec *WorkspaceSpec) (serviceManifest string, err err
 	return
 }
 
-func createVirtualServiceManifest(spec *WorkspaceSpec, config map[string]string) (virtualServiceManifest string, err error) {
+func createVirtualServiceManifest(spec *WorkspaceSpec) (virtualServiceManifest string, err error) {
 	for _, h := range spec.Routes {
 		for _, r := range h.Route {
 			r.Destination.Host = "{{workflow.parameters.sys-name}}"
@@ -132,7 +138,7 @@ func createVirtualServiceManifest(spec *WorkspaceSpec, config map[string]string)
 		"spec": networking.VirtualService{
 			Http:     spec.Routes,
 			Gateways: []string{"istio-system/ingressgateway"},
-			Hosts:    []string{fmt.Sprintf("{{workflow.parameters.sys-name}}--{{workflow.namespace}}.%v", config["ONEPANEL_DOMAIN"])},
+			Hosts:    []string{"{{workflow.parameters.sys-host}}"},
 		},
 	}
 	virtualServiceManifestBytes, err := yaml.Marshal(virtualService)
@@ -476,7 +482,7 @@ func (c *Client) generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *Wo
 		return nil, err
 	}
 
-	virtualServiceManifest, err := createVirtualServiceManifest(workspaceSpec, config)
+	virtualServiceManifest, err := createVirtualServiceManifest(workspaceSpec)
 	if err != nil {
 		return nil, err
 	}
