@@ -5,4 +5,15 @@ package api;
 message Parameter {
     string name = 1;
     string value = 2;
+    string type = 3;
+    string displayName = 4;
+    string hint = 5;
+    bool required = 6;
+
+    repeated ParameterOption options = 7;
+}
+
+message ParameterOption {
+    string name = 1;
+    string value = 2;
 }

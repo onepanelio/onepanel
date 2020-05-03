@@ -2075,6 +2075,36 @@
         },
         "value": {
           "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "hint": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean",
+          "format": "boolean"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ParameterOption"
+          }
+        }
+      }
+    },
+    "ParameterOption": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
         }
       }
     },
