@@ -5,6 +5,7 @@ import (
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/asaskevich/govalidator"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
@@ -452,8 +453,8 @@ func (c *Client) getWorkspaceTemplateWorkflowTemplate(namespace, uid string, ver
 }
 
 func (c *Client) generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *WorkspaceTemplate) (workflowTemplate *WorkflowTemplate, err error) {
-	if workspaceTemplate == nil {
-		return nil, nil
+	if workspaceTemplate == nil || workspaceTemplate.Manifest == "" {
+		return nil, util.NewUserError(codes.InvalidArgument, "Workspace template manifest is required")
 	}
 
 	config, err := c.GetSystemConfig()
@@ -510,6 +511,11 @@ func (c *Client) GenerateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *Wo
 
 // CreateWorkspaceTemplate creates a template for Workspaces
 func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate *WorkspaceTemplate) (*WorkspaceTemplate, error) {
+	valid, err := govalidator.ValidateStruct(workspaceTemplate)
+	if err != nil || !valid {
+		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
+	}
+
 	existingWorkspaceTemplate, err := c.getWorkspaceTemplateByName(namespace, workspaceTemplate.Name)
 	if err != nil {
 		return nil, err
