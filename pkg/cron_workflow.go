@@ -174,6 +174,7 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 		return nil, err
 	}
 
+	rawCronManifest := cronWorkflow.Manifest
 	workflowTemplateManifest := workflowTemplate.GetManifestBytes()
 
 	if err := cronWorkflow.AddToManifestSpec("workflowSpec", string(workflowTemplateManifest)); err != nil {
@@ -189,7 +190,7 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 
 	var argoCronWorkflow wfv1.CronWorkflow
 	var argoCronWorkflowSpec wfv1.CronWorkflowSpec
-	if err := yaml.Unmarshal([]byte(cronWorkflow.Manifest), &argoCronWorkflowSpec); err != nil {
+	if err := argojson.UnmarshalStrict([]byte(rawCronManifest), &argoCronWorkflowSpec); err != nil {
 		return nil, err
 	}
 	argoCronWorkflow.Spec = argoCronWorkflowSpec
