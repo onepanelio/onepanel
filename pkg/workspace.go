@@ -1,6 +1,7 @@
 package v1
 
 import (
+	sq "github.com/Masterminds/squirrel"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/pkg/util/validate"
@@ -31,24 +32,54 @@ func injectWorkspaceParameterValues(workspace *Workspace, workspaceAction, resou
 	return
 }
 
+func (c *Client) createWorkspace(namespace string, workspace *Workspace) (*Workspace, error) {
+	workflowExecution, err := c.CreateWorkflowExecution(namespace, &WorkflowExecution{
+		Parameters:       workspace.Parameters,
+		WorkflowTemplate: workspace.WorkspaceTemplate.WorkflowTemplate,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	workspace.UID = workflowExecution.UID
+
+	err = sb.Insert("workspaces").
+		SetMap(sq.Eq{
+			"uid":                   workspace.UID,
+			"name":                  workspace.Name,
+			"namespace":             namespace,
+			"workspace_template_id": workspace.WorkspaceTemplate.ID,
+			"workflow_execution_id": workflowExecution.ID,
+		}).
+		Suffix("RETURNING id, created_at").
+		RunWith(c.DB).
+		QueryRow().Scan(&workspace.ID, &workspace.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return workspace, nil
+}
+
 // CreateWorkspace creates a workspace by triggering the corresponding workflow
 func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Workspace, error) {
 	if err := injectWorkspaceParameterValues(workspace, "create", "apply"); err != nil {
 		return nil, err
 	}
 
-	workflowTemplate, err := c.getWorkspaceTemplateWorkflowTemplate(namespace,
+	workspaceTemplate, err := c.getWorkspaceTemplate(namespace,
 		workspace.WorkspaceTemplate.UID, workspace.WorkspaceTemplate.Version)
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workspace template not found.")
 	}
 
-	workflowExecution, err := c.CreateWorkflowExecution(namespace, &WorkflowExecution{
-		Parameters:       workspace.Parameters,
-		WorkflowTemplate: workflowTemplate,
-	})
+	workspace.WorkspaceTemplate.ID = workspaceTemplate.ID
+	workspace.WorkspaceTemplate = workspaceTemplate
 
-	workspace.UID = workflowExecution.UID
+	workspace, err = c.createWorkspace(namespace, workspace)
+	if err != nil {
+		return nil, util.NewUserError(codes.Unknown, "Could not create workspace.")
+	}
 
 	return workspace, nil
 }

@@ -351,32 +351,27 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 		return nil, err
 	}
 
-	var createdWorkflows []*wfv1.Workflow
-	for _, wf := range workflows {
-		dbId, createdWorkflow, err := c.createWorkflow(namespace, workflowTemplate.ID, workflowTemplate.WorkflowTemplateVersionId, &wf, opts)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"Namespace": namespace,
-				"Workflow":  workflow,
-				"Error":     err.Error(),
-			}).Error("Error parsing workflow.")
-			return nil, err
-		}
-
-		if len(workflow.Labels) > 0 {
-			_, err = c.InsertLabelsBuilder(TypeWorkflowExecution, dbId, workflow.Labels).
-				RunWith(c.DB).
-				Exec()
-
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		createdWorkflows = append(createdWorkflows, createdWorkflow)
+	id, createdWorkflow, err := c.createWorkflow(namespace, workflowTemplate.ID, workflowTemplate.WorkflowTemplateVersionId, &workflows[0], opts)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Workflow":  workflow,
+			"Error":     err.Error(),
+		}).Error("Error parsing workflow.")
+		return nil, err
 	}
 
-	if createdWorkflows == nil {
+	if len(workflow.Labels) > 0 {
+		_, err = c.InsertLabelsBuilder(TypeWorkflowExecution, id, workflow.Labels).
+			RunWith(c.DB).
+			Exec()
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if createdWorkflow == nil {
 		err = errors.New("unable to create workflow")
 		log.WithFields(log.Fields{
 			"Namespace":        namespace,
@@ -387,9 +382,10 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 		return nil, err
 	}
 
-	workflow.Name = createdWorkflows[0].Name
-	workflow.CreatedAt = createdWorkflows[0].CreationTimestamp.UTC()
-	workflow.UID = string(createdWorkflows[0].ObjectMeta.UID)
+	workflow.ID = id
+	workflow.Name = createdWorkflow.Name
+	workflow.CreatedAt = createdWorkflow.CreationTimestamp.UTC()
+	workflow.UID = string(createdWorkflow.ObjectMeta.UID)
 	workflow.WorkflowTemplate = workflowTemplate
 	// Manifests could get big, don't return them in this case.
 	workflow.WorkflowTemplate.Manifest = ""

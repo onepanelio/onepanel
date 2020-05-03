@@ -12,8 +12,8 @@ type WorkspaceTemplate struct {
 	Version          int64
 	Manifest         string
 	IsLatest         bool
-	CreatedAt        time.Time `db:"created_at"`
-	WorkflowTemplate *WorkflowTemplate
+	CreatedAt        time.Time         `db:"created_at"`
+	WorkflowTemplate *WorkflowTemplate `db:"workflow_template"`
 }
 
 func (wt *WorkspaceTemplate) GenerateUID() (string, error) {

@@ -428,10 +428,10 @@ func (c *Client) getWorkspaceTemplateByName(namespace, name string) (workspaceTe
 	return
 }
 
-func (c *Client) getWorkspaceTemplateWorkflowTemplate(namespace, uid string, version int64) (workflowTemplate *WorkflowTemplate, err error) {
-	workflowTemplate = &WorkflowTemplate{}
+func (c *Client) getWorkspaceTemplate(namespace, uid string, version int64) (workspaceTemplate *WorkspaceTemplate, err error) {
+	workspaceTemplate = &WorkspaceTemplate{}
 
-	query, args, err := sb.Select("wft.uid").
+	query, args, err := sb.Select("wt.id", "wft.uid \"workflow_template.uid\"").
 		From("workspace_templates wt").
 		Join("workflow_templates wft ON wft.id = wt.workflow_template_id").
 		Where(sq.Eq{
@@ -443,11 +443,11 @@ func (c *Client) getWorkspaceTemplateWorkflowTemplate(namespace, uid string, ver
 		return
 	}
 
-	if err = c.DB.Get(workflowTemplate, query, args...); err == sql.ErrNoRows {
+	if err = c.DB.Get(workspaceTemplate, query, args...); err == sql.ErrNoRows {
 		return
 	}
 
-	workflowTemplate, err = c.getWorkflowTemplate(namespace, workflowTemplate.UID, version)
+	workspaceTemplate.WorkflowTemplate, err = c.getWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID, version)
 
 	return
 }
