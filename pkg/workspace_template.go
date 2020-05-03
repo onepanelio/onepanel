@@ -558,7 +558,6 @@ func (c *Client) GetWorkspaceTemplate(namespace, uid string, version int64) (wor
 }
 
 func (c *Client) ListWorkspaceTemplates(namespace string, paginator *pagination.PaginationRequest) (workspaceTemplates []*WorkspaceTemplate, err error) {
-	workspaceTemplates = make([]*WorkspaceTemplate, 0)
 	sb := c.workspaceTemplatesSelectBuilder(namespace).
 		OrderBy("wt.created_at DESC")
 	paginator.ApplyToSelect(&sb)
@@ -576,12 +575,16 @@ func (c *Client) ListWorkspaceTemplates(namespace string, paginator *pagination.
 }
 
 func (c *Client) ListWorkspaceTemplateVersions(namespace, uid string) (workspaceTemplates []*WorkspaceTemplate, err error) {
-	sb := c.workspaceTemplateVersionsSelectBuilder(namespace, uid)
+	sb := c.workspaceTemplateVersionsSelectBuilder(namespace, uid).
+		Where(sq.Eq{
+			"wt.is_archived":  false,
+			"wft.is_archived": false,
+		})
 	query, args, err := sb.ToSql()
 	if err != nil {
 		return
 	}
-	if err = c.DB.Select(workspaceTemplates, query, args...); err != nil {
+	if err = c.DB.Select(&workspaceTemplates, query, args...); err != nil {
 		return
 	}
 
@@ -598,43 +601,4 @@ func (c *Client) CountWorkspaceTemplates(namespace string) (count int, err error
 		Scan(&count)
 
 	return
-}
-
-func (c *Client) ListWorkspaceWorkflowTemplateVersions(namespace, uid string) (workflowTemplates []*WorkflowTemplate, err error) {
-	query, args, err := c.workflowTemplatesVersionSelectBuilder(namespace).
-		Columns(`wt.id "workflow_template.id"`, `wt.created_at "workflow_template.created_at"`).
-		Columns(`wt.name "workflow_template.name"`, `wt.is_archived "workflow_template.is_archived"`).
-		Join("workspace_templates wst ON wst.workflow_template_id = wt.id").
-		Where(sq.Eq{
-			"wst.uid": uid,
-		}).
-		OrderBy("wtv.created_at DESC").
-		ToSql()
-
-	if err != nil {
-		return nil, err
-	}
-
-	workflowTemplateVersions := make([]*WorkflowTemplateVersion, 0)
-	if err := c.DB.Select(&workflowTemplateVersions, query, args...); err != nil {
-		return nil, err
-	}
-
-	for _, version := range workflowTemplateVersions {
-		newItem := WorkflowTemplate{
-			ID:         version.WorkflowTemplate.ID,
-			CreatedAt:  version.CreatedAt.UTC(),
-			UID:        version.UID,
-			Name:       version.WorkflowTemplate.Name,
-			Manifest:   version.Manifest,
-			Version:    version.Version,
-			IsLatest:   version.IsLatest,
-			IsArchived: version.WorkflowTemplate.IsArchived,
-			Labels:     version.Labels,
-		}
-
-		workflowTemplates = append(workflowTemplates, &newItem)
-	}
-
-	return workflowTemplates, nil
 }

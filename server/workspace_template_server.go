@@ -127,25 +127,25 @@ func (s *WorkspaceTemplateServer) ListWorkspaceTemplates(ctx context.Context, re
 	}, nil
 }
 
-func (s *WorkspaceTemplateServer) ListWorkspaceTemplateVersions(ctx context.Context, req *api.ListWorkspaceTemplateVersionsRequest) (*api.ListWorkflowTemplateVersionsResponse, error) {
+func (s *WorkspaceTemplateServer) ListWorkspaceTemplateVersions(ctx context.Context, req *api.ListWorkspaceTemplateVersionsRequest) (*api.ListWorkspaceTemplateVersionsResponse, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "workflowtemplates", "")
 	if err != nil || !allowed {
 		return nil, err
 	}
 
-	workflowTemplateVersions, err := client.ListWorkspaceWorkflowTemplateVersions(req.Namespace, req.Uid)
+	workspaceTemplateVersions, err := client.ListWorkspaceTemplateVersions(req.Namespace, req.Uid)
 	if err != nil {
 		return nil, err
 	}
 
-	var workflowTemplates []*api.WorkflowTemplate
-	for _, wtv := range workflowTemplateVersions {
-		workflowTemplates = append(workflowTemplates, apiWorkflowTemplate(wtv))
+	var workspaceTemplates []*api.WorkspaceTemplate
+	for _, wtv := range workspaceTemplateVersions {
+		workspaceTemplates = append(workspaceTemplates, apiWorkspaceTemplate(wtv))
 	}
 
-	return &api.ListWorkflowTemplateVersionsResponse{
-		Count:             int32(len(workflowTemplateVersions)),
-		WorkflowTemplates: workflowTemplates,
+	return &api.ListWorkspaceTemplateVersionsResponse{
+		Count:              int32(len(workspaceTemplateVersions)),
+		WorkspaceTemplates: workspaceTemplates,
 	}, nil
 }

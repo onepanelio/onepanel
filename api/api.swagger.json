@@ -1756,7 +1756,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/ListWorkflowTemplateVersionsResponse"
+              "$ref": "#/definitions/ListWorkspaceTemplateVersionsResponse"
             }
           },
           "default": {
@@ -2349,6 +2349,21 @@
         "totalCount": {
           "type": "integer",
           "format": "int32"
+        }
+      }
+    },
+    "ListWorkspaceTemplateVersionsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "workspaceTemplates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WorkspaceTemplate"
+          }
         }
       }
     },
