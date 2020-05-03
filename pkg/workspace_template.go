@@ -417,7 +417,7 @@ func (c *Client) workspaceTemplatesSelectBuilder(namespace string) sq.SelectBuil
 
 func (c *Client) workspaceTemplateVersionsSelectBuilder(namespace, uid string) sq.SelectBuilder {
 	sb := c.workspaceTemplatesSelectBuilder(namespace).
-		Columns("wtv.version", "wtv.manifest", "wftv.version \"workflow_template.version\"", "wftv.manifest \"workflow_template.manifest\"").
+		Columns("wtv.version", "wtv.manifest", "wft.uid \"workflow_template.uid\"", "wftv.version \"workflow_template.version\"", "wftv.manifest \"workflow_template.manifest\"").
 		Join("workspace_template_versions wtv ON wtv.workspace_template_id = wt.id").
 		Join("workflow_templates wft ON wft.id = wt.workflow_template_id").
 		Join("workflow_template_versions wftv ON wftv.workflow_template_id = wft.id").
