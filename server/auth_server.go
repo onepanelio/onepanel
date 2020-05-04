@@ -39,10 +39,12 @@ func (a *AuthServer) IsWorkspaceAuthenticated(ctx context.Context, request *api.
 	}
 	workspaceAndNamespace := xOriginalAuth[0:pos]
 	pieces := strings.Split(workspaceAndNamespace, "--")
-	client := ctx.Value("kubeClient").(*v1.Client)
 	allowed, err := auth.IsAuthorized(client, pieces[1], "create", "apps/v1", "statefulsets", pieces[0])
-	if err != nil || !allowed {
+	if err != nil {
 		return &empty.Empty{}, err
+	}
+	if !allowed {
+		return &empty.Empty{}, status.Error(codes.PermissionDenied, "Permission denied.")
 	}
 	return &empty.Empty{}, nil
 }
