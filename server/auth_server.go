@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
@@ -11,6 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"strings"
 )
 
 type AuthServer struct{}
@@ -43,7 +43,7 @@ func (a *AuthServer) IsWorkspaceAuthenticated(ctx context.Context, request *api.
 	return &empty.Empty{}, nil
 }
 
-func (a *AuthServer) IsValidToken(ctx context.Context, req *api.IsValidTokenRequest) (*empty.Empty, error) {
+func (a *AuthServer) IsValidToken(ctx context.Context, req *api.IsValidTokenRequest) (res *api.IsValidTokenResponse, err error) {
 	if ctx == nil {
 		return nil, status.Error(codes.Unauthenticated, "Unauthenticated.")
 	}
@@ -71,5 +71,12 @@ func (a *AuthServer) IsValidToken(ctx context.Context, req *api.IsValidTokenRequ
 		return nil, status.Error(codes.Unauthenticated, "Unauthenticated.")
 	}
 
-	return &empty.Empty{}, nil
+	config, err := client.GetSystemConfig()
+	if err != nil {
+		return
+	}
+	res = &api.IsValidTokenResponse{}
+	res.Domain = config["ONEPANEL_DOMAIN"]
+
+	return res, nil
 }
