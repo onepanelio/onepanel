@@ -19,6 +19,10 @@ func NewAuthServer() *AuthServer {
 	return &AuthServer{}
 }
 func (a *AuthServer) IsWorkspaceAuthenticated(ctx context.Context, request *api.IsWorkspaceAuthenticatedRequest) (*empty.Empty, error) {
+	if ctx == nil {
+		return &empty.Empty{}, nil
+	}
+	client := ctx.Value("kubeClient").(*v1.Client)
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return &empty.Empty{}, errors.New("Error parsing headers.")
