@@ -8,6 +8,7 @@ import (
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"google.golang.org/grpc/codes"
+	"time"
 )
 
 func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, workspaceAction, resourceAction string, config map[string]string) (err error) {
@@ -48,6 +49,8 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 			"name":                       workspace.Name,
 			"namespace":                  namespace,
 			"parameters":                 parameters,
+			"phase":                      WorkspaceStarted,
+			"started_at":                 time.Now().UTC(),
 			"workspace_template_id":      workspace.WorkspaceTemplate.ID,
 			"workspace_template_version": workspace.WorkspaceTemplate.Version,
 		}).
