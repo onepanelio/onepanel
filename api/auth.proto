@@ -6,10 +6,19 @@ import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
 service AuthService {
-    rpc IsValidToken(IsValidTokenRequest) returns (google.protobuf.Empty) {
+    rpc IsValidToken(IsValidTokenRequest) returns (IsValidTokenResponse) {
         option (google.api.http) = {
             post: "/apis/v1beta1/auth/token"
             body: "token"
+        };
+    }
+
+    rpc IsWorkspaceAuthenticated(IsWorkspaceAuthenticatedRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            custom: {
+                kind: "HEAD"
+                path: "/apis/v1beta1/auth/token"
+            }
         };
     }
 }
@@ -20,4 +29,15 @@ message TokenWrapper {
 
 message IsValidTokenRequest {
     TokenWrapper token = 1;
+}
+
+message IsValidTokenResponse {
+    string domain = 2;
+}
+
+message IsWorkspaceAuthenticatedRequest {
+    string FQDN = 1;
+    string XOriginalMethod = 2;
+    string XOriginalAuthority = 3;
+    string XOriginalUri = 4;
 }
