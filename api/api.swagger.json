@@ -28,7 +28,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "properties": {}
+              "$ref": "#/definitions/IsValidTokenResponse"
             }
           },
           "default": {
@@ -1987,6 +1987,14 @@
           "items": {
             "$ref": "#/definitions/Metric"
           }
+        }
+      }
+    },
+    "IsValidTokenResponse": {
+      "type": "object",
+      "properties": {
+        "domain": {
+          "type": "string"
         }
       }
     },
