@@ -37,6 +37,7 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 	}
 
 	workspace := &v1.Workspace{
+		Name: req.Workspace.Name,
 		WorkspaceTemplate: &v1.WorkspaceTemplate{
 			UID:     req.Workspace.WorkspaceTemplate.Uid,
 			Version: req.Workspace.WorkspaceTemplate.Version,

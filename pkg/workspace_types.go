@@ -13,13 +13,13 @@ import (
 type Workspace struct {
 	ID                uint64
 	UID               string
-	Name              string
+	Name              string `valid:"stringlength(3|63)~Name should be between 3 to 63 characters,dns,required"`
 	Labels            map[string]string
 	Parameters        []Parameter
-	CreatedAt         time.Time  `db:"created_at"`
-	StartedAt         *time.Time `db:"started_at"`
-	PausedAt          *time.Time `db:"paused_at"`
-	WorkspaceTemplate *WorkspaceTemplate
+	CreatedAt         time.Time          `db:"created_at"`
+	StartedAt         *time.Time         `db:"started_at"`
+	PausedAt          *time.Time         `db:"paused_at"`
+	WorkspaceTemplate *WorkspaceTemplate `valid:"-"`
 }
 
 type WorkspaceSpec struct {

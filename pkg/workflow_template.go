@@ -175,7 +175,7 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (work
 	}
 
 	sb := c.workflowTemplatesSelectBuilder(namespace).
-		Columns("wtv.manifest", "wtv.id workflow_template_version_id").
+		Columns("wtv.manifest", "wtv.version", "wtv.id workflow_template_version_id").
 		Join("workflow_template_versions wtv ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{"wt.uid": uid})
 

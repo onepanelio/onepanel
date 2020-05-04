@@ -1,43 +1,37 @@
 package v1
 
 import (
+	"encoding/json"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
+	"github.com/asaskevich/govalidator"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/ptr"
-	"github.com/onepanelio/core/pkg/util/validate"
 	"google.golang.org/grpc/codes"
 )
 
-func injectWorkspaceParameterValues(namespace string, workspace *Workspace, workspaceAction, resourceAction string, config map[string]string) (err error) {
-	for _, p := range workspace.Parameters {
-		if p.Name == "sys-name" {
-			// TODO: These if statements can be removed when we have validation on param level
-			if p.Value == nil {
-				return util.NewUserError(codes.InvalidArgument, "Workspace name is required.")
-			}
-			if !validate.IsDNSHost(*p.Value) {
-				return util.NewUserError(codes.InvalidArgument, "Workspace name is not valid.")
-			}
-			workspace.Name = *p.Value
-		}
-	}
+func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, workspaceAction, resourceAction string, config map[string]string) (err error) {
 	host := fmt.Sprintf("%v--%v.%v", workspace.Name, namespace, config["ONEPANEL_DOMAIN"])
-	workspace.Parameters = append(workspace.Parameters, Parameter{
-		Name:  "sys-workspace-action",
-		Value: ptr.String(workspaceAction),
-	}, Parameter{
-		Name:  "sys-resource-action",
-		Value: ptr.String(resourceAction),
-	}, Parameter{
-		Name:  "sys-host",
-		Value: ptr.String(host),
-	})
+	workspace.Parameters = append(workspace.Parameters,
+		Parameter{
+			Name:  "sys-name",
+			Value: ptr.String(workspace.Name),
+		},
+		Parameter{
+			Name:  "sys-workspace-action",
+			Value: ptr.String(workspaceAction),
+		}, Parameter{
+			Name:  "sys-resource-action",
+			Value: ptr.String(resourceAction),
+		}, Parameter{
+			Name:  "sys-host",
+			Value: ptr.String(host),
+		})
 
 	return
 }
 
-func (c *Client) createWorkspace(namespace string, workspace *Workspace) (*Workspace, error) {
+func (c *Client) createWorkspace(namespace string, parameters []byte, workspace *Workspace) (*Workspace, error) {
 	workflowExecution, err := c.CreateWorkflowExecution(namespace, &WorkflowExecution{
 		Parameters:       workspace.Parameters,
 		WorkflowTemplate: workspace.WorkspaceTemplate.WorkflowTemplate,
@@ -50,11 +44,12 @@ func (c *Client) createWorkspace(namespace string, workspace *Workspace) (*Works
 
 	err = sb.Insert("workspaces").
 		SetMap(sq.Eq{
-			"uid":                   workspace.UID,
-			"name":                  workspace.Name,
-			"namespace":             namespace,
-			"workspace_template_id": workspace.WorkspaceTemplate.ID,
-			"workflow_execution_id": workflowExecution.ID,
+			"uid":                        workspace.UID,
+			"name":                       workspace.Name,
+			"namespace":                  namespace,
+			"parameters":                 parameters,
+			"workspace_template_id":      workspace.WorkspaceTemplate.ID,
+			"workspace_template_version": workspace.WorkspaceTemplate.Version,
 		}).
 		Suffix("RETURNING id, created_at").
 		RunWith(c.DB).
@@ -68,12 +63,22 @@ func (c *Client) createWorkspace(namespace string, workspace *Workspace) (*Works
 
 // CreateWorkspace creates a workspace by triggering the corresponding workflow
 func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Workspace, error) {
+	valid, err := govalidator.ValidateStruct(workspace)
+	if err != nil || !valid {
+		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
+	}
+
 	config, err := c.GetSystemConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	if err := injectWorkspaceParameterValues(namespace, workspace, "create", "apply", config); err != nil {
+	parameters, err := json.Marshal(workspace.Parameters)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := injectWorkspaceSystemParameters(namespace, workspace, "create", "apply", config); err != nil {
 		return nil, err
 	}
 
@@ -86,7 +91,7 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 	workspace.WorkspaceTemplate.ID = workspaceTemplate.ID
 	workspace.WorkspaceTemplate = workspaceTemplate
 
-	workspace, err = c.createWorkspace(namespace, workspace)
+	workspace, err = c.createWorkspace(namespace, parameters, workspace)
 	if err != nil {
 		return nil, util.NewUserError(codes.Unknown, "Could not create workspace.")
 	}
