@@ -169,6 +169,7 @@ func (c *Client) GetWorkflowTemplateVersionDb(namespace, name, version string) (
 	return
 }
 
+// @todo remove argoworkflow template here
 func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (workflowTemplate *WorkflowTemplate, err error) {
 	workflowTemplate = &WorkflowTemplate{
 		WorkflowExecutionStatisticReport: &WorkflowExecutionStatisticReport{},
