@@ -142,11 +142,13 @@ func (cw *CronWorkflow) AddToManifestSpec(key, manifest string) error {
 
 type WorkflowTemplate struct {
 	ID                               uint64
-	CreatedAt                        time.Time `db:"created_at"`
+	CreatedAt                        time.Time  `db:"created_at"`
+	ModifiedAt                       *time.Time `db:"modified_at"`
 	UID                              string
+	Namespace                        string
 	Name                             string
 	Manifest                         string
-	Version                          int64
+	Version                          int64 // The latest version, unix timestamp
 	Versions                         int64 `db:"versions"` // How many versions there are of this template total.
 	IsLatest                         bool
 	IsArchived                       bool `db:"is_archived"`

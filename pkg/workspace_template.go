@@ -406,7 +406,7 @@ func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 }
 
 func (c *Client) workspaceTemplatesSelectBuilder(namespace string) sq.SelectBuilder {
-	sb := sb.Select("wt.id", "wt.created_at", "wt.uid", "wt.name").
+	sb := sb.Select("wt.id", "wt.created_at", "wt.uid", "wt.name", `wt.workflow_template_id "workflow_template.id"`).
 		From("workspace_templates wt").
 		Where(sq.Eq{
 			"wt.namespace": namespace,
@@ -417,7 +417,7 @@ func (c *Client) workspaceTemplatesSelectBuilder(namespace string) sq.SelectBuil
 
 func (c *Client) workspaceTemplateVersionsSelectBuilder(namespace, uid string) sq.SelectBuilder {
 	sb := c.workspaceTemplatesSelectBuilder(namespace).
-		Columns("wtv.version", "wtv.manifest", "wft.uid \"workflow_template.uid\"", "wftv.version \"workflow_template.version\"", "wftv.manifest \"workflow_template.manifest\"").
+		Columns("wtv.created_at \"created_at\"", "wtv.version", "wtv.manifest", "wft.uid \"workflow_template.uid\"", "wftv.version \"workflow_template.version\"", "wftv.manifest \"workflow_template.manifest\"").
 		Join("workspace_template_versions wtv ON wtv.workspace_template_id = wt.id").
 		Join("workflow_templates wft ON wft.id = wt.workflow_template_id").
 		Join("workflow_template_versions wftv ON wftv.workflow_template_id = wft.id").
@@ -557,6 +557,71 @@ func (c *Client) GetWorkspaceTemplate(namespace, uid string, version int64) (wor
 	return
 }
 
+// UpdateWorkspaceTemplate adds a new workspace template version
+func (c *Client) UpdateWorkspaceTemplate(namespace string, workspaceTemplate *WorkspaceTemplate) (*WorkspaceTemplate, error) {
+	valid, err := govalidator.ValidateStruct(workspaceTemplate)
+	if err != nil || !valid {
+		if err == nil {
+			err = fmt.Errorf("invalid Workspace Template")
+		}
+		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
+	}
+
+	existingWorkspaceTemplate, err := c.getWorkspaceTemplateByName(namespace, workspaceTemplate.Name)
+	if err != nil {
+		return nil, err
+	}
+	if existingWorkspaceTemplate == nil {
+		return nil, util.NewUserError(codes.NotFound, "Workspace template not found.")
+	}
+	workspaceTemplate.ID = existingWorkspaceTemplate.ID
+
+	existingWorkflowTemplate, err := c.getWorkflowTemplateById(existingWorkspaceTemplate.WorkflowTemplate.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedWorkflowTemplate, err := c.generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate)
+	if err != nil {
+		return nil, err
+	}
+	updatedWorkflowTemplate.ID = existingWorkflowTemplate.ID
+	updatedWorkflowTemplate.UID = existingWorkflowTemplate.UID
+
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	workflowTemplateVersion, err := c.CreateWorkflowTemplateVersion(namespace, updatedWorkflowTemplate)
+	if err != nil {
+		return nil, err
+	}
+
+	workspaceTemplate.Version = workflowTemplateVersion.Version
+	workspaceTemplate.IsLatest = true
+
+	_, err = sb.Insert("workspace_template_versions").
+		SetMap(sq.Eq{
+			"version":               workspaceTemplate.Version,
+			"is_latest":             workspaceTemplate.IsLatest,
+			"manifest":              workspaceTemplate.Manifest,
+			"workspace_template_id": workspaceTemplate.ID,
+		}).
+		RunWith(tx).
+		Exec()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return workspaceTemplate, nil
+}
+
 func (c *Client) ListWorkspaceTemplates(namespace string, paginator *pagination.PaginationRequest) (workspaceTemplates []*WorkspaceTemplate, err error) {
 	sb := c.workspaceTemplatesSelectBuilder(namespace).
 		OrderBy("wt.created_at DESC")
@@ -576,10 +641,12 @@ func (c *Client) ListWorkspaceTemplates(namespace string, paginator *pagination.
 
 func (c *Client) ListWorkspaceTemplateVersions(namespace, uid string) (workspaceTemplates []*WorkspaceTemplate, err error) {
 	sb := c.workspaceTemplateVersionsSelectBuilder(namespace, uid).
+		Options("DISTINCT ON (wtv.version) wtv.version,").
 		Where(sq.Eq{
 			"wt.is_archived":  false,
 			"wft.is_archived": false,
-		})
+		}).
+		OrderBy("wtv.version DESC")
 	query, args, err := sb.ToSql()
 	if err != nil {
 		return

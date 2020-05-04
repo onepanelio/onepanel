@@ -169,6 +169,23 @@ func (c *Client) GetWorkflowTemplateVersionDb(namespace, name, version string) (
 	return
 }
 
+func (c *Client) getWorkflowTemplateById(id uint64) (workflowTemplate *WorkflowTemplate, err error) {
+	workflowTemplate = &WorkflowTemplate{}
+
+	query, args, err := sb.Select(getWorkflowTemplateColumns("wt")...).
+		From("workflow_templates wt").
+		Where(sq.Eq{"id": id}).
+		ToSql()
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.DB.Get(workflowTemplate, query, args...)
+
+	return
+}
+
 // @todo remove argoworkflow template here
 func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (workflowTemplate *WorkflowTemplate, err error) {
 	workflowTemplate = &WorkflowTemplate{
@@ -378,6 +395,10 @@ func (c *Client) CreateWorkflowTemplate(namespace string, workflowTemplate *Work
 }
 
 func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
+	if workflowTemplate.UID == "" {
+		return nil, fmt.Errorf("uid required for CreateWorkflowTemplateVersion")
+	}
+
 	// validate workflow template
 	if err := c.validateWorkflowTemplate(namespace, workflowTemplate); err != nil {
 		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
@@ -493,6 +514,8 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
+
+	workflowTemplate.Version = versionUnix
 
 	return workflowTemplate, nil
 }
@@ -738,4 +761,22 @@ func (c *Client) GetWorkflowTemplateLabels(namespace, name, prefix string, versi
 	labels = label.RemovePrefix(prefix, labels)
 
 	return
+}
+
+// returns all of the columns for workflowTemplate prefied by alias. extraColumns are added after.
+// example: "cw", "wft.id"
+// returns: ["cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.namespace", "cw.modified_at", "cw.is_archived", "wft.id"]
+func getWorkflowTemplateColumns(alias string, extraColumns ...string) []string {
+	columns := []string{"id", "created_at", "uid", "name", "namespace", "modified_at", "is_archived"}
+	results := make([]string, 0)
+
+	for _, str := range columns {
+		results = append(results, alias+"."+str)
+	}
+
+	for _, str := range extraColumns {
+		results = append(results, str)
+	}
+
+	return results
 }

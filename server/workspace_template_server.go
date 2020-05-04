@@ -80,6 +80,27 @@ func (s *WorkspaceTemplateServer) CreateWorkspaceTemplate(ctx context.Context, r
 	return req.WorkspaceTemplate, nil
 }
 
+func (s *WorkspaceTemplateServer) UpdateWorkspaceTemplate(ctx context.Context, req *api.UpdateWorkspaceTemplateRequest) (*api.WorkspaceTemplate, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "workflowtemplates", req.Name)
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	workspaceTemplate := &v1.WorkspaceTemplate{
+		Name:     req.Name,
+		Manifest: req.WorkspaceTemplate.Manifest,
+	}
+	workspaceTemplate, err = client.UpdateWorkspaceTemplate(req.Namespace, workspaceTemplate)
+	if err != nil {
+		return nil, err
+	}
+
+	req.WorkspaceTemplate = apiWorkspaceTemplate(workspaceTemplate)
+
+	return req.WorkspaceTemplate, nil
+}
+
 func (s *WorkspaceTemplateServer) GetWorkspaceTemplate(ctx context.Context, req *api.GetWorkspaceTemplateRequest) (*api.WorkspaceTemplate, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflowtemplates", "")

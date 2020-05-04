@@ -23,6 +23,14 @@ service WorkspaceTemplateService {
         };
     }
 
+    // Updates a WorkspaceTemplate
+    rpc UpdateWorkspaceTemplate (UpdateWorkspaceTemplateRequest) returns (WorkspaceTemplate) {
+        option (google.api.http) = {
+            put: "/apis/v1beta1/{namespace}/workspace_templates/{name}"
+            body: "workspaceTemplate"
+        };
+    }
+
     // Get a WorkspaceTemplate
     rpc GetWorkspaceTemplate (GetWorkspaceTemplateRequest) returns (WorkspaceTemplate) {
         option (google.api.http) = {
@@ -62,6 +70,12 @@ message GenerateWorkspaceTemplateWorkflowTemplateRequest {
 message CreateWorkspaceTemplateRequest {
     string namespace = 1;
     WorkspaceTemplate workspaceTemplate = 2;
+}
+
+message UpdateWorkspaceTemplateRequest {
+    string namespace = 1;
+    string name = 2;
+    WorkspaceTemplate workspaceTemplate = 3;
 }
 
 message GetWorkspaceTemplateRequest {

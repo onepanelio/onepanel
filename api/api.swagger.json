@@ -1444,6 +1444,45 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/workspace_templates/{name}": {
+      "put": {
+        "summary": "Updates a WorkspaceTemplate",
+        "operationId": "UpdateWorkspaceTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkspaceTemplate"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WorkspaceTemplate"
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceTemplateService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workspace_templates/{uid}": {
       "get": {
         "summary": "Get a WorkspaceTemplate",
