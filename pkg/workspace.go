@@ -5,9 +5,11 @@ import (
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/asaskevich/govalidator"
+	"github.com/lib/pq"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"google.golang.org/grpc/codes"
+	"time"
 )
 
 func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, workspaceAction, resourceAction string, config map[string]string) (err error) {
@@ -48,6 +50,8 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 			"name":                       workspace.Name,
 			"namespace":                  namespace,
 			"parameters":                 parameters,
+			"phase":                      WorkspaceStarted,
+			"started_at":                 time.Now().UTC(),
 			"workspace_template_id":      workspace.WorkspaceTemplate.ID,
 			"workspace_template_version": workspace.WorkspaceTemplate.Version,
 		}).
@@ -97,4 +101,38 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 	}
 
 	return workspace, nil
+}
+
+// UpdateWorkspaceStatus updates workspace status and times based on phase
+func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceStatus) (err error) {
+	fieldMap := sq.Eq{
+		"phase": status.Phase,
+	}
+	switch status.Phase {
+	case WorkspaceStarted:
+		fieldMap["paused_at"] = pq.NullTime{}
+		fieldMap["started_at"] = time.Now().UTC()
+		break
+	case WorkspacePausing:
+		fieldMap["started_at"] = pq.NullTime{}
+		fieldMap["paused_at"] = time.Now().UTC()
+		break
+	case WorkspaceTerminating:
+		fieldMap["started_at"] = pq.NullTime{}
+		fieldMap["paused_at"] = pq.NullTime{}
+		fieldMap["terminated_at"] = time.Now().UTC()
+		break
+	}
+	_, err = sb.Update("workspaces").
+		SetMap(fieldMap).
+		Where(sq.Eq{
+			"namespace": namespace,
+			"uid":       uid,
+		}).
+		RunWith(c.DB).Exec()
+	if err != nil {
+		return util.NewUserError(codes.NotFound, "Workspace not found.")
+	}
+
+	return
 }

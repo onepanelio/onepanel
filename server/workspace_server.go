@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util/ptr"
@@ -57,4 +58,19 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 	req.Workspace = apiWorkspace(workspace)
 
 	return req.Workspace, nil
+}
+
+func (s *WorkspaceServer) UpdateWorkspaceStatus(ctx context.Context, req *api.UpdateWorkspaceStatusRequest) (*empty.Empty, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "apps/v1", "statefulsets", "")
+	if err != nil || !allowed {
+		return &empty.Empty{}, err
+	}
+
+	status := &v1.WorkspaceStatus{
+		Phase: v1.WorkspacePhase(req.Status.Phase),
+	}
+	err = client.UpdateWorkspaceStatus(req.Namespace, req.Uid, status)
+
+	return &empty.Empty{}, err
 }

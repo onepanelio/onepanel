@@ -1277,7 +1277,7 @@ func (c *Client) GetWorkflowExecutionStatisticsForTemplates(workflowTemplates ..
 Will build a template that makes a CURL request to the onepanel-core API,
 with statistics about the workflow that was just executed.
 */
-func getWorkflowStatisticsCallerTemplate(namespace, path, templateName string, statistics map[string]interface{}) (template *wfv1.Template, err error) {
+func getCURLNodeTemplate(name, curlPath, curlBody string) (template *wfv1.Template, err error) {
 	host := env.GetEnv("ONEPANEL_CORE_SERVICE_HOST", "onepanel-core.onepanel.svc.cluster.local")
 	if host == "" {
 		err = errors.New("ONEPANEL_CORE_SERVICE_HOST is empty.")
@@ -1288,23 +1288,17 @@ func getWorkflowStatisticsCallerTemplate(namespace, path, templateName string, s
 		err = errors.New("ONEPANEL_CORE_SERVICE_PORT is empty.")
 		return
 	}
-	endpoint := fmt.Sprintf("http://%s:%s/apis/v1beta1/%s/workflow_executions/{{workflow.name}}/%v", host, port, namespace, path)
-
-	statisticsBytes, err := json.Marshal(statistics)
-	if err != nil {
-		return nil, err
-	}
-	body := fmt.Sprintf("--data '%s'", string(statisticsBytes))
-
+	endpoint := fmt.Sprintf("http://%s:%s%s", host, port, curlPath)
 	template = &wfv1.Template{
-		Name: templateName,
+		Name: name,
 		Container: &corev1.Container{
+			Name:    "curl",
 			Image:   "curlimages/curl",
 			Command: []string{"sh", "-c"},
 			Args: []string{
 				"SERVICE_ACCOUNT_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) && curl -s -o /dev/null -w '%{http_code}' '" + endpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
 					"-H 'Authorization: Bearer '\"$SERVICE_ACCOUNT_TOKEN\"'' " +
-					body + " --compressed",
+					"--data '" + curlBody + "' --compressed",
 			},
 		},
 	}
@@ -1312,11 +1306,16 @@ func getWorkflowStatisticsCallerTemplate(namespace, path, templateName string, s
 }
 
 func injectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace string, workflowTemplateId *uint64) error {
+	curlPath := "/apis/v1beta1/{{workflow.namespace}}/workflow_executions/{{workflow.name}}/statistics"
 	statistics := map[string]interface{}{
 		"workflowStatus":     "{{workflow.status}}",
 		"workflowTemplateId": int64(*workflowTemplateId),
 	}
-	statsTemplate, err := getWorkflowStatisticsCallerTemplate(namespace, "statistics", "sys-send-exit-stats", statistics)
+	statisticsBytes, err := json.Marshal(statistics)
+	if err != nil {
+		return err
+	}
+	statsTemplate, err := getCURLNodeTemplate("sys-send-exit-stats", curlPath, string(statisticsBytes))
 	if err != nil {
 		return err
 	}
@@ -1354,10 +1353,15 @@ func injectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace st
 }
 
 func injectInitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace string, workflowTemplateId *uint64) error {
+	curlPath := "/apis/v1beta1/{{workflow.namespace}}/workflow_executions/{{workflow.name}}/cron_start_statistics"
 	statistics := map[string]interface{}{
 		"workflowTemplateId": int64(*workflowTemplateId),
 	}
-	containerTemplate, err := getWorkflowStatisticsCallerTemplate(namespace, "cron_start_statistics", "sys-send-init-stats", statistics)
+	statisticsBytes, err := json.Marshal(statistics)
+	if err != nil {
+		return err
+	}
+	containerTemplate, err := getCURLNodeTemplate("sys-send-init-stats", curlPath, string(statisticsBytes))
 	if err != nil {
 		return err
 	}

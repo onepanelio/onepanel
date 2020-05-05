@@ -2,6 +2,7 @@ package v1
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
@@ -40,6 +41,12 @@ func generateArguments(spec *WorkspaceSpec, config map[string]string) (err error
 	})
 
 	// TODO: These can be removed when lint validation of workflows work
+	// Workspace UID
+	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
+		Name:  "sys-uid",
+		Value: ptr.String("00000000-0000-0000-0000-000000000000"),
+		Type:  "input.hidden",
+	})
 	// Resource action parameter
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
 		Name:  "sys-resource-action",
@@ -49,13 +56,13 @@ func generateArguments(spec *WorkspaceSpec, config map[string]string) (err error
 	// Workspace action
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
 		Name:  "sys-workspace-action",
-		Value: ptr.String(config["ONEPANEL_DOMAIN"]),
+		Value: ptr.String("create"),
 		Type:  "input.hidden",
 	})
 	// Host
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
 		Name:  "sys-host",
-		Value: ptr.String("create"),
+		Value: ptr.String(config["ONEPANEL_DOMAIN"]),
 		Type:  "input.hidden",
 	})
 
@@ -328,6 +335,19 @@ metadata:
 			},
 		},
 	}
+	curlPath := fmt.Sprintf("/apis/v1beta1/{{workflow.namespace}}/workspaces/{{workflow.parameters.sys-uid}}/status")
+	status := map[string]interface{}{
+		"phase": "{{input.parameters.phase}}",
+	}
+	statusBytes, err := json.Marshal(status)
+	if err != nil {
+		return
+	}
+	curlNodeTemplate, err := getCURLNodeTemplate("update-workspace-status", curlPath, string(statusBytes))
+	if err != nil {
+		return
+	}
+	templates = append(templates, *curlNodeTemplate)
 	if spec.PostExecutionWorkflow != nil {
 		templates = append(templates, spec.PostExecutionWorkflow.Templates...)
 	}
