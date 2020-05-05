@@ -1288,10 +1288,11 @@ func getCURLNodeTemplate(name, curlPath, curlBody string) (template *wfv1.Templa
 		err = errors.New("ONEPANEL_CORE_SERVICE_PORT is empty.")
 		return
 	}
-	endpoint := fmt.Sprintf("http://%s:%s/%s", host, port, curlPath)
+	endpoint := fmt.Sprintf("http://%s:%s%s", host, port, curlPath)
 	template = &wfv1.Template{
 		Name: name,
 		Container: &corev1.Container{
+			Name:    "curl",
 			Image:   "curlimages/curl",
 			Command: []string{"sh", "-c"},
 			Args: []string{
@@ -1305,7 +1306,7 @@ func getCURLNodeTemplate(name, curlPath, curlBody string) (template *wfv1.Templa
 }
 
 func injectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace string, workflowTemplateId *uint64) error {
-	curlPath := fmt.Sprintf("apis/v1beta1/%s/workflow_executions/{{workflow.name}}/statistics", namespace)
+	curlPath := "/apis/v1beta1/{{workflow.namespace}}/workflow_executions/{{workflow.name}}/statistics"
 	statistics := map[string]interface{}{
 		"workflowStatus":     "{{workflow.status}}",
 		"workflowTemplateId": int64(*workflowTemplateId),
@@ -1352,7 +1353,7 @@ func injectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace st
 }
 
 func injectInitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace string, workflowTemplateId *uint64) error {
-	curlPath := fmt.Sprintf("apis/v1beta1/%s/workflow_executions/{{workflow.name}}/cron_start_statistics", namespace)
+	curlPath := "/apis/v1beta1/{{workflow.namespace}}/workflow_executions/{{workflow.name}}/cron_start_statistics"
 	statistics := map[string]interface{}{
 		"workflowTemplateId": int64(*workflowTemplateId),
 	}

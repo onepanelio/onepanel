@@ -2,6 +2,7 @@ package v1
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
@@ -334,6 +335,19 @@ metadata:
 			},
 		},
 	}
+	curlPath := fmt.Sprintf("/apis/v1beta1/{{workflow.namespace}}/workspaces/{{workflow.parameters.sys-uid}}/status")
+	status := map[string]interface{}{
+		"phase": "{{input.parameters.phase}}",
+	}
+	statusBytes, err := json.Marshal(status)
+	if err != nil {
+		return
+	}
+	curlNodeTemplate, err := getCURLNodeTemplate("update-workspace-status", curlPath, string(statusBytes))
+	if err != nil {
+		return
+	}
+	templates = append(templates, *curlNodeTemplate)
 	if spec.PostExecutionWorkflow != nil {
 		templates = append(templates, spec.PostExecutionWorkflow.Templates...)
 	}
