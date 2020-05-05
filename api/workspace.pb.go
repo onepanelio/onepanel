@@ -7,6 +7,7 @@ import (
 	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
+	empty "github.com/golang/protobuf/ptypes/empty"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -26,6 +27,7 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type Workspace struct {
+<<<<<<< HEAD
 	Uid                  string             `protobuf:"bytes,1,opt,name=uid,proto3" json:"uid,omitempty"`
 	Name                 string             `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Version              int64              `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
@@ -42,6 +44,28 @@ func (m *Workspace) String() string { return proto.CompactTextString(m) }
 func (*Workspace) ProtoMessage()    {}
 func (*Workspace) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dac718ecaafc2333, []int{0}
+=======
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Uid               string             `protobuf:"bytes,1,opt,name=uid,proto3" json:"uid,omitempty"`
+	Name              string             `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Version           int64              `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
+	CreatedAt         string             `protobuf:"bytes,4,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	Parameters        []*Parameter       `protobuf:"bytes,5,rep,name=parameters,proto3" json:"parameters,omitempty"`
+	WorkspaceTemplate *WorkspaceTemplate `protobuf:"bytes,6,opt,name=workspaceTemplate,proto3" json:"workspaceTemplate,omitempty"`
+	Status            *WorkspaceStatus   `protobuf:"bytes,7,opt,name=status,proto3" json:"status,omitempty"`
+}
+
+func (x *Workspace) Reset() {
+	*x = Workspace{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_workspace_proto_msgTypes[0]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+>>>>>>> update workspace status
 }
 
 func (m *Workspace) XXX_Unmarshal(b []byte) error {
@@ -104,7 +128,102 @@ func (m *Workspace) GetWorkspaceTemplate() *WorkspaceTemplate {
 	return nil
 }
 
+func (x *Workspace) GetStatus() *WorkspaceStatus {
+	if x != nil {
+		return x.Status
+	}
+	return nil
+}
+
+type WorkspaceStatus struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Phase         string `protobuf:"bytes,1,opt,name=phase,proto3" json:"phase,omitempty"`
+	StartedAt     string `protobuf:"bytes,2,opt,name=startedAt,proto3" json:"startedAt,omitempty"`
+	RunningAt     string `protobuf:"bytes,3,opt,name=runningAt,proto3" json:"runningAt,omitempty"`
+	PausingAt     string `protobuf:"bytes,4,opt,name=pausingAt,proto3" json:"pausingAt,omitempty"`
+	PausedAt      string `protobuf:"bytes,5,opt,name=pausedAt,proto3" json:"pausedAt,omitempty"`
+	TerminatingAt string `protobuf:"bytes,6,opt,name=terminatingAt,proto3" json:"terminatingAt,omitempty"`
+}
+
+func (x *WorkspaceStatus) Reset() {
+	*x = WorkspaceStatus{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_workspace_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *WorkspaceStatus) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorkspaceStatus) ProtoMessage() {}
+
+func (x *WorkspaceStatus) ProtoReflect() protoreflect.Message {
+	mi := &file_workspace_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WorkspaceStatus.ProtoReflect.Descriptor instead.
+func (*WorkspaceStatus) Descriptor() ([]byte, []int) {
+	return file_workspace_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *WorkspaceStatus) GetPhase() string {
+	if x != nil {
+		return x.Phase
+	}
+	return ""
+}
+
+func (x *WorkspaceStatus) GetStartedAt() string {
+	if x != nil {
+		return x.StartedAt
+	}
+	return ""
+}
+
+func (x *WorkspaceStatus) GetRunningAt() string {
+	if x != nil {
+		return x.RunningAt
+	}
+	return ""
+}
+
+func (x *WorkspaceStatus) GetPausingAt() string {
+	if x != nil {
+		return x.PausingAt
+	}
+	return ""
+}
+
+func (x *WorkspaceStatus) GetPausedAt() string {
+	if x != nil {
+		return x.PausedAt
+	}
+	return ""
+}
+
+func (x *WorkspaceStatus) GetTerminatingAt() string {
+	if x != nil {
+		return x.TerminatingAt
+	}
+	return ""
+}
+
 type CreateWorkspaceRequest struct {
+<<<<<<< HEAD
 	Namespace            string     `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	Workspace            *Workspace `protobuf:"bytes,3,opt,name=workspace,proto3" json:"workspace,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
@@ -117,11 +236,29 @@ func (m *CreateWorkspaceRequest) String() string { return proto.CompactTextStrin
 func (*CreateWorkspaceRequest) ProtoMessage()    {}
 func (*CreateWorkspaceRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dac718ecaafc2333, []int{1}
+=======
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Namespace string     `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	Workspace *Workspace `protobuf:"bytes,2,opt,name=workspace,proto3" json:"workspace,omitempty"`
+}
+
+func (x *CreateWorkspaceRequest) Reset() {
+	*x = CreateWorkspaceRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_workspace_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+>>>>>>> update workspace status
 }
 
 func (m *CreateWorkspaceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateWorkspaceRequest.Unmarshal(m, b)
 }
+<<<<<<< HEAD
 func (m *CreateWorkspaceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CreateWorkspaceRequest.Marshal(b, m, deterministic)
 }
@@ -130,6 +267,26 @@ func (m *CreateWorkspaceRequest) XXX_Merge(src proto.Message) {
 }
 func (m *CreateWorkspaceRequest) XXX_Size() int {
 	return xxx_messageInfo_CreateWorkspaceRequest.Size(m)
+=======
+
+func (*CreateWorkspaceRequest) ProtoMessage() {}
+
+func (x *CreateWorkspaceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_workspace_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateWorkspaceRequest.ProtoReflect.Descriptor instead.
+func (*CreateWorkspaceRequest) Descriptor() ([]byte, []int) {
+	return file_workspace_proto_rawDescGZIP(), []int{2}
+>>>>>>> update workspace status
 }
 func (m *CreateWorkspaceRequest) XXX_DiscardUnknown() {
 	xxx_messageInfo_CreateWorkspaceRequest.DiscardUnknown(m)
@@ -151,6 +308,7 @@ func (m *CreateWorkspaceRequest) GetWorkspace() *Workspace {
 	return nil
 }
 
+<<<<<<< HEAD
 func init() {
 	proto.RegisterType((*Workspace)(nil), "api.Workspace")
 	proto.RegisterType((*CreateWorkspaceRequest)(nil), "api.CreateWorkspaceRequest")
@@ -181,6 +339,261 @@ var fileDescriptor_dac718ecaafc2333 = []byte{
 	0xff, 0x7c, 0xeb, 0x4c, 0xe2, 0x93, 0xfa, 0xc8, 0x3a, 0xdb, 0x4c, 0xe6, 0x68, 0xd8, 0x24, 0x7b,
 	0x72, 0x21, 0x9f, 0x33, 0x97, 0x40, 0x5f, 0xb4, 0x69, 0xe6, 0x3d, 0x7b, 0xdc, 0xb3, 0xaf, 0x00,
 	0x00, 0x00, 0xff, 0xff, 0xb6, 0x9e, 0x1f, 0xcf, 0x3a, 0x02, 0x00, 0x00,
+=======
+type UpdateWorkspaceStatusRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Namespace string           `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	Uid       string           `protobuf:"bytes,2,opt,name=uid,proto3" json:"uid,omitempty"`
+	Status    *WorkspaceStatus `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+}
+
+func (x *UpdateWorkspaceStatusRequest) Reset() {
+	*x = UpdateWorkspaceStatusRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_workspace_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *UpdateWorkspaceStatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateWorkspaceStatusRequest) ProtoMessage() {}
+
+func (x *UpdateWorkspaceStatusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_workspace_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateWorkspaceStatusRequest.ProtoReflect.Descriptor instead.
+func (*UpdateWorkspaceStatusRequest) Descriptor() ([]byte, []int) {
+	return file_workspace_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *UpdateWorkspaceStatusRequest) GetNamespace() string {
+	if x != nil {
+		return x.Namespace
+	}
+	return ""
+}
+
+func (x *UpdateWorkspaceStatusRequest) GetUid() string {
+	if x != nil {
+		return x.Uid
+	}
+	return ""
+}
+
+func (x *UpdateWorkspaceStatusRequest) GetStatus() *WorkspaceStatus {
+	if x != nil {
+		return x.Status
+	}
+	return nil
+}
+
+var File_workspace_proto protoreflect.FileDescriptor
+
+var file_workspace_proto_rawDesc = []byte{
+	0x0a, 0x0f, 0x77, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x12, 0x03, 0x61, 0x70, 0x69, 0x1a, 0x1c, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x61,
+	0x70, 0x69, 0x2f, 0x61, 0x6e, 0x6e, 0x6f, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1b, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x65, 0x6d, 0x70, 0x74, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x1a, 0x18, 0x77, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x5f, 0x74, 0x65, 0x6d,
+	0x70, 0x6c, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x0c, 0x63, 0x6f, 0x6d,
+	0x6d, 0x6f, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x8d, 0x02, 0x0a, 0x09, 0x57, 0x6f,
+	0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x69, 0x64, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x75, 0x69, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d,
+	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x18, 0x0a,
+	0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x07,
+	0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x1c, 0x0a, 0x09, 0x63, 0x72, 0x65, 0x61, 0x74,
+	0x65, 0x64, 0x41, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x63, 0x72, 0x65, 0x61,
+	0x74, 0x65, 0x64, 0x41, 0x74, 0x12, 0x2e, 0x0a, 0x0a, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x65, 0x74,
+	0x65, 0x72, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0e, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x50, 0x61, 0x72, 0x61, 0x6d, 0x65, 0x74, 0x65, 0x72, 0x52, 0x0a, 0x70, 0x61, 0x72, 0x61, 0x6d,
+	0x65, 0x74, 0x65, 0x72, 0x73, 0x12, 0x44, 0x0a, 0x11, 0x77, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61,
+	0x63, 0x65, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x16, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x57, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65,
+	0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x52, 0x11, 0x77, 0x6f, 0x72, 0x6b, 0x73, 0x70,
+	0x61, 0x63, 0x65, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x12, 0x2c, 0x0a, 0x06, 0x73,
+	0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x57, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x53, 0x74, 0x61, 0x74, 0x75,
+	0x73, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x22, 0xc3, 0x01, 0x0a, 0x0f, 0x57, 0x6f,
+	0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x14, 0x0a,
+	0x05, 0x70, 0x68, 0x61, 0x73, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x70, 0x68,
+	0x61, 0x73, 0x65, 0x12, 0x1c, 0x0a, 0x09, 0x73, 0x74, 0x61, 0x72, 0x74, 0x65, 0x64, 0x41, 0x74,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x73, 0x74, 0x61, 0x72, 0x74, 0x65, 0x64, 0x41,
+	0x74, 0x12, 0x1c, 0x0a, 0x09, 0x72, 0x75, 0x6e, 0x6e, 0x69, 0x6e, 0x67, 0x41, 0x74, 0x18, 0x03,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x72, 0x75, 0x6e, 0x6e, 0x69, 0x6e, 0x67, 0x41, 0x74, 0x12,
+	0x1c, 0x0a, 0x09, 0x70, 0x61, 0x75, 0x73, 0x69, 0x6e, 0x67, 0x41, 0x74, 0x18, 0x04, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x09, 0x70, 0x61, 0x75, 0x73, 0x69, 0x6e, 0x67, 0x41, 0x74, 0x12, 0x1a, 0x0a,
+	0x08, 0x70, 0x61, 0x75, 0x73, 0x65, 0x64, 0x41, 0x74, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x08, 0x70, 0x61, 0x75, 0x73, 0x65, 0x64, 0x41, 0x74, 0x12, 0x24, 0x0a, 0x0d, 0x74, 0x65, 0x72,
+	0x6d, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6e, 0x67, 0x41, 0x74, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x0d, 0x74, 0x65, 0x72, 0x6d, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6e, 0x67, 0x41, 0x74, 0x22,
+	0x64, 0x0a, 0x16, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x57, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61,
+	0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1c, 0x0a, 0x09, 0x6e, 0x61, 0x6d,
+	0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x6e, 0x61,
+	0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x12, 0x2c, 0x0a, 0x09, 0x77, 0x6f, 0x72, 0x6b, 0x73,
+	0x70, 0x61, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0e, 0x2e, 0x61, 0x70, 0x69,
+	0x2e, 0x57, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x52, 0x09, 0x77, 0x6f, 0x72, 0x6b,
+	0x73, 0x70, 0x61, 0x63, 0x65, 0x22, 0x7c, 0x0a, 0x1c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x57,
+	0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1c, 0x0a, 0x09, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61,
+	0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70,
+	0x61, 0x63, 0x65, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x03, 0x75, 0x69, 0x64, 0x12, 0x2c, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18,
+	0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x57, 0x6f, 0x72, 0x6b,
+	0x73, 0x70, 0x61, 0x63, 0x65, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x06, 0x73, 0x74, 0x61,
+	0x74, 0x75, 0x73, 0x32, 0xa3, 0x02, 0x0a, 0x10, 0x57, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63,
+	0x65, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x77, 0x0a, 0x0f, 0x43, 0x72, 0x65, 0x61,
+	0x74, 0x65, 0x57, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x12, 0x1b, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x57, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63,
+	0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0e, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x57,
+	0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x22, 0x37, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x31,
+	0x22, 0x24, 0x2f, 0x61, 0x70, 0x69, 0x73, 0x2f, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2f,
+	0x7b, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x7d, 0x2f, 0x77, 0x6f, 0x72, 0x6b,
+	0x73, 0x70, 0x61, 0x63, 0x65, 0x73, 0x3a, 0x09, 0x77, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63,
+	0x65, 0x12, 0x95, 0x01, 0x0a, 0x15, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x57, 0x6f, 0x72, 0x6b,
+	0x73, 0x70, 0x61, 0x63, 0x65, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x21, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x57, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63,
+	0x65, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16,
+	0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66,
+	0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x41, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x3b, 0x1a, 0x31,
+	0x2f, 0x61, 0x70, 0x69, 0x73, 0x2f, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2f, 0x7b, 0x6e,
+	0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x7d, 0x2f, 0x77, 0x6f, 0x72, 0x6b, 0x73, 0x70,
+	0x61, 0x63, 0x65, 0x73, 0x2f, 0x7b, 0x75, 0x69, 0x64, 0x7d, 0x2f, 0x73, 0x74, 0x61, 0x74, 0x75,
+	0x73, 0x3a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x33,
+}
+
+var (
+	file_workspace_proto_rawDescOnce sync.Once
+	file_workspace_proto_rawDescData = file_workspace_proto_rawDesc
+)
+
+func file_workspace_proto_rawDescGZIP() []byte {
+	file_workspace_proto_rawDescOnce.Do(func() {
+		file_workspace_proto_rawDescData = protoimpl.X.CompressGZIP(file_workspace_proto_rawDescData)
+	})
+	return file_workspace_proto_rawDescData
+}
+
+var file_workspace_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_workspace_proto_goTypes = []interface{}{
+	(*Workspace)(nil),                    // 0: api.Workspace
+	(*WorkspaceStatus)(nil),              // 1: api.WorkspaceStatus
+	(*CreateWorkspaceRequest)(nil),       // 2: api.CreateWorkspaceRequest
+	(*UpdateWorkspaceStatusRequest)(nil), // 3: api.UpdateWorkspaceStatusRequest
+	(*Parameter)(nil),                    // 4: api.Parameter
+	(*WorkspaceTemplate)(nil),            // 5: api.WorkspaceTemplate
+	(*empty.Empty)(nil),                  // 6: google.protobuf.Empty
+}
+var file_workspace_proto_depIdxs = []int32{
+	4, // 0: api.Workspace.parameters:type_name -> api.Parameter
+	5, // 1: api.Workspace.workspaceTemplate:type_name -> api.WorkspaceTemplate
+	1, // 2: api.Workspace.status:type_name -> api.WorkspaceStatus
+	0, // 3: api.CreateWorkspaceRequest.workspace:type_name -> api.Workspace
+	1, // 4: api.UpdateWorkspaceStatusRequest.status:type_name -> api.WorkspaceStatus
+	2, // 5: api.WorkspaceService.CreateWorkspace:input_type -> api.CreateWorkspaceRequest
+	3, // 6: api.WorkspaceService.UpdateWorkspaceStatus:input_type -> api.UpdateWorkspaceStatusRequest
+	0, // 7: api.WorkspaceService.CreateWorkspace:output_type -> api.Workspace
+	6, // 8: api.WorkspaceService.UpdateWorkspaceStatus:output_type -> google.protobuf.Empty
+	7, // [7:9] is the sub-list for method output_type
+	5, // [5:7] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
+}
+
+func init() { file_workspace_proto_init() }
+func file_workspace_proto_init() {
+	if File_workspace_proto != nil {
+		return
+	}
+	file_workspace_template_proto_init()
+	file_common_proto_init()
+	if !protoimpl.UnsafeEnabled {
+		file_workspace_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Workspace); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_workspace_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*WorkspaceStatus); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_workspace_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CreateWorkspaceRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_workspace_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UpdateWorkspaceStatusRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+	}
+	type x struct{}
+	out := protoimpl.TypeBuilder{
+		File: protoimpl.DescBuilder{
+			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
+			RawDescriptor: file_workspace_proto_rawDesc,
+			NumEnums:      0,
+			NumMessages:   4,
+			NumExtensions: 0,
+			NumServices:   1,
+		},
+		GoTypes:           file_workspace_proto_goTypes,
+		DependencyIndexes: file_workspace_proto_depIdxs,
+		MessageInfos:      file_workspace_proto_msgTypes,
+	}.Build()
+	File_workspace_proto = out.File
+	file_workspace_proto_rawDesc = nil
+	file_workspace_proto_goTypes = nil
+	file_workspace_proto_depIdxs = nil
+>>>>>>> update workspace status
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -196,6 +609,7 @@ const _ = grpc.SupportPackageIsVersion4
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type WorkspaceServiceClient interface {
 	CreateWorkspace(ctx context.Context, in *CreateWorkspaceRequest, opts ...grpc.CallOption) (*Workspace, error)
+	UpdateWorkspaceStatus(ctx context.Context, in *UpdateWorkspaceStatusRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type workspaceServiceClient struct {
@@ -215,9 +629,19 @@ func (c *workspaceServiceClient) CreateWorkspace(ctx context.Context, in *Create
 	return out, nil
 }
 
+func (c *workspaceServiceClient) UpdateWorkspaceStatus(ctx context.Context, in *UpdateWorkspaceStatusRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/api.WorkspaceService/UpdateWorkspaceStatus", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WorkspaceServiceServer is the server API for WorkspaceService service.
 type WorkspaceServiceServer interface {
 	CreateWorkspace(context.Context, *CreateWorkspaceRequest) (*Workspace, error)
+	UpdateWorkspaceStatus(context.Context, *UpdateWorkspaceStatusRequest) (*empty.Empty, error)
 }
 
 // UnimplementedWorkspaceServiceServer can be embedded to have forward compatible implementations.
@@ -226,6 +650,9 @@ type UnimplementedWorkspaceServiceServer struct {
 
 func (*UnimplementedWorkspaceServiceServer) CreateWorkspace(ctx context.Context, req *CreateWorkspaceRequest) (*Workspace, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateWorkspace not implemented")
+}
+func (*UnimplementedWorkspaceServiceServer) UpdateWorkspaceStatus(context.Context, *UpdateWorkspaceStatusRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateWorkspaceStatus not implemented")
 }
 
 func RegisterWorkspaceServiceServer(s *grpc.Server, srv WorkspaceServiceServer) {
@@ -250,6 +677,24 @@ func _WorkspaceService_CreateWorkspace_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WorkspaceService_UpdateWorkspaceStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateWorkspaceStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).UpdateWorkspaceStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.WorkspaceService/UpdateWorkspaceStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).UpdateWorkspaceStatus(ctx, req.(*UpdateWorkspaceStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _WorkspaceService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "api.WorkspaceService",
 	HandlerType: (*WorkspaceServiceServer)(nil),
@@ -257,6 +702,10 @@ var _WorkspaceService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateWorkspace",
 			Handler:    _WorkspaceService_CreateWorkspace_Handler,
+		},
+		{
+			MethodName: "UpdateWorkspaceStatus",
+			Handler:    _WorkspaceService_UpdateWorkspaceStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

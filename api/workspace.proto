@@ -3,6 +3,7 @@ syntax = "proto3";
 package api;
 
 import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
 import "workspace_template.proto";
 import "common.proto";
 
@@ -11,6 +12,13 @@ service WorkspaceService {
 		option (google.api.http) = {
             post: "/apis/v1beta1/{namespace}/workspaces"
             body: "workspace"
+        };
+	}
+
+	rpc UpdateWorkspaceStatus (UpdateWorkspaceStatusRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+            put: "/apis/v1beta1/{namespace}/workspaces/{uid}/status"
+            body: "status"
         };
 	}
 }
@@ -22,9 +30,23 @@ message Workspace {
 	string createdAt = 4;
 	repeated Parameter parameters = 5;
 	WorkspaceTemplate workspaceTemplate = 6;
+	WorkspaceStatus status = 7;
+}
+
+message WorkspaceStatus {
+	string phase = 1;
+	string startedAt = 2;
+	string pausedAt = 3;
+	string terminatedAt = 4;
 }
 
 message CreateWorkspaceRequest {
 	string namespace = 1;
-	Workspace workspace = 3;
+	Workspace workspace = 2;
+}
+
+message UpdateWorkspaceStatusRequest {
+	string namespace = 1;
+	string uid = 2;
+	WorkspaceStatus status = 3;
 }

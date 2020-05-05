@@ -12,7 +12,6 @@ CREATE TABLE workspaces
     workspace_template_version  integer NOT NULL,
 
     started_at                  timestamp,
-    running_at                  timestamp,
     paused_at                   timestamp,
     terminated_at               timestamp,
 

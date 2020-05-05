@@ -1651,6 +1651,50 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/workspaces/{uid}/status": {
+      "put": {
+        "operationId": "UpdateWorkspaceStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WorkspaceStatus"
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/{resource}/{uid}/labels": {
       "get": {
         "operationId": "GetLabels",
@@ -2423,6 +2467,32 @@
         },
         "workspaceTemplate": {
           "$ref": "#/definitions/WorkspaceTemplate"
+        },
+        "status": {
+          "$ref": "#/definitions/WorkspaceStatus"
+        }
+      }
+    },
+    "WorkspaceStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "type": "string"
+        },
+        "startedAt": {
+          "type": "string"
+        },
+        "runningAt": {
+          "type": "string"
+        },
+        "pausingAt": {
+          "type": "string"
+        },
+        "pausedAt": {
+          "type": "string"
+        },
+        "terminatingAt": {
+          "type": "string"
         }
       }
     },

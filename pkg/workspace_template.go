@@ -40,6 +40,12 @@ func generateArguments(spec *WorkspaceSpec, config map[string]string) (err error
 	})
 
 	// TODO: These can be removed when lint validation of workflows work
+	// Workspace UID
+	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
+		Name:  "sys-uid",
+		Value: ptr.String("00000000-0000-0000-0000-000000000000"),
+		Type:  "input.hidden",
+	})
 	// Resource action parameter
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
 		Name:  "sys-resource-action",

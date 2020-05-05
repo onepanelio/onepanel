@@ -101,3 +101,23 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 
 	return workspace, nil
 }
+
+func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceStatus) (err error) {
+	_, err = sb.Update("workspaces").
+		SetMap(sq.Eq{
+			"phase":         status.Phase,
+			"started_at":    status.StartedAt,
+			"paused_at":     status.PausedAt,
+			"terminated_at": status.TerminatedAt,
+		}).
+		Where(sq.Eq{
+			"namespace": namespace,
+			"uid":       uid,
+		}).
+		RunWith(c.DB).Exec()
+	if err != nil {
+		return util.NewUserError(codes.NotFound, "Workspace not found.")
+	}
+
+	return
+}
