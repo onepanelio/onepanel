@@ -2,6 +2,7 @@ package v1
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/onepanelio/core/pkg/util/mapping"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -429,6 +430,7 @@ type WorkflowExecution struct {
 	Name             string
 	GenerateName     string
 	Parameters       []Parameter
+	ParametersBytes  []byte `db:"parameters"` // to load from database
 	Manifest         string
 	Phase            wfv1.NodePhase
 	StartedAt        *time.Time        `db:"started_at"`
@@ -590,4 +592,39 @@ func CronWorkflowsToIds(resources []*CronWorkflow) (ids []uint64) {
 	}
 
 	return
+}
+
+// returns all of the columns for workflowTemplate prefied by alias. extraColumns are added after.
+// example: "cw", "wft.id"
+// returns: ["cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.namespace", "cw.modified_at", "cw.is_archived", "wft.id"]
+// @todo update documentation
+func getWorkflowTemplateColumns(alias string, destination string, extraColumns ...string) []string {
+	columns := []string{"id", "created_at", "uid", "name", "namespace", "modified_at", "is_archived"}
+	return formatColumnSelect(columns, alias, destination, extraColumns...)
+}
+
+// @todo documentation
+func formatColumnSelect(columns []string, alias, destination string, extraColumns ...string) []string {
+	results := make([]string, 0)
+
+	for _, str := range columns {
+		result := alias + "." + str
+		if destination != "" {
+			result += fmt.Sprintf(` "%v.%v"`, destination, str)
+		}
+		results = append(results, result)
+	}
+
+	results = append(results, extraColumns...)
+
+	return results
+}
+
+// @todo documentation
+// returns all of the columns for workflowTemplate prefixed by alias. extraColumns are added after.
+// example: "cw", "wft.id"
+// returns: ["cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.namespace", "cw.modified_at", "cw.is_archived", "wft.id"]
+func getWorkflowExecutionColumns(alias string, destination string, extraColumns ...string) []string {
+	columns := []string{"id", "created_at", "uid", "name", "parameters"}
+	return formatColumnSelect(columns, alias, destination, extraColumns...)
 }

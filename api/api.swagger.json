@@ -686,6 +686,35 @@
         "tags": [
           "WorkflowService"
         ]
+      },
+      "post": {
+        "summary": "Clone a Workflow. This is the same as running it again.",
+        "operationId": "CloneWorkflowExecution",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkflowExecution"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
       }
     },
     "/apis/v1beta1/{namespace}/workflow_executions/{name}/artifacts/{key}": {

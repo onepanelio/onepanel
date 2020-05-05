@@ -18,6 +18,13 @@ service WorkflowService {
         };
     }
 
+    // Clone a Workflow. This is the same as running it again.
+    rpc CloneWorkflowExecution (CloneWorkflowExecutionRequest) returns (WorkflowExecution) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/{namespace}/workflow_executions/{name}"
+        };
+    }
+
     rpc GetWorkflowExecution (GetWorkflowExecutionRequest) returns (WorkflowExecution) {
         option (google.api.http) = {
             get: "/apis/v1beta1/{namespace}/workflow_executions/{name}"
@@ -91,6 +98,11 @@ service WorkflowService {
 message CreateWorkflowExecutionRequest {    
     string namespace = 1;
     WorkflowExecution workflowExecution = 2;
+}
+
+message CloneWorkflowExecutionRequest {
+    string namespace = 1;
+    string name = 2;
 }
 
 message GetWorkflowExecutionRequest {
@@ -172,8 +184,6 @@ message WorkflowExecution {
 
     repeated KeyValue labels = 10;
 }
-
-
 
 message ArtifactResponse {
     bytes data = 1;

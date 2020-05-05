@@ -81,6 +81,21 @@ func (s *WorkflowServer) CreateWorkflowExecution(ctx context.Context, req *api.C
 	return apiWorkflowExecution(wf), nil
 }
 
+func (s *WorkflowServer) CloneWorkflowExecution(ctx context.Context, req *api.CloneWorkflowExecutionRequest) (*api.WorkflowExecution, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	wf, err := client.CloneWorkflowExecution(req.Namespace, req.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	return apiWorkflowExecution(wf), nil
+}
+
 func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, req *api.AddWorkflowExecutionStatisticRequest) (*empty.Empty, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
 	phase := v1alpha1.NodeFailed

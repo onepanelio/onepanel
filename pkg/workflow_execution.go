@@ -59,6 +59,10 @@ func typeWorkflow(wf *wfv1.Workflow) (workflow *WorkflowExecution) {
 }
 
 func UnmarshalWorkflows(wfBytes []byte, strict bool) (wfs []wfv1.Workflow, err error) {
+	if len(wfBytes) == 0 {
+		return nil, fmt.Errorf("UnmarshalWorkflows unable to work on empty bytes")
+	}
+
 	var wf wfv1.Workflow
 	var jsonOpts []argojson.JSONOpt
 	if strict {
@@ -141,14 +145,14 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		})
 
 		// Always add output artifacts for metrics but make them optional
-		wf.Spec.Templates[i].Outputs.Artifacts = append(template.Outputs.Artifacts, wfv1.Artifact{
-			Name:     "sys-metrics",
-			Path:     "/tmp/sys-metrics.json",
-			Optional: true,
-			Archive: &wfv1.ArchiveStrategy{
-				None: &wfv1.NoneStrategy{},
-			},
-		})
+		//wf.Spec.Templates[i].Outputs.Artifacts = append(template.Outputs.Artifacts, wfv1.Artifact{
+		//	Name:     "sys-metrics",
+		//	Path:     "/tmp/sys-metrics.json",
+		//	Optional: true,
+		//	Archive: &wfv1.ArchiveStrategy{
+		//		None: &wfv1.NoneStrategy{},
+		//	},
+		//})
 
 		if !addSecretValsToTemplate {
 			continue
@@ -252,7 +256,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateId uint64, wor
 	uid := wf.Labels[label.WorkflowUid]
 	//Create an entry for workflow_executions statistic
 	//CURL code will hit the API endpoint that will update the db row
-	newDbId, err = c.insertPreWorkflowExecutionStatistic(namespace, createdWorkflow.Name, workflowTemplateVersionId, createdWorkflow.CreationTimestamp.UTC(), uid)
+	newDbId, err = c.insertPreWorkflowExecutionStatistic(namespace, createdWorkflow.Name, workflowTemplateVersionId, createdWorkflow.CreationTimestamp.UTC(), uid, opts.Parameters)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -306,24 +310,18 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	}
 
 	// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
-	opts := &WorkflowExecutionOptions{}
+	opts := &WorkflowExecutionOptions{
+		Labels:     &map[string]string{},
+		Parameters: workflow.Parameters,
+	}
 	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
 	opts.GenerateName = strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`)) + "-"
-	for _, param := range workflow.Parameters {
-		opts.Parameters = append(opts.Parameters, Parameter{
-			Name:  param.Name,
-			Value: param.Value,
-		})
-	}
 
 	workflowUid, err := uuid.GenerateUUID()
 	if err != nil {
 		return nil, err
 	}
 
-	if opts.Labels == nil {
-		opts.Labels = &map[string]string{}
-	}
 	(*opts.Labels)[workflowTemplateUIDLabelKey] = workflowTemplate.UID
 	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
 	(*opts.Labels)[label.WorkflowUid] = workflowUid
@@ -393,12 +391,26 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	return workflow, nil
 }
 
-func (c *Client) insertPreWorkflowExecutionStatistic(namespace, name string, workflowTemplateVersionId uint64, createdAt time.Time, uid string) (newId uint64, err error) {
+func (c *Client) CloneWorkflowExecution(namespace, name string) (*WorkflowExecution, error) {
+	workflowExecution, err := c.getWorkflowExecutionAndTemplate(namespace, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.CreateWorkflowExecution(namespace, workflowExecution)
+}
+
+func (c *Client) insertPreWorkflowExecutionStatistic(namespace, name string, workflowTemplateVersionId uint64, createdAt time.Time, uid string, parameters []Parameter) (newId uint64, err error) {
 	tx, err := c.DB.Begin()
 	if err != nil {
 		return 0, err
 	}
 	defer tx.Rollback()
+
+	parametersJson, err := json.Marshal(parameters)
+	if err != nil {
+		return 0, err
+	}
 
 	insertMap := sq.Eq{
 		"uid":                          uid,
@@ -407,6 +419,7 @@ func (c *Client) insertPreWorkflowExecutionStatistic(namespace, name string, wor
 		"namespace":                    namespace,
 		"created_at":                   createdAt.UTC(),
 		"phase":                        wfv1.NodePending,
+		"parameters":                   string(parametersJson),
 	}
 
 	err = sb.Insert("workflow_executions").
@@ -1394,4 +1407,33 @@ func workflowExecutionsSelectBuilder(namespace, workflowTemplateUID, workflowTem
 	sb = sb.Columns("we.id", "we.created_at", "we.uid", "we.name", "we.phase", "we.started_at", "we.finished_at", `wtv.version "workflow_template.version"`)
 
 	return sb
+}
+
+func (c *Client) getWorkflowExecutionAndTemplate(namespace string, name string) (workflow *WorkflowExecution, err error) {
+	query, args, err := sb.Select(getWorkflowExecutionColumns("we", "")...).
+		Columns(getWorkflowTemplateColumns("wt", "workflow_template")...).
+		Columns(`wtv.manifest "workflow_template.manifest"`, `wtv.version "workflow_template.version"`).
+		From("workflow_executions we").
+		Join("workflow_template_versions wtv ON we.workflow_template_version_id = wtv.id").
+		Join("workflow_templates wt ON wtv.workflow_template_id = wt.id").
+		Where(sq.Eq{
+			"wt.namespace": namespace,
+			"we.name":      name,
+		}).
+		ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	workflow = &WorkflowExecution{}
+	if err = c.DB.Get(workflow, query, args...); err != nil {
+		return nil, err
+	}
+
+	workflow.Parameters = make([]Parameter, 0)
+	if err := json.Unmarshal(workflow.ParametersBytes, &workflow.Parameters); err != nil {
+		return nil, err
+	}
+
+	return
 }
