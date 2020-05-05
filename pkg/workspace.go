@@ -103,11 +103,11 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 	return workspace, nil
 }
 
+// UpdateWorkspaceStatus updates workspace status and times based on phase
 func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceStatus) (err error) {
 	fieldMap := sq.Eq{
 		"phase": status.Phase,
 	}
-
 	switch status.Phase {
 	case WorkspaceStarted:
 		fieldMap["paused_at"] = pq.NullTime{}
@@ -123,7 +123,6 @@ func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceS
 		fieldMap["terminated_at"] = time.Now().UTC()
 		break
 	}
-
 	_, err = sb.Update("workspaces").
 		SetMap(fieldMap).
 		Where(sq.Eq{
