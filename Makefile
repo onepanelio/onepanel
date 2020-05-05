@@ -14,7 +14,7 @@ protoc:
  		api/*.proto \
  		--go_out=plugins=grpc:api \
  		--grpc-gateway_out=logtostderr=true,allow_delete_body=true:api \
- 		--swagger_out=allow_merge=true,fqn_for_swagger_name=true,allow_delete_body=true,logtostderr=true:api
+ 		--swagger_out=allow_merge=true,fqn_for_swagger_name=true,allow_delete_body=true,logtostderr=true,simple_operation_ids=true:api
 
 api: protoc jq
 
