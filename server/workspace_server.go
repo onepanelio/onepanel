@@ -67,14 +67,8 @@ func (s *WorkspaceServer) UpdateWorkspaceStatus(ctx context.Context, req *api.Up
 		return &empty.Empty{}, err
 	}
 
-	started, _ := time.Parse(TimeLayout, req.Status.StartedAt)
-	pausedAt, _ := time.Parse(TimeLayout, req.Status.PausedAt)
-	terminatedAt, _ := time.Parse(TimeLayout, req.Status.TerminatingAt)
 	status := &v1.WorkspaceStatus{
-		Phase:        v1.WorkspacePhase(req.Status.Phase),
-		StartedAt:    &started,
-		PausedAt:     &pausedAt,
-		TerminatedAt: &terminatedAt,
+		Phase: v1.WorkspacePhase(req.Status.Phase),
 	}
 	err = client.UpdateWorkspaceStatus(req.Namespace, req.Uid, status)
 

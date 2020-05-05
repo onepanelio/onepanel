@@ -5,6 +5,7 @@ import (
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/asaskevich/govalidator"
+	"github.com/lib/pq"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"google.golang.org/grpc/codes"
@@ -103,13 +104,28 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 }
 
 func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceStatus) (err error) {
+	fieldMap := sq.Eq{
+		"phase": status.Phase,
+	}
+
+	switch status.Phase {
+	case WorkspaceStarted:
+		fieldMap["paused_at"] = pq.NullTime{}
+		fieldMap["started_at"] = time.Now().UTC()
+		break
+	case WorkspacePausing:
+		fieldMap["started_at"] = pq.NullTime{}
+		fieldMap["paused_at"] = time.Now().UTC()
+		break
+	case WorkspaceTerminating:
+		fieldMap["started_at"] = pq.NullTime{}
+		fieldMap["paused_at"] = pq.NullTime{}
+		fieldMap["terminated_at"] = time.Now().UTC()
+		break
+	}
+
 	_, err = sb.Update("workspaces").
-		SetMap(sq.Eq{
-			"phase":         status.Phase,
-			"started_at":    status.StartedAt,
-			"paused_at":     status.PausedAt,
-			"terminated_at": status.TerminatedAt,
-		}).
+		SetMap(fieldMap).
 		Where(sq.Eq{
 			"namespace": namespace,
 			"uid":       uid,
