@@ -55,13 +55,13 @@ func generateArguments(spec *WorkspaceSpec, config map[string]string) (err error
 	// Workspace action
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
 		Name:  "sys-workspace-action",
-		Value: ptr.String(config["ONEPANEL_DOMAIN"]),
+		Value: ptr.String("create"),
 		Type:  "input.hidden",
 	})
 	// Host
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
 		Name:  "sys-host",
-		Value: ptr.String("create"),
+		Value: ptr.String(config["ONEPANEL_DOMAIN"]),
 		Type:  "input.hidden",
 	})
 
