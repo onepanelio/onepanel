@@ -103,6 +103,20 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		}
 	}
 
+	uid := wf.Labels[label.WorkflowUid]
+	if uid == "" {
+		uid = "00000000-0000-0000-0000-000000000000"
+	}
+	if &wf.Spec.Arguments == nil {
+		wf.Spec.Arguments = wfv1.Arguments{
+			Parameters: []wfv1.Parameter{},
+		}
+	}
+	wf.Spec.Arguments.Parameters = append(wf.Spec.Arguments.Parameters, wfv1.Parameter{
+		Name:  "sys-uid",
+		Value: ptr.String(uid),
+	})
+
 	addSecretValsToTemplate := true
 	secret, err := c.GetSecret(namespace, "onepanel-default-env")
 	if err != nil {
@@ -384,7 +398,7 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	workflow.ID = id
 	workflow.Name = createdWorkflow.Name
 	workflow.CreatedAt = createdWorkflow.CreationTimestamp.UTC()
-	workflow.UID = string(createdWorkflow.ObjectMeta.UID)
+	workflow.UID = workflowUid
 	workflow.WorkflowTemplate = workflowTemplate
 	// Manifests could get big, don't return them in this case.
 	workflow.WorkflowTemplate.Manifest = ""
