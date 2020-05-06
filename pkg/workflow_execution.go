@@ -14,6 +14,7 @@ import (
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -508,6 +509,7 @@ func (c *Client) CronStartWorkflowExecutionStatisticInsert(namespace, name strin
 		"namespace":                    namespace,
 		"phase":                        wfv1.NodePending,
 		"cron_workflow_id":             cronWorkflow.ID,
+		"parameters":                   "[]",
 	}
 
 	_, err = sb.Insert("workflow_executions").
@@ -1277,7 +1279,7 @@ func (c *Client) GetWorkflowExecutionStatisticsForTemplates(workflowTemplates ..
 Will build a template that makes a CURL request to the onepanel-core API,
 with statistics about the workflow that was just executed.
 */
-func getCURLNodeTemplate(name, curlPath, curlBody string) (template *wfv1.Template, err error) {
+func getCURLNodeTemplate(name, curlMethod, curlPath, curlBody string) (template *wfv1.Template, err error) {
 	host := env.GetEnv("ONEPANEL_CORE_SERVICE_HOST", "onepanel-core.onepanel.svc.cluster.local")
 	if host == "" {
 		err = errors.New("ONEPANEL_CORE_SERVICE_HOST is empty.")
@@ -1296,7 +1298,8 @@ func getCURLNodeTemplate(name, curlPath, curlBody string) (template *wfv1.Templa
 			Image:   "curlimages/curl",
 			Command: []string{"sh", "-c"},
 			Args: []string{
-				"SERVICE_ACCOUNT_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) && curl -s -o /dev/null -w '%{http_code}' '" + endpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
+				"SERVICE_ACCOUNT_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) " +
+					"&& curl -X " + curlMethod + " -s -o /dev/null -w '%{http_code}' '" + endpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
 					"-H 'Authorization: Bearer '\"$SERVICE_ACCOUNT_TOKEN\"'' " +
 					"--data '" + curlBody + "' --compressed",
 			},
@@ -1315,7 +1318,7 @@ func injectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace st
 	if err != nil {
 		return err
 	}
-	statsTemplate, err := getCURLNodeTemplate("sys-send-exit-stats", curlPath, string(statisticsBytes))
+	statsTemplate, err := getCURLNodeTemplate("sys-send-exit-stats", http.MethodPost, curlPath, string(statisticsBytes))
 	if err != nil {
 		return err
 	}
@@ -1361,7 +1364,7 @@ func injectInitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace st
 	if err != nil {
 		return err
 	}
-	containerTemplate, err := getCURLNodeTemplate("sys-send-init-stats", curlPath, string(statisticsBytes))
+	containerTemplate, err := getCURLNodeTemplate("sys-send-init-stats", http.MethodPost, curlPath, string(statisticsBytes))
 	if err != nil {
 		return err
 	}
