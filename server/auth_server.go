@@ -39,12 +39,9 @@ func (a *AuthServer) IsWorkspaceAuthenticated(ctx context.Context, request *api.
 	}
 	workspaceAndNamespace := xOriginalAuth[0:pos]
 	pieces := strings.Split(workspaceAndNamespace, "--")
-	allowed, err := auth.IsAuthorized(client, pieces[1], "create", "apps/v1", "statefulsets", pieces[0])
+	_, err := auth.IsAuthorized(client, pieces[1], "create", "apps", "statefulsets", pieces[0])
 	if err != nil {
 		return &empty.Empty{}, err
-	}
-	if !allowed {
-		return &empty.Empty{}, status.Error(codes.PermissionDenied, "Permission denied.")
 	}
 	return &empty.Empty{}, nil
 }
