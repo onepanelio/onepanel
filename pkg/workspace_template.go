@@ -297,6 +297,34 @@ metadata:
 						When: "{{workflow.parameters.sys-workspace-action}} == create",
 					},
 					{
+						Name:         "sys-set-phase-pausing",
+						Template:     "sys-update-status",
+						Dependencies: []string{"delete-stateful-set"},
+						Arguments: wfv1.Arguments{
+							Parameters: []wfv1.Parameter{
+								{
+									Name:  "sys-workspace-phase",
+									Value: ptr.String(string(WorkspacePausing)),
+								},
+							},
+						},
+						When: "{{workflow.parameters.sys-workspace-action}} == pause",
+					},
+					{
+						Name:         "sys-set-phase-terminating",
+						Template:     "sys-update-status",
+						Dependencies: []string{"delete-pvc"},
+						Arguments: wfv1.Arguments{
+							Parameters: []wfv1.Parameter{
+								{
+									Name:  "sys-workspace-phase",
+									Value: ptr.String(string(WorkspaceTerminating)),
+								},
+							},
+						},
+						When: "{{workflow.parameters.sys-workspace-action}} == delete",
+					},
+					{
 						Name:         spec.PostExecutionWorkflow.Entrypoint,
 						Template:     spec.PostExecutionWorkflow.Entrypoint,
 						Dependencies: []string{"stateful-set", "delete-stateful-set"},

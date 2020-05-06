@@ -87,6 +87,45 @@ func UnmarshalWorkflows(wfBytes []byte, strict bool) (wfs []wfv1.Workflow, err e
 	return
 }
 
+func addSystemUIDParameter(wf *wfv1.Workflow) {
+	for _, p := range wf.Spec.Arguments.Parameters {
+		if p.Name == "sys-uid" {
+			return
+		}
+	}
+
+	uid := wf.Labels[label.WorkflowUid]
+	if uid == "" {
+		uid = "00000000-0000-0000-0000-000000000000"
+	}
+	if wf.Spec.Arguments.Parameters == nil {
+		wf.Spec.Arguments.Parameters = make([]wfv1.Parameter, 0)
+	}
+	wf.Spec.Arguments.Parameters = append(wf.Spec.Arguments.Parameters, wfv1.Parameter{
+		Name:  "sys-uid",
+		Value: ptr.String(uid),
+	})
+
+	return
+}
+
+func addEnvToTemplate(template *wfv1.Template, key string, value string) {
+	//Flag to prevent over-writing user's envs
+	overwriteUserEnv := true
+	for _, templateEnv := range template.Container.Env {
+		if templateEnv.Name == key {
+			overwriteUserEnv = false
+			break
+		}
+	}
+	if overwriteUserEnv {
+		template.Container.Env = append(template.Container.Env, corev1.EnvVar{
+			Name:  key,
+			Value: value,
+		})
+	}
+}
+
 func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (err error) {
 	if opts.PodGCStrategy == nil {
 		if wf.Spec.PodGC == nil {
@@ -103,19 +142,7 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		}
 	}
 
-	uid := wf.Labels[label.WorkflowUid]
-	if uid == "" {
-		uid = "00000000-0000-0000-0000-000000000000"
-	}
-	if &wf.Spec.Arguments == nil {
-		wf.Spec.Arguments = wfv1.Arguments{
-			Parameters: []wfv1.Parameter{},
-		}
-	}
-	wf.Spec.Arguments.Parameters = append(wf.Spec.Arguments.Parameters, wfv1.Parameter{
-		Name:  "sys-uid",
-		Value: ptr.String(uid),
-	})
+	addSystemUIDParameter(wf)
 
 	addSecretValsToTemplate := true
 	secret, err := c.GetSecret(namespace, "onepanel-default-env")
@@ -194,23 +221,6 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 	}
 
 	return
-}
-
-func addEnvToTemplate(template *wfv1.Template, key string, value string) {
-	//Flag to prevent over-writing user's envs
-	overwriteUserEnv := true
-	for _, templateEnv := range template.Container.Env {
-		if templateEnv.Name == key {
-			overwriteUserEnv = false
-			break
-		}
-	}
-	if overwriteUserEnv {
-		template.Container.Env = append(template.Container.Env, corev1.EnvVar{
-			Name:  key,
-			Value: value,
-		})
-	}
 }
 
 func (c *Client) createWorkflow(namespace string, workflowTemplateId uint64, workflowTemplateVersionId uint64, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (newDbId uint64, createdWorkflow *wfv1.Workflow, err error) {
