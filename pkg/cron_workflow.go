@@ -387,6 +387,76 @@ func (c *Client) CountCronWorkflows(namespace, workflowTemplateUID string) (coun
 	return
 }
 
+func (c *Client) buildCronWorkflowDefinition(namespace string, workflowTemplateId *uint64, wf *wfv1.Workflow, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (cronWorkflow *wfv1.CronWorkflow, err error) {
+	if opts == nil {
+		opts = &WorkflowExecutionOptions{}
+	}
+
+	if opts.Name != "" {
+		cwf.ObjectMeta.Name = opts.Name
+	}
+	if opts.GenerateName != "" {
+		cwf.ObjectMeta.GenerateName = opts.GenerateName
+	}
+	if opts.Entrypoint != "" {
+		cwf.Spec.WorkflowSpec.Entrypoint = opts.Entrypoint
+	}
+	if opts.ServiceAccount != "" {
+		cwf.Spec.WorkflowSpec.ServiceAccountName = opts.ServiceAccount
+	}
+	if len(opts.Parameters) > 0 {
+		newParams := make([]wfv1.Parameter, 0)
+		passedParams := make(map[string]bool)
+		for _, param := range opts.Parameters {
+			newParams = append(newParams, wfv1.Parameter{
+				Name:  param.Name,
+				Value: param.Value,
+			})
+			passedParams[param.Name] = true
+		}
+
+		for _, param := range cwf.Spec.WorkflowSpec.Arguments.Parameters {
+			if _, ok := passedParams[param.Name]; ok {
+				// this parameter was overridden via command line
+				continue
+			}
+			newParams = append(newParams, param)
+		}
+		cwf.Spec.WorkflowSpec.Arguments.Parameters = newParams
+		wf.Spec.Arguments.Parameters = newParams
+	}
+	if opts.Labels != nil {
+		cwf.ObjectMeta.Labels = *opts.Labels
+	}
+
+	err = injectExitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
+	if err != nil {
+		return nil, err
+	}
+	err = injectInitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
+	if err != nil {
+		return nil, err
+	}
+	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
+		return nil, err
+	}
+
+	cwf.Spec.WorkflowSpec = wf.Spec
+	cwf.Spec.WorkflowMetadata = &wf.ObjectMeta
+
+	//merge the labels
+	mergedLabels := wf.ObjectMeta.Labels
+	if mergedLabels == nil {
+		mergedLabels = make(map[string]string)
+	}
+	for k, v := range *opts.Labels {
+		mergedLabels[k] = v
+	}
+	cwf.Spec.WorkflowMetadata.Labels = mergedLabels
+
+	return cwf, nil
+}
+
 func (c *Client) updateCronWorkflow(namespace string, name string, workflowTemplateId *uint64, wf *wfv1.Workflow, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (updatedCronWorkflow *wfv1.CronWorkflow, err error) {
 	//Make sure the CronWorkflow exists before we edit it
 	toUpdateCWF, err := c.ArgoprojV1alpha1().CronWorkflows(namespace).Get(name, metav1.GetOptions{})
@@ -399,71 +469,10 @@ func (c *Client) updateCronWorkflow(namespace string, name string, workflowTempl
 		return nil, util.NewUserError(codes.NotFound, "CronWorkflow not found.")
 	}
 
-	if opts == nil {
-		opts = &WorkflowExecutionOptions{}
-	}
-
-	if opts.Name != "" {
-		cwf.ObjectMeta.Name = opts.Name
-	}
-	if opts.GenerateName != "" {
-		cwf.ObjectMeta.GenerateName = opts.GenerateName
-	}
-	if opts.Entrypoint != "" {
-		cwf.Spec.WorkflowSpec.Entrypoint = opts.Entrypoint
-	}
-	if opts.ServiceAccount != "" {
-		cwf.Spec.WorkflowSpec.ServiceAccountName = opts.ServiceAccount
-	}
-	if len(opts.Parameters) > 0 {
-		newParams := make([]wfv1.Parameter, 0)
-		passedParams := make(map[string]bool)
-		for _, param := range opts.Parameters {
-			newParams = append(newParams, wfv1.Parameter{
-				Name:  param.Name,
-				Value: param.Value,
-			})
-			passedParams[param.Name] = true
-		}
-
-		for _, param := range cwf.Spec.WorkflowSpec.Arguments.Parameters {
-			if _, ok := passedParams[param.Name]; ok {
-				// this parameter was overridden via command line
-				continue
-			}
-			newParams = append(newParams, param)
-		}
-		cwf.Spec.WorkflowSpec.Arguments.Parameters = newParams
-		wf.Spec.Arguments.Parameters = newParams
-	}
-	if opts.Labels != nil {
-		cwf.ObjectMeta.Labels = *opts.Labels
-	}
-
-	err = injectExitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
+	cwf, err = c.buildCronWorkflowDefinition(namespace, workflowTemplateId, wf, cwf, opts)
 	if err != nil {
-		return nil, err
+		return
 	}
-	err = injectInitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
-	if err != nil {
-		return nil, err
-	}
-	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
-		return nil, err
-	}
-
-	cwf.Spec.WorkflowSpec = wf.Spec
-	cwf.Spec.WorkflowMetadata = &wf.ObjectMeta
-
-	//merge the labels
-	mergedLabels := wf.ObjectMeta.Labels
-	if mergedLabels == nil {
-		mergedLabels = make(map[string]string)
-	}
-	for k, v := range *opts.Labels {
-		mergedLabels[k] = v
-	}
-	cwf.Spec.WorkflowMetadata.Labels = mergedLabels
 
 	cwf.Name = name
 	cwf.ResourceVersion = toUpdateCWF.ResourceVersion
@@ -476,70 +485,11 @@ func (c *Client) updateCronWorkflow(namespace string, name string, workflowTempl
 }
 
 func (c *Client) createCronWorkflow(namespace string, workflowTemplateId *uint64, wf *wfv1.Workflow, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (createdCronWorkflow *wfv1.CronWorkflow, err error) {
-	if opts == nil {
-		opts = &WorkflowExecutionOptions{}
-	}
-
-	if opts.Name != "" {
-		cwf.ObjectMeta.Name = opts.Name
-	}
-	if opts.GenerateName != "" {
-		cwf.ObjectMeta.GenerateName = opts.GenerateName
-	}
-	if opts.Entrypoint != "" {
-		cwf.Spec.WorkflowSpec.Entrypoint = opts.Entrypoint
-	}
-	if opts.ServiceAccount != "" {
-		cwf.Spec.WorkflowSpec.ServiceAccountName = opts.ServiceAccount
-	}
-	if len(opts.Parameters) > 0 {
-		newParams := make([]wfv1.Parameter, 0)
-		passedParams := make(map[string]bool)
-		for _, param := range opts.Parameters {
-			newParams = append(newParams, wfv1.Parameter{
-				Name:  param.Name,
-				Value: param.Value,
-			})
-			passedParams[param.Name] = true
-		}
-
-		for _, param := range cwf.Spec.WorkflowSpec.Arguments.Parameters {
-			if _, ok := passedParams[param.Name]; ok {
-				// this parameter was overridden via command line
-				continue
-			}
-			newParams = append(newParams, param)
-		}
-		cwf.Spec.WorkflowSpec.Arguments.Parameters = newParams
-		wf.Spec.Arguments.Parameters = newParams
-	}
-	if opts.Labels != nil {
-		cwf.ObjectMeta.Labels = *opts.Labels
-	}
-	err = injectExitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
+	cwf, err = c.buildCronWorkflowDefinition(namespace, workflowTemplateId, wf, cwf, opts)
 	if err != nil {
-		return nil, err
-	}
-	err = injectInitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
-	if err != nil {
-		return nil, err
-	}
-	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
-		return nil, err
+		return
 	}
 
-	cwf.Spec.WorkflowSpec = wf.Spec
-	cwf.Spec.WorkflowMetadata = &wf.ObjectMeta
-
-	//merge the labels
-	mergedLabels := wf.ObjectMeta.Labels
-	if mergedLabels == nil {
-		mergedLabels = make(map[string]string)
-	}
-	for k, v := range *opts.Labels {
-		mergedLabels[k] = v
-	}
-	cwf.Spec.WorkflowMetadata.Labels = mergedLabels
 	createdCronWorkflow, err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Create(cwf)
 	if err != nil {
 		return nil, err
