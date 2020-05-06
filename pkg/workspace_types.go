@@ -27,15 +27,23 @@ type WorkspaceStatus struct {
 }
 
 type Workspace struct {
-	ID                uint64
-	UID               string
-	Name              string `valid:"stringlength(3|63)~Name should be between 3 to 63 characters,dns,required"`
-	Labels            map[string]string
-	Parameters        []Parameter
-	Status            WorkspaceStatus
-	CreatedAt         time.Time          `db:"created_at"`
-	ModifiedAt        time.Time          `db:"modified_at"`
-	WorkspaceTemplate *WorkspaceTemplate `valid:"-"`
+	ID                       uint64
+	Namespace                string
+	UID                      string
+	Name                     string `valid:"stringlength(3|63)~Name should be between 3 to 63 characters,dns,required"`
+	Labels                   map[string]string
+	Phase                    string
+	Parameters               []Parameter
+	ParametersBytes          []byte `db:"parameters"` // to load from database
+	Status                   WorkspaceStatus
+	CreatedAt                time.Time          `db:"created_at"`
+	ModifiedAt               *time.Time         `db:"modified_at"`
+	StartedAt                *time.Time         `db:"started_at"`
+	PausedAt                 *time.Time         `db:"paused_at"`
+	TerminatedAt             *time.Time         `db:"terminated_at"`
+	WorkspaceTemplate        *WorkspaceTemplate `valid:"-"`
+	WorkspaceTemplateID      uint64             `db:"workspace_template_id"`
+	WorkspaceTemplateVersion uint64             `db:"workspace_template_version"`
 }
 
 type WorkspaceSpec struct {

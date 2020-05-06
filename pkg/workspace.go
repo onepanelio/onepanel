@@ -7,6 +7,7 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/lib/pq"
 	"github.com/onepanelio/core/pkg/util"
+	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"google.golang.org/grpc/codes"
 	"time"
@@ -132,6 +133,27 @@ func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceS
 		RunWith(c.DB).Exec()
 	if err != nil {
 		return util.NewUserError(codes.NotFound, "Workspace not found.")
+	}
+
+	return
+}
+
+func (c *Client) ListWorkspaces(namespace string, paginator *pagination.PaginationRequest) (workspaces []*Workspace, err error) {
+	sb := sb.Select(getWorkspaceColumns("w", "")...).
+		From("workspaces w").
+		OrderBy("w.created_at DESC").
+		Where(sq.Eq{
+			"w.namespace": namespace,
+		})
+	paginator.ApplyToSelect(&sb)
+
+	query, args, err := sb.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := c.DB.Select(&workspaces, query, args...); err != nil {
+		return nil, err
 	}
 
 	return
