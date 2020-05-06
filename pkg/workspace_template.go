@@ -14,6 +14,7 @@ import (
 	networking "istio.io/api/networking/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"net/http"
 	"sigs.k8s.io/yaml"
 )
 
@@ -41,12 +42,6 @@ func generateArguments(spec *WorkspaceSpec, config map[string]string) (err error
 	})
 
 	// TODO: These can be removed when lint validation of workflows work
-	// Workspace UID
-	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
-		Name:  "sys-uid",
-		Value: ptr.String("00000000-0000-0000-0000-000000000000"),
-		Type:  "input.hidden",
-	})
 	// Resource action parameter
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
 		Name:  "sys-resource-action",
@@ -288,6 +283,48 @@ metadata:
 						WithItems: volumeClaimItems,
 					},
 					{
+						Name:         "sys-set-phase-running",
+						Template:     "sys-update-status",
+						Dependencies: []string{"stateful-set"},
+						Arguments: wfv1.Arguments{
+							Parameters: []wfv1.Parameter{
+								{
+									Name:  "sys-workspace-phase",
+									Value: ptr.String(string(WorkspaceRunning)),
+								},
+							},
+						},
+						When: "{{workflow.parameters.sys-workspace-action}} == create",
+					},
+					{
+						Name:         "sys-set-phase-pausing",
+						Template:     "sys-update-status",
+						Dependencies: []string{"delete-stateful-set"},
+						Arguments: wfv1.Arguments{
+							Parameters: []wfv1.Parameter{
+								{
+									Name:  "sys-workspace-phase",
+									Value: ptr.String(string(WorkspacePausing)),
+								},
+							},
+						},
+						When: "{{workflow.parameters.sys-workspace-action}} == pause",
+					},
+					{
+						Name:         "sys-set-phase-terminating",
+						Template:     "sys-update-status",
+						Dependencies: []string{"delete-pvc"},
+						Arguments: wfv1.Arguments{
+							Parameters: []wfv1.Parameter{
+								{
+									Name:  "sys-workspace-phase",
+									Value: ptr.String(string(WorkspaceTerminating)),
+								},
+							},
+						},
+						When: "{{workflow.parameters.sys-workspace-action}} == delete",
+					},
+					{
 						Name:         spec.PostExecutionWorkflow.Entrypoint,
 						Template:     spec.PostExecutionWorkflow.Entrypoint,
 						Dependencies: []string{"stateful-set", "delete-stateful-set"},
@@ -335,24 +372,30 @@ metadata:
 			},
 		},
 	}
+	// Add curl template
 	curlPath := fmt.Sprintf("/apis/v1beta1/{{workflow.namespace}}/workspaces/{{workflow.parameters.sys-uid}}/status")
 	status := map[string]interface{}{
-		"phase": "{{input.parameters.phase}}",
+		"phase": "{{inputs.parameters.sys-workspace-phase}}",
 	}
 	statusBytes, err := json.Marshal(status)
 	if err != nil {
 		return
 	}
-	curlNodeTemplate, err := getCURLNodeTemplate("update-workspace-status", curlPath, string(statusBytes))
+	inputs := wfv1.Inputs{
+		Parameters: []wfv1.Parameter{
+			{Name: "sys-workspace-phase"},
+		},
+	}
+	curlNodeTemplate, err := getCURLNodeTemplate("sys-update-status", http.MethodPut, curlPath, string(statusBytes), inputs)
 	if err != nil {
 		return
 	}
 	templates = append(templates, *curlNodeTemplate)
+	// Add postExecutionWorkflow if it exists
 	if spec.PostExecutionWorkflow != nil {
 		templates = append(templates, spec.PostExecutionWorkflow.Templates...)
 	}
 
-	// TODO: Consider storing this as a Go template in a "settings" database table
 	workflowTemplateSpec := map[string]interface{}{
 		"arguments":  spec.Arguments,
 		"entrypoint": "workspace",

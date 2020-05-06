@@ -33,7 +33,7 @@ func NewWorkspaceServer() *WorkspaceServer {
 
 func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWorkspaceRequest) (*api.Workspace, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "apps/v1", "statefulsets", "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "apps", "statefulsets", "")
 	if err != nil || !allowed {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 
 func (s *WorkspaceServer) UpdateWorkspaceStatus(ctx context.Context, req *api.UpdateWorkspaceStatusRequest) (*empty.Empty, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "apps/v1", "statefulsets", "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "apps", "statefulsets", "")
 	if err != nil || !allowed {
 		return &empty.Empty{}, err
 	}

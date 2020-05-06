@@ -14,6 +14,7 @@ import (
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -86,6 +87,45 @@ func UnmarshalWorkflows(wfBytes []byte, strict bool) (wfs []wfv1.Workflow, err e
 	return
 }
 
+func addSystemUIDParameter(wf *wfv1.Workflow) {
+	for _, p := range wf.Spec.Arguments.Parameters {
+		if p.Name == "sys-uid" {
+			return
+		}
+	}
+
+	uid := wf.Labels[label.WorkflowUid]
+	if uid == "" {
+		uid = "00000000-0000-0000-0000-000000000000"
+	}
+	if wf.Spec.Arguments.Parameters == nil {
+		wf.Spec.Arguments.Parameters = make([]wfv1.Parameter, 0)
+	}
+	wf.Spec.Arguments.Parameters = append(wf.Spec.Arguments.Parameters, wfv1.Parameter{
+		Name:  "sys-uid",
+		Value: ptr.String(uid),
+	})
+
+	return
+}
+
+func addEnvToTemplate(template *wfv1.Template, key string, value string) {
+	//Flag to prevent over-writing user's envs
+	overwriteUserEnv := true
+	for _, templateEnv := range template.Container.Env {
+		if templateEnv.Name == key {
+			overwriteUserEnv = false
+			break
+		}
+	}
+	if overwriteUserEnv {
+		template.Container.Env = append(template.Container.Env, corev1.EnvVar{
+			Name:  key,
+			Value: value,
+		})
+	}
+}
+
 func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (err error) {
 	if opts.PodGCStrategy == nil {
 		if wf.Spec.PodGC == nil {
@@ -101,6 +141,8 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 			Strategy: *opts.PodGCStrategy,
 		}
 	}
+
+	addSystemUIDParameter(wf)
 
 	addSecretValsToTemplate := true
 	secret, err := c.GetSecret(namespace, "onepanel-default-env")
@@ -179,23 +221,6 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 	}
 
 	return
-}
-
-func addEnvToTemplate(template *wfv1.Template, key string, value string) {
-	//Flag to prevent over-writing user's envs
-	overwriteUserEnv := true
-	for _, templateEnv := range template.Container.Env {
-		if templateEnv.Name == key {
-			overwriteUserEnv = false
-			break
-		}
-	}
-	if overwriteUserEnv {
-		template.Container.Env = append(template.Container.Env, corev1.EnvVar{
-			Name:  key,
-			Value: value,
-		})
-	}
 }
 
 func (c *Client) createWorkflow(namespace string, workflowTemplateId uint64, workflowTemplateVersionId uint64, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (newDbId uint64, createdWorkflow *wfv1.Workflow, err error) {
@@ -383,7 +408,7 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	workflow.ID = id
 	workflow.Name = createdWorkflow.Name
 	workflow.CreatedAt = createdWorkflow.CreationTimestamp.UTC()
-	workflow.UID = string(createdWorkflow.ObjectMeta.UID)
+	workflow.UID = workflowUid
 	workflow.WorkflowTemplate = workflowTemplate
 	// Manifests could get big, don't return them in this case.
 	workflow.WorkflowTemplate.Manifest = ""
@@ -1283,7 +1308,7 @@ func (c *Client) GetWorkflowExecutionStatisticsForTemplates(workflowTemplates ..
 Will build a template that makes a CURL request to the onepanel-core API,
 with statistics about the workflow that was just executed.
 */
-func getCURLNodeTemplate(name, curlPath, curlBody string) (template *wfv1.Template, err error) {
+func getCURLNodeTemplate(name, curlMethod, curlPath, curlBody string, inputs wfv1.Inputs) (template *wfv1.Template, err error) {
 	host := env.GetEnv("ONEPANEL_CORE_SERVICE_HOST", "onepanel-core.onepanel.svc.cluster.local")
 	if host == "" {
 		err = errors.New("ONEPANEL_CORE_SERVICE_HOST is empty.")
@@ -1296,13 +1321,15 @@ func getCURLNodeTemplate(name, curlPath, curlBody string) (template *wfv1.Templa
 	}
 	endpoint := fmt.Sprintf("http://%s:%s%s", host, port, curlPath)
 	template = &wfv1.Template{
-		Name: name,
+		Name:   name,
+		Inputs: inputs,
 		Container: &corev1.Container{
 			Name:    "curl",
 			Image:   "curlimages/curl",
 			Command: []string{"sh", "-c"},
 			Args: []string{
-				"SERVICE_ACCOUNT_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) && curl -s -o /dev/null -w '%{http_code}' '" + endpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
+				"SERVICE_ACCOUNT_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) " +
+					"&& curl -X " + curlMethod + " -s -o /dev/null -w '%{http_code}' '" + endpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
 					"-H 'Authorization: Bearer '\"$SERVICE_ACCOUNT_TOKEN\"'' " +
 					"--data '" + curlBody + "' --compressed",
 			},
@@ -1321,7 +1348,7 @@ func injectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace st
 	if err != nil {
 		return err
 	}
-	statsTemplate, err := getCURLNodeTemplate("sys-send-exit-stats", curlPath, string(statisticsBytes))
+	statsTemplate, err := getCURLNodeTemplate("sys-send-exit-stats", http.MethodPost, curlPath, string(statisticsBytes), wfv1.Inputs{})
 	if err != nil {
 		return err
 	}
@@ -1367,7 +1394,7 @@ func injectInitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace st
 	if err != nil {
 		return err
 	}
-	containerTemplate, err := getCURLNodeTemplate("sys-send-init-stats", curlPath, string(statisticsBytes))
+	containerTemplate, err := getCURLNodeTemplate("sys-send-init-stats", http.MethodPost, curlPath, string(statisticsBytes), wfv1.Inputs{})
 	if err != nil {
 		return err
 	}

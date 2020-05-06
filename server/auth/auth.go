@@ -78,6 +78,9 @@ func IsAuthorized(c *v1.Client, namespace, verb, group, resource, name string) (
 		return false, status.Error(codes.PermissionDenied, "Permission denied.")
 	}
 	allowed = review.Status.Allowed
+	if !allowed {
+		return false, status.Error(codes.PermissionDenied, "Permission denied.")
+	}
 
 	return
 }
