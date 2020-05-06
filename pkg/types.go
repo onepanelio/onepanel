@@ -452,6 +452,25 @@ type WorkflowExecution struct {
 	Labels           map[string]string
 }
 
+func (we *WorkflowExecution) LoadParametersFromBytes() ([]Parameter, error) {
+	loadedParameters := make([]Parameter, 0)
+
+	err := json.Unmarshal(we.ParametersBytes, &loadedParameters)
+	if err != nil {
+		return we.Parameters, err
+	}
+
+	// It might be nil because the value "null" is stored in db if there are no parameters.
+	// for consistency, we return an empty array.
+	if loadedParameters == nil {
+		loadedParameters = make([]Parameter, 0)
+	}
+
+	we.Parameters = loadedParameters
+
+	return we.Parameters, err
+}
+
 type ListOptions = metav1.ListOptions
 
 type PodGCStrategy = wfv1.PodGCStrategy
@@ -652,4 +671,14 @@ func getWorkflowExecutionColumns(alias string, destination string, extraColumns 
 func getWorkspaceColumns(alias string, destination string, extraColumns ...string) []string {
 	columns := []string{"id", "created_at", "modified_at", "uid", "name", "namespace", "phase", "parameters", "workspace_template_id", "workspace_template_version", "started_at", "paused_at", "terminated_at"}
 	return formatColumnSelect(columns, alias, destination, extraColumns...)
+}
+
+func LabelsToMapping(labels ...*Label) map[string]string {
+	result := make(map[string]string)
+
+	for _, label := range labels {
+		result[label.Key] = label.Value
+	}
+
+	return result
 }

@@ -49,6 +49,15 @@ func apiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecu
 		workflow.WorkflowTemplate = apiWorkflowTemplate(wf.WorkflowTemplate)
 	}
 
+	if wf.ParametersBytes != nil {
+		parameters, err := wf.LoadParametersFromBytes()
+		if err != nil {
+			return nil
+		}
+
+		workflow.Parameters = converter.ParametersToAPI(parameters)
+	}
+
 	return
 }
 

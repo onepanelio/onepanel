@@ -516,6 +516,11 @@ func (c *Client) CronStartWorkflowExecutionStatisticInsert(namespace, name strin
 		return err
 	}
 
+	cronLabels, err := c.GetDbLabels(TypeCronWorkflow, cronWorkflow.ID)
+	if err != nil {
+		return err
+	}
+
 	tx, err := c.DB.Begin()
 	if err != nil {
 		return err
@@ -541,11 +546,27 @@ func (c *Client) CronStartWorkflowExecutionStatisticInsert(namespace, name strin
 		"parameters":                   string(parametersJson),
 	}
 
-	_, err = sb.Insert("workflow_executions").
-		SetMap(insertMap).RunWith(tx).Exec()
+	workflowExecutionId := uint64(0)
+	err = sb.Insert("workflow_executions").
+		SetMap(insertMap).
+		Suffix("RETURNING id").
+		RunWith(tx).
+		QueryRow().
+		Scan(&workflowExecutionId)
 	if err != nil {
 		return err
 	}
+
+	if len(cronLabels) > 0 {
+		labelsMapped := LabelsToMapping(cronLabels...)
+		_, err = c.InsertLabelsBuilder(TypeWorkflowExecution, workflowExecutionId, labelsMapped).
+			RunWith(tx).
+			Exec()
+		if err != nil {
+			return err
+		}
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return err
@@ -556,7 +577,7 @@ func (c *Client) CronStartWorkflowExecutionStatisticInsert(namespace, name strin
 func (c *Client) GetWorkflowExecution(namespace, name string) (workflow *WorkflowExecution, err error) {
 	workflow = &WorkflowExecution{}
 
-	query, args, err := sb.Select("we.uid", "we.name", "we.phase", "we.started_at", "we.finished_at").
+	query, args, err := sb.Select(getWorkflowExecutionColumns("we", "")...).
 		From("workflow_executions we").
 		Join("workflow_template_versions wtv ON wtv.id = we.workflow_template_version_id").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
