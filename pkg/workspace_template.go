@@ -347,7 +347,7 @@ metadata:
 	// Add curl template
 	curlPath := fmt.Sprintf("/apis/v1beta1/{{workflow.namespace}}/workspaces/{{workflow.parameters.sys-uid}}/status")
 	status := map[string]interface{}{
-		"phase": "{{input.parameters.sys-workspace-phase}}",
+		"phase": "{{inputs.parameters.sys-workspace-phase}}",
 	}
 	statusBytes, err := json.Marshal(status)
 	if err != nil {
