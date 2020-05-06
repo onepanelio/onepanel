@@ -1293,7 +1293,7 @@ func (c *Client) GetWorkflowExecutionStatisticsForTemplates(workflowTemplates ..
 Will build a template that makes a CURL request to the onepanel-core API,
 with statistics about the workflow that was just executed.
 */
-func getCURLNodeTemplate(name, curlMethod, curlPath, curlBody string) (template *wfv1.Template, err error) {
+func getCURLNodeTemplate(name, curlMethod, curlPath, curlBody string, inputs wfv1.Inputs) (template *wfv1.Template, err error) {
 	host := env.GetEnv("ONEPANEL_CORE_SERVICE_HOST", "onepanel-core.onepanel.svc.cluster.local")
 	if host == "" {
 		err = errors.New("ONEPANEL_CORE_SERVICE_HOST is empty.")
@@ -1306,7 +1306,8 @@ func getCURLNodeTemplate(name, curlMethod, curlPath, curlBody string) (template 
 	}
 	endpoint := fmt.Sprintf("http://%s:%s%s", host, port, curlPath)
 	template = &wfv1.Template{
-		Name: name,
+		Name:   name,
+		Inputs: inputs,
 		Container: &corev1.Container{
 			Name:    "curl",
 			Image:   "curlimages/curl",
@@ -1332,7 +1333,7 @@ func injectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace st
 	if err != nil {
 		return err
 	}
-	statsTemplate, err := getCURLNodeTemplate("sys-send-exit-stats", http.MethodPost, curlPath, string(statisticsBytes))
+	statsTemplate, err := getCURLNodeTemplate("sys-send-exit-stats", http.MethodPost, curlPath, string(statisticsBytes), wfv1.Inputs{})
 	if err != nil {
 		return err
 	}
@@ -1378,7 +1379,7 @@ func injectInitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace st
 	if err != nil {
 		return err
 	}
-	containerTemplate, err := getCURLNodeTemplate("sys-send-init-stats", http.MethodPost, curlPath, string(statisticsBytes))
+	containerTemplate, err := getCURLNodeTemplate("sys-send-init-stats", http.MethodPost, curlPath, string(statisticsBytes), wfv1.Inputs{})
 	if err != nil {
 		return err
 	}

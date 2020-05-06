@@ -353,7 +353,12 @@ metadata:
 	if err != nil {
 		return
 	}
-	curlNodeTemplate, err := getCURLNodeTemplate("sys-update-status", http.MethodPut, curlPath, string(statusBytes))
+	inputs := wfv1.Inputs{
+		Parameters: []wfv1.Parameter{
+			{Name: "sys-workspace-phase"},
+		},
+	}
+	curlNodeTemplate, err := getCURLNodeTemplate("sys-update-status", http.MethodPut, curlPath, string(statusBytes), inputs)
 	if err != nil {
 		return
 	}
