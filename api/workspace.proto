@@ -6,6 +6,7 @@ import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "workspace_template.proto";
 import "common.proto";
+import "label.proto";
 
 service WorkspaceService {
 	rpc CreateWorkspace (CreateWorkspaceRequest) returns (Workspace) {
@@ -37,6 +38,7 @@ message Workspace {
 	repeated Parameter parameters = 5;
 	WorkspaceTemplate workspaceTemplate = 6;
 	WorkspaceStatus status = 7;
+	repeated KeyValue labels = 8;
 }
 
 message WorkspaceStatus {

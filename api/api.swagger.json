@@ -2857,6 +2857,12 @@
         },
         "status": {
           "$ref": "#/definitions/WorkspaceStatus"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/KeyValue"
+          }
         }
       }
     },
