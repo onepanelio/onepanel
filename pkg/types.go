@@ -81,12 +81,17 @@ func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]Parameter, error) {
 
 	mappedData := make(map[string]interface{})
 
-	// todo workflow spec
 	if err := yaml.Unmarshal([]byte(cw.Manifest), mappedData); err != nil {
 		return nil, err
 	}
 
-	arguments, ok := mappedData["arguments"]
+	workflowSpec, ok := mappedData["workflowSpec"]
+	if !ok {
+		return parameters, nil
+	}
+
+	workflowSpecMap := workflowSpec.(map[interface{}]interface{})
+	arguments, ok := workflowSpecMap["arguments"]
 	if !ok {
 		return parameters, nil
 	}
@@ -104,18 +109,26 @@ func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]Parameter, error) {
 			continue
 		}
 
-		name := paramMap["name"].(string)
-		value := paramMap["value"].(string)
+		workflowParameter := ParameterFromMap(paramMap)
 
-		workflowParameter := Parameter{
-			Name:  name,
-			Value: &value,
-		}
-
-		parameters = append(parameters, workflowParameter)
+		parameters = append(parameters, *workflowParameter)
 	}
 
 	return parameters, nil
+}
+
+func (cw *CronWorkflow) GetParametersFromWorkflowSpecJson() ([]byte, error) {
+	parameters, err := cw.GetParametersFromWorkflowSpec()
+	if err != nil {
+		return nil, err
+	}
+
+	parametersJson, err := json.Marshal(parameters)
+	if err != nil {
+		return nil, err
+	}
+
+	return parametersJson, nil
 }
 
 func (cw *CronWorkflow) AddToManifestSpec(key, manifest string) error {

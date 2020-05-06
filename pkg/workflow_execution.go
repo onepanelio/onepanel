@@ -497,6 +497,11 @@ func (c *Client) CronStartWorkflowExecutionStatisticInsert(namespace, name strin
 	}
 	defer tx.Rollback()
 
+	parametersJson, err := cronWorkflow.GetParametersFromWorkflowSpecJson()
+	if err != nil {
+		return err
+	}
+
 	cronUid, err := uuid.GenerateUUID()
 	if err != nil {
 		return err
@@ -508,6 +513,7 @@ func (c *Client) CronStartWorkflowExecutionStatisticInsert(namespace, name strin
 		"namespace":                    namespace,
 		"phase":                        wfv1.NodePending,
 		"cron_workflow_id":             cronWorkflow.ID,
+		"parameters":                   string(parametersJson),
 	}
 
 	_, err = sb.Insert("workflow_executions").
