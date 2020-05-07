@@ -19,6 +19,10 @@ func NewAuthServer() *AuthServer {
 	return &AuthServer{}
 }
 func (a *AuthServer) IsWorkspaceAuthenticated(ctx context.Context, request *api.IsWorkspaceAuthenticatedRequest) (*empty.Empty, error) {
+	if ctx == nil {
+		return &empty.Empty{}, nil
+	}
+	client := ctx.Value("kubeClient").(*v1.Client)
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return &empty.Empty{}, errors.New("Error parsing headers.")
@@ -35,9 +39,8 @@ func (a *AuthServer) IsWorkspaceAuthenticated(ctx context.Context, request *api.
 	}
 	workspaceAndNamespace := xOriginalAuth[0:pos]
 	pieces := strings.Split(workspaceAndNamespace, "--")
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, pieces[1], "create", "apps/v1", "statefulsets", pieces[0])
-	if err != nil || !allowed {
+	_, err := auth.IsAuthorized(client, pieces[1], "create", "apps", "statefulsets", pieces[0])
+	if err != nil {
 		return &empty.Empty{}, err
 	}
 	return &empty.Empty{}, nil
