@@ -12,6 +12,18 @@ import (
 	"time"
 )
 
+func (c *Client) workspacesSelectBuilder(namespace string) sq.SelectBuilder {
+	sb := sb.Select("w.id", "w.uid", "w.name", "wt.id \"workspace_template.id\"", "wt.uid \"workspace_template.uid\"", "wtv.version \"workspace_template.version\"").
+		From("workspaces w").
+		Join("workspace_templates wt ON wt.id = w.workspace_template_id").
+		Join("workspace_template_versions wtv ON wtv.workspace_template_id = wt.id").
+		Where(sq.Eq{
+			"w.namespace": namespace,
+		})
+
+	return sb
+}
+
 func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, workspaceAction, resourceAction string, config map[string]string) (err error) {
 	host := fmt.Sprintf("%v--%v.%v", workspace.Name, namespace, config["ONEPANEL_DOMAIN"])
 	workspace.Parameters = append(workspace.Parameters,
@@ -82,7 +94,8 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 		return nil, err
 	}
 
-	if err := injectWorkspaceSystemParameters(namespace, workspace, "create", "apply", config); err != nil {
+	err = injectWorkspaceSystemParameters(namespace, workspace, "create", "apply", config)
+	if err != nil {
 		return nil, err
 	}
 
@@ -91,8 +104,6 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workspace template not found.")
 	}
-
-	workspace.WorkspaceTemplate.ID = workspaceTemplate.ID
 	workspace.WorkspaceTemplate = workspaceTemplate
 
 	workspace, err = c.createWorkspace(namespace, parameters, workspace)
@@ -101,6 +112,20 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 	}
 
 	return workspace, nil
+}
+
+func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err error) {
+	query, args, err := c.workspacesSelectBuilder(namespace).
+		Where(sq.Eq{
+			"w.uid": uid,
+		}).ToSql()
+	if err != nil {
+		return
+	}
+	workspace = &Workspace{}
+	err = c.DB.Get(workspace, query, args...)
+
+	return
 }
 
 // UpdateWorkspaceStatus updates workspace status and times based on phase
@@ -135,4 +160,54 @@ func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceS
 	}
 
 	return
+}
+
+func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction string, status *WorkspaceStatus) (err error) {
+	workspace, err := c.GetWorkspace(namespace, uid)
+	if err != nil {
+		return util.NewUserError(codes.NotFound, "Workspace not found.")
+	}
+
+	config, err := c.GetSystemConfig()
+	if err != nil {
+		return
+	}
+
+	workspace.Parameters = append(workspace.Parameters, Parameter{
+		Name:  "sys-uid",
+		Value: ptr.String(uid),
+	})
+	err = injectWorkspaceSystemParameters(namespace, workspace, workspaceAction, resourceAction, config)
+	if err != nil {
+		return
+	}
+
+	if err = c.UpdateWorkspaceStatus(namespace, uid, status); err != nil {
+		return
+	}
+
+	workspaceTemplate, err := c.GetWorkspaceTemplate(namespace,
+		workspace.WorkspaceTemplate.UID, workspace.WorkspaceTemplate.Version)
+	if err != nil {
+		return util.NewUserError(codes.NotFound, "Workspace template not found.")
+	}
+	workspace.WorkspaceTemplate = workspaceTemplate
+
+	_, err = c.CreateWorkflowExecution(namespace, &WorkflowExecution{
+		Parameters:       workspace.Parameters,
+		WorkflowTemplate: workspace.WorkspaceTemplate.WorkflowTemplate,
+	})
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func (c *Client) PauseWorkspace(namespace, uid string) (err error) {
+	return c.updateWorkspace(namespace, uid, "pause", "delete", &WorkspaceStatus{Phase: WorkspacePausing})
+}
+
+func (c *Client) DeleteWorkspace(namespace, uid string) (err error) {
+	return c.updateWorkspace(namespace, uid, "delete", "delete", &WorkspaceStatus{Phase: WorkspaceTerminating})
 }

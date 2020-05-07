@@ -21,6 +21,18 @@ service WorkspaceService {
             body: "status"
         };
 	}
+
+	rpc PauseWorkspace (PauseWorkspaceRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+            put: "/apis/v1beta1/{namespace}/workspaces/{uid}/pause"
+        };
+	}
+
+	rpc DeleteWorkspace (DeleteWorkspaceRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+            delete: "/apis/v1beta1/{namespace}/workspaces/{uid}"
+        };
+	}
 }
 
 message Workspace {
@@ -49,4 +61,14 @@ message UpdateWorkspaceStatusRequest {
 	string namespace = 1;
 	string uid = 2;
 	WorkspaceStatus status = 3;
+}
+
+message PauseWorkspaceRequest {
+	string namespace = 1;
+	string uid = 2;
+}
+
+message DeleteWorkspaceRequest {
+	string namespace = 1;
+	string uid = 2;
 }

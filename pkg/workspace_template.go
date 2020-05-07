@@ -297,28 +297,28 @@ metadata:
 						When: "{{workflow.parameters.sys-workspace-action}} == create",
 					},
 					{
-						Name:         "sys-set-phase-pausing",
+						Name:         "sys-set-phase-paused",
 						Template:     "sys-update-status",
 						Dependencies: []string{"delete-stateful-set"},
 						Arguments: wfv1.Arguments{
 							Parameters: []wfv1.Parameter{
 								{
 									Name:  "sys-workspace-phase",
-									Value: ptr.String(string(WorkspacePausing)),
+									Value: ptr.String(string(WorkspacePaused)),
 								},
 							},
 						},
 						When: "{{workflow.parameters.sys-workspace-action}} == pause",
 					},
 					{
-						Name:         "sys-set-phase-terminating",
+						Name:         "sys-set-phase-terminated",
 						Template:     "sys-update-status",
 						Dependencies: []string{"delete-pvc"},
 						Arguments: wfv1.Arguments{
 							Parameters: []wfv1.Parameter{
 								{
 									Name:  "sys-workspace-phase",
-									Value: ptr.String(string(WorkspaceTerminating)),
+									Value: ptr.String(string(WorkspaceTerminated)),
 								},
 							},
 						},

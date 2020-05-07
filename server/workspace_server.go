@@ -74,3 +74,27 @@ func (s *WorkspaceServer) UpdateWorkspaceStatus(ctx context.Context, req *api.Up
 
 	return &empty.Empty{}, err
 }
+
+func (s *WorkspaceServer) PauseWorkspace(ctx context.Context, req *api.PauseWorkspaceRequest) (*empty.Empty, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "apps", "statefulsets", "")
+	if err != nil || !allowed {
+		return &empty.Empty{}, err
+	}
+
+	err = client.PauseWorkspace(req.Namespace, req.Uid)
+
+	return &empty.Empty{}, err
+}
+
+func (s *WorkspaceServer) DeleteWorkspace(ctx context.Context, req *api.DeleteWorkspaceRequest) (*empty.Empty, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "apps", "statefulsets", "")
+	if err != nil || !allowed {
+		return &empty.Empty{}, err
+	}
+
+	err = client.DeleteWorkspace(req.Namespace, req.Uid)
+
+	return &empty.Empty{}, err
+}

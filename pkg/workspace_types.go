@@ -35,7 +35,7 @@ type Workspace struct {
 	Status            WorkspaceStatus
 	CreatedAt         time.Time          `db:"created_at"`
 	ModifiedAt        time.Time          `db:"modified_at"`
-	WorkspaceTemplate *WorkspaceTemplate `valid:"-"`
+	WorkspaceTemplate *WorkspaceTemplate `db:"workspace_template" valid:"-"`
 }
 
 type WorkspaceSpec struct {
