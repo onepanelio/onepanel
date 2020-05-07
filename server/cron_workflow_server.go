@@ -18,30 +18,20 @@ func NewCronWorkflowServer() *CronWorkflowServer {
 }
 
 func apiCronWorkflow(cwf *v1.CronWorkflow) (cronWorkflow *api.CronWorkflow) {
+	if cwf == nil {
+		return nil
+	}
+
 	cronWorkflow = &api.CronWorkflow{
-		Name:              cwf.Name,
-		Schedule:          cwf.Schedule,
-		Timezone:          cwf.Timezone,
-		Suspend:           cwf.Suspend,
-		ConcurrencyPolicy: cwf.ConcurrencyPolicy,
-	}
-
-	if cwf.StartingDeadlineSeconds != nil {
-		cronWorkflow.StartingDeadlineSeconds = *cwf.StartingDeadlineSeconds
-	}
-
-	if cwf.SuccessfulJobsHistoryLimit != nil {
-		cronWorkflow.SuccessfulJobsHistoryLimit = *cwf.SuccessfulJobsHistoryLimit
-	}
-
-	if cwf.FailedJobsHistoryLimit != nil {
-		cronWorkflow.FailedJobsHistoryLimit = *cwf.FailedJobsHistoryLimit
+		Name:     cwf.Name,
+		Labels:   converter.MappingToKeyValue(cwf.Labels),
+		Manifest: cwf.Manifest,
 	}
 
 	if cwf.WorkflowExecution != nil {
 		cronWorkflow.WorkflowExecution = GenApiWorkflowExecution(cwf.WorkflowExecution)
 		for _, param := range cwf.WorkflowExecution.Parameters {
-			convertedParam := &api.WorkflowExecutionParameter{
+			convertedParam := &api.Parameter{
 				Name:  param.Name,
 				Value: *param.Value,
 			}
@@ -60,37 +50,42 @@ func (c *CronWorkflowServer) CreateCronWorkflow(ctx context.Context, req *api.Cr
 	}
 
 	workflow := &v1.WorkflowExecution{
-		Labels: converter.APIKeyValueToLabel(req.CronWorkflow.WorkflowExecution.Labels),
 		WorkflowTemplate: &v1.WorkflowTemplate{
 			UID:     req.CronWorkflow.WorkflowExecution.WorkflowTemplate.Uid,
 			Version: req.CronWorkflow.WorkflowExecution.WorkflowTemplate.Version,
 		},
 	}
 	for _, param := range req.CronWorkflow.WorkflowExecution.Parameters {
-		workflow.Parameters = append(workflow.Parameters, v1.WorkflowExecutionParameter{
-			Name:  param.Name,
-			Value: ptr.String(param.Value),
+		options := make([]*v1.ParameterOption, 0)
+		for _, option := range param.Options {
+			options = append(options, &v1.ParameterOption{
+				Name:  option.Name,
+				Value: option.Value,
+			})
+		}
+
+		workflow.Parameters = append(workflow.Parameters, v1.Parameter{
+			Name:        param.Name,
+			Value:       ptr.String(param.Value),
+			Type:        param.Type,
+			DisplayName: &param.DisplayName,
+			Hint:        &param.Hint,
+			Options:     options,
+			Required:    param.Required,
 		})
 	}
 
 	cronWorkflow := v1.CronWorkflow{
-		Schedule:                   req.CronWorkflow.Schedule,
-		Timezone:                   req.CronWorkflow.Timezone,
-		Suspend:                    req.CronWorkflow.Suspend,
-		ConcurrencyPolicy:          req.CronWorkflow.ConcurrencyPolicy,
-		StartingDeadlineSeconds:    &req.CronWorkflow.StartingDeadlineSeconds,
-		SuccessfulJobsHistoryLimit: &req.CronWorkflow.SuccessfulJobsHistoryLimit,
-		FailedJobsHistoryLimit:     &req.CronWorkflow.FailedJobsHistoryLimit,
-		WorkflowExecution:          workflow,
+		WorkflowExecution: workflow,
+		Manifest:          req.CronWorkflow.Manifest,
+		Labels:            converter.APIKeyValueToLabel(req.CronWorkflow.Labels),
 	}
 
 	cwf, err := client.CreateCronWorkflow(req.Namespace, &cronWorkflow)
 	if err != nil {
 		return nil, err
 	}
-	if cwf == nil {
-		return nil, nil
-	}
+
 	return apiCronWorkflow(cwf), nil
 }
 
@@ -107,21 +102,29 @@ func (c *CronWorkflowServer) UpdateCronWorkflow(ctx context.Context, req *api.Up
 		},
 	}
 	for _, param := range req.CronWorkflow.WorkflowExecution.Parameters {
-		workflow.Parameters = append(workflow.Parameters, v1.WorkflowExecutionParameter{
-			Name:  param.Name,
-			Value: ptr.String(param.Value),
+		options := make([]*v1.ParameterOption, 0)
+		for _, option := range param.Options {
+			options = append(options, &v1.ParameterOption{
+				Name:  option.Name,
+				Value: option.Value,
+			})
+		}
+
+		workflow.Parameters = append(workflow.Parameters, v1.Parameter{
+			Name:        param.Name,
+			Value:       ptr.String(param.Value),
+			Type:        param.Type,
+			DisplayName: &param.DisplayName,
+			Hint:        &param.Hint,
+			Options:     options,
+			Required:    param.Required,
 		})
 	}
 
 	cronWorkflow := v1.CronWorkflow{
-		Schedule:                   req.CronWorkflow.Schedule,
-		Timezone:                   req.CronWorkflow.Timezone,
-		Suspend:                    req.CronWorkflow.Suspend,
-		ConcurrencyPolicy:          req.CronWorkflow.ConcurrencyPolicy,
-		StartingDeadlineSeconds:    &req.CronWorkflow.StartingDeadlineSeconds,
-		SuccessfulJobsHistoryLimit: &req.CronWorkflow.SuccessfulJobsHistoryLimit,
-		FailedJobsHistoryLimit:     &req.CronWorkflow.FailedJobsHistoryLimit,
-		WorkflowExecution:          workflow,
+		WorkflowExecution: workflow,
+		Manifest:          req.CronWorkflow.Manifest,
+		Labels:            converter.APIKeyValueToLabel(req.CronWorkflow.Labels),
 	}
 
 	cwf, err := client.UpdateCronWorkflow(req.Namespace, req.Name, &cronWorkflow)
@@ -155,7 +158,7 @@ func (c *CronWorkflowServer) ListCronWorkflows(ctx context.Context, req *api.Lis
 	}
 
 	paginator := pagination.NewRequest(req.Page, req.PageSize)
-	cronWorkflows, err := client.ListCronWorkflows(req.Namespace, req.WorkflowTemplateUid, &paginator)
+	cronWorkflows, err := client.ListCronWorkflows(req.Namespace, req.WorkflowTemplateName, &paginator)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +167,7 @@ func (c *CronWorkflowServer) ListCronWorkflows(ctx context.Context, req *api.Lis
 		apiCronWorkflows = append(apiCronWorkflows, apiCronWorkflow(cwf))
 	}
 
-	count, err := client.CountCronWorkflows(req.Namespace, req.WorkflowTemplateUid)
+	count, err := client.CountCronWorkflows(req.Namespace, req.WorkflowTemplateName)
 	if err != nil {
 		return nil, err
 	}

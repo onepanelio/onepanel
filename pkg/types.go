@@ -2,7 +2,7 @@ package v1
 
 import (
 	"encoding/json"
-	v1 "github.com/onepanelio/core/pkg/apis/core/v1"
+	"fmt"
 	"github.com/onepanelio/core/pkg/util/mapping"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -63,36 +63,35 @@ type Metric struct {
 }
 
 type CronWorkflow struct {
-	ID                         uint64
-	CreatedAt                  time.Time  `db:"created_at"`
-	ModifiedAt                 *time.Time `db:"modified_at"`
-	UID                        string
-	Name                       string
-	GenerateName               string
-	Schedule                   string
-	Timezone                   string
-	Suspend                    bool
-	ConcurrencyPolicy          string `db:"concurrency_policy"`
-	StartingDeadlineSeconds    *int64 `db:"starting_deadline_seconds"`
-	SuccessfulJobsHistoryLimit *int32 `db:"successful_jobs_history_limit"`
-	FailedJobsHistoryLimit     *int32 `db:"failed_jobs_history_limit"`
-	WorkflowExecution          *WorkflowExecution
-	WorkflowSpec               string `db:"workflow_spec"`
-	Labels                     []*Label
-	Version                    int64
-	WorkflowTemplateVersionId  uint64 `db:"workflow_template_version_id"`
+	ID                        uint64
+	CreatedAt                 time.Time  `db:"created_at"`
+	ModifiedAt                *time.Time `db:"modified_at"`
+	UID                       string
+	Name                      string
+	GenerateName              string
+	WorkflowExecution         *WorkflowExecution
+	Labels                    map[string]string
+	Version                   int64
+	WorkflowTemplateVersionId uint64 `db:"workflow_template_version_id"`
+	Manifest                  string
 }
 
-func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]WorkflowExecutionParameter, error) {
-	var parameters []WorkflowExecutionParameter
+func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]Parameter, error) {
+	var parameters []Parameter
 
 	mappedData := make(map[string]interface{})
 
-	if err := yaml.Unmarshal([]byte(cw.WorkflowSpec), mappedData); err != nil {
+	if err := yaml.Unmarshal([]byte(cw.Manifest), mappedData); err != nil {
 		return nil, err
 	}
 
-	arguments, ok := mappedData["arguments"]
+	workflowSpec, ok := mappedData["workflowSpec"]
+	if !ok {
+		return parameters, nil
+	}
+
+	workflowSpecMap := workflowSpec.(map[interface{}]interface{})
+	arguments, ok := workflowSpecMap["arguments"]
 	if !ok {
 		return parameters, nil
 	}
@@ -110,27 +109,60 @@ func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]WorkflowExecutionPara
 			continue
 		}
 
-		name := paramMap["name"].(string)
-		value := paramMap["value"].(string)
+		workflowParameter := ParameterFromMap(paramMap)
 
-		workflowParameter := WorkflowExecutionParameter{
-			Name:  name,
-			Value: &value,
-		}
-
-		parameters = append(parameters, workflowParameter)
+		parameters = append(parameters, *workflowParameter)
 	}
 
 	return parameters, nil
 }
 
+func (cw *CronWorkflow) GetParametersFromWorkflowSpecJson() ([]byte, error) {
+	parameters, err := cw.GetParametersFromWorkflowSpec()
+	if err != nil {
+		return nil, err
+	}
+
+	parametersJson, err := json.Marshal(parameters)
+	if err != nil {
+		return nil, err
+	}
+
+	return parametersJson, nil
+}
+
+func (cw *CronWorkflow) AddToManifestSpec(key, manifest string) error {
+	currentManifestMapping, err := mapping.NewFromYamlString(cw.Manifest)
+	if err != nil {
+		return err
+	}
+
+	additionalManifest, err := mapping.NewFromYamlString(manifest)
+	if err != nil {
+		return err
+	}
+
+	currentManifestMapping[key] = additionalManifest
+
+	updatedManifest, err := currentManifestMapping.ToYamlBytes()
+	if err != nil {
+		return err
+	}
+
+	cw.Manifest = string(updatedManifest)
+
+	return nil
+}
+
 type WorkflowTemplate struct {
 	ID                               uint64
-	CreatedAt                        time.Time `db:"created_at"`
+	CreatedAt                        time.Time  `db:"created_at"`
+	ModifiedAt                       *time.Time `db:"modified_at"`
 	UID                              string
+	Namespace                        string
 	Name                             string
 	Manifest                         string
-	Version                          int64
+	Version                          int64 // The latest version, unix timestamp
 	Versions                         int64 `db:"versions"` // How many versions there are of this template total.
 	IsLatest                         bool
 	IsArchived                       bool `db:"is_archived"`
@@ -254,6 +286,29 @@ func (wt *WorkflowTemplate) GenerateUID() (string, error) {
 	wt.UID = uid.String()
 
 	return wt.UID, nil
+}
+
+func (wt *WorkflowTemplate) UpdateManifestParameters(params []Parameter) error {
+	manifestMap, err := mapping.NewFromYamlString(wt.Manifest)
+	if err != nil {
+		return err
+	}
+
+	arguments, err := manifestMap.GetChildMap("arguments")
+	if err != nil {
+		return err
+	}
+
+	arguments["parameters"] = params
+
+	manifestBytes, err := manifestMap.ToYamlBytes()
+	if err != nil {
+		return err
+	}
+
+	wt.Manifest = string(manifestBytes)
+
+	return nil
 }
 
 func (wt *WorkflowTemplate) GetWorkflowManifestBytes() ([]byte, error) {
@@ -387,7 +442,8 @@ type WorkflowExecution struct {
 	UID              string
 	Name             string
 	GenerateName     string
-	Parameters       []WorkflowExecutionParameter
+	Parameters       []Parameter
+	ParametersBytes  []byte `db:"parameters"` // to load from database
 	Manifest         string
 	Phase            wfv1.NodePhase
 	StartedAt        *time.Time        `db:"started_at"`
@@ -396,8 +452,24 @@ type WorkflowExecution struct {
 	Labels           map[string]string
 }
 
-// TODO: Using an alias so we can refactor out WorkflowExecutionParameter
-type WorkflowExecutionParameter = v1.Parameter
+func (we *WorkflowExecution) LoadParametersFromBytes() ([]Parameter, error) {
+	loadedParameters := make([]Parameter, 0)
+
+	err := json.Unmarshal(we.ParametersBytes, &loadedParameters)
+	if err != nil {
+		return we.Parameters, err
+	}
+
+	// It might be nil because the value "null" is stored in db if there are no parameters.
+	// for consistency, we return an empty array.
+	if loadedParameters == nil {
+		loadedParameters = make([]Parameter, 0)
+	}
+
+	we.Parameters = loadedParameters
+
+	return we.Parameters, err
+}
 
 type ListOptions = metav1.ListOptions
 
@@ -407,7 +479,7 @@ type WorkflowExecutionOptions struct {
 	Name           string
 	GenerateName   string
 	Entrypoint     string
-	Parameters     []WorkflowExecutionParameter
+	Parameters     []Parameter
 	ServiceAccount string
 	Labels         *map[string]string
 	ListOptions    *ListOptions
@@ -539,23 +611,74 @@ func WorkflowTemplateVersionsToIds(resources []*WorkflowTemplateVersion) (ids []
 	return
 }
 
-type WorkspaceTemplate struct {
-	ID               uint64
-	UID              string
-	Name             string
-	Version          int64
-	Manifest         string
-	IsLatest         bool
-	CreatedAt        time.Time `db:"created_at"`
-	WorkflowTemplate *WorkflowTemplate
+func CronWorkflowsToIds(resources []*CronWorkflow) (ids []uint64) {
+	mappedIds := make(map[uint64]bool)
+
+	// This is to make sure we don't have duplicates
+	for _, resource := range resources {
+		mappedIds[resource.ID] = true
+	}
+
+	for id := range mappedIds {
+		ids = append(ids, id)
+	}
+
+	return
 }
 
-func (wt *WorkspaceTemplate) GenerateUID() (string, error) {
-	uid, err := uuid.NewRandom()
-	if err != nil {
-		return "", err
-	}
-	wt.UID = uid.String()
+// Returns a list of column names prefixed with alias, and named to destination. Extra columns are added to the end of the list.
+// Setting destination to empty string will not apply any destination.
+// Example - with destination
+//
+// Input: ([id, name], "w", "workflow")
+// Output: [w.id "workflow.id", w.name "workflow.name"]
+//
+// Example - no destination
+// Input: ([id, name], "w", "")
+// Output: [w.id, w.name]
+func formatColumnSelect(columns []string, alias, destination string, extraColumns ...string) []string {
+	results := make([]string, 0)
 
-	return wt.UID, nil
+	for _, str := range columns {
+		result := alias + "." + str
+		if destination != "" {
+			result += fmt.Sprintf(` "%v.%v"`, destination, str)
+		}
+		results = append(results, result)
+	}
+
+	results = append(results, extraColumns...)
+
+	return results
+}
+
+// returns all of the columns for workflowTemplate modified by alias, destination.
+// see formatColumnSelect
+func getWorkflowTemplateColumns(alias string, destination string, extraColumns ...string) []string {
+	columns := []string{"id", "created_at", "uid", "name", "namespace", "modified_at", "is_archived"}
+	return formatColumnSelect(columns, alias, destination, extraColumns...)
+}
+
+// returns all of the columns for workflowExecution modified by alias, destination.
+// see formatColumnSelect
+func getWorkflowExecutionColumns(alias string, destination string, extraColumns ...string) []string {
+	columns := []string{"id", "created_at", "uid", "name", "parameters"}
+	return formatColumnSelect(columns, alias, destination, extraColumns...)
+}
+
+// returns all of the columns for workspace modified by alias, destination.
+// see formatColumnSelect
+func getWorkspaceColumns(alias string, destination string, extraColumns ...string) []string {
+	columns := []string{"id", "created_at", "modified_at", "uid", "name", "namespace", "phase", "parameters", "workspace_template_id", "workspace_template_version", "started_at", "paused_at", "terminated_at"}
+	return formatColumnSelect(columns, alias, destination, extraColumns...)
+}
+
+func LabelsToMapping(labels ...*Label) map[string]string {
+	result := make(map[string]string)
+
+	for _, label := range labels {
+		result[label.Key] = label.Value
+	}
+
+	return result
 }

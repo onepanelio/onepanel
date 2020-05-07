@@ -200,7 +200,7 @@
           "CronWorkflowService"
         ]
       },
-      "post": {
+      "put": {
         "operationId": "UpdateCronWorkflow",
         "responses": {
           "200": {
@@ -268,7 +268,7 @@
             "type": "string"
           },
           {
-            "name": "workflow_template_uid",
+            "name": "workflow_template_name",
             "in": "query",
             "required": false,
             "type": "string"
@@ -329,7 +329,7 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/cron_workflows/{workflow_template_uid}": {
+    "/apis/v1beta1/{namespace}/cron_workflows/{workflow_template_name}": {
       "get": {
         "operationId": "ListCronWorkflows2",
         "responses": {
@@ -354,7 +354,7 @@
             "type": "string"
           },
           {
-            "name": "workflow_template_uid",
+            "name": "workflow_template_name",
             "in": "path",
             "required": true,
             "type": "string"
@@ -805,6 +805,40 @@
         "tags": [
           "WorkflowService"
         ]
+      },
+      "post": {
+        "operationId": "CloneWorkflowExecution",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkflowExecution"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
       }
     },
     "/apis/v1beta1/{namespace}/workflow_executions/{name}/artifacts/{key}": {
@@ -849,8 +883,8 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/workflow_executions/{name}/cron_start_statistics/{workflowTemplateId}": {
-      "get": {
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}/cron_start_statistics": {
+      "post": {
         "operationId": "CronStartWorkflowExecutionStatistic",
         "responses": {
           "200": {
@@ -880,11 +914,12 @@
             "type": "string"
           },
           {
-            "name": "workflowTemplateId",
-            "in": "path",
+            "name": "body",
+            "in": "body",
             "required": true,
-            "type": "string",
-            "format": "int64"
+            "schema": {
+              "$ref": "#/definitions/Statistics"
+            }
           }
         ],
         "tags": [
@@ -1626,6 +1661,48 @@
       }
     },
     "/apis/v1beta1/{namespace}/workspace_templates": {
+      "get": {
+        "operationId": "ListWorkspaceTemplates",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListWorkspaceTemplatesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "WorkspaceTemplateService"
+        ]
+      },
       "post": {
         "operationId": "CreateWorkspaceTemplate",
         "responses": {
@@ -1660,6 +1737,369 @@
         ],
         "tags": [
           "WorkspaceTemplateService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workspace_templates/{name}": {
+      "put": {
+        "operationId": "UpdateWorkspaceTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkspaceTemplate"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WorkspaceTemplate"
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceTemplateService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workspace_templates/{uid}": {
+      "get": {
+        "operationId": "GetWorkspaceTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkspaceTemplate"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "WorkspaceTemplateService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workspace_templates/{uid}/versions": {
+      "get": {
+        "operationId": "ListWorkspaceTemplateVersions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListWorkspaceTemplateVersionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceTemplateService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workspace_templates/{uid}/workflow_template": {
+      "post": {
+        "operationId": "GenerateWorkspaceTemplateWorkflowTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkflowTemplate"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WorkspaceTemplate"
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceTemplateService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workspaces": {
+      "get": {
+        "operationId": "ListWorkspaces",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListWorkspaceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      },
+      "post": {
+        "operationId": "CreateWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/Workspace"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Workspace"
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workspaces/{uid}": {
+      "delete": {
+        "operationId": "DeleteWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workspaces/{uid}/pause": {
+      "put": {
+        "operationId": "PauseWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workspaces/{uid}/status": {
+      "put": {
+        "operationId": "UpdateWorkspaceStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WorkspaceStatus"
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
         ]
       }
     },
@@ -1883,33 +2323,17 @@
         "name": {
           "type": "string"
         },
-        "schedule": {
+        "manifest": {
           "type": "string"
-        },
-        "timezone": {
-          "type": "string"
-        },
-        "suspend": {
-          "type": "boolean",
-          "format": "boolean"
-        },
-        "concurrencyPolicy": {
-          "type": "string"
-        },
-        "startingDeadlineSeconds": {
-          "type": "string",
-          "format": "int64"
-        },
-        "successfulJobsHistoryLimit": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "failedJobsHistoryLimit": {
-          "type": "integer",
-          "format": "int32"
         },
         "workflowExecution": {
           "$ref": "#/definitions/WorkflowExecution"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/KeyValue"
+          }
         }
       }
     },
@@ -2172,6 +2596,75 @@
         }
       }
     },
+    "ListWorkspaceResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "workspaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Workspace"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pages": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "ListWorkspaceTemplateVersionsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "workspaceTemplates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WorkspaceTemplate"
+          }
+        }
+      }
+    },
+    "ListWorkspaceTemplatesResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "workspaceTemplates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WorkspaceTemplate"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pages": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "LogEntry": {
       "type": "object",
       "properties": {
@@ -2202,6 +2695,47 @@
       "type": "object",
       "properties": {
         "name": {
+          "type": "string"
+        }
+      }
+    },
+    "Parameter": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "hint": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean",
+          "format": "boolean"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ParameterOption"
+          }
+        }
+      }
+    },
+    "ParameterOption": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
           "type": "string"
         }
       }
@@ -2285,7 +2819,7 @@
         "parameters": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/WorkflowExecutionParameter"
+            "$ref": "#/definitions/Parameter"
           }
         },
         "workflowTemplate": {
@@ -2296,17 +2830,6 @@
           "items": {
             "$ref": "#/definitions/KeyValue"
           }
-        }
-      }
-    },
-    "WorkflowExecutionParameter": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "value": {
-          "type": "string"
         }
       }
     },
@@ -2376,6 +2899,59 @@
         },
         "cronStats": {
           "$ref": "#/definitions/CronWorkflowStatisticsReport"
+        }
+      }
+    },
+    "Workspace": {
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string",
+          "format": "int64"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Parameter"
+          }
+        },
+        "workspaceTemplate": {
+          "$ref": "#/definitions/WorkspaceTemplate"
+        },
+        "status": {
+          "$ref": "#/definitions/WorkspaceStatus"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/KeyValue"
+          }
+        }
+      }
+    },
+    "WorkspaceStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "type": "string"
+        },
+        "startedAt": {
+          "type": "string"
+        },
+        "pausedAt": {
+          "type": "string"
+        },
+        "terminatedAt": {
+          "type": "string"
         }
       }
     },

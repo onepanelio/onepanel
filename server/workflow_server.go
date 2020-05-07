@@ -49,6 +49,15 @@ func apiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecu
 		workflow.WorkflowTemplate = apiWorkflowTemplate(wf.WorkflowTemplate)
 	}
 
+	if wf.ParametersBytes != nil {
+		parameters, err := wf.LoadParametersFromBytes()
+		if err != nil {
+			return nil
+		}
+
+		workflow.Parameters = converter.ParametersToAPI(parameters)
+	}
+
 	return
 }
 
@@ -67,13 +76,28 @@ func (s *WorkflowServer) CreateWorkflowExecution(ctx context.Context, req *api.C
 		},
 	}
 	for _, param := range req.WorkflowExecution.Parameters {
-		workflow.Parameters = append(workflow.Parameters, v1.WorkflowExecutionParameter{
+		workflow.Parameters = append(workflow.Parameters, v1.Parameter{
 			Name:  param.Name,
 			Value: ptr.String(param.Value),
 		})
 	}
 
 	wf, err := client.CreateWorkflowExecution(req.Namespace, workflow)
+	if err != nil {
+		return nil, err
+	}
+
+	return apiWorkflowExecution(wf), nil
+}
+
+func (s *WorkflowServer) CloneWorkflowExecution(ctx context.Context, req *api.CloneWorkflowExecutionRequest) (*api.WorkflowExecution, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	wf, err := client.CloneWorkflowExecution(req.Namespace, req.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +136,7 @@ func (s *WorkflowServer) CronStartWorkflowExecutionStatistic(ctx context.Context
 		return &empty.Empty{}, err
 	}
 
-	err = client.CronStartWorkflowExecutionStatisticInsert(req.Namespace, req.Name, req.WorkflowTemplateId)
+	err = client.CronStartWorkflowExecutionStatisticInsert(req.Namespace, req.Name, req.Statistics.WorkflowTemplateId)
 	if err != nil {
 		return &empty.Empty{}, err
 	}

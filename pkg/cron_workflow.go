@@ -10,13 +10,21 @@ import (
 	"github.com/onepanelio/core/pkg/util/pagination"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
-	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"regexp"
 	"strings"
 )
 
 func (c *Client) UpdateCronWorkflow(namespace string, name string, cronWorkflow *CronWorkflow) (*CronWorkflow, error) {
+	err := c.cronWorkflowSelectBuilderNoColumns(namespace, cronWorkflow.WorkflowExecution.WorkflowTemplate.UID).
+		Columns("cw.id").
+		RunWith(c.DB).
+		QueryRow().
+		Scan(&cronWorkflow.ID)
+	if err != nil {
+		return nil, err
+	}
+
 	workflow := cronWorkflow.WorkflowExecution
 	workflowTemplate, err := c.GetWorkflowTemplate(namespace, workflow.WorkflowTemplate.UID, workflow.WorkflowTemplate.Version)
 	if err != nil {
@@ -33,10 +41,21 @@ func (c *Client) UpdateCronWorkflow(namespace string, name string, cronWorkflow 
 	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
 	opts.GenerateName = strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`)) + "-"
 	for _, param := range workflow.Parameters {
-		opts.Parameters = append(opts.Parameters, WorkflowExecutionParameter{
+		opts.Parameters = append(opts.Parameters, Parameter{
 			Name:  param.Name,
 			Value: param.Value,
 		})
+	}
+
+	if err := workflowTemplate.UpdateManifestParameters(workflow.Parameters); err != nil {
+		return nil, err
+	}
+
+	rawCronManifest := cronWorkflow.Manifest
+	workflowTemplateManifest := workflowTemplate.GetManifestBytes()
+
+	if err := cronWorkflow.AddToManifestSpec("workflowSpec", string(workflowTemplateManifest)); err != nil {
+		return nil, err
 	}
 
 	if opts.Labels == nil {
@@ -45,15 +64,11 @@ func (c *Client) UpdateCronWorkflow(namespace string, name string, cronWorkflow 
 	(*opts.Labels)[workflowTemplateUIDLabelKey] = workflowTemplate.UID
 	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
 	var argoCronWorkflow wfv1.CronWorkflow
-	argoCronWorkflow.Spec.Schedule = cronWorkflow.Schedule
-	argoCronWorkflow.Spec.Timezone = cronWorkflow.Timezone
-	argoCronWorkflow.Spec.Suspend = cronWorkflow.Suspend
-	argoCronWorkflow.Spec.ConcurrencyPolicy = wfv1.ConcurrencyPolicy(cronWorkflow.ConcurrencyPolicy)
-	argoCronWorkflow.Spec.StartingDeadlineSeconds = cronWorkflow.StartingDeadlineSeconds
-	argoCronWorkflow.Spec.SuccessfulJobsHistoryLimit = cronWorkflow.SuccessfulJobsHistoryLimit
-	argoCronWorkflow.Spec.FailedJobsHistoryLimit = cronWorkflow.FailedJobsHistoryLimit
-	//UX prevents multiple workflows
-
+	var argoCronWorkflowSpec wfv1.CronWorkflowSpec
+	if err := argojson.UnmarshalStrict([]byte(rawCronManifest), &argoCronWorkflowSpec); err != nil {
+		return nil, err
+	}
+	argoCronWorkflow.Spec = argoCronWorkflowSpec
 	manifestBytes, err := workflowTemplate.GetWorkflowManifestBytes()
 	if err != nil {
 		return nil, err
@@ -68,28 +83,68 @@ func (c *Client) UpdateCronWorkflow(namespace string, name string, cronWorkflow 
 		}).Error("Error parsing workflow.")
 		return nil, err
 	}
+	if len(workflows) != 1 {
+		return nil, fmt.Errorf("more than one workflow in spec")
+	}
 
-	for _, wf := range workflows {
-		argoCronWorkflow.Spec.WorkflowSpec = wf.Spec
-		argoCreatedCronWorkflow, err := c.updateCronWorkflow(namespace, name, &workflowTemplate.ID, &wf, &argoCronWorkflow, opts)
+	wf := workflows[0]
+	argoCronWorkflow.Spec.WorkflowSpec = wf.Spec
+	_, err = c.updateCronWorkflow(namespace, name, &workflowTemplate.ID, &wf, &argoCronWorkflow, opts)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace":    namespace,
+			"CronWorkflow": cronWorkflow,
+			"Error":        err.Error(),
+		}).Error("Error parsing workflow.")
+		return nil, err
+	}
+	cronWorkflow.WorkflowExecution.WorkflowTemplate = workflowTemplate
+	// Manifests could get big, don't return them in this case.
+	cronWorkflow.WorkflowExecution.WorkflowTemplate.Manifest = ""
+
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	_, err = sb.Update("cron_workflows").
+		SetMap(sq.Eq{
+			"manifest": cronWorkflow.Manifest,
+		}).Where(sq.Eq{
+		"id": cronWorkflow.ID,
+	}).
+		RunWith(tx).
+		Exec()
+	if err != nil {
+		return nil, err
+	}
+
+	// delete all labels then replace
+	_, err = sb.Delete("labels").
+		Where(sq.Eq{
+			"resource":    TypeCronWorkflow,
+			"resource_id": cronWorkflow.ID,
+		}).RunWith(tx).
+		Exec()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(cronWorkflow.Labels) > 0 {
+		_, err = c.InsertLabelsBuilder(TypeCronWorkflow, cronWorkflow.ID, cronWorkflow.Labels).
+			RunWith(tx).
+			Exec()
 		if err != nil {
-			log.WithFields(log.Fields{
-				"Namespace":    namespace,
-				"CronWorkflow": cronWorkflow,
-				"Error":        err.Error(),
-			}).Error("Error parsing workflow.")
 			return nil, err
 		}
-		cronWorkflow.Name = argoCreatedCronWorkflow.Name
-		cronWorkflow.CreatedAt = argoCreatedCronWorkflow.CreationTimestamp.UTC()
-		cronWorkflow.UID = string(argoCreatedCronWorkflow.ObjectMeta.UID)
-		cronWorkflow.WorkflowExecution.WorkflowTemplate = workflowTemplate
-		// Manifests could get big, don't return them in this case.
-		cronWorkflow.WorkflowExecution.WorkflowTemplate.Manifest = ""
-
-		return cronWorkflow, nil
 	}
-	return nil, nil
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return cronWorkflow, nil
 }
 
 func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow) (*CronWorkflow, error) {
@@ -104,15 +159,26 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 		return nil, util.NewUserError(codes.NotFound, "Error with getting workflow template.")
 	}
 
-	// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
+	//// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
 	opts := &WorkflowExecutionOptions{}
 	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
 	opts.GenerateName = strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`)) + "-"
 	for _, param := range workflow.Parameters {
-		opts.Parameters = append(opts.Parameters, WorkflowExecutionParameter{
+		opts.Parameters = append(opts.Parameters, Parameter{
 			Name:  param.Name,
 			Value: param.Value,
 		})
+	}
+
+	if err := workflowTemplate.UpdateManifestParameters(workflow.Parameters); err != nil {
+		return nil, err
+	}
+
+	rawCronManifest := cronWorkflow.Manifest
+	workflowTemplateManifest := workflowTemplate.GetManifestBytes()
+
+	if err := cronWorkflow.AddToManifestSpec("workflowSpec", string(workflowTemplateManifest)); err != nil {
+		return nil, err
 	}
 
 	if opts.Labels == nil {
@@ -123,14 +189,12 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 	label.MergeLabelsPrefix(*opts.Labels, workflow.Labels, label.TagPrefix)
 
 	var argoCronWorkflow wfv1.CronWorkflow
-	argoCronWorkflow.Spec.Schedule = cronWorkflow.Schedule
-	argoCronWorkflow.Spec.Timezone = cronWorkflow.Timezone
-	argoCronWorkflow.Spec.Suspend = cronWorkflow.Suspend
-	argoCronWorkflow.Spec.ConcurrencyPolicy = wfv1.ConcurrencyPolicy(cronWorkflow.ConcurrencyPolicy)
-	argoCronWorkflow.Spec.StartingDeadlineSeconds = cronWorkflow.StartingDeadlineSeconds
-	argoCronWorkflow.Spec.SuccessfulJobsHistoryLimit = cronWorkflow.SuccessfulJobsHistoryLimit
-	argoCronWorkflow.Spec.FailedJobsHistoryLimit = cronWorkflow.FailedJobsHistoryLimit
-	//UX prevents multiple workflows
+	var argoCronWorkflowSpec wfv1.CronWorkflowSpec
+	if err := argojson.UnmarshalStrict([]byte(rawCronManifest), &argoCronWorkflowSpec); err != nil {
+		return nil, err
+	}
+	argoCronWorkflow.Spec = argoCronWorkflowSpec
+
 	manifestBytes, err := workflowTemplate.GetWorkflowManifestBytes()
 	if err != nil {
 		return nil, err
@@ -145,80 +209,74 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 		}).Error("Error parsing workflow.")
 		return nil, err
 	}
-
-	for _, wf := range workflows {
-		argoCronWorkflow.Spec.WorkflowSpec = wf.Spec
-		argoCreatedCronWorkflow, err := c.createCronWorkflow(namespace, &workflowTemplate.ID, &wf, &argoCronWorkflow, opts)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"Namespace":    namespace,
-				"CronWorkflow": cronWorkflow,
-				"Error":        err.Error(),
-			}).Error("Error parsing workflow.")
-			return nil, err
-		}
-		cronWorkflow.Name = argoCreatedCronWorkflow.Name
-		cronWorkflow.CreatedAt = argoCreatedCronWorkflow.CreationTimestamp.UTC()
-		cronWorkflow.UID = string(argoCreatedCronWorkflow.ObjectMeta.UID)
-		cronWorkflow.WorkflowExecution.WorkflowTemplate = workflowTemplate
-		// Manifests could get big, don't return them in this case.
-		cronWorkflow.WorkflowExecution.WorkflowTemplate.Manifest = ""
-
-		workflowSpec, err := yaml.Marshal(argoCreatedCronWorkflow.Spec.WorkflowSpec)
-		if err != nil {
-			return nil, err
-		}
-		_, err = sb.Insert("cron_workflows").
-			SetMap(sq.Eq{
-				"uid":                           cronWorkflow.UID,
-				"name":                          cronWorkflow.Name,
-				"workflow_template_version_id":  workflowTemplate.WorkflowTemplateVersionId,
-				"schedule":                      cronWorkflow.Schedule,
-				"timezone":                      cronWorkflow.Timezone,
-				"suspend":                       cronWorkflow.Suspend,
-				"concurrency_policy":            cronWorkflow.ConcurrencyPolicy,
-				"starting_deadline_seconds":     cronWorkflow.StartingDeadlineSeconds,
-				"successful_jobs_history_limit": cronWorkflow.SuccessfulJobsHistoryLimit,
-				"failed_jobs_history_limit":     cronWorkflow.FailedJobsHistoryLimit,
-				"workflow_spec":                 workflowSpec,
-			}).
-			Suffix("RETURNING id").
-			RunWith(c.DB.DB).
-			Exec()
-
-		if err != nil {
-			return nil, err
-		}
-
-		return cronWorkflow, nil
+	if len(workflows) != 1 {
+		return nil, fmt.Errorf("more than one workflow in spec")
 	}
-	return nil, nil
+
+	wf := workflows[0]
+
+	argoCronWorkflow.Spec.WorkflowSpec = wf.Spec
+	argoCreatedCronWorkflow, err := c.createCronWorkflow(namespace, &workflowTemplate.ID, &wf, &argoCronWorkflow, opts)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace":    namespace,
+			"CronWorkflow": cronWorkflow,
+			"Error":        err.Error(),
+		}).Error("Error parsing workflow.")
+		return nil, err
+	}
+
+	cronWorkflow.Name = argoCreatedCronWorkflow.Name
+	cronWorkflow.CreatedAt = argoCreatedCronWorkflow.CreationTimestamp.UTC()
+	cronWorkflow.UID = string(argoCreatedCronWorkflow.ObjectMeta.UID)
+	cronWorkflow.WorkflowExecution.WorkflowTemplate = workflowTemplate
+	// Manifests could get big, don't return them in this case.
+	cronWorkflow.WorkflowExecution.WorkflowTemplate.Manifest = ""
+
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	err = sb.Insert("cron_workflows").
+		SetMap(sq.Eq{
+			"uid":                          cronWorkflow.UID,
+			"name":                         cronWorkflow.Name,
+			"workflow_template_version_id": workflowTemplate.WorkflowTemplateVersionId,
+			"manifest":                     cronWorkflow.Manifest,
+		}).
+		Suffix("RETURNING id").
+		RunWith(tx).
+		QueryRow().
+		Scan(&cronWorkflow.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(cronWorkflow.Labels) > 0 {
+		_, err = c.InsertLabelsBuilder(TypeCronWorkflow, cronWorkflow.ID, cronWorkflow.Labels).
+			RunWith(tx).
+			Exec()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return cronWorkflow, nil
 }
 
 func (c *Client) GetCronWorkflow(namespace, name string) (cronWorkflow *CronWorkflow, err error) {
-	cwf, err := c.ArgoprojV1alpha1().CronWorkflows(namespace).Get(name, metav1.GetOptions{})
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"Name":      name,
-			"Error":     err.Error(),
-		}).Error("CronWorkflow not found.")
-		return nil, util.NewUserError(codes.NotFound, "CronWorkflow not found.")
-	}
+	cronWorkflow = &CronWorkflow{}
 
-	cronWorkflow = &CronWorkflow{
-		CreatedAt:                  cwf.CreationTimestamp.UTC(),
-		UID:                        string(cwf.UID),
-		Name:                       cwf.Name,
-		Schedule:                   cwf.Spec.Schedule,
-		Timezone:                   cwf.Spec.Timezone,
-		Suspend:                    cwf.Spec.Suspend,
-		ConcurrencyPolicy:          string(cwf.Spec.ConcurrencyPolicy),
-		StartingDeadlineSeconds:    cwf.Spec.StartingDeadlineSeconds,
-		SuccessfulJobsHistoryLimit: cwf.Spec.SuccessfulJobsHistoryLimit,
-		FailedJobsHistoryLimit:     cwf.Spec.FailedJobsHistoryLimit,
-		WorkflowExecution:          nil,
-	}
+	err = c.cronWorkflowSelectBuilderNamespaceName(namespace, name).
+		RunWith(c.DB).
+		QueryRow().
+		Scan(cronWorkflow)
 
 	return
 }
@@ -303,16 +361,17 @@ func (c *Client) ListCronWorkflows(namespace, workflowTemplateUID string, pagina
 	if err := c.DB.Select(&cronWorkflows, query, args...); err != nil {
 		return nil, err
 	}
+	labelsMap, err := c.GetDbLabelsMapped(TypeCronWorkflow, CronWorkflowsToIds(cronWorkflows)...)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Error":     err.Error(),
+		}).Error("Unable to get Workflow Template Labels")
+		return nil, err
+	}
 
-	for _, cwf := range cronWorkflows {
-		parameters, err := cwf.GetParametersFromWorkflowSpec()
-		if err != nil {
-			continue
-		}
-
-		cwf.WorkflowExecution = &WorkflowExecution{
-			Parameters: parameters,
-		}
+	for _, resource := range cronWorkflows {
+		resource.Labels = labelsMap[resource.ID]
 	}
 
 	return
@@ -328,94 +387,7 @@ func (c *Client) CountCronWorkflows(namespace, workflowTemplateUID string) (coun
 	return
 }
 
-func (c *Client) updateCronWorkflow(namespace string, name string, workflowTemplateId *uint64, wf *wfv1.Workflow, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (updatedCronWorkflow *wfv1.CronWorkflow, err error) {
-	//Make sure the CronWorkflow exists before we edit it
-	toUpdateCWF, err := c.ArgoprojV1alpha1().CronWorkflows(namespace).Get(name, metav1.GetOptions{})
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"Name":      name,
-			"Error":     err.Error(),
-		}).Error("CronWorkflow not found.")
-		return nil, util.NewUserError(codes.NotFound, "CronWorkflow not found.")
-	}
-
-	if opts == nil {
-		opts = &WorkflowExecutionOptions{}
-	}
-
-	if opts.Name != "" {
-		cwf.ObjectMeta.Name = opts.Name
-	}
-	if opts.GenerateName != "" {
-		cwf.ObjectMeta.GenerateName = opts.GenerateName
-	}
-	if opts.Entrypoint != "" {
-		cwf.Spec.WorkflowSpec.Entrypoint = opts.Entrypoint
-	}
-	if opts.ServiceAccount != "" {
-		cwf.Spec.WorkflowSpec.ServiceAccountName = opts.ServiceAccount
-	}
-	if len(opts.Parameters) > 0 {
-		newParams := make([]wfv1.Parameter, 0)
-		passedParams := make(map[string]bool)
-		for _, param := range opts.Parameters {
-			newParams = append(newParams, wfv1.Parameter{
-				Name:  param.Name,
-				Value: param.Value,
-			})
-			passedParams[param.Name] = true
-		}
-
-		for _, param := range cwf.Spec.WorkflowSpec.Arguments.Parameters {
-			if _, ok := passedParams[param.Name]; ok {
-				// this parameter was overridden via command line
-				continue
-			}
-			newParams = append(newParams, param)
-		}
-		cwf.Spec.WorkflowSpec.Arguments.Parameters = newParams
-	}
-	if opts.Labels != nil {
-		cwf.ObjectMeta.Labels = *opts.Labels
-	}
-	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
-		return nil, err
-	}
-
-	err = InjectExitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
-	if err != nil {
-		return nil, err
-	}
-	err = InjectInitHandlerWorkflowExecutionStatistic(wf, namespace, int64(*workflowTemplateId))
-	if err != nil {
-		return nil, err
-	}
-
-	cwf.Spec.WorkflowSpec = wf.Spec
-	cwf.Spec.WorkflowMetadata = &wf.ObjectMeta
-
-	//merge the labels
-	mergedLabels := wf.ObjectMeta.Labels
-	if mergedLabels == nil {
-		mergedLabels = make(map[string]string)
-	}
-	for k, v := range *opts.Labels {
-		mergedLabels[k] = v
-	}
-	cwf.Spec.WorkflowMetadata.Labels = mergedLabels
-
-	cwf.Name = name
-	cwf.ResourceVersion = toUpdateCWF.ResourceVersion
-	updatedCronWorkflow, err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Update(cwf)
-	if err != nil {
-		return nil, err
-	}
-
-	return
-}
-
-func (c *Client) createCronWorkflow(namespace string, workflowTemplateId *uint64, wf *wfv1.Workflow, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (createdCronWorkflow *wfv1.CronWorkflow, err error) {
+func (c *Client) buildCronWorkflowDefinition(namespace string, workflowTemplateId *uint64, wf *wfv1.Workflow, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (cronWorkflow *wfv1.CronWorkflow, err error) {
 	if opts == nil {
 		opts = &WorkflowExecutionOptions{}
 	}
@@ -456,11 +428,12 @@ func (c *Client) createCronWorkflow(namespace string, workflowTemplateId *uint64
 	if opts.Labels != nil {
 		cwf.ObjectMeta.Labels = *opts.Labels
 	}
-	err = InjectExitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
+
+	err = injectExitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
 	if err != nil {
 		return nil, err
 	}
-	err = InjectInitHandlerWorkflowExecutionStatistic(wf, namespace, int64(*workflowTemplateId))
+	err = injectInitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
 	if err != nil {
 		return nil, err
 	}
@@ -480,6 +453,43 @@ func (c *Client) createCronWorkflow(namespace string, workflowTemplateId *uint64
 		mergedLabels[k] = v
 	}
 	cwf.Spec.WorkflowMetadata.Labels = mergedLabels
+
+	return cwf, nil
+}
+
+func (c *Client) updateCronWorkflow(namespace string, name string, workflowTemplateId *uint64, wf *wfv1.Workflow, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (updatedCronWorkflow *wfv1.CronWorkflow, err error) {
+	//Make sure the CronWorkflow exists before we edit it
+	toUpdateCWF, err := c.ArgoprojV1alpha1().CronWorkflows(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Name":      name,
+			"Error":     err.Error(),
+		}).Error("CronWorkflow not found.")
+		return nil, util.NewUserError(codes.NotFound, "CronWorkflow not found.")
+	}
+
+	cwf, err = c.buildCronWorkflowDefinition(namespace, workflowTemplateId, wf, cwf, opts)
+	if err != nil {
+		return
+	}
+
+	cwf.Name = name
+	cwf.ResourceVersion = toUpdateCWF.ResourceVersion
+	updatedCronWorkflow, err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Update(cwf)
+	if err != nil {
+		return nil, err
+	}
+
+	return
+}
+
+func (c *Client) createCronWorkflow(namespace string, workflowTemplateId *uint64, wf *wfv1.Workflow, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (createdCronWorkflow *wfv1.CronWorkflow, err error) {
+	cwf, err = c.buildCronWorkflowDefinition(namespace, workflowTemplateId, wf, cwf, opts)
+	if err != nil {
+		return
+	}
+
 	createdCronWorkflow, err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Create(cwf)
 	if err != nil {
 		return nil, err
@@ -489,10 +499,7 @@ func (c *Client) createCronWorkflow(namespace string, workflowTemplateId *uint64
 }
 
 func (c *Client) TerminateCronWorkflow(namespace, name string) (err error) {
-	query, args, err := sb.Select().
-		Columns("cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.workflow_template_version_id").
-		Columns("cw.schedule", "cw.timezone", "cw.suspend", "cw.concurrency_policy", "cw.starting_deadline_seconds").
-		Columns("cw.successful_jobs_history_limit", "cw.failed_jobs_history_limit", "cw.workflow_spec", "wtv.version").
+	query, args, err := sb.Select(cronWorkflowColumns("wtv.version")...).
 		From("cron_workflows cw").
 		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
@@ -547,9 +554,21 @@ func unmarshalCronWorkflows(cwfBytes []byte, strict bool) (cwfs wfv1.CronWorkflo
 
 func (c *Client) cronWorkflowSelectBuilder(namespace string, workflowTemplateUid string) sq.SelectBuilder {
 	sb := c.cronWorkflowSelectBuilderNoColumns(namespace, workflowTemplateUid).
-		Columns("cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.workflow_template_version_id").
-		Columns("cw.schedule", "cw.timezone", "cw.suspend", "cw.concurrency_policy", "cw.starting_deadline_seconds").
-		Columns("cw.successful_jobs_history_limit", "cw.failed_jobs_history_limit", "cw.workflow_spec", "wtv.version")
+		Columns(cronWorkflowColumns("wtv.version")...)
+
+	return sb
+}
+
+func (c *Client) cronWorkflowSelectBuilderNamespaceName(namespace string, name string) sq.SelectBuilder {
+	sb := sb.Select("cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.workflow_template_version_id").
+		Columns("cw.manifest", "wtv.version").
+		From("cron_workflows cw").
+		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
+		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
+		Where(sq.Eq{
+			"wt.namespace": namespace,
+			"cw.name":      name,
+		})
 
 	return sb
 }
@@ -628,4 +647,14 @@ func (c *Client) GetCronWorkflowStatisticsForTemplates(workflowTemplates ...*Wor
 	}
 
 	return
+}
+
+func cronWorkflowColumns(extraColumns ...string) []string {
+	results := []string{"cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.workflow_template_version_id", "cw.manifest"}
+
+	for _, str := range extraColumns {
+		results = append(results, str)
+	}
+
+	return results
 }

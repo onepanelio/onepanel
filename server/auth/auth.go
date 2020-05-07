@@ -80,6 +80,7 @@ func IsAuthorized(c *v1.Client, namespace, verb, group, resource, name string) (
 	if !allowed {
 		return false, status.Error(codes.PermissionDenied, "Permission denied.")
 	}
+
 	return
 }
 

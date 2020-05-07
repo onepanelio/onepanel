@@ -158,13 +158,14 @@ func (c *Client) ReplaceLabels(namespace, resource, uid string, keyValues map[st
 		return err
 	}
 
-	_, err = c.InsertLabelsBuilder(resource, resourceId, keyValues).
-		RunWith(tx).
-		Exec()
-	if err != nil {
-		return err
+	if len(keyValues) > 0 {
+		_, err = c.InsertLabelsBuilder(resource, resourceId, keyValues).
+			RunWith(tx).
+			Exec()
+		if err != nil {
+			return err
+		}
 	}
-
 	if err := tx.Commit(); err != nil {
 		return err
 	}
