@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/onepanelio/core/api"
 	"net/http"
 	"strings"
@@ -111,20 +110,16 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerIntercep
 		// if you don't need the token,
 		if info.FullMethod == "/api.AuthService/IsWorkspaceAuthenticated" {
 			md, ok := metadata.FromIncomingContext(ctx)
-			fmt.Printf("%+v\n", md) //todo remove
 			if !ok {
 				ctx = nil
 				return handler(ctx, req)
 			}
 			xOriginalAuthority := md.Get("x-original-authority")[0]
+			authToken := md.Get("authorization")
 			fqdn := md.Get("fqdn")[0]
-			//expected format: https://nginx-0--default.test-0.onepanel.site/
-			if xOriginalAuthority != fqdn { //Ignore fully qualified domain uris
-				ctx, err = getClient(ctx, kubeConfig, db)
-				if err != nil {
-					return
-				}
-
+			//len = 0 when user logged out or hasn't logged in yet
+			if len(authToken) == 0 && xOriginalAuthority == fqdn {
+				ctx = nil
 				return handler(ctx, req)
 			}
 		}
