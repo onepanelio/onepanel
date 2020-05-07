@@ -41,7 +41,7 @@ type Workspace struct {
 	StartedAt                *time.Time         `db:"started_at"`
 	PausedAt                 *time.Time         `db:"paused_at"`
 	TerminatedAt             *time.Time         `db:"terminated_at"`
-	WorkspaceTemplate        *WorkspaceTemplate `valid:"-"`
+	WorkspaceTemplate        *WorkspaceTemplate `db:"workspace_template" valid:"-"`
 	WorkspaceTemplateID      uint64             `db:"workspace_template_id"`
 	WorkspaceTemplateVersion uint64             `db:"workspace_template_version"`
 }
