@@ -92,12 +92,19 @@ service WorkflowService {
             body: "statistics"
         };
     }
+}
 
+message CreateWorkflowExecutionBody {
+    string workflowTemplateUid = 1;
+    int64 workflowTemplateVersion = 2;
+
+    repeated Parameter parameters = 3;
+    repeated KeyValue labels = 4;
 }
 
 message CreateWorkflowExecutionRequest {    
     string namespace = 1;
-    WorkflowExecution workflowExecution = 2;
+    CreateWorkflowExecutionBody workflowExecution = 2;
 }
 
 message CloneWorkflowExecutionRequest {

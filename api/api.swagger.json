@@ -762,7 +762,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/WorkflowExecution"
+              "$ref": "#/definitions/CreateWorkflowExecutionBody"
             }
           }
         ],
@@ -2314,6 +2314,30 @@
         "data": {
           "type": "string",
           "format": "byte"
+        }
+      }
+    },
+    "CreateWorkflowExecutionBody": {
+      "type": "object",
+      "properties": {
+        "workflowTemplateUid": {
+          "type": "string"
+        },
+        "workflowTemplateVersion": {
+          "type": "string",
+          "format": "int64"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Parameter"
+          }
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/KeyValue"
+          }
         }
       }
     },
