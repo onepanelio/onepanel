@@ -8,7 +8,9 @@ import (
 	"github.com/onepanelio/core/server/auth"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"strings"
 )
 
 type AuthServer struct{}
@@ -16,8 +18,32 @@ type AuthServer struct{}
 func NewAuthServer() *AuthServer {
 	return &AuthServer{}
 }
+func (a *AuthServer) IsWorkspaceAuthenticated(ctx context.Context, request *api.IsWorkspaceAuthenticatedRequest) (*empty.Empty, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return &empty.Empty{}, errors.New("Error parsing headers.")
+	}
+	//Expected format: x-original-authority:[name--default.alexcluster.onepanel.io]
+	xOriginalAuth := md.Get("x-original-authority")[0]
+	fqdn := md.Get("fqdn")[0]
+	if xOriginalAuth == fqdn {
+		return &empty.Empty{}, nil
+	}
+	pos := strings.Index(xOriginalAuth, ".")
+	if pos == -1 {
+		return &empty.Empty{}, errors.New("Error parsing x-original-authority. No '.' character.")
+	}
+	workspaceAndNamespace := xOriginalAuth[0:pos]
+	pieces := strings.Split(workspaceAndNamespace, "--")
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, pieces[1], "create", "apps/v1", "statefulsets", pieces[0])
+	if err != nil || !allowed {
+		return &empty.Empty{}, err
+	}
+	return &empty.Empty{}, nil
+}
 
-func (a *AuthServer) IsValidToken(ctx context.Context, req *api.IsValidTokenRequest) (*empty.Empty, error) {
+func (a *AuthServer) IsValidToken(ctx context.Context, req *api.IsValidTokenRequest) (res *api.IsValidTokenResponse, err error) {
 	if ctx == nil {
 		return nil, status.Error(codes.Unauthenticated, "Unauthenticated.")
 	}
@@ -45,5 +71,12 @@ func (a *AuthServer) IsValidToken(ctx context.Context, req *api.IsValidTokenRequ
 		return nil, status.Error(codes.Unauthenticated, "Unauthenticated.")
 	}
 
-	return &empty.Empty{}, nil
+	config, err := client.GetSystemConfig()
+	if err != nil {
+		return
+	}
+	res = &api.IsValidTokenResponse{}
+	res.Domain = config["ONEPANEL_DOMAIN"]
+
+	return res, nil
 }

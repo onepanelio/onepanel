@@ -2,10 +2,12 @@ package server
 
 import (
 	"context"
-	"errors"
+	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/onepanelio/core/pkg/util"
+	"github.com/onepanelio/core/pkg/util/pagination"
+	"github.com/onepanelio/core/server/converter"
 	"google.golang.org/grpc/codes"
-	"math"
+	argov1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sort"
 	"strings"
 	"time"
@@ -36,52 +38,27 @@ func apiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecu
 		Manifest:  wf.Manifest,
 	}
 
-	if !wf.StartedAt.IsZero() {
+	if wf.StartedAt != nil && !wf.StartedAt.IsZero() {
 		workflow.StartedAt = wf.StartedAt.Format(time.RFC3339)
 	}
-	if !wf.FinishedAt.IsZero() {
+	if wf.FinishedAt != nil && !wf.FinishedAt.IsZero() {
 		workflow.FinishedAt = wf.FinishedAt.Format(time.RFC3339)
 	}
 
 	if wf.WorkflowTemplate != nil {
-		workflow.WorkflowTemplate = &api.WorkflowTemplate{
-			Uid:        wf.WorkflowTemplate.UID,
-			CreatedAt:  wf.WorkflowTemplate.CreatedAt.UTC().Format(time.RFC3339),
-			Name:       wf.WorkflowTemplate.Name,
-			Version:    wf.WorkflowTemplate.Version,
-			Manifest:   wf.WorkflowTemplate.Manifest,
-			IsLatest:   wf.WorkflowTemplate.IsLatest,
-			IsArchived: wf.WorkflowTemplate.IsArchived,
+		workflow.WorkflowTemplate = apiWorkflowTemplate(wf.WorkflowTemplate)
+	}
+
+	if wf.ParametersBytes != nil {
+		parameters, err := wf.LoadParametersFromBytes()
+		if err != nil {
+			return nil
 		}
+
+		workflow.Parameters = converter.ParametersToAPI(parameters)
 	}
 
 	return
-}
-
-func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
-	return &api.WorkflowTemplate{
-		Uid:        wft.UID,
-		CreatedAt:  wft.CreatedAt.UTC().Format(time.RFC3339),
-		Name:       wft.Name,
-		Version:    wft.Version,
-		Manifest:   wft.Manifest,
-		IsLatest:   wft.IsLatest,
-		IsArchived: wft.IsArchived,
-	}
-}
-
-func mapToKeyValue(input map[string]string) []*api.KeyValue {
-	var result []*api.KeyValue
-	for key, value := range input {
-		keyValue := &api.KeyValue{
-			Key:   key,
-			Value: value,
-		}
-
-		result = append(result, keyValue)
-	}
-
-	return result
 }
 
 func (s *WorkflowServer) CreateWorkflowExecution(ctx context.Context, req *api.CreateWorkflowExecutionRequest) (*api.WorkflowExecution, error) {
@@ -92,13 +69,14 @@ func (s *WorkflowServer) CreateWorkflowExecution(ctx context.Context, req *api.C
 	}
 
 	workflow := &v1.WorkflowExecution{
+		Labels: converter.APIKeyValueToLabel(req.WorkflowExecution.Labels),
 		WorkflowTemplate: &v1.WorkflowTemplate{
 			UID:     req.WorkflowExecution.WorkflowTemplate.Uid,
 			Version: req.WorkflowExecution.WorkflowTemplate.Version,
 		},
 	}
 	for _, param := range req.WorkflowExecution.Parameters {
-		workflow.Parameters = append(workflow.Parameters, v1.WorkflowExecutionParameter{
+		workflow.Parameters = append(workflow.Parameters, v1.Parameter{
 			Name:  param.Name,
 			Value: ptr.String(param.Value),
 		})
@@ -110,6 +88,60 @@ func (s *WorkflowServer) CreateWorkflowExecution(ctx context.Context, req *api.C
 	}
 
 	return apiWorkflowExecution(wf), nil
+}
+
+func (s *WorkflowServer) CloneWorkflowExecution(ctx context.Context, req *api.CloneWorkflowExecutionRequest) (*api.WorkflowExecution, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	wf, err := client.CloneWorkflowExecution(req.Namespace, req.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	return apiWorkflowExecution(wf), nil
+}
+
+func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, req *api.AddWorkflowExecutionStatisticRequest) (*empty.Empty, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	phase := v1alpha1.NodeFailed
+	if req.Statistics.WorkflowStatus == "Succeeded" {
+		phase = v1alpha1.NodeSucceeded
+	}
+
+	workflow, err := client.ArgoprojV1alpha1().Workflows(req.Namespace).Get(req.Name, argov1.GetOptions{})
+	if err != nil {
+		return &empty.Empty{}, err
+	}
+
+	err = client.FinishWorkflowExecutionStatisticViaExitHandler(req.Namespace, req.Name,
+		req.Statistics.WorkflowTemplateId, phase, workflow.Status.StartedAt.UTC())
+
+	if err != nil {
+		return &empty.Empty{}, err
+	}
+	return &empty.Empty{}, nil
+}
+
+// @todo we should not pass in an id into the request.
+// instead pass in the cron workflow uid, we can load the cron workflow from db that way and get
+// all required data.
+func (s *WorkflowServer) CronStartWorkflowExecutionStatistic(ctx context.Context, req *api.CronStartWorkflowExecutionStatisticRequest) (*empty.Empty, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Name)
+	if err != nil || !allowed {
+		return &empty.Empty{}, err
+	}
+
+	err = client.CronStartWorkflowExecutionStatisticInsert(req.Namespace, req.Name, req.Statistics.WorkflowTemplateId)
+	if err != nil {
+		return &empty.Empty{}, err
+	}
+
+	return &empty.Empty{}, nil
 }
 
 func (s *WorkflowServer) GetWorkflowExecution(ctx context.Context, req *api.GetWorkflowExecutionRequest) (*api.WorkflowExecution, error) {
@@ -222,11 +254,8 @@ func (s *WorkflowServer) ListWorkflowExecutions(ctx context.Context, req *api.Li
 		return nil, err
 	}
 
-	if req.PageSize <= 0 {
-		req.PageSize = 15
-	}
-
-	workflows, err := client.ListWorkflowExecutions(req.Namespace, req.WorkflowTemplateUid, req.WorkflowTemplateVersion)
+	paginator := pagination.NewRequest(req.Page, req.PageSize)
+	workflows, err := client.ListWorkflowExecutions(req.Namespace, req.WorkflowTemplateUid, req.WorkflowTemplateVersion, &paginator)
 	if err != nil {
 		return nil, err
 	}
@@ -236,27 +265,17 @@ func (s *WorkflowServer) ListWorkflowExecutions(ctx context.Context, req *api.Li
 		apiWorkflowExecutions = append(apiWorkflowExecutions, apiWorkflowExecution(wf))
 	}
 
-	pages := int32(math.Ceil(float64(len(apiWorkflowExecutions)) / float64(req.PageSize)))
-	if req.Page > pages {
-		req.Page = pages
-	}
-
-	if req.Page <= 0 {
-		req.Page = 1
-	}
-
-	start := (req.Page - 1) * req.PageSize
-	end := start + req.PageSize
-	if end >= int32(len(apiWorkflowExecutions)) {
-		end = int32(len(apiWorkflowExecutions))
+	count, err := client.CountWorkflowExecutions(req.Namespace, req.WorkflowTemplateUid, req.WorkflowTemplateVersion)
+	if err != nil {
+		return nil, err
 	}
 
 	return &api.ListWorkflowExecutionsResponse{
-		Count:              end - start,
-		WorkflowExecutions: apiWorkflowExecutions[start:end],
-		Page:               req.Page,
-		Pages:              pages,
-		TotalCount:         int32(len(apiWorkflowExecutions)),
+		Count:              int32(len(apiWorkflowExecutions)),
+		WorkflowExecutions: apiWorkflowExecutions,
+		Page:               int32(paginator.Page),
+		Pages:              paginator.CalculatePages(count),
+		TotalCount:         int32(count),
 	}, nil
 }
 
@@ -288,197 +307,6 @@ func (s *WorkflowServer) TerminateWorkflowExecution(ctx context.Context, req *ap
 	}
 
 	return &empty.Empty{}, nil
-}
-
-func (s *WorkflowServer) CreateWorkflowTemplate(ctx context.Context, req *api.CreateWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	workflowTemplate := &v1.WorkflowTemplate{
-		Name:     req.WorkflowTemplate.Name,
-		Manifest: req.WorkflowTemplate.Manifest,
-	}
-	workflowTemplate, err = client.CreateWorkflowTemplate(req.Namespace, workflowTemplate)
-	if err != nil {
-		return nil, err
-	}
-	req.WorkflowTemplate.Uid = workflowTemplate.UID
-	req.WorkflowTemplate.Version = workflowTemplate.Version
-
-	return req.WorkflowTemplate, nil
-}
-
-func (s *WorkflowServer) CreateWorkflowTemplateVersion(ctx context.Context, req *api.CreateWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", req.WorkflowTemplate.Name)
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	workflowTemplate := &v1.WorkflowTemplate{
-		UID:      req.WorkflowTemplate.Uid,
-		Name:     req.WorkflowTemplate.Name,
-		Manifest: req.WorkflowTemplate.Manifest,
-	}
-
-	workflowTemplate, err = client.CreateWorkflowTemplateVersion(req.Namespace, workflowTemplate)
-	if err != nil {
-		return nil, err
-	}
-	req.WorkflowTemplate.Uid = workflowTemplate.UID
-	req.WorkflowTemplate.Name = workflowTemplate.Name
-	req.WorkflowTemplate.Version = workflowTemplate.Version
-
-	return req.WorkflowTemplate, nil
-}
-
-func (s *WorkflowServer) UpdateWorkflowTemplateVersion(ctx context.Context, req *api.UpdateWorkflowTemplateVersionRequest) (*api.WorkflowTemplate, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "workflows", req.WorkflowTemplate.Name)
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	workflowTemplate := &v1.WorkflowTemplate{
-		UID:      req.WorkflowTemplate.Uid,
-		Name:     req.WorkflowTemplate.Name,
-		Manifest: req.WorkflowTemplate.Manifest,
-		Version:  req.WorkflowTemplate.Version,
-	}
-	workflowTemplate, err = client.UpdateWorkflowTemplateVersion(req.Namespace, workflowTemplate)
-	if err != nil {
-		return nil, err
-	}
-	req.WorkflowTemplate.Uid = workflowTemplate.UID
-	req.WorkflowTemplate.Name = workflowTemplate.Name
-	req.WorkflowTemplate.Version = workflowTemplate.Version
-
-	return req.WorkflowTemplate, nil
-}
-
-func (s *WorkflowServer) GetWorkflowTemplate(ctx context.Context, req *api.GetWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	workflowTemplate, err := client.GetWorkflowTemplate(req.Namespace, req.Uid, req.Version)
-	if err != nil {
-		return nil, err
-	}
-
-	return apiWorkflowTemplate(workflowTemplate), nil
-}
-
-func (s *WorkflowServer) CloneWorkflowTemplate(ctx context.Context, req *api.CloneWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	allowed, err = auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	//Verify the template exists
-	workflowTemplate, err := client.GetWorkflowTemplate(req.Namespace, req.Uid, req.Version)
-	if err != nil {
-		return nil, err
-	}
-
-	//Verify the cloned template name doesn't exist already
-	workflowTemplateByName, err := client.GetWorkflowTemplateByName(req.Namespace, req.Name, req.Version)
-	if err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return nil, err
-		}
-	}
-	if workflowTemplateByName != nil {
-		return nil, errors.New("Cannot clone, WorkflowTemplate name already taken.")
-	}
-
-	workflowTemplateClone := &v1.WorkflowTemplate{
-		Name:     req.Name,
-		Manifest: workflowTemplate.Manifest,
-		IsLatest: true,
-	}
-	workflowTemplateCloned, err := client.CreateWorkflowTemplate(req.Namespace, workflowTemplateClone)
-	if err != nil {
-		return nil, err
-	}
-
-	return apiWorkflowTemplate(workflowTemplateCloned), nil
-}
-
-func (s *WorkflowServer) ListWorkflowTemplateVersions(ctx context.Context, req *api.ListWorkflowTemplateVersionsRequest) (*api.ListWorkflowTemplateVersionsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "workflows", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	workflowTemplateVersions, err := client.ListWorkflowTemplateVersions(req.Namespace, req.Uid)
-	if err != nil {
-		return nil, err
-	}
-
-	workflowTemplates := []*api.WorkflowTemplate{}
-	for _, wtv := range workflowTemplateVersions {
-		workflowTemplates = append(workflowTemplates, apiWorkflowTemplate(wtv))
-	}
-
-	return &api.ListWorkflowTemplateVersionsResponse{
-		Count:             int32(len(workflowTemplateVersions)),
-		WorkflowTemplates: workflowTemplates,
-	}, nil
-}
-
-func (s *WorkflowServer) ListWorkflowTemplates(ctx context.Context, req *api.ListWorkflowTemplatesRequest) (*api.ListWorkflowTemplatesResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "workflows", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	workflowTemplates, err := client.ListWorkflowTemplates(req.Namespace)
-	if err != nil {
-		return nil, err
-	}
-
-	apiWorkflowTemplates := []*api.WorkflowTemplate{}
-	for _, wtv := range workflowTemplates {
-		apiWorkflowTemplates = append(apiWorkflowTemplates, apiWorkflowTemplate(wtv))
-	}
-
-	return &api.ListWorkflowTemplatesResponse{
-		Count:             int32(len(apiWorkflowTemplates)),
-		WorkflowTemplates: apiWorkflowTemplates,
-	}, nil
-}
-
-func (s *WorkflowServer) ArchiveWorkflowTemplate(ctx context.Context, req *api.ArchiveWorkflowTemplateRequest) (*api.ArchiveWorkflowTemplateResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "argoproj.io", "workflows", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	archived, err := client.ArchiveWorkflowTemplate(req.Namespace, req.Uid)
-	if err != nil {
-		return nil, err
-	}
-
-	return &api.ArchiveWorkflowTemplateResponse{
-		WorkflowTemplate: &api.WorkflowTemplate{
-			IsArchived: archived,
-		},
-	}, nil
 }
 
 func (s *WorkflowServer) GetArtifact(ctx context.Context, req *api.GetArtifactRequest) (*api.ArtifactResponse, error) {
@@ -540,194 +368,4 @@ func (s *WorkflowServer) ListFiles(ctx context.Context, req *api.ListFilesReques
 		Files:      apiFiles,
 		ParentPath: parentPath,
 	}, nil
-}
-
-func (s *WorkflowServer) GetWorkflowExecutionLabels(ctx context.Context, req *api.GetLabelsRequest) (*api.GetLabelsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	labels, err := client.GetWorkflowExecutionLabels(req.Namespace, req.Name, "tags.onepanel.io/")
-	if err != nil {
-		return nil, err
-	}
-
-	resp := &api.GetLabelsResponse{
-		Labels: mapToKeyValue(labels),
-	}
-
-	return resp, nil
-}
-
-// Adds any labels that are not yet associated to the workflow execution.
-// If the label already exists, overwrites it.
-func (s *WorkflowServer) AddWorkflowExecutionLabels(ctx context.Context, req *api.AddLabelsRequest) (*api.GetLabelsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	keyValues := make(map[string]string)
-	for _, item := range req.Labels.Items {
-		keyValues[item.Key] = item.Value
-	}
-
-	labels, err := client.SetWorkflowExecutionLabels(req.Namespace, req.Name, "tags.onepanel.io/", keyValues, false)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := &api.GetLabelsResponse{
-		Labels: mapToKeyValue(labels),
-	}
-
-	return resp, nil
-}
-
-// Deletes all of the old labels and adds the new ones.
-func (s *WorkflowServer) ReplaceWorkflowExecutionLabels(ctx context.Context, req *api.ReplaceLabelsRequest) (*api.GetLabelsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	keyValues := make(map[string]string)
-	for _, item := range req.Labels.Items {
-		keyValues[item.Key] = item.Value
-	}
-
-	labels, err := client.SetWorkflowExecutionLabels(req.Namespace, req.Name, "tags.onepanel.io/", keyValues, true)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := &api.GetLabelsResponse{
-		Labels: mapToKeyValue(labels),
-	}
-
-	return resp, nil
-}
-
-func (s *WorkflowServer) DeleteWorkflowExecutionLabel(ctx context.Context, req *api.DeleteLabelRequest) (*api.GetLabelsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "argoproj.io", "workflows", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	keyToDelete := "tags.onepanel.io/" + req.Key
-	labels, err := client.DeleteWorkflowExecutionLabel(req.Namespace, req.Name, keyToDelete)
-	if err != nil {
-		return nil, err
-	}
-
-	keyValues := make(map[string]string)
-	for key, val := range labels {
-		keyValues[key] = val
-	}
-
-	labels, err = client.SetWorkflowExecutionLabels(req.Namespace, req.Name, "", keyValues, true)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := &api.GetLabelsResponse{
-		Labels: mapToKeyValue(labels),
-	}
-
-	return resp, nil
-}
-
-func (s *WorkflowServer) GetWorkflowTemplateLabels(ctx context.Context, req *api.GetLabelsRequest) (*api.GetLabelsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	labels, err := client.GetWorkflowTemplateLabels(req.Namespace, req.Name, "tags.onepanel.io/")
-	if err != nil {
-		return nil, err
-	}
-
-	resp := &api.GetLabelsResponse{
-		Labels: mapToKeyValue(labels),
-	}
-
-	return resp, nil
-}
-
-// Adds any labels that are not yet associated to the workflow execution.
-// If the label already exists, overwrites it.
-func (s *WorkflowServer) AddWorkflowTemplateLabels(ctx context.Context, req *api.AddLabelsRequest) (*api.GetLabelsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	keyValues := make(map[string]string)
-	for _, item := range req.Labels.Items {
-		keyValues[item.Key] = item.Value
-	}
-
-	labels, err := client.SetWorkflowTemplateLabels(req.Namespace, req.Name, "tags.onepanel.io/", keyValues, false)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := &api.GetLabelsResponse{
-		Labels: mapToKeyValue(labels),
-	}
-
-	return resp, nil
-}
-
-// Deletes all of the old labels and adds the new ones.
-func (s *WorkflowServer) ReplaceWorkflowTemplateLabels(ctx context.Context, req *api.ReplaceLabelsRequest) (*api.GetLabelsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	keyValues := make(map[string]string)
-	for _, item := range req.Labels.Items {
-		keyValues[item.Key] = item.Value
-	}
-
-	labels, err := client.SetWorkflowTemplateLabels(req.Namespace, req.Name, "tags.onepanel.io/", keyValues, true)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := &api.GetLabelsResponse{
-		Labels: mapToKeyValue(labels),
-	}
-
-	return resp, nil
-}
-
-func (s *WorkflowServer) DeleteWorkflowTemplateLabel(ctx context.Context, req *api.DeleteLabelRequest) (*api.GetLabelsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "argoproj.io", "workflows", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	keyToDelete := "tags.onepanel.io/" + req.Key
-	labels, err := client.DeleteWorkflowTemplateLabel(req.Namespace, req.Name, keyToDelete)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := &api.GetLabelsResponse{
-		Labels: mapToKeyValue(labels),
-	}
-
-	return resp, nil
 }

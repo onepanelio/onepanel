@@ -5,9 +5,10 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
+	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/server/auth"
-	"math"
+	"github.com/onepanelio/core/server/converter"
 )
 
 type CronWorkflowServer struct{}
@@ -17,30 +18,20 @@ func NewCronWorkflowServer() *CronWorkflowServer {
 }
 
 func apiCronWorkflow(cwf *v1.CronWorkflow) (cronWorkflow *api.CronWorkflow) {
+	if cwf == nil {
+		return nil
+	}
+
 	cronWorkflow = &api.CronWorkflow{
-		Name:              cwf.Name,
-		Schedule:          cwf.Schedule,
-		Timezone:          cwf.Timezone,
-		Suspend:           cwf.Suspend,
-		ConcurrencyPolicy: cwf.ConcurrencyPolicy,
-	}
-
-	if cwf.StartingDeadlineSeconds != nil {
-		cronWorkflow.StartingDeadlineSeconds = *cwf.StartingDeadlineSeconds
-	}
-
-	if cwf.SuccessfulJobsHistoryLimit != nil {
-		cronWorkflow.SuccessfulJobsHistoryLimit = *cwf.SuccessfulJobsHistoryLimit
-	}
-
-	if cwf.FailedJobsHistoryLimit != nil {
-		cronWorkflow.FailedJobsHistoryLimit = *cwf.FailedJobsHistoryLimit
+		Name:     cwf.Name,
+		Labels:   converter.MappingToKeyValue(cwf.Labels),
+		Manifest: cwf.Manifest,
 	}
 
 	if cwf.WorkflowExecution != nil {
 		cronWorkflow.WorkflowExecution = GenApiWorkflowExecution(cwf.WorkflowExecution)
 		for _, param := range cwf.WorkflowExecution.Parameters {
-			convertedParam := &api.WorkflowExecutionParameter{
+			convertedParam := &api.Parameter{
 				Name:  param.Name,
 				Value: *param.Value,
 			}
@@ -65,30 +56,36 @@ func (c *CronWorkflowServer) CreateCronWorkflow(ctx context.Context, req *api.Cr
 		},
 	}
 	for _, param := range req.CronWorkflow.WorkflowExecution.Parameters {
-		workflow.Parameters = append(workflow.Parameters, v1.WorkflowExecutionParameter{
-			Name:  param.Name,
-			Value: ptr.String(param.Value),
+		options := make([]*v1.ParameterOption, 0)
+		for _, option := range param.Options {
+			options = append(options, &v1.ParameterOption{
+				Name:  option.Name,
+				Value: option.Value,
+			})
+		}
+
+		workflow.Parameters = append(workflow.Parameters, v1.Parameter{
+			Name:        param.Name,
+			Value:       ptr.String(param.Value),
+			Type:        param.Type,
+			DisplayName: &param.DisplayName,
+			Hint:        &param.Hint,
+			Options:     options,
+			Required:    param.Required,
 		})
 	}
 
 	cronWorkflow := v1.CronWorkflow{
-		Schedule:                   req.CronWorkflow.Schedule,
-		Timezone:                   req.CronWorkflow.Timezone,
-		Suspend:                    req.CronWorkflow.Suspend,
-		ConcurrencyPolicy:          req.CronWorkflow.ConcurrencyPolicy,
-		StartingDeadlineSeconds:    &req.CronWorkflow.StartingDeadlineSeconds,
-		SuccessfulJobsHistoryLimit: &req.CronWorkflow.SuccessfulJobsHistoryLimit,
-		FailedJobsHistoryLimit:     &req.CronWorkflow.FailedJobsHistoryLimit,
-		WorkflowExecution:          workflow,
+		WorkflowExecution: workflow,
+		Manifest:          req.CronWorkflow.Manifest,
+		Labels:            converter.APIKeyValueToLabel(req.CronWorkflow.Labels),
 	}
 
 	cwf, err := client.CreateCronWorkflow(req.Namespace, &cronWorkflow)
 	if err != nil {
 		return nil, err
 	}
-	if cwf == nil {
-		return nil, nil
-	}
+
 	return apiCronWorkflow(cwf), nil
 }
 
@@ -105,21 +102,29 @@ func (c *CronWorkflowServer) UpdateCronWorkflow(ctx context.Context, req *api.Up
 		},
 	}
 	for _, param := range req.CronWorkflow.WorkflowExecution.Parameters {
-		workflow.Parameters = append(workflow.Parameters, v1.WorkflowExecutionParameter{
-			Name:  param.Name,
-			Value: ptr.String(param.Value),
+		options := make([]*v1.ParameterOption, 0)
+		for _, option := range param.Options {
+			options = append(options, &v1.ParameterOption{
+				Name:  option.Name,
+				Value: option.Value,
+			})
+		}
+
+		workflow.Parameters = append(workflow.Parameters, v1.Parameter{
+			Name:        param.Name,
+			Value:       ptr.String(param.Value),
+			Type:        param.Type,
+			DisplayName: &param.DisplayName,
+			Hint:        &param.Hint,
+			Options:     options,
+			Required:    param.Required,
 		})
 	}
 
 	cronWorkflow := v1.CronWorkflow{
-		Schedule:                   req.CronWorkflow.Schedule,
-		Timezone:                   req.CronWorkflow.Timezone,
-		Suspend:                    req.CronWorkflow.Suspend,
-		ConcurrencyPolicy:          req.CronWorkflow.ConcurrencyPolicy,
-		StartingDeadlineSeconds:    &req.CronWorkflow.StartingDeadlineSeconds,
-		SuccessfulJobsHistoryLimit: &req.CronWorkflow.SuccessfulJobsHistoryLimit,
-		FailedJobsHistoryLimit:     &req.CronWorkflow.FailedJobsHistoryLimit,
-		WorkflowExecution:          workflow,
+		WorkflowExecution: workflow,
+		Manifest:          req.CronWorkflow.Manifest,
+		Labels:            converter.APIKeyValueToLabel(req.CronWorkflow.Labels),
 	}
 
 	cwf, err := client.UpdateCronWorkflow(req.Namespace, req.Name, &cronWorkflow)
@@ -145,107 +150,6 @@ func (c *CronWorkflowServer) GetCronWorkflow(ctx context.Context, req *api.GetCr
 	return apiCronWorkflow(cwf), nil
 }
 
-func (c *CronWorkflowServer) GetCronWorkflowLabels(ctx context.Context, req *api.GetLabelsRequest) (*api.GetLabelsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "cronworkflows", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	labels, err := client.GetCronWorkflowLabels(req.Namespace, req.Name, "tags.onepanel.io/")
-	if err != nil {
-		return nil, err
-	}
-
-	resp := &api.GetLabelsResponse{
-		Labels: mapToKeyValue(labels),
-	}
-
-	return resp, nil
-}
-
-// Adds any labels that are not yet associated to the workflow execution.
-// If the label already exists, overwrites it.
-func (c *CronWorkflowServer) AddCronWorkflowLabels(ctx context.Context, req *api.AddLabelsRequest) (*api.GetLabelsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "cronworkflows", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	keyValues := make(map[string]string)
-	for _, item := range req.Labels.Items {
-		keyValues[item.Key] = item.Value
-	}
-
-	labels, err := client.SetCronWorkflowLabels(req.Namespace, req.Name, "tags.onepanel.io/", keyValues, false)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := &api.GetLabelsResponse{
-		Labels: mapToKeyValue(labels),
-	}
-
-	return resp, nil
-}
-
-// Deletes all of the old labels and adds the new ones.
-func (c *CronWorkflowServer) ReplaceCronWorkflowLabels(ctx context.Context, req *api.ReplaceLabelsRequest) (*api.GetLabelsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "cronworkflows", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	keyValues := make(map[string]string)
-	for _, item := range req.Labels.Items {
-		keyValues[item.Key] = item.Value
-	}
-
-	labels, err := client.SetCronWorkflowLabels(req.Namespace, req.Name, "tags.onepanel.io/", keyValues, true)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := &api.GetLabelsResponse{
-		Labels: mapToKeyValue(labels),
-	}
-
-	return resp, nil
-}
-
-func (c *CronWorkflowServer) DeleteCronWorkflowLabel(ctx context.Context, req *api.DeleteLabelRequest) (*api.GetLabelsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "argoproj.io", "cronworkflows", "")
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	prefix := "tags.onepanel.io/"
-	keyToDelete := prefix + req.Key
-	labels, err := client.DeleteCronWorkflowLabel(req.Namespace, req.Name, keyToDelete)
-	if err != nil {
-		return nil, err
-	}
-
-	keyValues := make(map[string]string)
-	for key, val := range labels {
-		keyValues[key] = val
-	}
-
-	labels, err = client.SetCronWorkflowLabels(req.Namespace, req.Name, "", keyValues, true)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := &api.GetLabelsResponse{
-		Labels: mapToKeyValue(labels),
-	}
-
-	return resp, nil
-}
-
 func (c *CronWorkflowServer) ListCronWorkflows(ctx context.Context, req *api.ListCronWorkflowRequest) (*api.ListCronWorkflowsResponse, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "cronworkflows", "")
@@ -253,11 +157,8 @@ func (c *CronWorkflowServer) ListCronWorkflows(ctx context.Context, req *api.Lis
 		return nil, err
 	}
 
-	if req.PageSize <= 0 {
-		req.PageSize = 15
-	}
-
-	cronWorkflows, err := client.ListCronWorkflows(req.Namespace, req.WorkflowTemplateUid)
+	paginator := pagination.NewRequest(req.Page, req.PageSize)
+	cronWorkflows, err := client.ListCronWorkflows(req.Namespace, req.WorkflowTemplateName, &paginator)
 	if err != nil {
 		return nil, err
 	}
@@ -266,27 +167,17 @@ func (c *CronWorkflowServer) ListCronWorkflows(ctx context.Context, req *api.Lis
 		apiCronWorkflows = append(apiCronWorkflows, apiCronWorkflow(cwf))
 	}
 
-	pages := int32(math.Ceil(float64(len(apiCronWorkflows)) / float64(req.PageSize)))
-	if req.Page > pages {
-		req.Page = pages
-	}
-
-	if req.Page <= 0 {
-		req.Page = 1
-	}
-
-	start := (req.Page - 1) * req.PageSize
-	end := start + req.PageSize
-	if end >= int32(len(apiCronWorkflows)) {
-		end = int32(len(apiCronWorkflows))
+	count, err := client.CountCronWorkflows(req.Namespace, req.WorkflowTemplateName)
+	if err != nil {
+		return nil, err
 	}
 
 	return &api.ListCronWorkflowsResponse{
-		Count:         end - start,
-		CronWorkflows: apiCronWorkflows[start:end],
-		Page:          req.Page,
-		Pages:         pages,
-		TotalCount:    int32(len(apiCronWorkflows)),
+		Count:         int32(len(apiCronWorkflows)),
+		CronWorkflows: apiCronWorkflows,
+		Page:          int32(paginator.Page),
+		Pages:         paginator.CalculatePages(count),
+		TotalCount:    int32(count),
 	}, nil
 }
 

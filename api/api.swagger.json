@@ -28,7 +28,13 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "properties": {}
+              "$ref": "#/definitions/IsValidTokenResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -55,6 +61,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/ListNamespacesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -92,6 +104,12 @@
             "schema": {
               "$ref": "#/definitions/Namespace"
             }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
           }
         },
         "parameters": [
@@ -117,6 +135,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/CronWorkflow"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -150,6 +174,12 @@
             "schema": {
               "$ref": "#/definitions/CronWorkflow"
             }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
           }
         },
         "parameters": [
@@ -170,13 +200,19 @@
           "CronWorkflowService"
         ]
       },
-      "post": {
+      "put": {
         "operationId": "UpdateCronWorkflow",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/CronWorkflow"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -216,6 +252,12 @@
             "schema": {
               "$ref": "#/definitions/ListCronWorkflowsResponse"
             }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
           }
         },
         "parameters": [
@@ -226,7 +268,7 @@
             "type": "string"
           },
           {
-            "name": "workflow_template_uid",
+            "name": "workflow_template_name",
             "in": "query",
             "required": false,
             "type": "string"
@@ -251,144 +293,6 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/cron_workflows/{name}/labels": {
-      "get": {
-        "operationId": "GetCronWorkflowLabels",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/GetLabelsResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "CronWorkflowService"
-        ]
-      },
-      "post": {
-        "operationId": "AddCronWorkflowLabels",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/GetLabelsResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/Labels"
-            }
-          }
-        ],
-        "tags": [
-          "CronWorkflowService"
-        ]
-      },
-      "put": {
-        "operationId": "ReplaceCronWorkflowLabels",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/GetLabelsResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/Labels"
-            }
-          }
-        ],
-        "tags": [
-          "CronWorkflowService"
-        ]
-      }
-    },
-    "/apis/v1beta1/{namespace}/cron_workflows/{name}/labels/{key}": {
-      "delete": {
-        "operationId": "DeleteCronWorkflowLabel",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/GetLabelsResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "key",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "CronWorkflowService"
-        ]
-      }
-    },
     "/apis/v1beta1/{namespace}/cron_workflows/{name}/terminate": {
       "delete": {
         "operationId": "TerminateCronWorkflow",
@@ -398,6 +302,12 @@
             "schema": {
               "properties": {}
             }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
           }
         },
         "parameters": [
@@ -419,7 +329,7 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/cron_workflows/{workflow_template_uid}": {
+    "/apis/v1beta1/{namespace}/cron_workflows/{workflow_template_name}": {
       "get": {
         "operationId": "ListCronWorkflows2",
         "responses": {
@@ -427,6 +337,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/ListCronWorkflowsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -438,7 +354,7 @@
             "type": "string"
           },
           {
-            "name": "workflow_template_uid",
+            "name": "workflow_template_name",
             "in": "path",
             "required": true,
             "type": "string"
@@ -472,6 +388,12 @@
             "schema": {
               "$ref": "#/definitions/ListSecretsResponse"
             }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
           }
         },
         "parameters": [
@@ -493,6 +415,12 @@
             "description": "A successful response.",
             "schema": {
               "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -526,6 +454,12 @@
             "schema": {
               "$ref": "#/definitions/Secret"
             }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
           }
         },
         "parameters": [
@@ -553,6 +487,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/DeleteSecretResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -584,6 +524,12 @@
             "schema": {
               "$ref": "#/definitions/SecretExistsResponse"
             }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
           }
         },
         "parameters": [
@@ -613,6 +559,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/AddSecretKeyValueResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -649,6 +601,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/UpdateSecretKeyValueResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -688,6 +646,12 @@
             "schema": {
               "$ref": "#/definitions/DeleteSecretKeyResponse"
             }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
           }
         },
         "parameters": [
@@ -723,6 +687,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/ListWorkflowExecutionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -765,13 +735,18 @@
         ]
       },
       "post": {
-        "summary": "Creates a Workflow",
         "operationId": "CreateWorkflowExecution",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/WorkflowExecution"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -805,6 +780,46 @@
             "schema": {
               "$ref": "#/definitions/WorkflowExecution"
             }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      },
+      "post": {
+        "operationId": "CloneWorkflowExecution",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkflowExecution"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
           }
         },
         "parameters": [
@@ -835,6 +850,12 @@
             "schema": {
               "$ref": "#/definitions/ArtifactResponse"
             }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
           }
         },
         "parameters": [
@@ -862,6 +883,50 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}/cron_start_statistics": {
+      "post": {
+        "operationId": "CronStartWorkflowExecutionStatistic",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Statistics"
+            }
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workflow_executions/{name}/files/{path}": {
       "get": {
         "operationId": "ListFiles",
@@ -870,6 +935,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/ListFilesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -898,144 +969,6 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/workflow_executions/{name}/labels": {
-      "get": {
-        "operationId": "GetWorkflowExecutionLabels",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/GetLabelsResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "WorkflowService"
-        ]
-      },
-      "post": {
-        "operationId": "AddWorkflowExecutionLabels",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/GetLabelsResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/Labels"
-            }
-          }
-        ],
-        "tags": [
-          "WorkflowService"
-        ]
-      },
-      "put": {
-        "operationId": "ReplaceWorkflowExecutionLabels",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/GetLabelsResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/Labels"
-            }
-          }
-        ],
-        "tags": [
-          "WorkflowService"
-        ]
-      }
-    },
-    "/apis/v1beta1/{namespace}/workflow_executions/{name}/labels/{key}": {
-      "delete": {
-        "operationId": "DeleteWorkflowExecutionLabel",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/GetLabelsResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "key",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "WorkflowService"
-        ]
-      }
-    },
     "/apis/v1beta1/{namespace}/workflow_executions/{name}/pods/{podName}/containers/{containerName}/logs": {
       "get": {
         "operationId": "GetWorkflowExecutionLogs",
@@ -1043,7 +976,22 @@
           "200": {
             "description": "A successful response.(streaming responses)",
             "schema": {
-              "$ref": "#/x-stream-definitions/LogEntry"
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/LogEntry"
+                },
+                "error": {
+                  "$ref": "#/definitions/grpc.gateway.runtime.StreamError"
+                }
+              },
+              "title": "Stream result of LogEntry"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -1087,6 +1035,12 @@
             "schema": {
               "$ref": "#/definitions/GetWorkflowExecutionMetricsResponse"
             }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
           }
         },
         "parameters": [
@@ -1123,6 +1077,12 @@
             "schema": {
               "$ref": "#/definitions/WorkflowExecution"
             }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
           }
         },
         "parameters": [
@@ -1144,6 +1104,50 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/workflow_executions/{name}/statistics": {
+      "post": {
+        "operationId": "AddWorkflowExecutionStatistics",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Statistics"
+            }
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workflow_executions/{name}/terminate": {
       "put": {
         "operationId": "TerminateWorkflowExecution",
@@ -1152,6 +1156,12 @@
             "description": "A successful response.",
             "schema": {
               "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -1181,7 +1191,22 @@
           "200": {
             "description": "A successful response.(streaming responses)",
             "schema": {
-              "$ref": "#/x-stream-definitions/WorkflowExecution"
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/WorkflowExecution"
+                },
+                "error": {
+                  "$ref": "#/definitions/grpc.gateway.runtime.StreamError"
+                }
+              },
+              "title": "Stream result of WorkflowExecution"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -1213,6 +1238,12 @@
             "schema": {
               "$ref": "#/definitions/ListWorkflowTemplatesResponse"
             }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
           }
         },
         "parameters": [
@@ -1221,10 +1252,24 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       },
       "post": {
@@ -1235,6 +1280,12 @@
             "schema": {
               "$ref": "#/definitions/WorkflowTemplate"
             }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
           }
         },
         "parameters": [
@@ -1254,145 +1305,7 @@
           }
         ],
         "tags": [
-          "WorkflowService"
-        ]
-      }
-    },
-    "/apis/v1beta1/{namespace}/workflow_templates/{name}/labels": {
-      "get": {
-        "operationId": "GetWorkflowTemplateLabels",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/GetLabelsResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "WorkflowService"
-        ]
-      },
-      "post": {
-        "operationId": "AddWorkflowTemplateLabels",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/GetLabelsResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/Labels"
-            }
-          }
-        ],
-        "tags": [
-          "WorkflowService"
-        ]
-      },
-      "put": {
-        "operationId": "ReplaceWorkflowTemplateLabels",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/GetLabelsResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/Labels"
-            }
-          }
-        ],
-        "tags": [
-          "WorkflowService"
-        ]
-      }
-    },
-    "/apis/v1beta1/{namespace}/workflow_templates/{name}/labels/{key}": {
-      "delete": {
-        "operationId": "DeleteWorkflowTemplateLabel",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/GetLabelsResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "key",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       }
     },
@@ -1405,6 +1318,12 @@
             "schema": {
               "$ref": "#/definitions/WorkflowTemplate"
             }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
           }
         },
         "parameters": [
@@ -1424,12 +1343,12 @@
             "name": "version",
             "in": "query",
             "required": false,
-            "type": "integer",
-            "format": "int32"
+            "type": "string",
+            "format": "int64"
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       }
     },
@@ -1442,6 +1361,12 @@
             "schema": {
               "$ref": "#/definitions/ArchiveWorkflowTemplateResponse"
             }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
           }
         },
         "parameters": [
@@ -1459,7 +1384,7 @@
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       }
     },
@@ -1471,6 +1396,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/WorkflowTemplate"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -1497,12 +1428,12 @@
             "name": "version",
             "in": "query",
             "required": false,
-            "type": "integer",
-            "format": "int32"
+            "type": "string",
+            "format": "int64"
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       }
     },
@@ -1514,6 +1445,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/WorkflowTemplate"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -1540,12 +1477,12 @@
             "name": "version",
             "in": "path",
             "required": true,
-            "type": "integer",
-            "format": "int32"
+            "type": "string",
+            "format": "int64"
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       }
     },
@@ -1557,6 +1494,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/ListWorkflowTemplateVersionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -1575,7 +1518,7 @@
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       }
     },
@@ -1587,6 +1530,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/WorkflowTemplate"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -1607,12 +1556,12 @@
             "name": "version",
             "in": "path",
             "required": true,
-            "type": "integer",
-            "format": "int32"
+            "type": "string",
+            "format": "int64"
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       }
     },
@@ -1624,6 +1573,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/WorkflowTemplate"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -1650,7 +1605,7 @@
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
         ]
       }
     },
@@ -1662,6 +1617,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/WorkflowTemplate"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
           }
         },
@@ -1682,8 +1643,8 @@
             "name": "workflowTemplate.version",
             "in": "path",
             "required": true,
-            "type": "integer",
-            "format": "int32"
+            "type": "string",
+            "format": "int64"
           },
           {
             "name": "body",
@@ -1695,7 +1656,636 @@
           }
         ],
         "tags": [
-          "WorkflowService"
+          "WorkflowTemplateService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workspace_templates": {
+      "get": {
+        "operationId": "ListWorkspaceTemplates",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListWorkspaceTemplatesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "WorkspaceTemplateService"
+        ]
+      },
+      "post": {
+        "operationId": "CreateWorkspaceTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkspaceTemplate"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WorkspaceTemplate"
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceTemplateService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workspace_templates/{name}": {
+      "put": {
+        "operationId": "UpdateWorkspaceTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkspaceTemplate"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WorkspaceTemplate"
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceTemplateService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workspace_templates/{uid}": {
+      "get": {
+        "operationId": "GetWorkspaceTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkspaceTemplate"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "WorkspaceTemplateService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workspace_templates/{uid}/versions": {
+      "get": {
+        "operationId": "ListWorkspaceTemplateVersions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListWorkspaceTemplateVersionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceTemplateService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workspace_templates/{uid}/workflow_template": {
+      "post": {
+        "operationId": "GenerateWorkspaceTemplateWorkflowTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkflowTemplate"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WorkspaceTemplate"
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceTemplateService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workspaces": {
+      "get": {
+        "operationId": "ListWorkspaces",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListWorkspaceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      },
+      "post": {
+        "operationId": "CreateWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/Workspace"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Workspace"
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workspaces/{uid}": {
+      "delete": {
+        "operationId": "DeleteWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workspaces/{uid}/pause": {
+      "put": {
+        "operationId": "PauseWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workspaces/{uid}/status": {
+      "put": {
+        "operationId": "UpdateWorkspaceStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WorkspaceStatus"
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/{resource}/{uid}/labels": {
+      "get": {
+        "operationId": "GetLabels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetLabelsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "resource",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "LabelService"
+        ]
+      },
+      "post": {
+        "operationId": "AddLabels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetLabelsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "resource",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Labels"
+            }
+          }
+        ],
+        "tags": [
+          "LabelService"
+        ]
+      },
+      "put": {
+        "operationId": "ReplaceLabels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetLabelsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "resource",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Labels"
+            }
+          }
+        ],
+        "tags": [
+          "LabelService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/{resource}/{uid}/labels/{key}": {
+      "delete": {
+        "operationId": "DeleteLabel",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetLabelsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "resource",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "LabelService"
         ]
       }
     }
@@ -1733,33 +2323,26 @@
         "name": {
           "type": "string"
         },
-        "schedule": {
+        "manifest": {
           "type": "string"
-        },
-        "timezone": {
-          "type": "string"
-        },
-        "suspend": {
-          "type": "boolean",
-          "format": "boolean"
-        },
-        "concurrencyPolicy": {
-          "type": "string"
-        },
-        "startingDeadlineSeconds": {
-          "type": "string",
-          "format": "int64"
-        },
-        "successfulJobsHistoryLimit": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "failedJobsHistoryLimit": {
-          "type": "integer",
-          "format": "int32"
         },
         "workflowExecution": {
           "$ref": "#/definitions/WorkflowExecution"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/KeyValue"
+          }
+        }
+      }
+    },
+    "CronWorkflowStatisticsReport": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -1828,6 +2411,14 @@
           "items": {
             "$ref": "#/definitions/Metric"
           }
+        }
+      }
+    },
+    "IsValidTokenResponse": {
+      "type": "object",
+      "properties": {
+        "domain": {
+          "type": "string"
         }
       }
     },
@@ -1990,6 +2581,87 @@
           "items": {
             "$ref": "#/definitions/WorkflowTemplate"
           }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pages": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "ListWorkspaceResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "workspaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Workspace"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pages": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "ListWorkspaceTemplateVersionsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "workspaceTemplates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WorkspaceTemplate"
+          }
+        }
+      }
+    },
+    "ListWorkspaceTemplatesResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "workspaceTemplates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WorkspaceTemplate"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pages": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -2027,6 +2699,47 @@
         }
       }
     },
+    "Parameter": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "hint": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean",
+          "format": "boolean"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ParameterOption"
+          }
+        }
+      }
+    },
+    "ParameterOption": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
     "Secret": {
       "type": "object",
       "properties": {
@@ -2047,6 +2760,18 @@
         "exists": {
           "type": "boolean",
           "format": "boolean"
+        }
+      }
+    },
+    "Statistics": {
+      "type": "object",
+      "properties": {
+        "workflowStatus": {
+          "type": "string"
+        },
+        "workflowTemplateId": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },
@@ -2094,22 +2819,41 @@
         "parameters": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/WorkflowExecutionParameter"
+            "$ref": "#/definitions/Parameter"
           }
         },
         "workflowTemplate": {
           "$ref": "#/definitions/WorkflowTemplate"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/KeyValue"
+          }
         }
       }
     },
-    "WorkflowExecutionParameter": {
+    "WorkflowExecutionStatisticReport": {
       "type": "object",
       "properties": {
-        "name": {
+        "total": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "lastExecuted": {
           "type": "string"
         },
-        "value": {
-          "type": "string"
+        "running": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "completed": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "failed": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -2126,8 +2870,12 @@
           "type": "string"
         },
         "version": {
-          "type": "integer",
-          "format": "int32"
+          "type": "string",
+          "format": "int64"
+        },
+        "versions": {
+          "type": "string",
+          "format": "int64"
         },
         "manifest": {
           "type": "string"
@@ -2139,6 +2887,99 @@
         "isArchived": {
           "type": "boolean",
           "format": "boolean"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/KeyValue"
+          }
+        },
+        "stats": {
+          "$ref": "#/definitions/WorkflowExecutionStatisticReport"
+        },
+        "cronStats": {
+          "$ref": "#/definitions/CronWorkflowStatisticsReport"
+        }
+      }
+    },
+    "Workspace": {
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string",
+          "format": "int64"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Parameter"
+          }
+        },
+        "workspaceTemplate": {
+          "$ref": "#/definitions/WorkspaceTemplate"
+        },
+        "status": {
+          "$ref": "#/definitions/WorkspaceStatus"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/KeyValue"
+          }
+        }
+      }
+    },
+    "WorkspaceStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "type": "string"
+        },
+        "startedAt": {
+          "type": "string"
+        },
+        "pausedAt": {
+          "type": "string"
+        },
+        "terminatedAt": {
+          "type": "string"
+        }
+      }
+    },
+    "WorkspaceTemplate": {
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string",
+          "format": "int64"
+        },
+        "manifest": {
+          "type": "string"
+        },
+        "isLatest": {
+          "type": "boolean",
+          "format": "boolean"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "workflowTemplate": {
+          "$ref": "#/definitions/WorkflowTemplate"
         }
       }
     },
@@ -2156,6 +2997,27 @@
         }
       },
       "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(&foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := &pb.Foo{...}\n     any, err := ptypes.MarshalAny(foo)\n     ...\n     foo := &pb.Foo{}\n     if err := ptypes.UnmarshalAny(any, foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": <string>,\n      \"lastName\": <string>\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
+    },
+    "grpc.gateway.runtime.Error": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/google.protobuf.Any"
+          }
+        }
+      }
     },
     "grpc.gateway.runtime.StreamError": {
       "type": "object",
@@ -2181,32 +3043,6 @@
           }
         }
       }
-    }
-  },
-  "x-stream-definitions": {
-    "LogEntry": {
-      "type": "object",
-      "properties": {
-        "result": {
-          "$ref": "#/definitions/LogEntry"
-        },
-        "error": {
-          "$ref": "#/definitions/grpc.gateway.runtime.StreamError"
-        }
-      },
-      "title": "Stream result of LogEntry"
-    },
-    "WorkflowExecution": {
-      "type": "object",
-      "properties": {
-        "result": {
-          "$ref": "#/definitions/WorkflowExecution"
-        },
-        "error": {
-          "$ref": "#/definitions/grpc.gateway.runtime.StreamError"
-        }
-      },
-      "title": "Stream result of WorkflowExecution"
     }
   },
   "securityDefinitions": {

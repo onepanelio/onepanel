@@ -7,6 +7,7 @@ import "google/protobuf/empty.proto";
 import "workflow_template.proto";
 import "metric.proto";
 import "label.proto";
+import "common.proto";
 
 service WorkflowService {
     // Creates a Workflow
@@ -14,6 +15,13 @@ service WorkflowService {
         option (google.api.http) = {
             post: "/apis/v1beta1/{namespace}/workflow_executions"
             body: "workflowExecution"
+        };
+    }
+
+    // Clone a Workflow. This is the same as running it again.
+    rpc CloneWorkflowExecution (CloneWorkflowExecutionRequest) returns (WorkflowExecution) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/{namespace}/workflow_executions/{name}"
         };
     }
 
@@ -59,63 +67,6 @@ service WorkflowService {
         };
     }
 
-    rpc CreateWorkflowTemplate (CreateWorkflowTemplateRequest) returns (WorkflowTemplate) {
-        option (google.api.http) = {
-            post: "/apis/v1beta1/{namespace}/workflow_templates"
-            body: "workflowTemplate"
-        };
-    }
-
-    rpc UpdateWorkflowTemplateVersion (UpdateWorkflowTemplateVersionRequest) returns (WorkflowTemplate) {
-        option (google.api.http) = {
-            put: "/apis/v1beta1/{namespace}/workflow_templates/{workflowTemplate.uid}/versions/{workflowTemplate.version}"
-            body: "workflowTemplate"
-        };
-    }
-
-    rpc CreateWorkflowTemplateVersion (CreateWorkflowTemplateRequest) returns (WorkflowTemplate) {
-        option (google.api.http) = {
-            post: "/apis/v1beta1/{namespace}/workflow_templates/{workflowTemplate.uid}/versions"
-            body: "workflowTemplate"
-        };
-    }
-
-    rpc GetWorkflowTemplate (GetWorkflowTemplateRequest) returns (WorkflowTemplate) {
-        option (google.api.http) = {
-            get: "/apis/v1beta1/{namespace}/workflow_templates/{uid}"
-            additional_bindings {
-				get: "/apis/v1beta1/{namespace}/workflow_templates/{uid}/versions/{version}"
-			}
-        };
-    }
-
-    rpc ListWorkflowTemplateVersions (ListWorkflowTemplateVersionsRequest) returns (ListWorkflowTemplateVersionsResponse) {
-        option (google.api.http) = {
-            get: "/apis/v1beta1/{namespace}/workflow_templates/{uid}/versions"
-        };
-    }
-
-    rpc ListWorkflowTemplates (ListWorkflowTemplatesRequest) returns (ListWorkflowTemplatesResponse) {
-        option (google.api.http) = {
-            get: "/apis/v1beta1/{namespace}/workflow_templates"
-        };
-    }
-
-    rpc CloneWorkflowTemplate (CloneWorkflowTemplateRequest) returns (WorkflowTemplate) {
-        option (google.api.http) = {
-            get: "/apis/v1beta1/{namespace}/workflow_templates/{uid}/clone/{name}"
-            additional_bindings {
-				get: "/apis/v1beta1/{namespace}/workflow_templates/{uid}/clone/{name}/{version}"
-			}
-        };
-    }
-
-    rpc ArchiveWorkflowTemplate (ArchiveWorkflowTemplateRequest) returns (ArchiveWorkflowTemplateResponse) {
-        option (google.api.http) = {
-            put: "/apis/v1beta1/{namespace}/workflow_templates/{uid}/archive"
-        };
-    }
-
     rpc GetArtifact (GetArtifactRequest) returns (ArtifactResponse) {
         option (google.api.http) = {
             get: "/apis/v1beta1/{namespace}/workflow_executions/{name}/artifacts/{key=**}"
@@ -128,62 +79,30 @@ service WorkflowService {
         };
     }
 
-    rpc GetWorkflowExecutionLabels (GetLabelsRequest) returns (GetLabelsResponse) {
+    rpc AddWorkflowExecutionStatistics (AddWorkflowExecutionStatisticRequest) returns (google.protobuf.Empty) {
         option (google.api.http) = {
-            get: "/apis/v1beta1/{namespace}/workflow_executions/{name}/labels"
+            post: "/apis/v1beta1/{namespace}/workflow_executions/{name}/statistics"
+            body: "statistics"
         };
     }
 
-    rpc AddWorkflowExecutionLabels (AddLabelsRequest) returns (GetLabelsResponse) {
-         option (google.api.http) = {
-            post: "/apis/v1beta1/{namespace}/workflow_executions/{name}/labels"
-            body: "labels"
+    rpc CronStartWorkflowExecutionStatistic (CronStartWorkflowExecutionStatisticRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/{namespace}/workflow_executions/{name}/cron_start_statistics"
+            body: "statistics"
         };
     }
 
-    rpc ReplaceWorkflowExecutionLabels (ReplaceLabelsRequest) returns (GetLabelsResponse) {
-        option (google.api.http) = {
-            put: "/apis/v1beta1/{namespace}/workflow_executions/{name}/labels"
-            body: "labels"
-        };
-    }
-
-    rpc DeleteWorkflowExecutionLabel (DeleteLabelRequest) returns (GetLabelsResponse) {
-        option (google.api.http) = {
-            delete: "/apis/v1beta1/{namespace}/workflow_executions/{name}/labels/{key}"
-        };
-    }
-
-    rpc GetWorkflowTemplateLabels (GetLabelsRequest) returns (GetLabelsResponse) {
-        option (google.api.http) = {
-            get: "/apis/v1beta1/{namespace}/workflow_templates/{name}/labels"
-        };
-    }
-
-    rpc AddWorkflowTemplateLabels (AddLabelsRequest) returns (GetLabelsResponse) {
-        option (google.api.http) = {
-            post: "/apis/v1beta1/{namespace}/workflow_templates/{name}/labels"
-            body: "labels"
-        };
-    }
-
-    rpc ReplaceWorkflowTemplateLabels (ReplaceLabelsRequest) returns (GetLabelsResponse) {
-        option (google.api.http) = {
-            put: "/apis/v1beta1/{namespace}/workflow_templates/{name}/labels"
-            body: "labels"
-        };
-    }
-
-    rpc DeleteWorkflowTemplateLabel (DeleteLabelRequest) returns (GetLabelsResponse) {
-        option (google.api.http) = {
-            delete: "/apis/v1beta1/{namespace}/workflow_templates/{name}/labels/{key}"
-        };
-    }
 }
 
 message CreateWorkflowExecutionRequest {    
     string namespace = 1;
     WorkflowExecution workflowExecution = 2;
+}
+
+message CloneWorkflowExecutionRequest {
+    string namespace = 1;
+    string name = 2;
 }
 
 message GetWorkflowExecutionRequest {
@@ -259,14 +178,11 @@ message WorkflowExecution {
     string finishedAt = 6;
     string manifest = 7;
 
-    repeated WorkflowExecutionParameter parameters = 8;
+    repeated Parameter parameters = 8;
 
     WorkflowTemplate workflowTemplate = 9;
-}
 
-message WorkflowExecutionParameter {
-    string name = 1;
-    string value = 2;
+    repeated KeyValue labels = 10;
 }
 
 message ArtifactResponse {
@@ -292,4 +208,21 @@ message ListFilesRequest {
 message ListFilesResponse {
     repeated File files = 1;
     string parentPath = 2;
+}
+
+message Statistics {
+    string workflowStatus = 1;
+    int64 workflowTemplateId = 2;
+}
+
+message AddWorkflowExecutionStatisticRequest {
+    string namespace = 1;
+    string name = 2;
+    Statistics statistics = 3;
+}
+
+message CronStartWorkflowExecutionStatisticRequest {
+    string namespace = 1;
+    string name = 2;
+    Statistics statistics = 3;
 }
