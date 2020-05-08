@@ -69,13 +69,13 @@ func (s *WorkflowServer) CreateWorkflowExecution(ctx context.Context, req *api.C
 	}
 
 	workflow := &v1.WorkflowExecution{
-		Labels: converter.APIKeyValueToLabel(req.WorkflowExecution.Labels),
+		Labels: converter.APIKeyValueToLabel(req.Labels),
 		WorkflowTemplate: &v1.WorkflowTemplate{
-			UID:     req.WorkflowExecution.WorkflowTemplate.Uid,
-			Version: req.WorkflowExecution.WorkflowTemplate.Version,
+			UID:     req.WorkflowTemplateUid,
+			Version: req.WorkflowTemplateVersion,
 		},
 	}
-	for _, param := range req.WorkflowExecution.Parameters {
+	for _, param := range req.Parameters {
 		workflow.Parameters = append(workflow.Parameters, v1.Parameter{
 			Name:  param.Name,
 			Value: ptr.String(param.Value),
