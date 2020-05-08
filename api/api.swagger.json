@@ -762,7 +762,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/CreateWorkflowExecutionRequest"
+              "$ref": "#/definitions/CreateWorkflowExecutionBody"
             }
           }
         ],
@@ -2317,12 +2317,9 @@
         }
       }
     },
-    "CreateWorkflowExecutionRequest": {
+    "CreateWorkflowExecutionBody": {
       "type": "object",
       "properties": {
-        "namespace": {
-          "type": "string"
-        },
         "workflowTemplateUid": {
           "type": "string"
         },
