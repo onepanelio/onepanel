@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
@@ -102,6 +103,14 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 		return nil, err
 	}
 
+	existingWorkspace, err := c.GetWorkspace(namespace, workspace.UID)
+	if err != nil {
+		return nil, err
+	}
+	if existingWorkspace != nil {
+		return nil, util.NewUserError(codes.AlreadyExists, "Workspace already exists.")
+	}
+
 	// Validate workspace fields
 	valid, err := govalidator.ValidateStruct(workspace)
 	if err != nil || !valid {
@@ -132,7 +141,10 @@ func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err 
 		return
 	}
 	workspace = &Workspace{}
-	err = c.DB.Get(workspace, query, args...)
+	if err = c.DB.Get(workspace, query, args...); err == sql.ErrNoRows {
+		err = nil
+		workspace = nil
+	}
 
 	return
 }
