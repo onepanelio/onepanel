@@ -2,7 +2,7 @@
 CREATE TABLE cron_workflows
 (
     id          serial PRIMARY KEY,
-    uid         varchar(36) UNIQUE NOT NULL CHECK(uid <> ''),
+    uid         varchar(63) UNIQUE NOT NULL CHECK(uid <> ''),
     name varchar(255),
     workflow_template_version_id INT REFERENCES workflow_template_versions,
     schedule varchar(255),
