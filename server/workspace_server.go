@@ -8,7 +8,6 @@ import (
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/server/auth"
-	"github.com/onepanelio/core/server/converter"
 	"time"
 )
 
@@ -19,9 +18,6 @@ func apiWorkspace(wt *v1.Workspace) *api.Workspace {
 		Uid:       wt.UID,
 		Name:      wt.Name,
 		CreatedAt: wt.CreatedAt.UTC().Format(time.RFC3339),
-	}
-	if len(wt.Labels) > 0 {
-		res.Labels = converter.MappingToKeyValue(wt.Labels)
 	}
 
 	if wt.WorkspaceTemplate != nil {
@@ -43,21 +39,13 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 	}
 
 	workspace := &v1.Workspace{
+		Name: req.Workspace.Name,
 		WorkspaceTemplate: &v1.WorkspaceTemplate{
-			UID:     req.WorkspaceTemplateUid,
-			Version: req.WorkspaceTemplateVersion,
+			UID:     req.Workspace.WorkspaceTemplate.Uid,
+			Version: req.Workspace.WorkspaceTemplate.Version,
 		},
-		Labels: converter.APIKeyValueToLabel(req.Labels),
 	}
-	for _, param := range req.Parameters {
-		if param.Type == "input.hidden" {
-			continue
-		}
-
-		if param.Name == "sys-name" {
-			workspace.Name = param.Value
-		}
-
+	for _, param := range req.Workspace.Parameters {
 		workspace.Parameters = append(workspace.Parameters, v1.Parameter{
 			Name:  param.Name,
 			Value: ptr.String(param.Value),
@@ -68,9 +56,9 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 		return nil, err
 	}
 
-	apiWorkspace := apiWorkspace(workspace)
+	req.Workspace = apiWorkspace(workspace)
 
-	return apiWorkspace, nil
+	return req.Workspace, nil
 }
 
 func (s *WorkspaceServer) UpdateWorkspaceStatus(ctx context.Context, req *api.UpdateWorkspaceStatusRequest) (*empty.Empty, error) {

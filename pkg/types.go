@@ -19,7 +19,6 @@ const (
 	TypeWorkflowTemplateVersion string = "workflow_template_version"
 	TypeWorkflowExecution       string = "workflow_execution"
 	TypeCronWorkflow            string = "cron_workflow"
-	TypeWorkspace               string = "workspace"
 )
 
 func TypeToTableName(value string) string {
@@ -32,8 +31,6 @@ func TypeToTableName(value string) string {
 		return "workflow_executions"
 	case TypeCronWorkflow:
 		return "cron_workflows"
-	case TypeWorkspace:
-		return "workspace"
 	}
 
 	return ""
@@ -639,7 +636,6 @@ func CronWorkflowsToIds(resources []*CronWorkflow) (ids []uint64) {
 // Example - no destination
 // Input: ([id, name], "w", "")
 // Output: [w.id, w.name]
-// @todo change this to have a black list at the end.
 func formatColumnSelect(columns []string, alias, destination string, extraColumns ...string) []string {
 	results := make([]string, 0)
 
