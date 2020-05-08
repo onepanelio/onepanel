@@ -107,12 +107,12 @@ func createServiceManifest(spec *WorkspaceSpec) (serviceManifest string, err err
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "{{workflow.parameters.sys-name}}",
+			Name: "{{workflow.parameters.sys-uid}}",
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: spec.Ports,
 			Selector: map[string]string{
-				"app": "{{workflow.parameters.sys-name}}",
+				"app": "{{workflow.parameters.sys-uid}}",
 			},
 		},
 	}
@@ -128,14 +128,14 @@ func createServiceManifest(spec *WorkspaceSpec) (serviceManifest string, err err
 func createVirtualServiceManifest(spec *WorkspaceSpec) (virtualServiceManifest string, err error) {
 	for _, h := range spec.Routes {
 		for _, r := range h.Route {
-			r.Destination.Host = "{{workflow.parameters.sys-name}}"
+			r.Destination.Host = "{{workflow.parameters.sys-uid}}"
 		}
 	}
 	virtualService := map[string]interface{}{
 		"apiVersion": "networking.istio.io/v1alpha3",
 		"kind":       "VirtualService",
 		"metadata": metav1.ObjectMeta{
-			Name: "{{workflow.parameters.sys-name}}",
+			Name: "{{workflow.parameters.sys-uid}}",
 		},
 		"spec": networking.VirtualService{
 			Http:     spec.Routes,
@@ -186,20 +186,20 @@ func createStatefulSetManifest(workspaceSpec *WorkspaceSpec, config map[string]s
 		"apiVersion": "apps/v1",
 		"kind":       "StatefulSet",
 		"metadata": metav1.ObjectMeta{
-			Name: "{{workflow.parameters.sys-name}}",
+			Name: "{{workflow.parameters.sys-uid}}",
 		},
 		"spec": map[string]interface{}{
 			"replicas":    1,
-			"serviceName": "{{workflow.parameters.sys-name}}",
+			"serviceName": "{{workflow.parameters.sys-uid}}",
 			"selector": &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": "{{workflow.parameters.sys-name}}",
+					"app": "{{workflow.parameters.sys-uid}}",
 				},
 			},
 			"template": corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": "{{workflow.parameters.sys-name}}",
+						"app": "{{workflow.parameters.sys-uid}}",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -239,7 +239,7 @@ func unmarshalWorkflowTemplate(spec *WorkspaceSpec, serviceManifest, virtualServ
 	deletePVCManifest := `apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{inputs.parameters.sys-pvc-name}}-{{workflow.parameters.sys-name}}-0
+  name: {{inputs.parameters.sys-pvc-name}}-{{workflow.parameters.sys-uid}}-0
 `
 	templates := []wfv1.Template{
 		{
