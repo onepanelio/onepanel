@@ -25,23 +25,46 @@ func (c *Client) workspacesSelectBuilder(namespace string) sq.SelectBuilder {
 	return sb
 }
 
+// Injects parameters into the workspace.Parameters.
+// If the parameter already exists, it's value is updated.
+// The parameters injected are:
+// sys-name
+// sys-workspace-action
+// sys-resource-action
+// sys-host
 func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, workspaceAction, resourceAction string, config map[string]string) (err error) {
 	host := fmt.Sprintf("%v--%v.%v", workspace.Name, namespace, config["ONEPANEL_DOMAIN"])
-	workspace.Parameters = append(workspace.Parameters,
-		Parameter{
+
+	insertionMap := map[string]Parameter{
+		"sys-name": {
 			Name:  "sys-name",
 			Value: ptr.String(workspace.Name),
 		},
-		Parameter{
+		"sys-workspace-action": {
 			Name:  "sys-workspace-action",
 			Value: ptr.String(workspaceAction),
-		}, Parameter{
+		},
+		"sys-resource-action": {
 			Name:  "sys-resource-action",
 			Value: ptr.String(resourceAction),
-		}, Parameter{
+		},
+		"sys-host": {
 			Name:  "sys-host",
 			Value: ptr.String(host),
-		})
+		},
+	}
+
+	for _, parameter := range workspace.Parameters {
+		existingParam, ok := insertionMap[parameter.Name]
+		if ok {
+			parameter.Value = existingParam.Value
+			delete(insertionMap, parameter.Name)
+		}
+	}
+
+	for _, parameter := range insertionMap {
+		workspace.Parameters = append(workspace.Parameters, parameter)
+	}
 
 	return
 }
@@ -112,6 +135,15 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 		return nil, util.NewUserError(codes.Unknown, "Could not create workspace.")
 	}
 
+	if len(workspace.Labels) > 0 {
+		_, err = c.InsertLabelsBuilder(TypeWorkspace, workspace.ID, workspace.Labels).
+			RunWith(c.DB).
+			Exec()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return workspace, nil
 }
 
@@ -179,6 +211,15 @@ func (c *Client) ListWorkspaces(namespace string, paginator *pagination.Paginati
 
 	if err := c.DB.Select(&workspaces, query, args...); err != nil {
 		return nil, err
+	}
+
+	labelsMapped, err := c.GetDbLabelsMapped(TypeWorkspace, WorkspacesToIds(workspaces)...)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, workspace := range workspaces {
+		workspace.Labels = labelsMapped[workspace.ID]
 	}
 
 	return

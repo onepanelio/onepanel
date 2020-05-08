@@ -53,3 +53,18 @@ type WorkspaceSpec struct {
 	Routes                []*networking.HTTPRoute    `json:"routes" protobuf:"bytes,5,opt,name=routes"`
 	PostExecutionWorkflow *wfv1.WorkflowTemplateSpec `json:"postExecutionWorkflow" protobuf:"bytes,6,opt,name=postExecutionWorkflow"`
 }
+
+func WorkspacesToIds(workspaces []*Workspace) (ids []uint64) {
+	mappedIds := make(map[uint64]bool)
+
+	// This is to make sure we don't have duplicates
+	for _, workspace := range workspaces {
+		mappedIds[workspace.ID] = true
+	}
+
+	for id := range mappedIds {
+		ids = append(ids, id)
+	}
+
+	return
+}

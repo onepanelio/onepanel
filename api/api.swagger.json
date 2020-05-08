@@ -1978,7 +1978,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/CreateWorkspaceBody"
+              "$ref": "#/definitions/CreateWorkspaceRequest"
             }
           }
         ],
@@ -2344,10 +2344,10 @@
         }
       }
     },
-    "CreateWorkspaceBody": {
+    "CreateWorkspaceRequest": {
       "type": "object",
       "properties": {
-        "name": {
+        "namespace": {
           "type": "string"
         },
         "workspaceTemplateUid": {
