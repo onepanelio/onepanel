@@ -9,7 +9,7 @@ import (
 type WorkspaceTemplate struct {
 	ID               uint64
 	UID              string
-	Name             string `valid:"stringlength(3|63)~Name should be between 3 to 63 characters,required"`
+	Name             string `valid:"stringlength(3|30)~Name should be between 3 to 30 characters,required"`
 	Version          int64
 	Manifest         string
 	IsLatest         bool

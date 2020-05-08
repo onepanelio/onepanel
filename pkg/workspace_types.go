@@ -32,7 +32,7 @@ type Workspace struct {
 	ID                       uint64
 	Namespace                string
 	UID                      string
-	Name                     string `valid:"stringlength(3|63)~Name should be between 3 to 63 characters,dns,required"`
+	Name                     string `valid:"stringlength(3|30)~Name should be between 3 to 30 characters,dns,required"`
 	Labels                   map[string]string
 	Phase                    string
 	Parameters               []Parameter

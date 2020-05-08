@@ -37,7 +37,7 @@ func generateArguments(spec *WorkspaceSpec, config map[string]string) (err error
 		Type:        "input.text",
 		Value:       ptr.String("name"),
 		DisplayName: ptr.String("Workspace name"),
-		Hint:        ptr.String("Must be less than 63 characters, contain only alphanumeric or `-` characters"),
+		Hint:        ptr.String("Must be between 3-30 characters, contain only alphanumeric or `-` characters"),
 		Required:    true,
 	})
 

@@ -2,9 +2,9 @@
 CREATE TABLE workspaces
 (
     id                          serial PRIMARY KEY,
-    uid                         varchar(63) NOT NULL CHECK(uid <> ''),
-    name                        varchar(63) NOT NULL CHECK(name <> ''),
-    namespace                   varchar(36) NOT NULL,
+    uid                         varchar(30) NOT NULL CHECK(uid <> ''),
+    name                        varchar(30) NOT NULL CHECK(name <> ''),
+    namespace                   varchar(30) NOT NULL,
     phase                       varchar(50) NOT NULL,
     parameters                  jsonb NOT NULL,
 
