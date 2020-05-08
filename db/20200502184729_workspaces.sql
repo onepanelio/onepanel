@@ -2,8 +2,8 @@
 CREATE TABLE workspaces
 (
     id                          serial PRIMARY KEY,
-    uid                         varchar(36) UNIQUE NOT NULL CHECK(uid <> ''),
-    name                        text NOT NULL CHECK(name <> ''),
+    uid                         varchar(63) NOT NULL CHECK(uid <> ''),
+    name                        varchar(63) NOT NULL CHECK(name <> ''),
     namespace                   varchar(36) NOT NULL,
     phase                       varchar(50) NOT NULL,
     parameters                  jsonb NOT NULL,
@@ -19,6 +19,9 @@ CREATE TABLE workspaces
     created_at                  timestamp NOT NULL DEFAULT (NOW() at time zone 'utc'),
     modified_at                 timestamp
 );
+
+CREATE UNIQUE INDEX workspaces_name_namespace_key ON workspaces (name, namespace) WHERE phase <> 'Terminated';
+CREATE UNIQUE INDEX workspaces_uid_namespace_key ON workspaces (uid, namespace) WHERE phase <> 'Terminated';
 
 -- +goose Down
 DROP TABLE workspaces;

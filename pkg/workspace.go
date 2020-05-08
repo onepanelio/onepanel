@@ -26,11 +26,20 @@ func (c *Client) workspacesSelectBuilder(namespace string) sq.SelectBuilder {
 }
 
 func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, workspaceAction, resourceAction string, config map[string]string) (err error) {
+	for _, p := range workspace.Parameters {
+		if p.Name == "sys-name" {
+			workspace.Name = *p.Value
+			break
+		}
+	}
 	host := fmt.Sprintf("%v--%v.%v", workspace.Name, namespace, config["ONEPANEL_DOMAIN"])
+	if _, err = workspace.GenerateUID(); err != nil {
+		return
+	}
 	workspace.Parameters = append(workspace.Parameters,
 		Parameter{
-			Name:  "sys-name",
-			Value: ptr.String(workspace.Name),
+			Name:  "sys-uid",
+			Value: ptr.String(workspace.UID),
 		},
 		Parameter{
 			Name:  "sys-workspace-action",
@@ -47,15 +56,13 @@ func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, wor
 }
 
 func (c *Client) createWorkspace(namespace string, parameters []byte, workspace *Workspace) (*Workspace, error) {
-	workflowExecution, err := c.CreateWorkflowExecution(namespace, &WorkflowExecution{
+	_, err := c.CreateWorkflowExecution(namespace, &WorkflowExecution{
 		Parameters:       workspace.Parameters,
 		WorkflowTemplate: workspace.WorkspaceTemplate.WorkflowTemplate,
 	})
 	if err != nil {
 		return nil, err
 	}
-
-	workspace.UID = workflowExecution.UID
 
 	err = sb.Insert("workspaces").
 		SetMap(sq.Eq{
@@ -72,7 +79,7 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 		RunWith(c.DB).
 		QueryRow().Scan(&workspace.ID, &workspace.CreatedAt)
 	if err != nil {
-		return nil, err
+		return nil, util.NewUserErrorWrap(err, "Workspace")
 	}
 
 	return workspace, nil
@@ -80,11 +87,6 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 
 // CreateWorkspace creates a workspace by triggering the corresponding workflow
 func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Workspace, error) {
-	valid, err := govalidator.ValidateStruct(workspace)
-	if err != nil || !valid {
-		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
-	}
-
 	config, err := c.GetSystemConfig()
 	if err != nil {
 		return nil, err
@@ -100,6 +102,12 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 		return nil, err
 	}
 
+	// Validate workspace fields
+	valid, err := govalidator.ValidateStruct(workspace)
+	if err != nil || !valid {
+		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
+	}
+
 	workspaceTemplate, err := c.GetWorkspaceTemplate(namespace,
 		workspace.WorkspaceTemplate.UID, workspace.WorkspaceTemplate.Version)
 	if err != nil {
@@ -109,7 +117,7 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 
 	workspace, err = c.createWorkspace(namespace, parameters, workspace)
 	if err != nil {
-		return nil, util.NewUserError(codes.Unknown, "Could not create workspace.")
+		return nil, err
 	}
 
 	return workspace, nil
@@ -151,9 +159,13 @@ func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceS
 	}
 	_, err = sb.Update("workspaces").
 		SetMap(fieldMap).
-		Where(sq.Eq{
-			"namespace": namespace,
-			"uid":       uid,
+		Where(sq.And{
+			sq.Eq{
+				"namespace": namespace,
+				"uid":       uid,
+			}, sq.NotEq{
+				"phase": WorkspaceTerminated,
+			},
 		}).
 		RunWith(c.DB).Exec()
 	if err != nil {

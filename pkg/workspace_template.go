@@ -443,7 +443,7 @@ func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 		QueryRow().Scan(&workspaceTemplate.ID, &workspaceTemplate.CreatedAt)
 	if err != nil {
 		_, err := c.ArchiveWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID)
-		return nil, err
+		return nil, util.NewUserErrorWrap(err, "Workspace template")
 	}
 
 	_, err = sb.Insert("workspace_template_versions").

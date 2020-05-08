@@ -2,8 +2,8 @@
 CREATE TABLE workspace_templates
 (
     id                      serial PRIMARY KEY,
-    uid                     varchar(36) UNIQUE NOT NULL CHECK(uid <> ''),
-    name                    text NOT NULL CHECK(name <> ''),
+    uid                     varchar(63) NOT NULL CHECK(uid <> ''),
+    name                    varchar(63) NOT NULL CHECK(name <> ''),
     namespace               varchar(36) NOT NULL,
     is_archived             boolean DEFAULT false,
 
@@ -15,6 +15,7 @@ CREATE TABLE workspace_templates
 );
 
 CREATE UNIQUE INDEX workspace_templates_name_namespace_key ON workspace_templates (name, namespace) WHERE is_archived = false;
+CREATE UNIQUE INDEX workspace_templates_uid_namespace_key ON workspace_templates (uid, namespace) WHERE is_archived = false;
 
 -- +goose Down
 DROP TABLE workspace_templates;

@@ -1,7 +1,8 @@
 package v1
 
 import (
-	"github.com/google/uuid"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -17,11 +18,11 @@ type WorkspaceTemplate struct {
 }
 
 func (wt *WorkspaceTemplate) GenerateUID() (string, error) {
-	uid, err := uuid.NewRandom()
+	re, err := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
 	if err != nil {
 		return "", err
 	}
-	wt.UID = uid.String()
+	wt.UID = strings.ToLower(re.ReplaceAllString(wt.Name, `-`))
 
 	return wt.UID, nil
 }
