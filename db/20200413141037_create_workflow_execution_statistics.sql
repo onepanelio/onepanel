@@ -5,7 +5,7 @@ CREATE TABLE workflow_executions
     id                   serial PRIMARY KEY,
     workflow_template_id integer     NOT NULL REFERENCES workflow_templates ON DELETE CASCADE,
     name                 text        NOT NULL CHECK (name <> ''),
-    namespace            varchar(36) NOT NULL,
+    namespace            varchar(30) NOT NULL,
 
     -- auditing info
     created_at           timestamp   NOT NULL DEFAULT (NOW() at time zone 'utc'),
