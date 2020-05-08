@@ -4,6 +4,8 @@ import (
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	networking "istio.io/api/networking/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -30,7 +32,7 @@ type Workspace struct {
 	ID                       uint64
 	Namespace                string
 	UID                      string
-	Name                     string `valid:"stringlength(3|63)~Name should be between 3 to 63 characters,dns,required"`
+	Name                     string `valid:"stringlength(3|30)~Name should be between 3 to 30 characters,dns,required"`
 	Labels                   map[string]string
 	Phase                    string
 	Parameters               []Parameter
@@ -52,4 +54,14 @@ type WorkspaceSpec struct {
 	Ports                 []corev1.ServicePort       `json:"ports" protobuf:"bytes,4,opt,name=ports"`
 	Routes                []*networking.HTTPRoute    `json:"routes" protobuf:"bytes,5,opt,name=routes"`
 	PostExecutionWorkflow *wfv1.WorkflowTemplateSpec `json:"postExecutionWorkflow" protobuf:"bytes,6,opt,name=postExecutionWorkflow"`
+}
+
+func (w *Workspace) GenerateUID() (string, error) {
+	re, err := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
+	if err != nil {
+		return "", err
+	}
+	w.UID = strings.ToLower(re.ReplaceAllString(w.Name, `-`))
+
+	return w.UID, nil
 }
