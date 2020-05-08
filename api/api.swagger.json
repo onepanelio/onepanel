@@ -762,7 +762,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/CreateWorkflowExecutionBody"
+              "$ref": "#/definitions/CreateWorkflowExecutionRequest"
             }
           }
         ],
@@ -1978,7 +1978,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/Workspace"
+              "$ref": "#/definitions/CreateWorkspaceBody"
             }
           }
         ],
@@ -2317,13 +2317,43 @@
         }
       }
     },
-    "CreateWorkflowExecutionBody": {
+    "CreateWorkflowExecutionRequest": {
       "type": "object",
       "properties": {
+        "namespace": {
+          "type": "string"
+        },
         "workflowTemplateUid": {
           "type": "string"
         },
         "workflowTemplateVersion": {
+          "type": "string",
+          "format": "int64"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Parameter"
+          }
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/KeyValue"
+          }
+        }
+      }
+    },
+    "CreateWorkspaceBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "workspaceTemplateUid": {
+          "type": "string"
+        },
+        "workspaceTemplateVersion": {
           "type": "string",
           "format": "int64"
         },

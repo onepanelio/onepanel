@@ -14,7 +14,7 @@ service WorkflowService {
     rpc CreateWorkflowExecution (CreateWorkflowExecutionRequest) returns (WorkflowExecution) {
         option (google.api.http) = {
             post: "/apis/v1beta1/{namespace}/workflow_executions"
-            body: "workflowExecution"
+            body: "*"
         };
     }
 
@@ -94,17 +94,14 @@ service WorkflowService {
     }
 }
 
-message CreateWorkflowExecutionBody {
-    string workflowTemplateUid = 1;
-    int64 workflowTemplateVersion = 2;
-
-    repeated Parameter parameters = 3;
-    repeated KeyValue labels = 4;
-}
-
 message CreateWorkflowExecutionRequest {    
     string namespace = 1;
-    CreateWorkflowExecutionBody workflowExecution = 2;
+
+    string workflowTemplateUid = 2;
+    int64 workflowTemplateVersion = 3;
+
+    repeated Parameter parameters = 4;
+    repeated KeyValue labels = 5;
 }
 
 message CloneWorkflowExecutionRequest {
