@@ -73,6 +73,7 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 			Value: ptr.String(param.Value),
 		})
 	}
+
 	workspace, err = client.CreateWorkspace(req.Namespace, workspace)
 	if err != nil {
 		return nil, err

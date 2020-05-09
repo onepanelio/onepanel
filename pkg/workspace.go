@@ -146,14 +146,15 @@ func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err 
 	if err = c.DB.Get(workspace, query, args...); err == sql.ErrNoRows {
 		err = nil
 		workspace = nil
+
+		return
 	}
 	if err != nil {
 		return nil, err
 	}
-	if workspace != nil {
-		if err = json.Unmarshal(workspace.ParametersBytes, &workspace.Parameters); err != nil {
-			return
-		}
+
+	if err = json.Unmarshal(workspace.ParametersBytes, &workspace.Parameters); err != nil {
+		return
 	}
 
 	labelsMap, err := c.GetDbLabelsMapped(TypeWorkspace, workspace.ID)
