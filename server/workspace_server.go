@@ -19,7 +19,18 @@ func apiWorkspace(wt *v1.Workspace) *api.Workspace {
 		Uid:       wt.UID,
 		Name:      wt.Name,
 		CreatedAt: wt.CreatedAt.UTC().Format(time.RFC3339),
+		Phase:     wt.Phase,
 	}
+	if wt.StartedAt != nil {
+		res.StartedAt = wt.StartedAt.UTC().Format(time.RFC3339)
+	}
+	if wt.PausedAt != nil {
+		res.PausedAt = wt.PausedAt.UTC().Format(time.RFC3339)
+	}
+	if wt.TerminatedAt != nil {
+		res.TerminatedAt = wt.TerminatedAt.UTC().Format(time.RFC3339)
+	}
+
 	if len(wt.Labels) > 0 {
 		res.Labels = converter.MappingToKeyValue(wt.Labels)
 	}
@@ -44,12 +55,12 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 
 	workspace := &v1.Workspace{
 		WorkspaceTemplate: &v1.WorkspaceTemplate{
-			UID:     req.WorkspaceTemplateUid,
-			Version: req.WorkspaceTemplateVersion,
+			UID:     req.Body.WorkspaceTemplateUid,
+			Version: req.Body.WorkspaceTemplateVersion,
 		},
-		Labels: converter.APIKeyValueToLabel(req.Labels),
+		Labels: converter.APIKeyValueToLabel(req.Body.Labels),
 	}
-	for _, param := range req.Parameters {
+	for _, param := range req.Body.Parameters {
 		if param.Type == "input.hidden" {
 			continue
 		}
@@ -64,6 +75,23 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 		})
 	}
 	workspace, err = client.CreateWorkspace(req.Namespace, workspace)
+	if err != nil {
+		return nil, err
+	}
+
+	apiWorkspace := apiWorkspace(workspace)
+
+	return apiWorkspace, nil
+}
+
+func (s *WorkspaceServer) GetWorkspace(ctx context.Context, req *api.GetWorkspaceRequest) (*api.Workspace, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "apps", "statefulsets", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	workspace, err := client.GetWorkspace(req.Namespace, req.Uid)
 	if err != nil {
 		return nil, err
 	}

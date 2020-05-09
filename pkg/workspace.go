@@ -157,6 +157,16 @@ func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err 
 	}
 	workspace = &Workspace{}
 	err = c.DB.Get(workspace, query, args...)
+	if err != nil {
+		return
+	}
+
+	labelsMap, err := c.GetDbLabelsMapped(TypeWorkspace, workspace.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	workspace.Labels = labelsMap[workspace.ID]
 
 	return
 }

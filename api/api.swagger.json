@@ -762,7 +762,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/CreateWorkflowExecutionRequest"
+              "$ref": "#/definitions/CreateWorkflowExecutionBody"
             }
           }
         ],
@@ -1978,7 +1978,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/CreateWorkspaceRequest"
+              "$ref": "#/definitions/CreateWorkspaceBody"
             }
           }
         ],
@@ -1988,6 +1988,40 @@
       }
     },
     "/apis/v1beta1/{namespace}/workspaces/{uid}": {
+      "get": {
+        "operationId": "GetWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/Workspace"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      },
       "delete": {
         "operationId": "DeleteWorkspace",
         "responses": {
@@ -2317,12 +2351,9 @@
         }
       }
     },
-    "CreateWorkflowExecutionRequest": {
+    "CreateWorkflowExecutionBody": {
       "type": "object",
       "properties": {
-        "namespace": {
-          "type": "string"
-        },
         "workflowTemplateUid": {
           "type": "string"
         },
@@ -2344,12 +2375,9 @@
         }
       }
     },
-    "CreateWorkspaceRequest": {
+    "CreateWorkspaceBody": {
       "type": "object",
       "properties": {
-        "namespace": {
-          "type": "string"
-        },
         "workspaceTemplateUid": {
           "type": "string"
         },
@@ -2989,6 +3017,18 @@
           "items": {
             "$ref": "#/definitions/KeyValue"
           }
+        },
+        "phase": {
+          "type": "string"
+        },
+        "startedAt": {
+          "type": "string"
+        },
+        "pausedAt": {
+          "type": "string"
+        },
+        "terminatedAt": {
+          "type": "string"
         }
       }
     },
