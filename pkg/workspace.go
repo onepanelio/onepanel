@@ -15,7 +15,7 @@ import (
 )
 
 func (c *Client) workspacesSelectBuilder(namespace string) sq.SelectBuilder {
-	sb := sb.Select("w.id", "w.uid", "w.name", "wt.id \"workspace_template.id\"", "wt.uid \"workspace_template.uid\"", "wtv.version \"workspace_template.version\"").
+	sb := sb.Select("w.id", "w.uid", "w.name", "w.parameters", "wt.id \"workspace_template.id\"", "wt.uid \"workspace_template.uid\"", "wtv.version \"workspace_template.version\"").
 		From("workspaces w").
 		Join("workspace_templates wt ON wt.id = w.workspace_template_id").
 		Join("workspace_template_versions wtv ON wtv.workspace_template_id = wt.id").
@@ -38,10 +38,6 @@ func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, wor
 		return
 	}
 	workspace.Parameters = append(workspace.Parameters,
-		Parameter{
-			Name:  "sys-uid",
-			Value: ptr.String(workspace.UID),
-		},
 		Parameter{
 			Name:  "sys-workspace-action",
 			Value: ptr.String(workspaceAction),
@@ -102,6 +98,10 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 	if err != nil {
 		return nil, err
 	}
+	workspace.Parameters = append(workspace.Parameters, Parameter{
+		Name:  "sys-uid",
+		Value: ptr.String(workspace.UID),
+	})
 
 	existingWorkspace, err := c.GetWorkspace(namespace, workspace.UID)
 	if err != nil {
@@ -134,8 +134,9 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 
 func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err error) {
 	query, args, err := c.workspacesSelectBuilder(namespace).
-		Where(sq.Eq{
-			"w.uid": uid,
+		Where(sq.And{
+			sq.Eq{"w.uid": uid},
+			sq.NotEq{"w.phase": WorkspaceTerminated},
 		}).ToSql()
 	if err != nil {
 		return
@@ -144,6 +145,11 @@ func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err 
 	if err = c.DB.Get(workspace, query, args...); err == sql.ErrNoRows {
 		err = nil
 		workspace = nil
+	}
+	if workspace != nil {
+		if err = json.Unmarshal(workspace.ParametersBytes, &workspace.Parameters); err != nil {
+			return
+		}
 	}
 
 	return
@@ -252,6 +258,10 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 
 func (c *Client) PauseWorkspace(namespace, uid string) (err error) {
 	return c.updateWorkspace(namespace, uid, "pause", "delete", &WorkspaceStatus{Phase: WorkspacePausing})
+}
+
+func (c *Client) ResumeWorkspace(namespace, uid string) (err error) {
+	return c.updateWorkspace(namespace, uid, "create", "apply", &WorkspaceStatus{Phase: WorkspaceStarted})
 }
 
 func (c *Client) DeleteWorkspace(namespace, uid string) (err error) {

@@ -63,7 +63,7 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 
 func (s *WorkspaceServer) UpdateWorkspaceStatus(ctx context.Context, req *api.UpdateWorkspaceStatusRequest) (*empty.Empty, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "apps", "statefulsets", "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "apps", "statefulsets", req.Uid)
 	if err != nil || !allowed {
 		return &empty.Empty{}, err
 	}
@@ -102,7 +102,7 @@ func (s *WorkspaceServer) ListWorkspaces(ctx context.Context, req *api.ListWorks
 
 func (s *WorkspaceServer) PauseWorkspace(ctx context.Context, req *api.PauseWorkspaceRequest) (*empty.Empty, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "apps", "statefulsets", "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "apps", "statefulsets", req.Uid)
 	if err != nil || !allowed {
 		return &empty.Empty{}, err
 	}
@@ -112,9 +112,21 @@ func (s *WorkspaceServer) PauseWorkspace(ctx context.Context, req *api.PauseWork
 	return &empty.Empty{}, err
 }
 
+func (s *WorkspaceServer) ResumeWorkspace(ctx context.Context, req *api.ResumeWorkspaceRequest) (*empty.Empty, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "apps", "statefulsets", req.Uid)
+	if err != nil || !allowed {
+		return &empty.Empty{}, err
+	}
+
+	err = client.ResumeWorkspace(req.Namespace, req.Uid)
+
+	return &empty.Empty{}, err
+}
+
 func (s *WorkspaceServer) DeleteWorkspace(ctx context.Context, req *api.DeleteWorkspaceRequest) (*empty.Empty, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "apps", "statefulsets", "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "apps", "statefulsets", req.Uid)
 	if err != nil || !allowed {
 		return &empty.Empty{}, err
 	}
