@@ -39,10 +39,6 @@ func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, wor
 	}
 	workspace.Parameters = append(workspace.Parameters,
 		Parameter{
-			Name:  "sys-uid",
-			Value: ptr.String(workspace.UID),
-		},
-		Parameter{
 			Name:  "sys-workspace-action",
 			Value: ptr.String(workspaceAction),
 		}, Parameter{
@@ -102,6 +98,10 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 	if err != nil {
 		return nil, err
 	}
+	workspace.Parameters = append(workspace.Parameters, Parameter{
+		Name:  "sys-uid",
+		Value: ptr.String(workspace.UID),
+	})
 
 	existingWorkspace, err := c.GetWorkspace(namespace, workspace.UID)
 	if err != nil {
@@ -134,8 +134,9 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 
 func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err error) {
 	query, args, err := c.workspacesSelectBuilder(namespace).
-		Where(sq.Eq{
-			"w.uid": uid,
+		Where(sq.And{
+			sq.Eq{"w.uid": uid},
+			sq.NotEq{"w.phase": WorkspaceTerminated},
 		}).ToSql()
 	if err != nil {
 		return
