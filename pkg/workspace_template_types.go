@@ -15,6 +15,7 @@ type WorkspaceTemplate struct {
 	IsLatest         bool
 	CreatedAt        time.Time         `db:"created_at"`
 	WorkflowTemplate *WorkflowTemplate `db:"workflow_template"`
+	Labels           map[string]string
 }
 
 func (wt *WorkspaceTemplate) GenerateUID() (string, error) {

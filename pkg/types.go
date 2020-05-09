@@ -19,6 +19,7 @@ const (
 	TypeWorkflowTemplateVersion string = "workflow_template_version"
 	TypeWorkflowExecution       string = "workflow_execution"
 	TypeCronWorkflow            string = "cron_workflow"
+	TypeWorkspace               string = "workspace"
 )
 
 func TypeToTableName(value string) string {
@@ -31,6 +32,8 @@ func TypeToTableName(value string) string {
 		return "workflow_executions"
 	case TypeCronWorkflow:
 		return "cron_workflows"
+	case TypeWorkspace:
+		return "workspace"
 	}
 
 	return ""
