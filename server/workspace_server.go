@@ -86,7 +86,7 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 
 func (s *WorkspaceServer) GetWorkspace(ctx context.Context, req *api.GetWorkspaceRequest) (*api.Workspace, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "apps", "statefulsets", "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "apps", "statefulsets", "")
 	if err != nil || !allowed {
 		return nil, err
 	}
