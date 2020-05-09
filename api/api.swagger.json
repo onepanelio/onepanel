@@ -1978,7 +1978,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/Workspace"
+              "$ref": "#/definitions/CreateWorkspaceBody"
             }
           }
         ],
@@ -1988,6 +1988,40 @@
       }
     },
     "/apis/v1beta1/{namespace}/workspaces/{uid}": {
+      "get": {
+        "operationId": "GetWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/Workspace"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      },
       "delete": {
         "operationId": "DeleteWorkspace",
         "responses": {
@@ -2360,6 +2394,30 @@
           "type": "string"
         },
         "workflowTemplateVersion": {
+          "type": "string",
+          "format": "int64"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Parameter"
+          }
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/KeyValue"
+          }
+        }
+      }
+    },
+    "CreateWorkspaceBody": {
+      "type": "object",
+      "properties": {
+        "workspaceTemplateUid": {
+          "type": "string"
+        },
+        "workspaceTemplateVersion": {
           "type": "string",
           "format": "int64"
         },
@@ -2995,6 +3053,18 @@
           "items": {
             "$ref": "#/definitions/KeyValue"
           }
+        },
+        "phase": {
+          "type": "string"
+        },
+        "startedAt": {
+          "type": "string"
+        },
+        "pausedAt": {
+          "type": "string"
+        },
+        "terminatedAt": {
+          "type": "string"
         }
       }
     },
