@@ -3053,18 +3053,6 @@
           "items": {
             "$ref": "#/definitions/KeyValue"
           }
-        },
-        "phase": {
-          "type": "string"
-        },
-        "startedAt": {
-          "type": "string"
-        },
-        "pausedAt": {
-          "type": "string"
-        },
-        "terminatedAt": {
-          "type": "string"
         }
       }
     },
