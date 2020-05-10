@@ -19,17 +19,22 @@ func apiWorkspace(wt *v1.Workspace) *api.Workspace {
 		Uid:       wt.UID,
 		Name:      wt.Name,
 		CreatedAt: wt.CreatedAt.UTC().Format(time.RFC3339),
-		Phase:     wt.Phase,
 	}
 
-	if wt.StartedAt != nil {
-		res.StartedAt = wt.StartedAt.UTC().Format(time.RFC3339)
+	res.Status = &api.WorkspaceStatus{
+		Phase: string(wt.Status.Phase),
 	}
-	if wt.PausedAt != nil {
-		res.PausedAt = wt.PausedAt.UTC().Format(time.RFC3339)
+
+	if wt.Status.StartedAt != nil {
+		res.Status.StartedAt = wt.Status.StartedAt.UTC().Format(time.RFC3339)
 	}
-	if wt.TerminatedAt != nil {
-		res.TerminatedAt = wt.TerminatedAt.UTC().Format(time.RFC3339)
+
+	if wt.Status.PausedAt != nil {
+		res.Status.PausedAt = wt.Status.PausedAt.UTC().Format(time.RFC3339)
+	}
+
+	if wt.Status.TerminatedAt != nil {
+		res.Status.TerminatedAt = wt.Status.TerminatedAt.UTC().Format(time.RFC3339)
 	}
 
 	if len(wt.Labels) > 0 {

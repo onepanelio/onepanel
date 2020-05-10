@@ -22,10 +22,10 @@ const (
 )
 
 type WorkspaceStatus struct {
-	Phase        WorkspacePhase
-	StartedAt    *time.Time `db:"started_at"`
-	PausedAt     *time.Time `db:"paused_at"`
-	TerminatedAt *time.Time `db:"terminated_at"`
+	Phase        WorkspacePhase `db:"phase"`
+	StartedAt    *time.Time     `db:"started_at"`
+	PausedAt     *time.Time     `db:"paused_at"`
+	TerminatedAt *time.Time     `db:"terminated_at"`
 }
 
 type Workspace struct {
@@ -34,15 +34,11 @@ type Workspace struct {
 	UID                      string
 	Name                     string `valid:"stringlength(3|30)~Name should be between 3 to 30 characters,dns,required"`
 	Labels                   map[string]string
-	Phase                    string
 	Parameters               []Parameter
-	ParametersBytes          []byte `db:"parameters"` // to load from database
-	Status                   WorkspaceStatus
+	ParametersBytes          []byte             `db:"parameters"` // to load from database
+	Status                   WorkspaceStatus    `db:"status"`
 	CreatedAt                time.Time          `db:"created_at"`
 	ModifiedAt               *time.Time         `db:"modified_at"`
-	StartedAt                *time.Time         `db:"started_at"`
-	PausedAt                 *time.Time         `db:"paused_at"`
-	TerminatedAt             *time.Time         `db:"terminated_at"`
 	WorkspaceTemplate        *WorkspaceTemplate `db:"workspace_template" valid:"-"`
 	WorkspaceTemplateID      uint64             `db:"workspace_template_id"`
 	WorkspaceTemplateVersion uint64             `db:"workspace_template_version"`
@@ -64,4 +60,11 @@ func (w *Workspace) GenerateUID() (string, error) {
 	w.UID = strings.ToLower(re.ReplaceAllString(w.Name, `-`))
 
 	return w.UID, nil
+}
+
+// returns all of the columns for WorkspaceStatus modified by alias, destination.
+// see formatColumnSelect
+func getWorkspaceStatusColumns(alias string, destination string, extraColumns ...string) []string {
+	columns := []string{"phase", "started_at", "paused_at", "terminated_at"}
+	return formatColumnSelect(columns, alias, destination, extraColumns...)
 }
