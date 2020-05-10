@@ -63,12 +63,6 @@ message Workspace {
 	WorkspaceTemplate workspaceTemplate = 6;
 	WorkspaceStatus status = 7;
 	repeated KeyValue labels = 8;
-
-	string phase = 9;
-	string startedAt = 10;
-	string pausedAt = 11;
-	string terminatedAt = 12;
-
 }
 
 message WorkspaceStatus {
