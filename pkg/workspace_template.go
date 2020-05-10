@@ -480,7 +480,7 @@ func (c *Client) workspaceTemplatesSelectBuilder(namespace string) sq.SelectBuil
 
 func (c *Client) workspaceTemplateVersionsSelectBuilder(namespace, uid string) sq.SelectBuilder {
 	sb := c.workspaceTemplatesSelectBuilder(namespace).
-		Columns("wtv.created_at \"created_at\"", "wtv.version", "wtv.manifest", "wft.uid \"workflow_template.uid\"", "wftv.version \"workflow_template.version\"", "wftv.manifest \"workflow_template.manifest\"").
+		Columns("wtv.created_at \"created_at\"", "wtv.version", "wtv.manifest", "wft.id \"workflow_template.id\"", "wft.uid \"workflow_template.uid\"", "wftv.version \"workflow_template.version\"", "wftv.manifest \"workflow_template.manifest\"").
 		Join("workspace_template_versions wtv ON wtv.workspace_template_id = wt.id").
 		Join("workflow_templates wft ON wft.id = wt.workflow_template_id").
 		Join("workflow_template_versions wftv ON wftv.workflow_template_id = wft.id").
@@ -622,15 +622,7 @@ func (c *Client) GetWorkspaceTemplate(namespace, uid string, version int64) (wor
 
 // UpdateWorkspaceTemplate adds a new workspace template version
 func (c *Client) UpdateWorkspaceTemplate(namespace string, workspaceTemplate *WorkspaceTemplate) (*WorkspaceTemplate, error) {
-	valid, err := govalidator.ValidateStruct(workspaceTemplate)
-	if err != nil || !valid {
-		if err == nil {
-			err = fmt.Errorf("invalid Workspace Template")
-		}
-		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
-	}
-
-	existingWorkspaceTemplate, err := c.getWorkspaceTemplateByName(namespace, workspaceTemplate.Name)
+	existingWorkspaceTemplate, err := c.GetWorkspaceTemplate(namespace, workspaceTemplate.UID, workspaceTemplate.Version)
 	if err != nil {
 		return nil, err
 	}
@@ -638,18 +630,14 @@ func (c *Client) UpdateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 		return nil, util.NewUserError(codes.NotFound, "Workspace template not found.")
 	}
 	workspaceTemplate.ID = existingWorkspaceTemplate.ID
-
-	existingWorkflowTemplate, err := c.getWorkflowTemplateById(existingWorkspaceTemplate.WorkflowTemplate.ID)
-	if err != nil {
-		return nil, err
-	}
+	workspaceTemplate.Name = existingWorkspaceTemplate.UID
 
 	updatedWorkflowTemplate, err := c.generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate)
 	if err != nil {
 		return nil, err
 	}
-	updatedWorkflowTemplate.ID = existingWorkflowTemplate.ID
-	updatedWorkflowTemplate.UID = existingWorkflowTemplate.UID
+	updatedWorkflowTemplate.ID = existingWorkspaceTemplate.WorkflowTemplate.ID
+	updatedWorkflowTemplate.UID = existingWorkspaceTemplate.WorkflowTemplate.UID
 
 	tx, err := c.DB.Begin()
 	if err != nil {
