@@ -19,7 +19,7 @@ func (c *Client) workspacesSelectBuilder(namespace string) sq.SelectBuilder {
 		Columns(getWorkspaceStatusColumns("w", "status")...).
 		From("workspaces w").
 		Join("workspace_templates wt ON wt.id = w.workspace_template_id").
-		Join("workspace_template_versions wtv ON wtv.workspace_template_id = wt.id").
+		Join("workspace_template_versions wtv ON wtv.workspace_template_id = wt.id AND wtv.version = w.workspace_template_version").
 		Where(sq.Eq{
 			"w.namespace": namespace,
 		})
