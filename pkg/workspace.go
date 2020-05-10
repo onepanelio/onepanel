@@ -16,6 +16,7 @@ import (
 
 func (c *Client) workspacesSelectBuilder(namespace string) sq.SelectBuilder {
 	sb := sb.Select("w.id", "w.uid", "w.name", "w.parameters", "wt.id \"workspace_template.id\"", "wt.uid \"workspace_template.uid\"", "wtv.version \"workspace_template.version\"").
+		Columns(getWorkspaceStatusColumns("w", "status")...).
 		From("workspaces w").
 		Join("workspace_templates wt ON wt.id = w.workspace_template_id").
 		Join("workspace_template_versions wtv ON wtv.workspace_template_id = wt.id").
@@ -26,28 +27,49 @@ func (c *Client) workspacesSelectBuilder(namespace string) sq.SelectBuilder {
 	return sb
 }
 
+// Injects parameters into the workspace.Parameters.
+// If the parameter already exists, it's value is updated.
+// The parameters injected are:
+// sys-name
+// sys-workspace-action
+// sys-resource-action
+// sys-host
 func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, workspaceAction, resourceAction string, config map[string]string) (err error) {
-	for _, p := range workspace.Parameters {
-		if p.Name == "sys-name" {
-			workspace.Name = *p.Value
-			break
-		}
-	}
 	host := fmt.Sprintf("%v--%v.%v", workspace.Name, namespace, config["ONEPANEL_DOMAIN"])
 	if _, err = workspace.GenerateUID(); err != nil {
 		return
 	}
-	workspace.Parameters = append(workspace.Parameters,
-		Parameter{
+
+	insertionMap := map[string]Parameter{
+		"sys-name": {
+			Name:  "sys-name",
+			Value: ptr.String(workspace.Name),
+		},
+		"sys-workspace-action": {
 			Name:  "sys-workspace-action",
 			Value: ptr.String(workspaceAction),
-		}, Parameter{
+		},
+		"sys-resource-action": {
 			Name:  "sys-resource-action",
 			Value: ptr.String(resourceAction),
-		}, Parameter{
+		},
+		"sys-host": {
 			Name:  "sys-host",
 			Value: ptr.String(host),
-		})
+		},
+	}
+
+	for _, parameter := range workspace.Parameters {
+		existingParam, ok := insertionMap[parameter.Name]
+		if ok {
+			parameter.Value = existingParam.Value
+			delete(insertionMap, parameter.Name)
+		}
+	}
+
+	for _, parameter := range insertionMap {
+		workspace.Parameters = append(workspace.Parameters, parameter)
+	}
 
 	return
 }
@@ -141,16 +163,28 @@ func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err 
 	if err != nil {
 		return
 	}
+
 	workspace = &Workspace{}
 	if err = c.DB.Get(workspace, query, args...); err == sql.ErrNoRows {
 		err = nil
 		workspace = nil
+
+		return
 	}
-	if workspace != nil {
-		if err = json.Unmarshal(workspace.ParametersBytes, &workspace.Parameters); err != nil {
-			return
-		}
+	if err != nil {
+		return nil, err
 	}
+
+	if err = json.Unmarshal(workspace.ParametersBytes, &workspace.Parameters); err != nil {
+		return
+	}
+
+	labelsMap, err := c.GetDbLabelsMapped(TypeWorkspace, workspace.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	workspace.Labels = labelsMap[workspace.ID]
 
 	return
 }
@@ -195,6 +229,7 @@ func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceS
 
 func (c *Client) ListWorkspaces(namespace string, paginator *pagination.PaginationRequest) (workspaces []*Workspace, err error) {
 	sb := sb.Select(getWorkspaceColumns("w", "")...).
+		Columns(getWorkspaceStatusColumns("w", "status")...).
 		From("workspaces w").
 		OrderBy("w.created_at DESC").
 		Where(sq.Eq{

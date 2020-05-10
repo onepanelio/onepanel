@@ -12,7 +12,13 @@ service WorkspaceService {
 	rpc CreateWorkspace (CreateWorkspaceRequest) returns (Workspace) {
 		option (google.api.http) = {
             post: "/apis/v1beta1/{namespace}/workspaces"
-            body: "workspace"
+            body: "body"
+        };
+	}
+
+	rpc GetWorkspace (GetWorkspaceRequest) returns (Workspace) {
+		option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workspaces/{uid}"
         };
 	}
 
@@ -66,9 +72,23 @@ message WorkspaceStatus {
 	string terminatedAt = 4;
 }
 
+message CreateWorkspaceBody {
+	string workspaceTemplateUid = 2;
+	int64 workspaceTemplateVersion = 3;
+
+	repeated Parameter parameters = 4;
+	repeated KeyValue labels = 5;
+}
+
 message CreateWorkspaceRequest {
 	string namespace = 1;
-	Workspace workspace = 2;
+
+	CreateWorkspaceBody body = 2;
+}
+
+message GetWorkspaceRequest {
+	string namespace = 1;
+	string uid = 2;
 }
 
 message UpdateWorkspaceStatusRequest {

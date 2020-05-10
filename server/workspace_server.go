@@ -8,6 +8,7 @@ import (
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/server/auth"
+	"github.com/onepanelio/core/server/converter"
 	"time"
 )
 
@@ -18,6 +19,26 @@ func apiWorkspace(wt *v1.Workspace) *api.Workspace {
 		Uid:       wt.UID,
 		Name:      wt.Name,
 		CreatedAt: wt.CreatedAt.UTC().Format(time.RFC3339),
+	}
+
+	res.Status = &api.WorkspaceStatus{
+		Phase: string(wt.Status.Phase),
+	}
+
+	if wt.Status.StartedAt != nil {
+		res.Status.StartedAt = wt.Status.StartedAt.UTC().Format(time.RFC3339)
+	}
+
+	if wt.Status.PausedAt != nil {
+		res.Status.PausedAt = wt.Status.PausedAt.UTC().Format(time.RFC3339)
+	}
+
+	if wt.Status.TerminatedAt != nil {
+		res.Status.TerminatedAt = wt.Status.TerminatedAt.UTC().Format(time.RFC3339)
+	}
+
+	if len(wt.Labels) > 0 {
+		res.Labels = converter.MappingToKeyValue(wt.Labels)
 	}
 
 	if wt.WorkspaceTemplate != nil {
@@ -39,26 +60,50 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 	}
 
 	workspace := &v1.Workspace{
-		Name: req.Workspace.Name,
 		WorkspaceTemplate: &v1.WorkspaceTemplate{
-			UID:     req.Workspace.WorkspaceTemplate.Uid,
-			Version: req.Workspace.WorkspaceTemplate.Version,
+			UID:     req.Body.WorkspaceTemplateUid,
+			Version: req.Body.WorkspaceTemplateVersion,
+			Labels:  converter.APIKeyValueToLabel(req.Body.Labels),
 		},
 	}
-	for _, param := range req.Workspace.Parameters {
+
+	for _, param := range req.Body.Parameters {
+		if param.Name == "sys-name" {
+			workspace.Name = param.Value
+			continue
+		}
+
 		workspace.Parameters = append(workspace.Parameters, v1.Parameter{
 			Name:  param.Name,
 			Value: ptr.String(param.Value),
 		})
 	}
+
 	workspace, err = client.CreateWorkspace(req.Namespace, workspace)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Workspace = apiWorkspace(workspace)
+	apiWorkspace := apiWorkspace(workspace)
 
-	return req.Workspace, nil
+	return apiWorkspace, nil
+}
+
+func (s *WorkspaceServer) GetWorkspace(ctx context.Context, req *api.GetWorkspaceRequest) (*api.Workspace, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "apps", "statefulsets", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	workspace, err := client.GetWorkspace(req.Namespace, req.Uid)
+	if err != nil {
+		return nil, err
+	}
+
+	apiWorkspace := apiWorkspace(workspace)
+
+	return apiWorkspace, nil
 }
 
 func (s *WorkspaceServer) UpdateWorkspaceStatus(ctx context.Context, req *api.UpdateWorkspaceStatusRequest) (*empty.Empty, error) {
