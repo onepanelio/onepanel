@@ -653,6 +653,17 @@ func (c *Client) UpdateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	workspaceTemplate.Version = workflowTemplateVersion.Version
 	workspaceTemplate.IsLatest = true
 
+	_, err = sb.Update("workspace_template_versions").
+		SetMap(sq.Eq{"is_latest": false}).
+		Where(sq.Eq{
+			"workspace_template_id": workspaceTemplate.ID,
+		}).
+		RunWith(tx).
+		Exec()
+	if err != nil {
+		return nil, err
+	}
+
 	_, err = sb.Insert("workspace_template_versions").
 		SetMap(sq.Eq{
 			"version":               workspaceTemplate.Version,
