@@ -41,10 +41,6 @@ func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, wor
 	}
 
 	insertionMap := map[string]Parameter{
-		"sys-name": {
-			Name:  "sys-name",
-			Value: ptr.String(workspace.Name),
-		},
 		"sys-workspace-action": {
 			Name:  "sys-workspace-action",
 			Value: ptr.String(workspaceAction),

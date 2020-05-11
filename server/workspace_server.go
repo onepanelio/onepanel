@@ -70,7 +70,6 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 	for _, param := range req.Body.Parameters {
 		if param.Name == "sys-name" {
 			workspace.Name = param.Value
-			continue
 		}
 
 		workspace.Parameters = append(workspace.Parameters, v1.Parameter{
