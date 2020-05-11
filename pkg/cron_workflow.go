@@ -429,11 +429,11 @@ func (c *Client) buildCronWorkflowDefinition(namespace string, workflowTemplateI
 		cwf.ObjectMeta.Labels = *opts.Labels
 	}
 
-	err = injectExitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
+	err = injectExitHandlerWorkflowExecutionStatistic(wf, workflowTemplateId)
 	if err != nil {
 		return nil, err
 	}
-	err = injectInitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
+	err = injectInitHandlerWorkflowExecutionStatistic(wf, workflowTemplateId)
 	if err != nil {
 		return nil, err
 	}

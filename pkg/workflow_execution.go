@@ -234,7 +234,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateId uint64, wor
 		wf.ObjectMeta.Labels = *opts.Labels
 	}
 
-	err = injectExitHandlerWorkflowExecutionStatistic(wf, namespace, &workflowTemplateId)
+	err = injectExitHandlerWorkflowExecutionStatistic(wf, &workflowTemplateId)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -1345,7 +1345,7 @@ func getCURLNodeTemplate(name, curlMethod, curlPath, curlBody string, inputs wfv
 	return
 }
 
-func injectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace string, workflowTemplateId *uint64) error {
+func injectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, workflowTemplateId *uint64) error {
 	curlPath := "/apis/v1beta1/{{workflow.namespace}}/workflow_executions/{{workflow.name}}/statistics"
 	statistics := map[string]interface{}{
 		"workflowStatus":     "{{workflow.status}}",
@@ -1392,7 +1392,7 @@ func injectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace st
 	return nil
 }
 
-func injectInitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, namespace string, workflowTemplateId *uint64) error {
+func injectInitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, workflowTemplateId *uint64) error {
 	curlPath := "/apis/v1beta1/{{workflow.namespace}}/workflow_executions/{{workflow.name}}/cron_start_statistics"
 	statistics := map[string]interface{}{
 		"workflowTemplateId": int64(*workflowTemplateId),
