@@ -354,20 +354,6 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 		return nil, err
 	}
 
-	appendSysUid := true
-	for _, param := range opts.Parameters {
-		if param.Name == "sys-uid" {
-			appendSysUid = false
-			break
-		}
-	}
-	if appendSysUid {
-		opts.Parameters = append(opts.Parameters, Parameter{
-			Name:  "sys-uid",
-			Value: ptr.String(workflowUid),
-		})
-	}
-
 	id, createdWorkflow, err := c.createWorkflow(namespace, workflowTemplate.ID, workflowTemplate.WorkflowTemplateVersionId, &workflows[0], opts)
 	if err != nil {
 		log.WithFields(log.Fields{
