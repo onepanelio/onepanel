@@ -87,28 +87,6 @@ func UnmarshalWorkflows(wfBytes []byte, strict bool) (wfs []wfv1.Workflow, err e
 	return
 }
 
-func addSystemUIDParameter(wf *wfv1.Workflow) {
-	for _, p := range wf.Spec.Arguments.Parameters {
-		if p.Name == "sys-uid" {
-			return
-		}
-	}
-
-	uid := wf.Labels[label.WorkflowUid]
-	if uid == "" {
-		uid = "00000000-0000-0000-0000-000000000000"
-	}
-	if wf.Spec.Arguments.Parameters == nil {
-		wf.Spec.Arguments.Parameters = make([]wfv1.Parameter, 0)
-	}
-	wf.Spec.Arguments.Parameters = append(wf.Spec.Arguments.Parameters, wfv1.Parameter{
-		Name:  "sys-uid",
-		Value: ptr.String(uid),
-	})
-
-	return
-}
-
 func addEnvToTemplate(template *wfv1.Template, key string, value string) {
 	//Flag to prevent over-writing user's envs
 	overwriteUserEnv := true
