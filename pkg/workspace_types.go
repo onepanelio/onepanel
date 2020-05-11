@@ -42,6 +42,7 @@ type Workspace struct {
 	WorkspaceTemplate        *WorkspaceTemplate `db:"workspace_template" valid:"-"`
 	WorkspaceTemplateID      uint64             `db:"workspace_template_id"`
 	WorkspaceTemplateVersion uint64             `db:"workspace_template_version"`
+	Path                     string             `db:"path"` // the path to the workspace, a url that you can access via http
 }
 
 type WorkspaceSpec struct {

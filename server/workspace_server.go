@@ -19,6 +19,7 @@ func apiWorkspace(wt *v1.Workspace) *api.Workspace {
 		Uid:       wt.UID,
 		Name:      wt.Name,
 		CreatedAt: wt.CreatedAt.UTC().Format(time.RFC3339),
+		Path:      wt.Path,
 	}
 
 	res.Status = &api.WorkspaceStatus{
@@ -68,6 +69,10 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 	}
 
 	for _, param := range req.Body.Parameters {
+		if param.Type == "input.hidden" {
+			continue
+		}
+
 		if param.Name == "sys-name" {
 			workspace.Name = param.Value
 		}
