@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func GenerateK8sValidName(input string) (string, error) {
+func GenerateUid(input string) (string, error) {
 	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
 	cleanUp := strings.ToLower(re.ReplaceAllString(input, `-`))
 	if len(cleanUp) > 30 {
