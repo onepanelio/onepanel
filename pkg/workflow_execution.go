@@ -339,6 +339,7 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	for _, param := range opts.Parameters {
 		if param.Name == "sys-uid" {
 			appendSysUid = false
+			break
 		}
 	}
 	if appendSysUid {
