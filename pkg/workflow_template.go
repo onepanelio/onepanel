@@ -41,6 +41,7 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 			"uid":       uid,
 			"name":      workflowTemplate.Name,
 			"namespace": namespace,
+			"is_system": workflowTemplate.IsSystem,
 		}).
 		Suffix("RETURNING id").
 		RunWith(tx).
@@ -308,6 +309,7 @@ func (c *Client) listWorkflowTemplates(namespace string, paginator *pagination.P
 		GroupBy("wt.id", "wt.created_at", "wt.uid", "wt.name", "wt.is_archived").
 		Where(sq.Eq{
 			"wt.is_archived": false,
+			"wt.is_system":   false,
 		}).
 		OrderBy("wt.created_at DESC")
 

@@ -423,11 +423,11 @@ func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	}
 	defer tx.Rollback()
 
+	workspaceTemplate.WorkflowTemplate.IsSystem = true
 	workspaceTemplate.WorkflowTemplate, err = c.CreateWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate)
 	if err != nil {
 		return nil, err
 	}
-
 	workspaceTemplate.Version = workspaceTemplate.WorkflowTemplate.Version
 	workspaceTemplate.IsLatest = true
 
