@@ -11,6 +11,7 @@ import (
 	"github.com/onepanelio/core/pkg/util/label"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
+	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"io"
 	"io/ioutil"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -248,7 +249,10 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateId uint64, wor
 		return 0, nil, err
 	}
 
-	uid := wf.Labels[label.WorkflowUid]
+	uid, err := uid2.GenerateUID(createdWorkflow.Name)
+	if err != nil {
+		return 0, nil, err
+	}
 	//Create an entry for workflow_executions statistic
 	//CURL code will hit the API endpoint that will update the db row
 	newDbId, err = c.insertPreWorkflowExecutionStatistic(namespace, createdWorkflow.Name, workflowTemplateVersionId, createdWorkflow.CreationTimestamp.UTC(), uid, opts.Parameters)

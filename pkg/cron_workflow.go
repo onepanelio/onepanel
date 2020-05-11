@@ -38,8 +38,11 @@ func (c *Client) UpdateCronWorkflow(namespace string, name string, cronWorkflow 
 
 	// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
 	opts := &WorkflowExecutionOptions{}
-	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
-	opts.GenerateName = strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`)) + "-"
+	opts.GenerateName, err = uid.GenerateUID(workflowTemplate.Name)
+	if err != nil {
+		return nil, err
+	}
+	opts.GenerateName += "-"
 	for _, param := range workflow.Parameters {
 		opts.Parameters = append(opts.Parameters, Parameter{
 			Name:  param.Name,
@@ -228,7 +231,11 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 
 	cronWorkflow.Name = argoCreatedCronWorkflow.Name
 	cronWorkflow.CreatedAt = argoCreatedCronWorkflow.CreationTimestamp.UTC()
-	cronWorkflow.UID = string(argoCreatedCronWorkflow.ObjectMeta.UID)
+
+	cronWorkflow.UID, err = uid.GenerateUID(argoCreatedCronWorkflow.Name)
+	if err != nil {
+		return nil, err
+	}
 	cronWorkflow.WorkflowExecution.WorkflowTemplate = workflowTemplate
 	// Manifests could get big, don't return them in this case.
 	cronWorkflow.WorkflowExecution.WorkflowTemplate.Manifest = ""
