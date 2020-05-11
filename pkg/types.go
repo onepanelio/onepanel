@@ -169,6 +169,7 @@ type WorkflowTemplate struct {
 	Versions                         int64 `db:"versions"` // How many versions there are of this template total.
 	IsLatest                         bool
 	IsArchived                       bool `db:"is_archived"`
+	IsSystem                         bool `db:"is_system"`
 	ArgoWorkflowTemplate             *wfv1.WorkflowTemplate
 	Labels                           map[string]string
 	WorkflowExecutionStatisticReport *WorkflowExecutionStatisticReport

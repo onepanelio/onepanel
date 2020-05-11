@@ -1350,7 +1350,9 @@ func getCURLNodeTemplate(name, curlMethod, curlPath, curlBody string, inputs wfv
 			Command: []string{"sh", "-c"},
 			Args: []string{
 				"SERVICE_ACCOUNT_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) " +
-					"&& curl -X " + curlMethod + " -s -o /dev/null -w '%{http_code}' '" + endpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
+					"&& curl -X " + curlMethod + " -s -o /dev/null -w '%{http_code}' " +
+					"--connect-timeout 10 --retry 5 --retry-delay 5 " +
+					"'" + endpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
 					"-H 'Authorization: Bearer '\"$SERVICE_ACCOUNT_TOKEN\"'' " +
 					"--data '" + curlBody + "' --compressed",
 			},

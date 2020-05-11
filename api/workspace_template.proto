@@ -26,7 +26,7 @@ service WorkspaceTemplateService {
     // Updates a WorkspaceTemplate
     rpc UpdateWorkspaceTemplate (UpdateWorkspaceTemplateRequest) returns (WorkspaceTemplate) {
         option (google.api.http) = {
-            put: "/apis/v1beta1/{namespace}/workspace_templates/{name}"
+            put: "/apis/v1beta1/{namespace}/workspace_templates/{uid}"
             body: "workspaceTemplate"
         };
     }
@@ -74,7 +74,7 @@ message CreateWorkspaceTemplateRequest {
 
 message UpdateWorkspaceTemplateRequest {
     string namespace = 1;
-    string name = 2;
+    string uid = 2;
     WorkspaceTemplate workspaceTemplate = 3;
 }
 

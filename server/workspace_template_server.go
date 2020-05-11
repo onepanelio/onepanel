@@ -82,13 +82,13 @@ func (s *WorkspaceTemplateServer) CreateWorkspaceTemplate(ctx context.Context, r
 
 func (s *WorkspaceTemplateServer) UpdateWorkspaceTemplate(ctx context.Context, req *api.UpdateWorkspaceTemplateRequest) (*api.WorkspaceTemplate, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "workflowtemplates", req.Name)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "workflowtemplates", req.Uid)
 	if err != nil || !allowed {
 		return nil, err
 	}
 
 	workspaceTemplate := &v1.WorkspaceTemplate{
-		Name:     req.Name,
+		UID:      req.Uid,
 		Manifest: req.WorkspaceTemplate.Manifest,
 	}
 	workspaceTemplate, err = client.UpdateWorkspaceTemplate(req.Namespace, workspaceTemplate)
