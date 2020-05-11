@@ -379,13 +379,16 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	}
 
 	appendSysUid := true
-	for key, _ := range *opts.Labels {
-		if key == "sys-uid" {
+	for _, param := range opts.Parameters {
+		if param.Name == "sys-uid" {
 			appendSysUid = false
 		}
 	}
 	if appendSysUid {
-		(*opts.Labels)["sys-uid"] = workflowUid
+		opts.Parameters = append(opts.Parameters, Parameter{
+			Name:  "sys-uid",
+			Value: ptr.String(workflowUid),
+		})
 	}
 
 	id, createdWorkflow, err := c.createWorkflow(namespace, workflowTemplate.ID, workflowTemplate.WorkflowTemplateVersionId, &workflows[0], opts)
