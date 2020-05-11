@@ -230,12 +230,14 @@ func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceS
 func (c *Client) ListWorkspaces(namespace string, paginator *pagination.PaginationRequest) (workspaces []*Workspace, err error) {
 	sb := sb.Select(getWorkspaceColumns("w", "")...).
 		Columns(getWorkspaceStatusColumns("w", "status")...).
+		Columns(getWorkspaceTemplateColumns("wt", "workspace_template")...).
 		From("workspaces w").
+		Join("workspace_templates wt ON wt.id = w.workspace_template_id").
 		OrderBy("w.created_at DESC").
 		Where(sq.Eq{
 			"w.namespace": namespace,
 		})
-	paginator.ApplyToSelect(&sb)
+	sb = *paginator.ApplyToSelect(&sb)
 
 	query, args, err := sb.ToSql()
 	if err != nil {
@@ -245,6 +247,21 @@ func (c *Client) ListWorkspaces(namespace string, paginator *pagination.Paginati
 	if err := c.DB.Select(&workspaces, query, args...); err != nil {
 		return nil, err
 	}
+
+	return
+}
+
+func (c *Client) CountWorkspaces(namespace string) (count int, err error) {
+	err = sb.Select("COUNT( DISTINCT( w.id ))").
+		From("workspaces w").
+		Join("workspace_templates wt ON w.workspace_template_id = wt.id").
+		Where(sq.Eq{
+			"wt.namespace":   namespace,
+			"wt.is_archived": false,
+		}).
+		RunWith(c.DB.DB).
+		QueryRow().
+		Scan(&count)
 
 	return
 }

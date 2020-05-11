@@ -676,6 +676,13 @@ func getWorkspaceColumns(alias string, destination string, extraColumns ...strin
 	return formatColumnSelect(columns, alias, destination, extraColumns...)
 }
 
+// returns all of the columns for workspace template modified by alias, destination.
+// see formatColumnSelect
+func getWorkspaceTemplateColumns(alias string, destination string, extraColumns ...string) []string {
+	columns := []string{"id", "uid", "created_at", "modified_at", "name", "namespace", "is_archived", "workflow_template_id"}
+	return formatColumnSelect(columns, alias, destination, extraColumns...)
+}
+
 func LabelsToMapping(labels ...*Label) map[string]string {
 	result := make(map[string]string)
 
