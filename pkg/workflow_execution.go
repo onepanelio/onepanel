@@ -223,6 +223,10 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 	return
 }
 
+/*
+	Name is == to UID, no user friendly name.
+	Workflow execution name == uid, example: name = my-friendly-wf-name-8skjz, uid = my-friendly-wf-name-8skjz
+*/
 func (c *Client) createWorkflow(namespace string, workflowTemplateId uint64, workflowTemplateVersionId uint64, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (newDbId uint64, createdWorkflow *wfv1.Workflow, err error) {
 	if opts == nil {
 		opts = &WorkflowExecutionOptions{}
@@ -372,6 +376,16 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 			"Error":     err.Error(),
 		}).Error("Error parsing workflow.")
 		return nil, err
+	}
+
+	appendSysUid := true
+	for key, _ := range *opts.Labels {
+		if key == "sys-uid" {
+			appendSysUid = false
+		}
+	}
+	if appendSysUid {
+		(*opts.Labels)["sys-uid"] = workflowUid
 	}
 
 	id, createdWorkflow, err := c.createWorkflow(namespace, workflowTemplate.ID, workflowTemplate.WorkflowTemplateVersionId, &workflows[0], opts)
