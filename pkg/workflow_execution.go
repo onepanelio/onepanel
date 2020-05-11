@@ -142,8 +142,6 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		}
 	}
 
-	addSystemUIDParameter(wf)
-
 	addSecretValsToTemplate := true
 	secret, err := c.GetSecret(namespace, "onepanel-default-env")
 	if err != nil {
