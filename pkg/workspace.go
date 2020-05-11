@@ -59,7 +59,8 @@ func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, wor
 		},
 	}
 
-	for _, parameter := range workspace.Parameters {
+	for i := range workspace.Parameters {
+		parameter := &workspace.Parameters[i]
 		existingParam, ok := insertionMap[parameter.Name]
 		if ok {
 			parameter.Value = existingParam.Value
