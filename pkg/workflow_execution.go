@@ -13,6 +13,7 @@ import (
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"io"
 	"io/ioutil"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -123,7 +124,20 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		}
 	}
 
-	addSystemUIDParameter(wf)
+	addSecretValsToTemplate := true
+	secret, err := c.GetSecret(namespace, "onepanel-default-env")
+	if err != nil {
+		var statusError *k8serrors.StatusError
+		if errors.As(err, &statusError) {
+			if statusError.ErrStatus.Reason == "NotFound" {
+				addSecretValsToTemplate = false
+			} else {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
 
 	// Create dev/shm volume
 	wf.Spec.Volumes = append(wf.Spec.Volumes, corev1.Volume{
