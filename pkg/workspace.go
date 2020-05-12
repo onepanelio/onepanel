@@ -132,7 +132,7 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 	if !ok {
 		return nil, fmt.Errorf("sys-host parameter not found")
 	}
-	workspace.URL = "http://" + *sysHost.Value
+	workspace.URL = *sysHost.Value
 
 	existingWorkspace, err := c.GetWorkspace(namespace, workspace.UID)
 	if err != nil {
