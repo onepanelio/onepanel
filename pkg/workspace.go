@@ -15,8 +15,10 @@ import (
 )
 
 func (c *Client) workspacesSelectBuilder(namespace string) sq.SelectBuilder {
-	sb := sb.Select("w.id", "w.uid", "w.name", "w.parameters", "wt.id \"workspace_template.id\"", "wt.uid \"workspace_template.uid\"", "wtv.version \"workspace_template.version\"", "w.url").
+	sb := sb.Select(getWorkspaceColumns("w", "")...).
 		Columns(getWorkspaceStatusColumns("w", "status")...).
+		Columns(getWorkspaceTemplateColumns("wt", "workspace_template")...).
+		Columns("wtv.version \"workspace_template.version\"").
 		From("workspaces w").
 		Join("workspace_templates wt ON wt.id = w.workspace_template_id").
 		Join("workspace_template_versions wtv ON wtv.workspace_template_id = wt.id AND wtv.version = w.workspace_template_version").
