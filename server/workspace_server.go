@@ -9,17 +9,24 @@ import (
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/onepanelio/core/server/converter"
+	"strings"
 	"time"
 )
 
 type WorkspaceServer struct{}
 
-func apiWorkspace(wt *v1.Workspace) *api.Workspace {
+func apiWorkspace(wt *v1.Workspace, config map[string]string) *api.Workspace {
+	protocol := "http://"
+	onepanelApiUrl := config["ONEPANEL_API_URL"]
+	if strings.HasPrefix(onepanelApiUrl, "https://") {
+		protocol = "https://"
+	}
+
 	res := &api.Workspace{
 		Uid:       wt.UID,
 		Name:      wt.Name,
 		CreatedAt: wt.CreatedAt.UTC().Format(time.RFC3339),
-		Url:       wt.URL,
+		Url:       protocol + wt.URL,
 	}
 
 	res.Status = &api.WorkspaceStatus{
@@ -88,7 +95,12 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 		return nil, err
 	}
 
-	apiWorkspace := apiWorkspace(workspace)
+	sysConfig, err := client.GetSystemConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	apiWorkspace := apiWorkspace(workspace, sysConfig)
 
 	return apiWorkspace, nil
 }
@@ -105,7 +117,12 @@ func (s *WorkspaceServer) GetWorkspace(ctx context.Context, req *api.GetWorkspac
 		return nil, err
 	}
 
-	apiWorkspace := apiWorkspace(workspace)
+	sysConfig, err := client.GetSystemConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	apiWorkspace := apiWorkspace(workspace, sysConfig)
 
 	return apiWorkspace, nil
 }
@@ -138,9 +155,13 @@ func (s *WorkspaceServer) ListWorkspaces(ctx context.Context, req *api.ListWorks
 		return nil, err
 	}
 
+	sysConfig, err := client.GetSystemConfig()
+	if err != nil {
+		return nil, err
+	}
 	var apiWorkspaces []*api.Workspace
 	for _, w := range workspaces {
-		apiWorkspaces = append(apiWorkspaces, apiWorkspace(w))
+		apiWorkspaces = append(apiWorkspaces, apiWorkspace(w, sysConfig))
 	}
 
 	count, err := client.CountWorkspaces(req.Namespace)

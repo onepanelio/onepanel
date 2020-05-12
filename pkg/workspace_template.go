@@ -687,7 +687,7 @@ func (c *Client) UpdateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 func (c *Client) ListWorkspaceTemplates(namespace string, paginator *pagination.PaginationRequest) (workspaceTemplates []*WorkspaceTemplate, err error) {
 	sb := c.workspaceTemplatesSelectBuilder(namespace).
 		OrderBy("wt.created_at DESC")
-	paginator.ApplyToSelect(&sb)
+	sb = *paginator.ApplyToSelect(&sb)
 
 	query, args, err := sb.ToSql()
 	if err != nil {
