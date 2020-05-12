@@ -95,7 +95,7 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 			"started_at":                 time.Now().UTC(),
 			"workspace_template_id":      workspace.WorkspaceTemplate.ID,
 			"workspace_template_version": workspace.WorkspaceTemplate.Version,
-			"path":                       workspace.Path,
+			"path":                       workspace.URL,
 		}).
 		Suffix("RETURNING id, created_at").
 		RunWith(c.DB).
@@ -132,7 +132,7 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 	if !ok {
 		return nil, fmt.Errorf("sys-host parameter not found")
 	}
-	workspace.Path = "http://" + *sysHost.Value
+	workspace.URL = "http://" + *sysHost.Value
 
 	existingWorkspace, err := c.GetWorkspace(namespace, workspace.UID)
 	if err != nil {

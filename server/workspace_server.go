@@ -19,7 +19,7 @@ func apiWorkspace(wt *v1.Workspace) *api.Workspace {
 		Uid:       wt.UID,
 		Name:      wt.Name,
 		CreatedAt: wt.CreatedAt.UTC().Format(time.RFC3339),
-		Path:      wt.Path,
+		Url:       wt.URL,
 	}
 
 	res.Status = &api.WorkspaceStatus{

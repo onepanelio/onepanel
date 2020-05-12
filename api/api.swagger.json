@@ -3052,7 +3052,7 @@
             "$ref": "#/definitions/KeyValue"
           }
         },
-        "path": {
+        "url": {
           "type": "string"
         }
       }
