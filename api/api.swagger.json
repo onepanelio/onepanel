@@ -3051,6 +3051,9 @@
           "items": {
             "$ref": "#/definitions/KeyValue"
           }
+        },
+        "url": {
+          "type": "string"
         }
       }
     },

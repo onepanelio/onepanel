@@ -34,7 +34,7 @@ func (c *Client) workspacesSelectBuilder(namespace string) sq.SelectBuilder {
 // sys-workspace-action
 // sys-resource-action
 // sys-host
-func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, workspaceAction, resourceAction string, config map[string]string) (err error) {
+func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, workspaceAction, resourceAction string, config map[string]string) (parameterMap map[string]Parameter, err error) {
 	host := fmt.Sprintf("%v--%v.%v", workspace.Name, namespace, config["ONEPANEL_DOMAIN"])
 	if _, err = workspace.GenerateUID(); err != nil {
 		return
@@ -68,6 +68,11 @@ func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, wor
 		workspace.Parameters = append(workspace.Parameters, parameter)
 	}
 
+	parameterMap = make(map[string]Parameter)
+	for _, parameter := range workspace.Parameters {
+		parameterMap[parameter.Name] = parameter
+	}
+
 	return
 }
 
@@ -90,6 +95,7 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 			"started_at":                 time.Now().UTC(),
 			"workspace_template_id":      workspace.WorkspaceTemplate.ID,
 			"workspace_template_version": workspace.WorkspaceTemplate.Version,
+			"url":                        workspace.URL,
 		}).
 		Suffix("RETURNING id, created_at").
 		RunWith(c.DB).
@@ -113,7 +119,7 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 		return nil, err
 	}
 
-	err = injectWorkspaceSystemParameters(namespace, workspace, "create", "apply", config)
+	parameterMap, err := injectWorkspaceSystemParameters(namespace, workspace, "create", "apply", config)
 	if err != nil {
 		return nil, err
 	}
@@ -121,6 +127,12 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 		Name:  "sys-uid",
 		Value: ptr.String(workspace.UID),
 	})
+
+	sysHost, ok := parameterMap["sys-host"]
+	if !ok {
+		return nil, fmt.Errorf("sys-host parameter not found")
+	}
+	workspace.URL = "http://" + *sysHost.Value
 
 	existingWorkspace, err := c.GetWorkspace(namespace, workspace.UID)
 	if err != nil {
@@ -278,7 +290,7 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 		Name:  "sys-uid",
 		Value: ptr.String(uid),
 	})
-	err = injectWorkspaceSystemParameters(namespace, workspace, workspaceAction, resourceAction, config)
+	_, err = injectWorkspaceSystemParameters(namespace, workspace, workspaceAction, resourceAction, config)
 	if err != nil {
 		return
 	}

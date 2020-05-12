@@ -63,6 +63,7 @@ message Workspace {
 	WorkspaceTemplate workspaceTemplate = 6;
 	WorkspaceStatus status = 7;
 	repeated KeyValue labels = 8;
+	string url = 9;
 }
 
 message WorkspaceStatus {
