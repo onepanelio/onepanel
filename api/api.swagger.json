@@ -2053,6 +2053,48 @@
         "tags": [
           "WorkspaceService"
         ]
+      },
+      "put": {
+        "operationId": "UpdateWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UpdateWorkspaceBody"
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
       }
     },
     "/apis/v1beta1/{namespace}/workspaces/{uid}/pause": {
@@ -2905,6 +2947,23 @@
         "updated": {
           "type": "boolean",
           "format": "boolean"
+        }
+      }
+    },
+    "UpdateWorkspaceBody": {
+      "type": "object",
+      "properties": {
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Parameter"
+          }
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/KeyValue"
+          }
         }
       }
     },

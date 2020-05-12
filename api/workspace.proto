@@ -35,6 +35,13 @@ service WorkspaceService {
         };
 	}
 
+	rpc UpdateWorkspace (UpdateWorkspaceRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+            put: "/apis/v1beta1/{namespace}/workspaces/{uid}"
+            body: "body"
+        };
+	}
+
 	rpc PauseWorkspace (PauseWorkspaceRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
             put: "/apis/v1beta1/{namespace}/workspaces/{uid}/pause"
@@ -74,11 +81,11 @@ message WorkspaceStatus {
 }
 
 message CreateWorkspaceBody {
-	string workspaceTemplateUid = 2;
-	int64 workspaceTemplateVersion = 3;
+	string workspaceTemplateUid = 1;
+	int64 workspaceTemplateVersion = 2;
 
-	repeated Parameter parameters = 4;
-	repeated KeyValue labels = 5;
+	repeated Parameter parameters = 3;
+	repeated KeyValue labels = 4;
 }
 
 message CreateWorkspaceRequest {
@@ -96,6 +103,17 @@ message UpdateWorkspaceStatusRequest {
 	string namespace = 1;
 	string uid = 2;
 	WorkspaceStatus status = 3;
+}
+
+message UpdateWorkspaceBody {
+	repeated Parameter parameters = 1;
+	repeated KeyValue labels = 2;
+}
+
+message UpdateWorkspaceRequest {
+	string namespace = 1;
+	string uid = 2;
+	UpdateWorkspaceBody body = 3;
 }
 
 message ListWorkspaceRequest {

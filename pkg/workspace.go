@@ -29,6 +29,39 @@ func (c *Client) workspacesSelectBuilder(namespace string) sq.SelectBuilder {
 	return sb
 }
 
+func getWorkspaceParameterValue(parameters []Parameter, name string) *string {
+	for _, p := range parameters {
+		if p.Name == name {
+			return p.Value
+		}
+	}
+
+	return nil
+}
+
+func mergeWorkspaceParameters(existingParameters, newParameters []Parameter) (parameters []Parameter) {
+	parameterMap := make(map[string]*string, 0)
+	for _, p := range newParameters {
+		parameterMap[p.Name] = p.Value
+		parameters = append(parameters, Parameter{
+			Name:  p.Name,
+			Value: p.Value,
+		})
+	}
+
+	for _, p := range existingParameters {
+		_, ok := parameterMap[p.Name]
+		if !ok {
+			parameters = append(parameters, Parameter{
+				Name:  p.Name,
+				Value: p.Value,
+			})
+		}
+	}
+
+	return parameters
+}
+
 // Injects parameters into the workspace.Parameters.
 // If the parameter already exists, it's value is updated.
 // The parameters injected are:
@@ -36,44 +69,27 @@ func (c *Client) workspacesSelectBuilder(namespace string) sq.SelectBuilder {
 // sys-workspace-action
 // sys-resource-action
 // sys-host
-func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, workspaceAction, resourceAction string, config map[string]string) (parameterMap map[string]Parameter, err error) {
+func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, workspaceAction, resourceAction string, config map[string]string) (err error) {
 	host := fmt.Sprintf("%v--%v.%v", workspace.Name, namespace, config["ONEPANEL_DOMAIN"])
 	if _, err = workspace.GenerateUID(); err != nil {
 		return
 	}
 
-	insertionMap := map[string]Parameter{
-		"sys-workspace-action": {
+	systemParameters := []Parameter{
+		{
 			Name:  "sys-workspace-action",
 			Value: ptr.String(workspaceAction),
 		},
-		"sys-resource-action": {
+		{
 			Name:  "sys-resource-action",
 			Value: ptr.String(resourceAction),
 		},
-		"sys-host": {
+		{
 			Name:  "sys-host",
 			Value: ptr.String(host),
 		},
 	}
-
-	for i := range workspace.Parameters {
-		parameter := &workspace.Parameters[i]
-		existingParam, ok := insertionMap[parameter.Name]
-		if ok {
-			parameter.Value = existingParam.Value
-			delete(insertionMap, parameter.Name)
-		}
-	}
-
-	for _, parameter := range insertionMap {
-		workspace.Parameters = append(workspace.Parameters, parameter)
-	}
-
-	parameterMap = make(map[string]Parameter)
-	for _, parameter := range workspace.Parameters {
-		parameterMap[parameter.Name] = parameter
-	}
+	workspace.Parameters = mergeWorkspaceParameters(workspace.Parameters, systemParameters)
 
 	return
 }
@@ -121,7 +137,7 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 		return nil, err
 	}
 
-	parameterMap, err := injectWorkspaceSystemParameters(namespace, workspace, "create", "apply", config)
+	err = injectWorkspaceSystemParameters(namespace, workspace, "create", "apply", config)
 	if err != nil {
 		return nil, err
 	}
@@ -130,11 +146,11 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 		Value: ptr.String(workspace.UID),
 	})
 
-	sysHost, ok := parameterMap["sys-host"]
-	if !ok {
+	sysHost := getWorkspaceParameterValue(workspace.Parameters, "sys-host")
+	if sysHost == nil {
 		return nil, fmt.Errorf("sys-host parameter not found")
 	}
-	workspace.URL = *sysHost.Value
+	workspace.URL = *sysHost
 
 	existingWorkspace, err := c.GetWorkspace(namespace, workspace.UID)
 	if err != nil {
@@ -277,7 +293,7 @@ func (c *Client) CountWorkspaces(namespace string) (count int, err error) {
 	return
 }
 
-func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction string, status *WorkspaceStatus) (err error) {
+func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction string, status *WorkspaceStatus, parameters ...Parameter) (err error) {
 	workspace, err := c.GetWorkspace(namespace, uid)
 	if err != nil {
 		return util.NewUserError(codes.NotFound, "Workspace not found.")
@@ -288,16 +304,13 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 		return
 	}
 
+	workspace.Parameters = mergeWorkspaceParameters(workspace.Parameters, parameters)
 	workspace.Parameters = append(workspace.Parameters, Parameter{
 		Name:  "sys-uid",
 		Value: ptr.String(uid),
 	})
-	_, err = injectWorkspaceSystemParameters(namespace, workspace, workspaceAction, resourceAction, config)
+	err = injectWorkspaceSystemParameters(namespace, workspace, workspaceAction, resourceAction, config)
 	if err != nil {
-		return
-	}
-
-	if err = c.UpdateWorkspaceStatus(namespace, uid, status); err != nil {
 		return
 	}
 
@@ -316,7 +329,15 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 		return
 	}
 
+	if err = c.UpdateWorkspaceStatus(namespace, uid, status); err != nil {
+		return
+	}
+
 	return
+}
+
+func (c *Client) UpdateWorkspace(namespace, uid string, parameters []Parameter) (err error) {
+	return c.updateWorkspace(namespace, uid, "update", "apply", &WorkspaceStatus{Phase: WorkspaceUpdating}, parameters...)
 }
 
 func (c *Client) PauseWorkspace(namespace, uid string) (err error) {
