@@ -95,7 +95,7 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 			"started_at":                 time.Now().UTC(),
 			"workspace_template_id":      workspace.WorkspaceTemplate.ID,
 			"workspace_template_version": workspace.WorkspaceTemplate.Version,
-			"path":                       workspace.URL,
+			"url":                        workspace.URL,
 		}).
 		Suffix("RETURNING id, created_at").
 		RunWith(c.DB).
