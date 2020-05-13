@@ -160,12 +160,12 @@ func (s *WorkflowServer) GetWorkflowExecution(ctx context.Context, req *api.GetW
 
 func (s *WorkflowServer) WatchWorkflowExecution(req *api.WatchWorkflowExecutionRequest, stream api.WorkflowService_WatchWorkflowExecutionServer) error {
 	client := stream.Context().Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Name)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Uid)
 	if err != nil || !allowed {
 		return err
 	}
 
-	watcher, err := client.WatchWorkflowExecution(req.Namespace, req.Name)
+	watcher, err := client.WatchWorkflowExecution(req.Namespace, req.Uid)
 	if err != nil {
 		return err
 	}
