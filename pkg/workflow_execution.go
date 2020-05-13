@@ -323,8 +323,11 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 		Labels:     &map[string]string{},
 		Parameters: workflow.Parameters,
 	}
-	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
-	opts.GenerateName = strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`)) + "-"
+	opts.GenerateName, err = uid2.GenerateUID(workflowTemplate.Name)
+	if err != nil {
+		return nil, err
+	}
+	opts.GenerateName += "-"
 
 	workflowUid, err := uuid.GenerateUUID()
 	if err != nil {
