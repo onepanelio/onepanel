@@ -179,18 +179,17 @@ message LogEntry {
 
 message WorkflowExecution {
     string createdAt = 1;
-    string uid = 2;
-    string name = 3;
-    string phase = 4;
-    string startedAt = 5;
-    string finishedAt = 6;
-    string manifest = 7;
+    string name = 2;
+    string phase = 3;
+    string startedAt = 4;
+    string finishedAt = 5;
+    string manifest = 6;
 
-    repeated Parameter parameters = 8;
+    repeated Parameter parameters = 7;
 
-    WorkflowTemplate workflowTemplate = 9;
+    WorkflowTemplate workflowTemplate = 8;
 
-    repeated KeyValue labels = 10;
+    repeated KeyValue labels = 9;
 }
 
 message ArtifactResponse {
