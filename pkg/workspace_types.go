@@ -27,6 +27,7 @@ type WorkspaceStatus struct {
 	StartedAt    *time.Time     `db:"started_at"`
 	PausedAt     *time.Time     `db:"paused_at"`
 	TerminatedAt *time.Time     `db:"terminated_at"`
+	UpdatedAt    *time.Time     `db:"updated_at"`
 }
 
 type Workspace struct {

@@ -219,7 +219,8 @@ func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err 
 // UpdateWorkspaceStatus updates workspace status and times based on phase
 func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceStatus) (err error) {
 	fieldMap := sq.Eq{
-		"phase": status.Phase,
+		"phase":       status.Phase,
+		"modified_at": time.Now().UTC(),
 	}
 	switch status.Phase {
 	case WorkspaceLaunching:
@@ -229,6 +230,10 @@ func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceS
 	case WorkspacePausing:
 		fieldMap["started_at"] = pq.NullTime{}
 		fieldMap["paused_at"] = time.Now().UTC()
+		break
+	case WorkspaceUpdating:
+		fieldMap["paused_at"] = pq.NullTime{}
+		fieldMap["updated_at"] = time.Now().UTC()
 		break
 	case WorkspaceTerminating:
 		fieldMap["started_at"] = pq.NullTime{}
@@ -305,6 +310,10 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 	}
 
 	workspace.Parameters = mergeWorkspaceParameters(workspace.Parameters, parameters)
+	parametersJSON, err := json.Marshal(workspace.Parameters)
+	if err != nil {
+		return
+	}
 	workspace.Parameters = append(workspace.Parameters, Parameter{
 		Name:  "sys-uid",
 		Value: ptr.String(uid),
@@ -331,6 +340,28 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 
 	if err = c.UpdateWorkspaceStatus(namespace, uid, status); err != nil {
 		return
+	}
+
+	// Update parameters if they are passed
+	if len(parameters) == 0 {
+		return
+	}
+
+	_, err = sb.Update("workspaces").
+		SetMap(sq.Eq{
+			"parameters": parametersJSON,
+		}).
+		Where(sq.And{
+			sq.Eq{
+				"namespace": namespace,
+				"uid":       uid,
+			}, sq.NotEq{
+				"phase": WorkspaceTerminated,
+			},
+		}).
+		RunWith(c.DB).Exec()
+	if err != nil {
+		return util.NewUserError(codes.NotFound, "Workspace not found.")
 	}
 
 	return
