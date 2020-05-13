@@ -656,25 +656,25 @@ func (c *Client) CountWorkflowExecutions(namespace, workflowTemplateUID, workflo
 	return
 }
 
-func (c *Client) WatchWorkflowExecution(namespace, name string) (<-chan *WorkflowExecution, error) {
-	_, err := c.GetWorkflowExecution(namespace, name)
+func (c *Client) WatchWorkflowExecution(namespace, uid string) (<-chan *WorkflowExecution, error) {
+	_, err := c.GetWorkflowExecution(namespace, uid)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
-			"Name":      name,
+			"UID":       uid,
 			"Error":     err.Error(),
 		}).Error("Workflow template not found.")
 		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
 	}
 
-	fieldSelector, _ := fields.ParseSelector(fmt.Sprintf("metadata.name=%s", name))
+	fieldSelector, _ := fields.ParseSelector(fmt.Sprintf("metadata.name=%s", uid))
 	watcher, err := c.ArgoprojV1alpha1().Workflows(namespace).Watch(metav1.ListOptions{
 		FieldSelector: fieldSelector.String(),
 	})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
-			"Name":      name,
+			"UID":       uid,
 			"Error":     err.Error(),
 		}).Error("Watch Workflow error.")
 		return nil, util.NewUserError(codes.Unknown, "Error with watching workflow.")
@@ -698,11 +698,11 @@ func (c *Client) WatchWorkflowExecution(namespace, name string) (<-chan *Workflo
 			}
 
 			if workflow == nil && !ok {
-				workflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
+				workflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Get(uid, metav1.GetOptions{})
 				if err != nil {
 					log.WithFields(log.Fields{
 						"Namespace": namespace,
-						"Name":      name,
+						"UID":       uid,
 						"Workflow":  workflow,
 						"Error":     err.Error(),
 					}).Error("Unable to get workflow.")
@@ -719,7 +719,7 @@ func (c *Client) WatchWorkflowExecution(namespace, name string) (<-chan *Workflo
 			if err != nil {
 				log.WithFields(log.Fields{
 					"Namespace": namespace,
-					"Name":      name,
+					"UID":       uid,
 					"Workflow":  workflow,
 					"Error":     err.Error(),
 				}).Error("Error with trying to JSON Marshal workflow.Status.")
