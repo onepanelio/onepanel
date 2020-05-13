@@ -266,8 +266,13 @@ func (c *Client) ListWorkspaces(namespace string, paginator *pagination.Paginati
 		From("workspaces w").
 		Join("workspace_templates wt ON wt.id = w.workspace_template_id").
 		OrderBy("w.created_at DESC").
-		Where(sq.Eq{
-			"w.namespace": namespace,
+		Where(sq.And{
+			sq.Eq{
+				"w.namespace": namespace,
+			},
+			sq.NotEq{
+				"phase": WorkspaceTerminated,
+			},
 		})
 	sb = *paginator.ApplyToSelect(&sb)
 
