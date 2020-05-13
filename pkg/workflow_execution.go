@@ -548,7 +548,7 @@ func (c *Client) CronStartWorkflowExecutionStatisticInsert(namespace, name strin
 	return err
 }
 
-func (c *Client) GetWorkflowExecution(namespace, name string) (workflow *WorkflowExecution, err error) {
+func (c *Client) GetWorkflowExecution(namespace, uid string) (workflow *WorkflowExecution, err error) {
 	workflow = &WorkflowExecution{}
 
 	query, args, err := sb.Select(getWorkflowExecutionColumns("we", "")...).
@@ -557,7 +557,7 @@ func (c *Client) GetWorkflowExecution(namespace, name string) (workflow *Workflo
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{
 			"wt.namespace": namespace,
-			"we.name":      name,
+			"we.name":      uid,
 		}).
 		ToSql()
 	if err != nil {
@@ -567,17 +567,17 @@ func (c *Client) GetWorkflowExecution(namespace, name string) (workflow *Workflo
 		return nil, err
 	}
 
-	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
+	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(uid, metav1.GetOptions{})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
-			"Name":      name,
+			"UID":       uid,
 			"Error":     err.Error(),
 		}).Error("Workflow not found.")
 		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
 	}
 
-	uid := wf.ObjectMeta.Labels[workflowTemplateUIDLabelKey]
+	uidLabel := wf.ObjectMeta.Labels[workflowTemplateUIDLabelKey]
 	version, err := strconv.ParseInt(
 		wf.ObjectMeta.Labels[workflowTemplateVersionLabelKey],
 		10,
@@ -586,16 +586,16 @@ func (c *Client) GetWorkflowExecution(namespace, name string) (workflow *Workflo
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
-			"Name":      name,
+			"UID":       uid,
 			"Error":     err.Error(),
 		}).Error("Invalid version number.")
 		return nil, util.NewUserError(codes.InvalidArgument, "Invalid version number.")
 	}
-	workflowTemplate, err := c.GetWorkflowTemplate(namespace, uid, version)
+	workflowTemplate, err := c.GetWorkflowTemplate(namespace, uidLabel, version)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
-			"Name":      name,
+			"UID":       uid,
 			"Error":     err.Error(),
 		}).Error("Cannot get Workflow Template.")
 		return nil, util.NewUserError(codes.NotFound, "Cannot get Workflow Template.")
@@ -606,7 +606,7 @@ func (c *Client) GetWorkflowExecution(namespace, name string) (workflow *Workflo
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
-			"Name":      name,
+			"UID":       uid,
 			"Error":     err.Error(),
 		}).Error("Invalid status.")
 		return nil, util.NewUserError(codes.InvalidArgument, "Invalid status.")
