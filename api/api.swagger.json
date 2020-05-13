@@ -771,7 +771,7 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/workflow_executions/{name}": {
+    "/apis/v1beta1/{namespace}/workflow_executions/{uid}": {
       "get": {
         "operationId": "GetWorkflowExecution",
         "responses": {
@@ -796,7 +796,7 @@
             "type": "string"
           },
           {
-            "name": "name",
+            "name": "uid",
             "in": "path",
             "required": true,
             "type": "string"
@@ -830,7 +830,7 @@
             "type": "string"
           },
           {
-            "name": "name",
+            "name": "uid",
             "in": "path",
             "required": true,
             "type": "string"
@@ -841,7 +841,7 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/workflow_executions/{name}/artifacts/{key}": {
+    "/apis/v1beta1/{namespace}/workflow_executions/{uid}/artifacts/{key}": {
       "get": {
         "operationId": "GetArtifact",
         "responses": {
@@ -866,7 +866,7 @@
             "type": "string"
           },
           {
-            "name": "name",
+            "name": "uid",
             "in": "path",
             "required": true,
             "type": "string"
@@ -883,7 +883,7 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/workflow_executions/{name}/cron_start_statistics": {
+    "/apis/v1beta1/{namespace}/workflow_executions/{uid}/cron_start_statistics": {
       "post": {
         "operationId": "CronStartWorkflowExecutionStatistic",
         "responses": {
@@ -908,7 +908,7 @@
             "type": "string"
           },
           {
-            "name": "name",
+            "name": "uid",
             "in": "path",
             "required": true,
             "type": "string"
@@ -927,7 +927,7 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/workflow_executions/{name}/files/{path}": {
+    "/apis/v1beta1/{namespace}/workflow_executions/{uid}/files/{path}": {
       "get": {
         "operationId": "ListFiles",
         "responses": {
@@ -952,7 +952,7 @@
             "type": "string"
           },
           {
-            "name": "name",
+            "name": "uid",
             "in": "path",
             "required": true,
             "type": "string"
@@ -969,7 +969,7 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/workflow_executions/{name}/pods/{podName}/containers/{containerName}/logs": {
+    "/apis/v1beta1/{namespace}/workflow_executions/{uid}/pods/{podName}/containers/{containerName}/logs": {
       "get": {
         "operationId": "GetWorkflowExecutionLogs",
         "responses": {
@@ -1003,7 +1003,7 @@
             "type": "string"
           },
           {
-            "name": "name",
+            "name": "uid",
             "in": "path",
             "required": true,
             "type": "string"
@@ -1026,7 +1026,7 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/workflow_executions/{name}/pods/{podName}/metrics": {
+    "/apis/v1beta1/{namespace}/workflow_executions/{uid}/pods/{podName}/metrics": {
       "get": {
         "operationId": "GetWorkflowExecutionMetrics",
         "responses": {
@@ -1051,7 +1051,7 @@
             "type": "string"
           },
           {
-            "name": "name",
+            "name": "uid",
             "in": "path",
             "required": true,
             "type": "string"
@@ -1068,7 +1068,7 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/workflow_executions/{name}/resubmit": {
+    "/apis/v1beta1/{namespace}/workflow_executions/{uid}/resubmit": {
       "put": {
         "operationId": "ResubmitWorkflowExecution",
         "responses": {
@@ -1093,7 +1093,7 @@
             "type": "string"
           },
           {
-            "name": "name",
+            "name": "uid",
             "in": "path",
             "required": true,
             "type": "string"
@@ -1104,7 +1104,7 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/workflow_executions/{name}/statistics": {
+    "/apis/v1beta1/{namespace}/workflow_executions/{uid}/statistics": {
       "post": {
         "operationId": "AddWorkflowExecutionStatistics",
         "responses": {
@@ -1129,7 +1129,7 @@
             "type": "string"
           },
           {
-            "name": "name",
+            "name": "uid",
             "in": "path",
             "required": true,
             "type": "string"
@@ -1148,7 +1148,7 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/workflow_executions/{name}/terminate": {
+    "/apis/v1beta1/{namespace}/workflow_executions/{uid}/terminate": {
       "put": {
         "operationId": "TerminateWorkflowExecution",
         "responses": {
@@ -1173,7 +1173,7 @@
             "type": "string"
           },
           {
-            "name": "name",
+            "name": "uid",
             "in": "path",
             "required": true,
             "type": "string"
@@ -1184,7 +1184,7 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/workflow_executions/{name}/watch": {
+    "/apis/v1beta1/{namespace}/workflow_executions/{uid}/watch": {
       "get": {
         "operationId": "WatchWorkflowExecution",
         "responses": {
@@ -1218,7 +1218,7 @@
             "type": "string"
           },
           {
-            "name": "name",
+            "name": "uid",
             "in": "path",
             "required": true,
             "type": "string"
@@ -2971,9 +2971,6 @@
       "type": "object",
       "properties": {
         "createdAt": {
-          "type": "string"
-        },
-        "uid": {
           "type": "string"
         },
         "name": {
