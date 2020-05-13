@@ -96,7 +96,7 @@ func (s *WorkflowServer) CloneWorkflowExecution(ctx context.Context, req *api.Cl
 		return nil, err
 	}
 
-	wf, err := client.CloneWorkflowExecution(req.Namespace, req.Name)
+	wf, err := client.CloneWorkflowExecution(req.Namespace, req.Uid)
 	if err != nil {
 		return nil, err
 	}
