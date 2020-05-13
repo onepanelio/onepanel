@@ -294,7 +294,7 @@ metadata:
 								},
 							},
 						},
-						When: "{{workflow.parameters.sys-workspace-action}} == create",
+						When: "{{workflow.parameters.sys-workspace-action}} == create || {{workflow.parameters.sys-workspace-action}} == update",
 					},
 					{
 						Name:         "sys-set-phase-paused",

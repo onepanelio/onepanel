@@ -13,8 +13,9 @@ type WorkspacePhase string
 
 // Workspace phases
 const (
-	WorkspaceStarted     WorkspacePhase = "Started"
+	WorkspaceLaunching   WorkspacePhase = "Launching"
 	WorkspaceRunning     WorkspacePhase = "Running"
+	WorkspaceUpdating    WorkspacePhase = "Updating"
 	WorkspacePausing     WorkspacePhase = "Pausing"
 	WorkspacePaused      WorkspacePhase = "Paused"
 	WorkspaceTerminating WorkspacePhase = "Terminating"
@@ -26,6 +27,7 @@ type WorkspaceStatus struct {
 	StartedAt    *time.Time     `db:"started_at"`
 	PausedAt     *time.Time     `db:"paused_at"`
 	TerminatedAt *time.Time     `db:"terminated_at"`
+	UpdatedAt    *time.Time     `db:"updated_at"`
 }
 
 type Workspace struct {

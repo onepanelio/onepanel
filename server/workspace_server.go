@@ -142,6 +142,29 @@ func (s *WorkspaceServer) UpdateWorkspaceStatus(ctx context.Context, req *api.Up
 	return &empty.Empty{}, err
 }
 
+func (s *WorkspaceServer) UpdateWorkspace(ctx context.Context, req *api.UpdateWorkspaceRequest) (*empty.Empty, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "apps", "statefulsets", req.Uid)
+	if err != nil || !allowed {
+		return &empty.Empty{}, err
+	}
+
+	var parameters []v1.Parameter
+	for _, param := range req.Body.Parameters {
+		if param.Type == "input.hidden" {
+			continue
+		}
+
+		parameters = append(parameters, v1.Parameter{
+			Name:  param.Name,
+			Value: ptr.String(param.Value),
+		})
+	}
+	err = client.UpdateWorkspace(req.Namespace, req.Uid, parameters)
+
+	return &empty.Empty{}, err
+}
+
 func (s *WorkspaceServer) ListWorkspaces(ctx context.Context, req *api.ListWorkspaceRequest) (*api.ListWorkspaceResponse, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "statefulsets", "")
