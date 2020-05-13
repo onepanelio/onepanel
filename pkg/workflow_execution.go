@@ -16,7 +16,6 @@ import (
 	"io/ioutil"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -393,8 +392,8 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	return workflow, nil
 }
 
-func (c *Client) CloneWorkflowExecution(namespace, name string) (*WorkflowExecution, error) {
-	workflowExecution, err := c.getWorkflowExecutionAndTemplate(namespace, name)
+func (c *Client) CloneWorkflowExecution(namespace, uid string) (*WorkflowExecution, error) {
+	workflowExecution, err := c.getWorkflowExecutionAndTemplate(namespace, uid)
 	if err != nil {
 		return nil, err
 	}
@@ -1446,7 +1445,7 @@ func workflowExecutionsSelectBuilder(namespace, workflowTemplateUID, workflowTem
 	return sb
 }
 
-func (c *Client) getWorkflowExecutionAndTemplate(namespace string, name string) (workflow *WorkflowExecution, err error) {
+func (c *Client) getWorkflowExecutionAndTemplate(namespace string, uid string) (workflow *WorkflowExecution, err error) {
 	query, args, err := sb.Select(getWorkflowExecutionColumns("we", "")...).
 		Columns(getWorkflowTemplateColumns("wt", "workflow_template")...).
 		Columns(`wtv.manifest "workflow_template.manifest"`, `wtv.version "workflow_template.version"`).
@@ -1455,7 +1454,7 @@ func (c *Client) getWorkflowExecutionAndTemplate(namespace string, name string) 
 		Join("workflow_templates wt ON wtv.workflow_template_id = wt.id").
 		Where(sq.Eq{
 			"wt.namespace": namespace,
-			"we.name":      name,
+			"we.name":      uid,
 		}).
 		ToSql()
 	if err != nil {
