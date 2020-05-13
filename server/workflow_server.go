@@ -145,12 +145,12 @@ func (s *WorkflowServer) CronStartWorkflowExecutionStatistic(ctx context.Context
 
 func (s *WorkflowServer) GetWorkflowExecution(ctx context.Context, req *api.GetWorkflowExecutionRequest) (*api.WorkflowExecution, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Name)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Uid)
 	if err != nil || !allowed {
 		return nil, err
 	}
 
-	wf, err := client.GetWorkflowExecution(req.Namespace, req.Name)
+	wf, err := client.GetWorkflowExecution(req.Namespace, req.Uid)
 	if err != nil {
 		return nil, err
 	}
