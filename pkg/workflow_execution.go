@@ -477,7 +477,7 @@ func (c *Client) FinishWorkflowExecutionStatisticViaExitHandler(namespace, name 
 	return err
 }
 
-func (c *Client) CronStartWorkflowExecutionStatisticInsert(namespace, name string, workflowTemplateID int64) (err error) {
+func (c *Client) CronStartWorkflowExecutionStatisticInsert(namespace, uid string, workflowTemplateID int64) (err error) {
 	query, args, err := c.workflowTemplatesSelectBuilder(namespace).
 		Where(sq.Eq{
 			"wt.id": workflowTemplateID,
@@ -525,7 +525,7 @@ func (c *Client) CronStartWorkflowExecutionStatisticInsert(namespace, name strin
 	insertMap := sq.Eq{
 		"uid":                          cronUid,
 		"workflow_template_version_id": cronWorkflow.WorkflowTemplateVersionId,
-		"name":                         name,
+		"name":                         uid,
 		"namespace":                    namespace,
 		"phase":                        wfv1.NodePending,
 		"cron_workflow_id":             cronWorkflow.ID,
@@ -747,12 +747,12 @@ func (c *Client) WatchWorkflowExecution(namespace, uid string) (<-chan *Workflow
 	return workflowWatcher, nil
 }
 
-func (c *Client) GetWorkflowExecutionLogs(namespace, name, podName, containerName string) (<-chan *LogEntry, error) {
-	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
+func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName string) (<-chan *LogEntry, error) {
+	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(uid, metav1.GetOptions{})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":     namespace,
-			"Name":          name,
+			"UID":           uid,
 			"PodName":       podName,
 			"ContainerName": containerName,
 			"Error":         err.Error(),
@@ -772,7 +772,7 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, name, podName, containerNam
 		if err != nil {
 			log.WithFields(log.Fields{
 				"Namespace":     namespace,
-				"Name":          name,
+				"UID":           uid,
 				"PodName":       podName,
 				"ContainerName": containerName,
 				"Error":         err.Error(),
@@ -784,7 +784,7 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, name, podName, containerNam
 		if err != nil {
 			log.WithFields(log.Fields{
 				"Namespace":     namespace,
-				"Name":          name,
+				"UID":           uid,
 				"PodName":       podName,
 				"ContainerName": containerName,
 				"Error":         err.Error(),
@@ -798,7 +798,7 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, name, podName, containerNam
 			return nil, util.NewUserError(codes.InvalidArgument, "Invaild range.")
 		}
 		opts.SetRange(0, int64(endOffset))
-		stream, err = s3Client.GetObject(config[artifactRepositoryBucketKey], "artifacts/"+namespace+"/"+name+"/"+podName+"/"+containerName+".log", opts)
+		stream, err = s3Client.GetObject(config[artifactRepositoryBucketKey], "artifacts/"+namespace+"/"+uid+"/"+podName+"/"+containerName+".log", opts)
 	} else {
 		stream, err = c.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{
 			Container:  containerName,
@@ -811,7 +811,7 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, name, podName, containerNam
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":     namespace,
-			"Name":          name,
+			"UID":           uid,
 			"PodName":       podName,
 			"ContainerName": containerName,
 			"Error":         err.Error(),
@@ -842,8 +842,8 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, name, podName, containerNam
 	return logWatcher, err
 }
 
-func (c *Client) GetWorkflowExecutionMetrics(namespace, name, podName string) (metrics []*Metric, err error) {
-	_, err = c.GetWorkflowExecution(namespace, name)
+func (c *Client) GetWorkflowExecutionMetrics(namespace, uid, podName string) (metrics []*Metric, err error) {
+	_, err = c.GetWorkflowExecution(namespace, uid)
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
 	}
@@ -858,7 +858,7 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, name, podName string) (m
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
-			"Name":      name,
+			"UID":       uid,
 			"PodName":   podName,
 			"Error":     err.Error(),
 		}).Error("Can't get configuration.")
@@ -869,7 +869,7 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, name, podName string) (m
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
-			"Name":      name,
+			"UID":       uid,
 			"PodName":   podName,
 			"Error":     err.Error(),
 		}).Error("Can't connect to S3 storage.")
@@ -877,11 +877,11 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, name, podName string) (m
 	}
 
 	opts := s3.GetObjectOptions{}
-	stream, err = s3Client.GetObject(config[artifactRepositoryBucketKey], "artifacts/"+namespace+"/"+name+"/"+podName+"/sys-metrics.json", opts)
+	stream, err = s3Client.GetObject(config[artifactRepositoryBucketKey], "artifacts/"+namespace+"/"+uid+"/"+podName+"/sys-metrics.json", opts)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
-			"Name":      name,
+			"UID":       uid,
 			"PodName":   podName,
 			"Error":     err.Error(),
 		}).Error("Metrics do not exist.")
@@ -891,7 +891,7 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, name, podName string) (m
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
-			"Name":      name,
+			"UID":       uid,
 			"PodName":   podName,
 			"Error":     err.Error(),
 		}).Error("Unknown.")
@@ -904,7 +904,7 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, name, podName string) (m
 	if err = json.Unmarshal(content, &metrics); err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
-			"Name":      name,
+			"UID":       uid,
 			"PodName":   podName,
 			"Error":     err.Error(),
 		}).Error("Error parsing metrics.")
@@ -914,8 +914,8 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, name, podName string) (m
 	return
 }
 
-func (c *Client) RetryWorkflowExecution(namespace, name string) (workflow *WorkflowExecution, err error) {
-	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
+func (c *Client) RetryWorkflowExecution(namespace, uid string) (workflow *WorkflowExecution, err error) {
+	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(uid, metav1.GetOptions{})
 	if err != nil {
 		return
 	}
@@ -927,8 +927,8 @@ func (c *Client) RetryWorkflowExecution(namespace, name string) (workflow *Workf
 	return
 }
 
-func (c *Client) ResubmitWorkflowExecution(namespace, name string) (workflow *WorkflowExecution, err error) {
-	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
+func (c *Client) ResubmitWorkflowExecution(namespace, uid string) (workflow *WorkflowExecution, err error) {
+	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(uid, metav1.GetOptions{})
 	if err != nil {
 		return
 	}
@@ -948,26 +948,26 @@ func (c *Client) ResubmitWorkflowExecution(namespace, name string) (workflow *Wo
 	return
 }
 
-func (c *Client) ResumeWorkflowExecution(namespace, name string) (workflow *WorkflowExecution, err error) {
-	err = argoutil.ResumeWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), name, "")
+func (c *Client) ResumeWorkflowExecution(namespace, uid string) (workflow *WorkflowExecution, err error) {
+	err = argoutil.ResumeWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), uid, "")
 	if err != nil {
 		return
 	}
 
-	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
+	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(uid, metav1.GetOptions{})
 
 	workflow = typeWorkflow(wf)
 
 	return
 }
 
-func (c *Client) SuspendWorkflowExecution(namespace, name string) (err error) {
-	err = argoutil.SuspendWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), name)
+func (c *Client) SuspendWorkflowExecution(namespace, uid string) (err error) {
+	err = argoutil.SuspendWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), uid)
 
 	return
 }
 
-func (c *Client) TerminateWorkflowExecution(namespace, name string) (err error) {
+func (c *Client) TerminateWorkflowExecution(namespace, uid string) (err error) {
 	query := `DELETE FROM workflow_executions	
 			  USING workflow_template_versions, workflow_templates
 			  WHERE workflow_executions.workflow_template_version_id = workflow_template_versions.id
@@ -975,16 +975,16 @@ func (c *Client) TerminateWorkflowExecution(namespace, name string) (err error) 
 				AND workflow_templates.namespace = $1
 				AND workflow_executions.name = $2`
 
-	if _, err := c.DB.Exec(query, namespace, name); err != nil {
+	if _, err := c.DB.Exec(query, namespace, uid); err != nil {
 		return err
 	}
 
-	err = argoutil.TerminateWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), name)
+	err = argoutil.TerminateWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), uid)
 
 	return
 }
 
-func (c *Client) GetArtifact(namespace, name, key string) (data []byte, err error) {
+func (c *Client) GetArtifact(namespace, uid, key string) (data []byte, err error) {
 	config, err := c.GetNamespaceConfig(namespace)
 	if err != nil {
 		return
@@ -1000,7 +1000,7 @@ func (c *Client) GetArtifact(namespace, name, key string) (data []byte, err erro
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
-			"Name":      name,
+			"UID":       uid,
 			"Key":       key,
 			"Error":     err.Error(),
 		}).Error("Metrics do not exist.")
@@ -1130,12 +1130,12 @@ func filterOutCustomTypesFromManifest(manifest []byte) (result []byte, err error
 
 // prefix is the label prefix.
 // e.g. prefix/my-label-key: my-label-value
-func (c *Client) GetWorkflowExecutionLabels(namespace, name, prefix string) (labels map[string]string, err error) {
-	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
+func (c *Client) GetWorkflowExecutionLabels(namespace, uid, prefix string) (labels map[string]string, err error) {
+	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(uid, metav1.GetOptions{})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
-			"Name":      name,
+			"UID":       uid,
 			"Error":     err.Error(),
 		}).Error("Workflow not found.")
 		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
@@ -1147,12 +1147,12 @@ func (c *Client) GetWorkflowExecutionLabels(namespace, name, prefix string) (lab
 	return
 }
 
-func (c *Client) DeleteWorkflowExecutionLabel(namespace, name string, keysToDelete ...string) (labels map[string]string, err error) {
-	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
+func (c *Client) DeleteWorkflowExecutionLabel(namespace, uid string, keysToDelete ...string) (labels map[string]string, err error) {
+	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(uid, metav1.GetOptions{})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
-			"Name":      name,
+			"UID":       uid,
 			"Error":     err.Error(),
 		}).Error("Workflow not found.")
 		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
@@ -1163,12 +1163,12 @@ func (c *Client) DeleteWorkflowExecutionLabel(namespace, name string, keysToDele
 	return wf.Labels, nil
 }
 
-func (c *Client) DeleteWorkflowTemplateLabel(namespace, name string, keysToDelete ...string) (labels map[string]string, err error) {
-	wf, err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Get(name, metav1.GetOptions{})
+func (c *Client) DeleteWorkflowTemplateLabel(namespace, uid string, keysToDelete ...string) (labels map[string]string, err error) {
+	wf, err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Get(uid, metav1.GetOptions{})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
-			"Name":      name,
+			"UID":       uid,
 			"Error":     err.Error(),
 		}).Error("Workflow Template not found.")
 		return nil, util.NewUserError(codes.NotFound, "Workflow Template not found.")
@@ -1182,12 +1182,12 @@ func (c *Client) DeleteWorkflowTemplateLabel(namespace, name string, keysToDelet
 // prefix is the label prefix.
 // we delete all labels with that prefix and set the new ones
 // e.g. prefix/my-label-key: my-label-value
-func (c *Client) SetWorkflowExecutionLabels(namespace, name, prefix string, keyValues map[string]string, deleteOld bool) (workflowLabels map[string]string, err error) {
-	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(name, metav1.GetOptions{})
+func (c *Client) SetWorkflowExecutionLabels(namespace, uid, prefix string, keyValues map[string]string, deleteOld bool) (workflowLabels map[string]string, err error) {
+	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(uid, metav1.GetOptions{})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
-			"Name":      name,
+			"UID":       uid,
 			"Error":     err.Error(),
 		}).Error("Workflow not found.")
 		return nil, util.NewUserError(codes.NotFound, "Workflow not found.")
@@ -1213,12 +1213,12 @@ func (c *Client) SetWorkflowExecutionLabels(namespace, name, prefix string, keyV
 // prefix is the label prefix.
 // we delete all labels with that prefix and set the new ones
 // e.g. prefix/my-label-key: my-label-value
-func (c *Client) SetWorkflowTemplateLabels(namespace, name, prefix string, keyValues map[string]string, deleteOld bool) (workflowLabels map[string]string, err error) {
-	wf, err := c.getArgoWorkflowTemplate(namespace, name, "latest")
+func (c *Client) SetWorkflowTemplateLabels(namespace, uid, prefix string, keyValues map[string]string, deleteOld bool) (workflowLabels map[string]string, err error) {
+	wf, err := c.getArgoWorkflowTemplate(namespace, uid, "latest")
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
-			"Name":      name,
+			"UID":       uid,
 			"Error":     err.Error(),
 		}).Error("Workflow Template not found.")
 		return nil, util.NewUserError(codes.NotFound, "Workflow Template not found.")
