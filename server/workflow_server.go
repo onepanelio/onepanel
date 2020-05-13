@@ -32,6 +32,7 @@ func GenApiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowEx
 func apiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecution) {
 	workflow = &api.WorkflowExecution{
 		CreatedAt: wf.CreatedAt.Format(time.RFC3339),
+		Uid:       wf.UID,
 		Name:      wf.Name,
 		Phase:     string(wf.Phase),
 		Manifest:  wf.Manifest,
