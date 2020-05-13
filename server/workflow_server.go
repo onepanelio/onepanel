@@ -33,7 +33,6 @@ func apiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecu
 	workflow = &api.WorkflowExecution{
 		CreatedAt: wf.CreatedAt.Format(time.RFC3339),
 		Name:      wf.Name,
-		Uid:       wf.UID,
 		Phase:     string(wf.Phase),
 		Manifest:  wf.Manifest,
 	}
