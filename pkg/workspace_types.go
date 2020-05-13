@@ -13,7 +13,7 @@ type WorkspacePhase string
 
 // Workspace phases
 const (
-	WorkspaceStarted     WorkspacePhase = "Started"
+	WorkspaceLaunching   WorkspacePhase = "Launching"
 	WorkspaceRunning     WorkspacePhase = "Running"
 	WorkspaceUpdating    WorkspacePhase = "Updating"
 	WorkspacePausing     WorkspacePhase = "Pausing"

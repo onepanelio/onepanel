@@ -109,7 +109,7 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 			"name":                       workspace.Name,
 			"namespace":                  namespace,
 			"parameters":                 parameters,
-			"phase":                      WorkspaceStarted,
+			"phase":                      WorkspaceLaunching,
 			"started_at":                 time.Now().UTC(),
 			"workspace_template_id":      workspace.WorkspaceTemplate.ID,
 			"workspace_template_version": workspace.WorkspaceTemplate.Version,
@@ -222,7 +222,7 @@ func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceS
 		"phase": status.Phase,
 	}
 	switch status.Phase {
-	case WorkspaceStarted:
+	case WorkspaceLaunching:
 		fieldMap["paused_at"] = pq.NullTime{}
 		fieldMap["started_at"] = time.Now().UTC()
 		break
@@ -345,7 +345,7 @@ func (c *Client) PauseWorkspace(namespace, uid string) (err error) {
 }
 
 func (c *Client) ResumeWorkspace(namespace, uid string) (err error) {
-	return c.updateWorkspace(namespace, uid, "create", "apply", &WorkspaceStatus{Phase: WorkspaceStarted})
+	return c.updateWorkspace(namespace, uid, "create", "apply", &WorkspaceStatus{Phase: WorkspaceLaunching})
 }
 
 func (c *Client) DeleteWorkspace(namespace, uid string) (err error) {
