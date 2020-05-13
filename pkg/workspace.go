@@ -292,9 +292,13 @@ func (c *Client) CountWorkspaces(namespace string) (count int, err error) {
 	err = sb.Select("COUNT( DISTINCT( w.id ))").
 		From("workspaces w").
 		Join("workspace_templates wt ON w.workspace_template_id = wt.id").
-		Where(sq.Eq{
-			"wt.namespace":   namespace,
-			"wt.is_archived": false,
+		Where(sq.And{
+			sq.Eq{
+				"w.namespace": namespace,
+			},
+			sq.NotEq{
+				"phase": WorkspaceTerminated,
+			},
 		}).
 		RunWith(c.DB.DB).
 		QueryRow().
