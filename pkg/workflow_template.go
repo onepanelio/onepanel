@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/go-uuid"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"strconv"
@@ -431,10 +430,7 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 		return nil, err
 	}
 
-	uid, err := uuid.GenerateUUID()
-	if err != nil {
-		return nil, err
-	}
+	uid := strconv.FormatInt(versionUnix, 10)
 	workflowTemplateVersionId := uint64(0)
 	err = sb.Insert("workflow_template_versions").
 		SetMap(sq.Eq{
