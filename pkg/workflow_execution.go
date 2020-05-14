@@ -14,7 +14,6 @@ import (
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"io"
 	"io/ioutil"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -116,21 +115,6 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 	} else {
 		wf.Spec.PodGC = &wfv1.PodGC{
 			Strategy: *opts.PodGCStrategy,
-		}
-	}
-
-	addSecretValsToTemplate := true
-	secret, err := c.GetSecret(namespace, "onepanel-default-env")
-	if err != nil {
-		var statusError *k8serrors.StatusError
-		if errors.As(err, &statusError) {
-			if statusError.ErrStatus.Reason == "NotFound" {
-				addSecretValsToTemplate = false
-			} else {
-				return err
-			}
-		} else {
-			return err
 		}
 	}
 
