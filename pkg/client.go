@@ -25,8 +25,6 @@ const (
 	ArtifactRepositoryInsecureKey       = "artifactRepositoryS3Insecure"
 	ArtifactRepositoryAccessKeyValueKey = "artifactRepositoryS3AccessKey"
 	ArtifactRepositorySecretKeyValueKey = "artifactRepositoryS3SecretKey"
-
-	DefaultEnvironmentVariableSecret = "onepanel-default-env"
 )
 
 type Config = rest.Config

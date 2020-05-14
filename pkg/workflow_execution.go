@@ -164,23 +164,16 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 
 		//Generate ENV vars from secret, if there is a container present in the workflow
 		//Get template ENV vars, avoid over-writing them with secret values
-		template.Container.EnvFrom = append(template.Container.EnvFrom, corev1.EnvFromSource{
-			SecretRef: &corev1.SecretEnvSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: DefaultEnvironmentVariableSecret,
-				},
-				Optional: ptr.Bool(true),
-			},
-		})
+		env.AddDefaultEnvVarsToContainr(template.Container)
 
 		config, sysErr := c.GetSystemConfig()
 		if sysErr != nil {
 			return sysErr
 		}
-		env.PrependEnvToContainer(template.Container, "ONEPANEL_API_URL", config["ONEPANEL_API_URL"])
-		env.PrependEnvToContainer(template.Container, "ONEPANEL_FQDN", config["ONEPANEL_FQDN"])
-		env.PrependEnvToContainer(template.Container, "ONEPANEL_DOMAIN", config["ONEPANEL_DOMAIN"])
-		env.PrependEnvToContainer(template.Container, "PROVIDER_TYPE", config["PROVIDER_TYPE"])
+		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_API_URL", config["ONEPANEL_API_URL"])
+		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_FQDN", config["ONEPANEL_FQDN"])
+		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_DOMAIN", config["ONEPANEL_DOMAIN"])
+		env.PrependEnvVarToContainer(template.Container, "PROVIDER_TYPE", config["PROVIDER_TYPE"])
 
 	}
 

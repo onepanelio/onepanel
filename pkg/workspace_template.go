@@ -158,18 +158,11 @@ func createStatefulSetManifest(workspaceSpec *WorkspaceSpec, config map[string]s
 	volumeClaimsMapped := make(map[string]bool)
 	for i, c := range workspaceSpec.Containers {
 		container := &workspaceSpec.Containers[i]
-		container.EnvFrom = append(container.EnvFrom, corev1.EnvFromSource{
-			SecretRef: &corev1.SecretEnvSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: DefaultEnvironmentVariableSecret,
-				},
-				Optional: ptr.Bool(true),
-			},
-		})
-		env.PrependEnvToContainer(container, "ONEPANEL_API_URL", config["ONEPANEL_API_URL"])
-		env.PrependEnvToContainer(container, "ONEPANEL_FQDN", config["ONEPANEL_FQDN"])
-		env.PrependEnvToContainer(container, "ONEPANEL_DOMAIN", config["ONEPANEL_DOMAIN"])
-		env.PrependEnvToContainer(container, "PROVIDER_TYPE", config["PROVIDER_TYPE"])
+		env.AddDefaultEnvVarsToContainr(container)
+		env.PrependEnvVarToContainer(container, "ONEPANEL_API_URL", config["ONEPANEL_API_URL"])
+		env.PrependEnvVarToContainer(container, "ONEPANEL_FQDN", config["ONEPANEL_FQDN"])
+		env.PrependEnvVarToContainer(container, "ONEPANEL_DOMAIN", config["ONEPANEL_DOMAIN"])
+		env.PrependEnvVarToContainer(container, "PROVIDER_TYPE", config["PROVIDER_TYPE"])
 
 		for _, v := range c.VolumeMounts {
 			if volumeClaimsMapped[v.Name] {
