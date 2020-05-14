@@ -944,17 +944,6 @@ func (c *Client) SuspendWorkflowExecution(namespace, uid string) (err error) {
 }
 
 func (c *Client) TerminateWorkflowExecution(namespace, uid string) (err error) {
-	query := `DELETE FROM workflow_executions	
-			  USING workflow_template_versions, workflow_templates
-			  WHERE workflow_executions.workflow_template_version_id = workflow_template_versions.id
-				AND workflow_template_versions.workflow_template_id = workflow_templates.id
-				AND workflow_templates.namespace = $1
-				AND workflow_executions.name = $2`
-
-	if _, err := c.DB.Exec(query, namespace, uid); err != nil {
-		return err
-	}
-
 	err = argoutil.TerminateWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), uid)
 
 	return
