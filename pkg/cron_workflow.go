@@ -12,7 +12,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"regexp"
 	"strings"
 )
 
@@ -165,8 +164,11 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 
 	//// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
 	opts := &WorkflowExecutionOptions{}
-	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
-	opts.GenerateName = strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`)) + "-"
+	opts.GenerateName, err = uid2.GenerateUID(workflowTemplate.Name)
+	if err != nil {
+		return nil, err
+	}
+	opts.GenerateName += "-"
 	for _, param := range workflow.Parameters {
 		opts.Parameters = append(opts.Parameters, Parameter{
 			Name:  param.Name,
