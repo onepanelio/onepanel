@@ -1,8 +1,6 @@
 package v1
 
 import (
-	"regexp"
-	"strings"
 	"time"
 )
 
@@ -20,14 +18,4 @@ type WorkspaceTemplate struct {
 	WorkflowTemplate   *WorkflowTemplate `db:"workflow_template"`
 	Labels             map[string]string
 	WorkflowTemplateID uint64 `db:"workflow_template_id"`
-}
-
-func (wt *WorkspaceTemplate) GenerateUID() (string, error) {
-	re, err := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
-	if err != nil {
-		return "", err
-	}
-	wt.UID = strings.ToLower(re.ReplaceAllString(wt.Name, `-`))
-
-	return wt.UID, nil
 }

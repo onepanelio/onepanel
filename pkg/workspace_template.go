@@ -11,6 +11,7 @@ import (
 	"github.com/onepanelio/core/pkg/util/env"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
+	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"google.golang.org/grpc/codes"
 	networking "istio.io/api/networking/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
@@ -420,10 +421,11 @@ metadata:
 }
 
 func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *WorkspaceTemplate) (*WorkspaceTemplate, error) {
-	uid, err := workspaceTemplate.GenerateUID()
+	uid, err := uid2.GenerateUID(workspaceTemplate.Name)
 	if err != nil {
 		return nil, err
 	}
+	workspaceTemplate.UID = uid
 
 	tx, err := c.DB.Begin()
 	if err != nil {

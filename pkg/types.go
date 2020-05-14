@@ -10,7 +10,6 @@ import (
 	"time"
 
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/google/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -280,16 +279,6 @@ func (wt *WorkflowTemplate) GetParametersKeyString() (map[string]string, error) 
 	}
 
 	return result, nil
-}
-
-func (wt *WorkflowTemplate) GenerateUID() (string, error) {
-	uid, err := uuid.NewRandom()
-	if err != nil {
-		return "", err
-	}
-	wt.UID = uid.String()
-
-	return wt.UID, nil
 }
 
 func (wt *WorkflowTemplate) UpdateManifestParameters(params []Parameter) error {

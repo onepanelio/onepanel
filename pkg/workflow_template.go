@@ -22,11 +22,11 @@ import (
 )
 
 func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
-	uid, err := workflowTemplate.GenerateUID()
+	uid, err := uid2.GenerateUID(workflowTemplate.Name)
 	if err != nil {
 		return nil, err
 	}
-
+	workflowTemplate.UID = uid
 	tx, err := c.DB.Begin()
 	if err != nil {
 		return nil, err
