@@ -85,9 +85,10 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 			workspace.Name = param.Value
 		}
 
-		v1Parameter := converter.APIParameterToInternal(param)
-
-		workspace.Parameters = append(workspace.Parameters, *v1Parameter)
+		workspace.Parameters = append(workspace.Parameters, v1.Parameter{
+			Name:  param.Name,
+			Value: ptr.String(param.Value),
+		})
 	}
 
 	workspace, err = client.CreateWorkspace(req.Namespace, workspace)
