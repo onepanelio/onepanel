@@ -6,9 +6,8 @@ import (
 	"fmt"
 	"github.com/hashicorp/go-uuid"
 	"github.com/onepanelio/core/pkg/util/pagination"
-	"regexp"
+	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"strconv"
-	"strings"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -659,8 +658,10 @@ func createArgoWorkflowTemplate(workflowTemplate *WorkflowTemplate, version int6
 		return nil, err
 	}
 
-	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
-	worfklowTemplateName := strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`))
+	worfklowTemplateName, err := uid2.GenerateUID(workflowTemplate.Name)
+	if err != nil {
+		return nil, err
+	}
 
 	argoWft.Name = fmt.Sprintf("%v-v%v", worfklowTemplateName, version)
 
