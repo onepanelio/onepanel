@@ -164,7 +164,7 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 
 		//Generate ENV vars from secret, if there is a container present in the workflow
 		//Get template ENV vars, avoid over-writing them with secret values
-		env.AddDefaultEnvVarsToContainr(template.Container)
+		env.AddDefaultEnvVarsToContainer(template.Container)
 
 		config, sysErr := c.GetSystemConfig()
 		if sysErr != nil {

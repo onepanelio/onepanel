@@ -158,7 +158,7 @@ func createStatefulSetManifest(workspaceSpec *WorkspaceSpec, config map[string]s
 	volumeClaimsMapped := make(map[string]bool)
 	for i, c := range workspaceSpec.Containers {
 		container := &workspaceSpec.Containers[i]
-		env.AddDefaultEnvVarsToContainr(container)
+		env.AddDefaultEnvVarsToContainer(container)
 		env.PrependEnvVarToContainer(container, "ONEPANEL_API_URL", config["ONEPANEL_API_URL"])
 		env.PrependEnvVarToContainer(container, "ONEPANEL_FQDN", config["ONEPANEL_FQDN"])
 		env.PrependEnvVarToContainer(container, "ONEPANEL_DOMAIN", config["ONEPANEL_DOMAIN"])

@@ -31,7 +31,7 @@ func PrependEnvVarToContainer(container *corev1.Container, name, value string) {
 	}, container.Env...)
 }
 
-func AddDefaultEnvVarsToContainr(container *corev1.Container) {
+func AddDefaultEnvVarsToContainer(container *corev1.Container) {
 	container.EnvFrom = append(container.EnvFrom, corev1.EnvFromSource{
 		SecretRef: &corev1.SecretEnvSource{
 			LocalObjectReference: corev1.LocalObjectReference{
