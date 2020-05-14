@@ -18,10 +18,12 @@ func (c *Client) workspacesSelectBuilder(namespace string) sq.SelectBuilder {
 	sb := sb.Select(getWorkspaceColumns("w", "")...).
 		Columns(getWorkspaceStatusColumns("w", "status")...).
 		Columns(getWorkspaceTemplateColumns("wt", "workspace_template")...).
+		Columns(getWorkflowTemplateVersionColumns("wftv", "workflow_template_version")...).
 		Columns("wtv.version \"workspace_template.version\"").
 		From("workspaces w").
 		Join("workspace_templates wt ON wt.id = w.workspace_template_id").
 		Join("workspace_template_versions wtv ON wtv.workspace_template_id = wt.id AND wtv.version = w.workspace_template_version").
+		Join("workflow_template_versions wftv ON wftv.workflow_template_id = wt.workflow_template_id AND wftv.version = w.workspace_template_version").
 		Where(sq.Eq{
 			"w.namespace": namespace,
 		})

@@ -36,15 +36,16 @@ type Workspace struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Uid               string             `protobuf:"bytes,1,opt,name=uid,proto3" json:"uid,omitempty"`
-	Name              string             `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Version           int64              `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
-	CreatedAt         string             `protobuf:"bytes,4,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
-	Parameters        []*Parameter       `protobuf:"bytes,5,rep,name=parameters,proto3" json:"parameters,omitempty"`
-	WorkspaceTemplate *WorkspaceTemplate `protobuf:"bytes,6,opt,name=workspaceTemplate,proto3" json:"workspaceTemplate,omitempty"`
-	Status            *WorkspaceStatus   `protobuf:"bytes,7,opt,name=status,proto3" json:"status,omitempty"`
-	Labels            []*KeyValue        `protobuf:"bytes,8,rep,name=labels,proto3" json:"labels,omitempty"`
-	Url               string             `protobuf:"bytes,9,opt,name=url,proto3" json:"url,omitempty"`
+	Uid                string             `protobuf:"bytes,1,opt,name=uid,proto3" json:"uid,omitempty"`
+	Name               string             `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Version            int64              `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
+	CreatedAt          string             `protobuf:"bytes,4,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	Parameters         []*Parameter       `protobuf:"bytes,5,rep,name=parameters,proto3" json:"parameters,omitempty"`
+	WorkspaceTemplate  *WorkspaceTemplate `protobuf:"bytes,6,opt,name=workspaceTemplate,proto3" json:"workspaceTemplate,omitempty"`
+	Status             *WorkspaceStatus   `protobuf:"bytes,7,opt,name=status,proto3" json:"status,omitempty"`
+	Labels             []*KeyValue        `protobuf:"bytes,8,rep,name=labels,proto3" json:"labels,omitempty"`
+	Url                string             `protobuf:"bytes,9,opt,name=url,proto3" json:"url,omitempty"`
+	TemplateParameters []*Parameter       `protobuf:"bytes,10,rep,name=templateParameters,proto3" json:"templateParameters,omitempty"`
 }
 
 func (x *Workspace) Reset() {
@@ -140,6 +141,13 @@ func (x *Workspace) GetUrl() string {
 		return x.Url
 	}
 	return ""
+}
+
+func (x *Workspace) GetTemplateParameters() []*Parameter {
+	if x != nil {
+		return x.TemplateParameters
+	}
+	return nil
 }
 
 type WorkspaceStatus struct {
@@ -893,7 +901,7 @@ var file_workspace_proto_rawDesc = []byte{
 	0x6f, 0x1a, 0x18, 0x77, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x5f, 0x74, 0x65, 0x6d,
 	0x70, 0x6c, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x0c, 0x63, 0x6f, 0x6d,
 	0x6d, 0x6f, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x0b, 0x6c, 0x61, 0x62, 0x65, 0x6c,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xc6, 0x02, 0x0a, 0x09, 0x57, 0x6f, 0x72, 0x6b, 0x73,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x86, 0x03, 0x0a, 0x09, 0x57, 0x6f, 0x72, 0x6b, 0x73,
 	0x70, 0x61, 0x63, 0x65, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
 	0x09, 0x52, 0x03, 0x75, 0x69, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02,
 	0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65,
@@ -913,7 +921,11 @@ var file_workspace_proto_rawDesc = []byte{
 	0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x25, 0x0a, 0x06, 0x6c, 0x61, 0x62, 0x65, 0x6c, 0x73,
 	0x18, 0x08, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x4b, 0x65, 0x79,
 	0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x06, 0x6c, 0x61, 0x62, 0x65, 0x6c, 0x73, 0x12, 0x10, 0x0a,
-	0x03, 0x75, 0x72, 0x6c, 0x18, 0x09, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x75, 0x72, 0x6c, 0x22,
+	0x03, 0x75, 0x72, 0x6c, 0x18, 0x09, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x75, 0x72, 0x6c, 0x12,
+	0x3e, 0x0a, 0x12, 0x74, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d,
+	0x65, 0x74, 0x65, 0x72, 0x73, 0x18, 0x0a, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0e, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x65, 0x74, 0x65, 0x72, 0x52, 0x12, 0x74, 0x65, 0x6d,
+	0x70, 0x6c, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x65, 0x74, 0x65, 0x72, 0x73, 0x22,
 	0x85, 0x01, 0x0a, 0x0f, 0x57, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x53, 0x74, 0x61,
 	0x74, 0x75, 0x73, 0x12, 0x14, 0x0a, 0x05, 0x70, 0x68, 0x61, 0x73, 0x65, 0x18, 0x01, 0x20, 0x01,
 	0x28, 0x09, 0x52, 0x05, 0x70, 0x68, 0x61, 0x73, 0x65, 0x12, 0x1c, 0x0a, 0x09, 0x73, 0x74, 0x61,
@@ -1105,35 +1117,36 @@ var file_workspace_proto_depIdxs = []int32{
 	14, // 1: api.Workspace.workspaceTemplate:type_name -> api.WorkspaceTemplate
 	1,  // 2: api.Workspace.status:type_name -> api.WorkspaceStatus
 	15, // 3: api.Workspace.labels:type_name -> api.KeyValue
-	13, // 4: api.CreateWorkspaceBody.parameters:type_name -> api.Parameter
-	15, // 5: api.CreateWorkspaceBody.labels:type_name -> api.KeyValue
-	2,  // 6: api.CreateWorkspaceRequest.body:type_name -> api.CreateWorkspaceBody
-	1,  // 7: api.UpdateWorkspaceStatusRequest.status:type_name -> api.WorkspaceStatus
-	13, // 8: api.UpdateWorkspaceBody.parameters:type_name -> api.Parameter
-	15, // 9: api.UpdateWorkspaceBody.labels:type_name -> api.KeyValue
-	6,  // 10: api.UpdateWorkspaceRequest.body:type_name -> api.UpdateWorkspaceBody
-	0,  // 11: api.ListWorkspaceResponse.workspaces:type_name -> api.Workspace
-	3,  // 12: api.WorkspaceService.CreateWorkspace:input_type -> api.CreateWorkspaceRequest
-	4,  // 13: api.WorkspaceService.GetWorkspace:input_type -> api.GetWorkspaceRequest
-	8,  // 14: api.WorkspaceService.ListWorkspaces:input_type -> api.ListWorkspaceRequest
-	5,  // 15: api.WorkspaceService.UpdateWorkspaceStatus:input_type -> api.UpdateWorkspaceStatusRequest
-	7,  // 16: api.WorkspaceService.UpdateWorkspace:input_type -> api.UpdateWorkspaceRequest
-	10, // 17: api.WorkspaceService.PauseWorkspace:input_type -> api.PauseWorkspaceRequest
-	11, // 18: api.WorkspaceService.ResumeWorkspace:input_type -> api.ResumeWorkspaceRequest
-	12, // 19: api.WorkspaceService.DeleteWorkspace:input_type -> api.DeleteWorkspaceRequest
-	0,  // 20: api.WorkspaceService.CreateWorkspace:output_type -> api.Workspace
-	0,  // 21: api.WorkspaceService.GetWorkspace:output_type -> api.Workspace
-	9,  // 22: api.WorkspaceService.ListWorkspaces:output_type -> api.ListWorkspaceResponse
-	16, // 23: api.WorkspaceService.UpdateWorkspaceStatus:output_type -> google.protobuf.Empty
-	16, // 24: api.WorkspaceService.UpdateWorkspace:output_type -> google.protobuf.Empty
-	16, // 25: api.WorkspaceService.PauseWorkspace:output_type -> google.protobuf.Empty
-	16, // 26: api.WorkspaceService.ResumeWorkspace:output_type -> google.protobuf.Empty
-	16, // 27: api.WorkspaceService.DeleteWorkspace:output_type -> google.protobuf.Empty
-	20, // [20:28] is the sub-list for method output_type
-	12, // [12:20] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	13, // 4: api.Workspace.templateParameters:type_name -> api.Parameter
+	13, // 5: api.CreateWorkspaceBody.parameters:type_name -> api.Parameter
+	15, // 6: api.CreateWorkspaceBody.labels:type_name -> api.KeyValue
+	2,  // 7: api.CreateWorkspaceRequest.body:type_name -> api.CreateWorkspaceBody
+	1,  // 8: api.UpdateWorkspaceStatusRequest.status:type_name -> api.WorkspaceStatus
+	13, // 9: api.UpdateWorkspaceBody.parameters:type_name -> api.Parameter
+	15, // 10: api.UpdateWorkspaceBody.labels:type_name -> api.KeyValue
+	6,  // 11: api.UpdateWorkspaceRequest.body:type_name -> api.UpdateWorkspaceBody
+	0,  // 12: api.ListWorkspaceResponse.workspaces:type_name -> api.Workspace
+	3,  // 13: api.WorkspaceService.CreateWorkspace:input_type -> api.CreateWorkspaceRequest
+	4,  // 14: api.WorkspaceService.GetWorkspace:input_type -> api.GetWorkspaceRequest
+	8,  // 15: api.WorkspaceService.ListWorkspaces:input_type -> api.ListWorkspaceRequest
+	5,  // 16: api.WorkspaceService.UpdateWorkspaceStatus:input_type -> api.UpdateWorkspaceStatusRequest
+	7,  // 17: api.WorkspaceService.UpdateWorkspace:input_type -> api.UpdateWorkspaceRequest
+	10, // 18: api.WorkspaceService.PauseWorkspace:input_type -> api.PauseWorkspaceRequest
+	11, // 19: api.WorkspaceService.ResumeWorkspace:input_type -> api.ResumeWorkspaceRequest
+	12, // 20: api.WorkspaceService.DeleteWorkspace:input_type -> api.DeleteWorkspaceRequest
+	0,  // 21: api.WorkspaceService.CreateWorkspace:output_type -> api.Workspace
+	0,  // 22: api.WorkspaceService.GetWorkspace:output_type -> api.Workspace
+	9,  // 23: api.WorkspaceService.ListWorkspaces:output_type -> api.ListWorkspaceResponse
+	16, // 24: api.WorkspaceService.UpdateWorkspaceStatus:output_type -> google.protobuf.Empty
+	16, // 25: api.WorkspaceService.UpdateWorkspace:output_type -> google.protobuf.Empty
+	16, // 26: api.WorkspaceService.PauseWorkspace:output_type -> google.protobuf.Empty
+	16, // 27: api.WorkspaceService.ResumeWorkspace:output_type -> google.protobuf.Empty
+	16, // 28: api.WorkspaceService.DeleteWorkspace:output_type -> google.protobuf.Empty
+	21, // [21:29] is the sub-list for method output_type
+	13, // [13:21] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_workspace_proto_init() }

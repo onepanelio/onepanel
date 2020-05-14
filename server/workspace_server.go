@@ -125,6 +125,13 @@ func (s *WorkspaceServer) GetWorkspace(ctx context.Context, req *api.GetWorkspac
 
 	apiWorkspace := apiWorkspace(workspace, sysConfig)
 
+	templateParameters, err := v1.ParseParametersFromManifest([]byte(workspace.WorkflowTemplateVersion.Manifest))
+	if err != nil {
+		return nil, err
+	}
+
+	apiWorkspace.TemplateParameters = converter.ParametersToAPI(templateParameters)
+
 	return apiWorkspace, nil
 }
 

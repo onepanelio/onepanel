@@ -37,14 +37,15 @@ type Workspace struct {
 	Name                     string `valid:"stringlength(3|30)~Name should be between 3 to 30 characters,dns,required"`
 	Labels                   map[string]string
 	Parameters               []Parameter
-	ParametersBytes          []byte             `db:"parameters"` // to load from database
-	Status                   WorkspaceStatus    `db:"status"`
-	CreatedAt                time.Time          `db:"created_at"`
-	ModifiedAt               *time.Time         `db:"modified_at"`
-	WorkspaceTemplate        *WorkspaceTemplate `db:"workspace_template" valid:"-"`
-	WorkspaceTemplateID      uint64             `db:"workspace_template_id"`
-	WorkspaceTemplateVersion uint64             `db:"workspace_template_version"`
-	URL                      string             `db:"url"` // the path to the workspace, a url that you can access via http
+	ParametersBytes          []byte                   `db:"parameters"` // to load from database
+	Status                   WorkspaceStatus          `db:"status"`
+	CreatedAt                time.Time                `db:"created_at"`
+	ModifiedAt               *time.Time               `db:"modified_at"`
+	WorkspaceTemplate        *WorkspaceTemplate       `db:"workspace_template" valid:"-"`
+	WorkspaceTemplateID      uint64                   `db:"workspace_template_id"`
+	WorkspaceTemplateVersion uint64                   `db:"workspace_template_version"`
+	URL                      string                   `db:"url"`                       // the path to the workspace, a url that you can access via http
+	WorkflowTemplateVersion  *WorkflowTemplateVersion `db:"workflow_template_version"` // helper to store data from workflow template version
 }
 
 type WorkspaceSpec struct {

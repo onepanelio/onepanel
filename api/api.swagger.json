@@ -3113,6 +3113,12 @@
         },
         "url": {
           "type": "string"
+        },
+        "templateParameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Parameter"
+          }
         }
       }
     },

@@ -71,6 +71,7 @@ message Workspace {
 	WorkspaceStatus status = 7;
 	repeated KeyValue labels = 8;
 	string url = 9;
+	repeated Parameter templateParameters = 10;
 }
 
 message WorkspaceStatus {
