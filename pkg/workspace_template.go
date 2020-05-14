@@ -155,7 +155,16 @@ func createVirtualServiceManifest(spec *WorkspaceSpec) (virtualServiceManifest s
 func createStatefulSetManifest(workspaceSpec *WorkspaceSpec, config map[string]string) (statefulSetManifest string, err error) {
 	var volumeClaims []map[string]interface{}
 	volumeClaimsMapped := make(map[string]bool)
-	for _, c := range workspaceSpec.Containers {
+	for i, c := range workspaceSpec.Containers {
+		workspaceSpec.Containers[i].EnvFrom = append(workspaceSpec.Containers[i].EnvFrom, corev1.EnvFromSource{
+			SecretRef: &corev1.SecretEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: "onepanel-default-env",
+				},
+				Optional: ptr.Bool(true),
+			},
+		})
+
 		for _, v := range c.VolumeMounts {
 			if volumeClaimsMapped[v.Name] {
 				continue
