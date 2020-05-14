@@ -812,7 +812,7 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, name, podName, containerNam
 			return nil, util.NewUserError(codes.InvalidArgument, "Invaild range.")
 		}
 		opts.SetRange(0, int64(endOffset))
-		stream, err = s3Client.GetObject(config[artifactRepositoryBucketKey], "artifacts/"+namespace+"/"+name+"/"+podName+"/"+containerName+".log", opts)
+		stream, err = s3Client.GetObject(config[ArtifactRepositoryBucketKey], "artifacts/"+namespace+"/"+name+"/"+podName+"/"+containerName+".log", opts)
 	} else {
 		stream, err = c.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{
 			Container:  containerName,
@@ -891,7 +891,7 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, name, podName string) (m
 	}
 
 	opts := s3.GetObjectOptions{}
-	stream, err = s3Client.GetObject(config[artifactRepositoryBucketKey], "artifacts/"+namespace+"/"+name+"/"+podName+"/sys-metrics.json", opts)
+	stream, err = s3Client.GetObject(config[ArtifactRepositoryBucketKey], "artifacts/"+namespace+"/"+name+"/"+podName+"/sys-metrics.json", opts)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -1010,7 +1010,7 @@ func (c *Client) GetArtifact(namespace, name, key string) (data []byte, err erro
 	}
 
 	opts := s3.GetObjectOptions{}
-	stream, err := s3Client.GetObject(config[artifactRepositoryBucketKey], key, opts)
+	stream, err := s3Client.GetObject(config[ArtifactRepositoryBucketKey], key, opts)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -1050,7 +1050,7 @@ func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
 
 	doneCh := make(chan struct{})
 	defer close(doneCh)
-	for objInfo := range s3Client.ListObjectsV2(config[artifactRepositoryBucketKey], key, false, doneCh) {
+	for objInfo := range s3Client.ListObjectsV2(config[ArtifactRepositoryBucketKey], key, false, doneCh) {
 		if objInfo.Key == key {
 			continue
 		}
