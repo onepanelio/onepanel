@@ -62,6 +62,12 @@ func generateArguments(spec *WorkspaceSpec, config map[string]string) (err error
 		Value: ptr.String(config["ONEPANEL_DOMAIN"]),
 		Type:  "input.hidden",
 	})
+	// UID placeholder
+	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
+		Name:  "sys-uid",
+		Value: ptr.String("uid"),
+		Type:  "input.hidden",
+	})
 
 	// Node pool parameter and options
 	var options []*ParameterOption

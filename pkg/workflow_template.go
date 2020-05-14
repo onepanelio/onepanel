@@ -49,15 +49,12 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, err
 	}
 
-	versionUid, err := uuid.GenerateUUID()
-	if err != nil {
-		return nil, err
-	}
+	versionUID := strconv.FormatInt(versionUnix, 10)
 
 	workflowTemplateVersion := WorkflowTemplateVersion{}
 	err = sb.Insert("workflow_template_versions").
 		SetMap(sq.Eq{
-			"uid":                  versionUid,
+			"uid":                  versionUID,
 			"workflow_template_id": workflowTemplate.ID,
 			"version":              versionUnix,
 			"is_latest":            true,
@@ -85,7 +82,7 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, err
 	}
 
-	argoWft.Labels[label.WorkflowTemplateVersionUid] = versionUid
+	argoWft.Labels[label.WorkflowTemplateVersionUid] = versionUID
 	argoWft, err = c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Create(argoWft)
 	if err != nil {
 		return nil, err
