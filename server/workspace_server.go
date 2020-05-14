@@ -28,6 +28,7 @@ func apiWorkspace(wt *v1.Workspace, config map[string]string) *api.Workspace {
 		CreatedAt: wt.CreatedAt.UTC().Format(time.RFC3339),
 		Url:       protocol + wt.URL,
 	}
+	res.Parameters = converter.ParametersToAPI(wt.Parameters)
 
 	res.Status = &api.WorkspaceStatus{
 		Phase: string(wt.Status.Phase),
@@ -84,10 +85,9 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 			workspace.Name = param.Value
 		}
 
-		workspace.Parameters = append(workspace.Parameters, v1.Parameter{
-			Name:  param.Name,
-			Value: ptr.String(param.Value),
-		})
+		v1Parameter := converter.APIParameterToInternal(param)
+
+		workspace.Parameters = append(workspace.Parameters, *v1Parameter)
 	}
 
 	workspace, err = client.CreateWorkspace(req.Namespace, workspace)

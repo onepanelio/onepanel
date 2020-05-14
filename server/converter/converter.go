@@ -31,7 +31,7 @@ func MappingToKeyValue(mapping map[string]string) []*api.KeyValue {
 	return keyValues
 }
 
-func ParameterOptionToAPI(option v1.ParameterOption) *api.ParameterOption {
+func ParameterOptionToAPI(option *v1.ParameterOption) *api.ParameterOption {
 	apiOption := &api.ParameterOption{
 		Name:  option.Name,
 		Value: option.Value,
@@ -40,11 +40,31 @@ func ParameterOptionToAPI(option v1.ParameterOption) *api.ParameterOption {
 	return apiOption
 }
 
+func APIParameterOptionToInternal(option *api.ParameterOption) *v1.ParameterOption {
+	result := &v1.ParameterOption{
+		Name:  option.Name,
+		Value: option.Value,
+	}
+
+	return result
+}
+
 func ParameterOptionsToAPI(options []*v1.ParameterOption) []*api.ParameterOption {
 	result := make([]*api.ParameterOption, len(options))
 
 	for i := range options {
-		newItem := ParameterOptionToAPI(*options[i])
+		newItem := ParameterOptionToAPI(options[i])
+		result[i] = newItem
+	}
+
+	return result
+}
+
+func APIParameterOptionsToInternal(options []*api.ParameterOption) []*v1.ParameterOption {
+	result := make([]*v1.ParameterOption, len(options))
+
+	for i := range options {
+		newItem := APIParameterOptionToInternal(options[i])
 		result[i] = newItem
 	}
 
@@ -81,6 +101,30 @@ func ParametersToAPI(params []v1.Parameter) []*api.Parameter {
 	for i := range params {
 		newItem := ParameterToAPI(params[i])
 		result[i] = newItem
+	}
+
+	return result
+}
+
+func APIParameterToInternal(param *api.Parameter) *v1.Parameter {
+	result := &v1.Parameter{
+		Name:     param.Name,
+		Type:     param.Type,
+		Required: param.Required,
+	}
+
+	if param.Value != "" {
+		result.Value = &param.Value
+	}
+	if param.DisplayName != "" {
+		result.DisplayName = &param.DisplayName
+	}
+	if param.Hint != "" {
+		result.Hint = &param.Hint
+	}
+
+	if param.Options != nil {
+		result.Options = APIParameterOptionsToInternal(param.Options)
 	}
 
 	return result
