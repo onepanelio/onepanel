@@ -165,7 +165,7 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/cron_workflow/{name}": {
+    "/apis/v1beta1/{namespace}/cron_workflow/{uid}": {
       "get": {
         "operationId": "GetCronWorkflow",
         "responses": {
@@ -190,7 +190,7 @@
             "type": "string"
           },
           {
-            "name": "name",
+            "name": "uid",
             "in": "path",
             "required": true,
             "type": "string"
@@ -224,7 +224,7 @@
             "type": "string"
           },
           {
-            "name": "name",
+            "name": "uid",
             "in": "path",
             "required": true,
             "type": "string"
@@ -293,7 +293,7 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/cron_workflows/{name}/terminate": {
+    "/apis/v1beta1/{namespace}/cron_workflows/{uid}/terminate": {
       "delete": {
         "operationId": "TerminateCronWorkflow",
         "responses": {
@@ -318,7 +318,7 @@
             "type": "string"
           },
           {
-            "name": "name",
+            "name": "uid",
             "in": "path",
             "required": true,
             "type": "string"
@@ -2971,6 +2971,9 @@
       "type": "object",
       "properties": {
         "createdAt": {
+          "type": "string"
+        },
+        "uid": {
           "type": "string"
         },
         "name": {
