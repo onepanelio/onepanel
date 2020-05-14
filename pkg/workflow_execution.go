@@ -107,23 +107,6 @@ func addSystemUIDParameter(wf *wfv1.Workflow) {
 	return
 }
 
-func addEnvToTemplate(template *wfv1.Template, key string, value string) {
-	//Flag to prevent over-writing user's envs
-	overwriteUserEnv := true
-	for _, templateEnv := range template.Container.Env {
-		if templateEnv.Name == key {
-			overwriteUserEnv = false
-			break
-		}
-	}
-	if overwriteUserEnv {
-		template.Container.Env = append(template.Container.Env, corev1.EnvVar{
-			Name:  key,
-			Value: value,
-		})
-	}
-}
-
 func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (err error) {
 	if opts.PodGCStrategy == nil {
 		if wf.Spec.PodGC == nil {
@@ -190,14 +173,15 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 			},
 		})
 
-		sysConfig, sysErr := c.GetSystemConfig()
+		config, sysErr := c.GetSystemConfig()
 		if sysErr != nil {
 			return sysErr
 		}
-		addEnvToTemplate(&template, "ONEPANEL_API_URL", sysConfig["ONEPANEL_API_URL"])
-		addEnvToTemplate(&template, "ONEPANEL_FQDN", sysConfig["ONEPANEL_FQDN"])
-		addEnvToTemplate(&template, "ONEPANEL_DOMAIN", sysConfig["ONEPANEL_DOMAIN"])
-		addEnvToTemplate(&template, "PROVIDER_TYPE", sysConfig["PROVIDER_TYPE"])
+		env.PrependEnvToContainer(template.Container, "ONEPANEL_API_URL", config["ONEPANEL_API_URL"])
+		env.PrependEnvToContainer(template.Container, "ONEPANEL_FQDN", config["ONEPANEL_FQDN"])
+		env.PrependEnvToContainer(template.Container, "ONEPANEL_DOMAIN", config["ONEPANEL_DOMAIN"])
+		env.PrependEnvToContainer(template.Container, "PROVIDER_TYPE", config["PROVIDER_TYPE"])
+
 	}
 
 	return

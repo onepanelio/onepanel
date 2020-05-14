@@ -8,6 +8,7 @@ import (
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/asaskevich/govalidator"
 	"github.com/onepanelio/core/pkg/util"
+	"github.com/onepanelio/core/pkg/util/env"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"google.golang.org/grpc/codes"
@@ -155,8 +156,9 @@ func createVirtualServiceManifest(spec *WorkspaceSpec) (virtualServiceManifest s
 func createStatefulSetManifest(workspaceSpec *WorkspaceSpec, config map[string]string) (statefulSetManifest string, err error) {
 	var volumeClaims []map[string]interface{}
 	volumeClaimsMapped := make(map[string]bool)
-	for i, c := range workspaceSpec.Containers {
-		workspaceSpec.Containers[i].EnvFrom = append(workspaceSpec.Containers[i].EnvFrom, corev1.EnvFromSource{
+	for _, c := range workspaceSpec.Containers {
+		container := &c
+		container.EnvFrom = append(container.EnvFrom, corev1.EnvFromSource{
 			SecretRef: &corev1.SecretEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: DefaultEnvironmentVariableSecret,
@@ -164,6 +166,10 @@ func createStatefulSetManifest(workspaceSpec *WorkspaceSpec, config map[string]s
 				Optional: ptr.Bool(true),
 			},
 		})
+		env.PrependEnvToContainer(&c, "ONEPANEL_API_URL", config["ONEPANEL_API_URL"])
+		env.PrependEnvToContainer(&c, "ONEPANEL_FQDN", config["ONEPANEL_FQDN"])
+		env.PrependEnvToContainer(&c, "ONEPANEL_DOMAIN", config["ONEPANEL_DOMAIN"])
+		env.PrependEnvToContainer(&c, "PROVIDER_TYPE", config["PROVIDER_TYPE"])
 
 		for _, v := range c.VolumeMounts {
 			if volumeClaimsMapped[v.Name] {
