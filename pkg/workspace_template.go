@@ -159,7 +159,7 @@ func createStatefulSetManifest(workspaceSpec *WorkspaceSpec, config map[string]s
 		workspaceSpec.Containers[i].EnvFrom = append(workspaceSpec.Containers[i].EnvFrom, corev1.EnvFromSource{
 			SecretRef: &corev1.SecretEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: "onepanel-default-env",
+					Name: DefaultEnvironmentVariableSecret,
 				},
 				Optional: ptr.Bool(true),
 			},

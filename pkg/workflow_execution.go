@@ -2,7 +2,6 @@ package v1
 
 import (
 	"bufio"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -32,7 +31,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -144,21 +142,6 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 
 	addSystemUIDParameter(wf)
 
-	addSecretValsToTemplate := true
-	secret, err := c.GetSecret(namespace, "onepanel-default-env")
-	if err != nil {
-		var statusError *k8serrors.StatusError
-		if errors.As(err, &statusError) {
-			if statusError.ErrStatus.Reason == "NotFound" {
-				addSecretValsToTemplate = false
-			} else {
-				return err
-			}
-		} else {
-			return err
-		}
-	}
-
 	// Create dev/shm volume
 	wf.Spec.Volumes = append(wf.Spec.Volumes, corev1.Volume{
 		Name: "sys-dshm",
@@ -196,24 +179,21 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 			},
 		})
 
-		if !addSecretValsToTemplate {
-			continue
-		}
-
 		//Generate ENV vars from secret, if there is a container present in the workflow
 		//Get template ENV vars, avoid over-writing them with secret values
-		for key, value := range secret.Data {
-			decodedValue, errDecode := base64.StdEncoding.DecodeString(value)
-			if errDecode != nil {
-				return errDecode
-			}
-			addEnvToTemplate(&template, key, string(decodedValue))
-		}
+		template.Container.EnvFrom = append(template.Container.EnvFrom, corev1.EnvFromSource{
+			SecretRef: &corev1.SecretEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: DefaultEnvironmentVariableSecret,
+				},
+				Optional: ptr.Bool(true),
+			},
+		})
+
 		sysConfig, sysErr := c.GetSystemConfig()
 		if sysErr != nil {
 			return sysErr
 		}
-
 		addEnvToTemplate(&template, "ONEPANEL_API_URL", sysConfig["ONEPANEL_API_URL"])
 		addEnvToTemplate(&template, "ONEPANEL_FQDN", sysConfig["ONEPANEL_FQDN"])
 		addEnvToTemplate(&template, "ONEPANEL_DOMAIN", sysConfig["ONEPANEL_DOMAIN"])
