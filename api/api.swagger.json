@@ -3029,6 +3029,10 @@
         "failed": {
           "type": "integer",
           "format": "int32"
+        },
+        "terminated": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
