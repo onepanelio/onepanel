@@ -21,7 +21,7 @@ Install gRPC:
 go get -u google.golang.org/grpc
 ```
 
-Download pre-compiled binaries for your platform(protoc-<version>-<platform>.zip) from here: https://github.com/google/protobuf/releases
+Download pre-compiled binaries for your platform (protoc-<version>-<platform>.zip) from here: https://github.com/google/protobuf/releases
 
 On macOS or Linux:
 
