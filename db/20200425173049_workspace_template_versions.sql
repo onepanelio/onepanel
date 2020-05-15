@@ -2,6 +2,7 @@
 CREATE TABLE workspace_template_versions
 (
     id                              serial PRIMARY KEY,
+    uid                             varchar(30) NOT NULL CHECK(uid <> ''),
     workspace_template_id           integer NOT NULL REFERENCES workspace_templates ON DELETE CASCADE,
     version                         integer NOT NULL,
     manifest                        text NOT NULL,
