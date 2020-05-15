@@ -3,6 +3,7 @@
 CREATE TABLE workflow_executions
 (
     id                   serial PRIMARY KEY,
+    uid                  varchar(30) UNIQUE NOT NULL CHECK(uid <> ''),
     workflow_template_id integer     NOT NULL REFERENCES workflow_templates ON DELETE CASCADE,
     name                 text        NOT NULL CHECK (name <> ''),
     namespace            varchar(30) NOT NULL,
