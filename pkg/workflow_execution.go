@@ -492,12 +492,8 @@ func (c *Client) CronStartWorkflowExecutionStatisticInsert(namespace, uid string
 		return err
 	}
 
-	cronUid, err := uuid.GenerateUUID()
-	if err != nil {
-		return err
-	}
 	insertMap := sq.Eq{
-		"uid":                          cronUid,
+		"uid":                          uid,
 		"workflow_template_version_id": cronWorkflow.WorkflowTemplateVersionId,
 		"name":                         uid,
 		"namespace":                    namespace,

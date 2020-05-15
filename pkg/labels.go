@@ -4,11 +4,9 @@ import (
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/hashicorp/go-uuid"
 	"github.com/onepanelio/core/pkg/util/label"
 	"github.com/onepanelio/core/pkg/util/mapping"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"log"
 )
 
 func (c *Client) ListLabels(resource string, uid string) (labels []*Label, err error) {
@@ -250,14 +248,10 @@ func (c *Client) DeleteLabels(namespace, resource, uid string, keyValues map[str
 
 func (c *Client) InsertLabelsBuilder(resource string, resourceId uint64, keyValues map[string]string) sq.InsertBuilder {
 	sb := sb.Insert("labels").
-		Columns("uid", "resource", "resource_id", "key", "value")
+		Columns("resource", "resource_id", "key", "value")
 
 	for key, value := range keyValues {
-		uid, err := uuid.GenerateUUID()
-		if err != nil {
-			log.Fatal("unable to generate uuid")
-		}
-		sb = sb.Values(uid, resource, resourceId, key, value)
+		sb = sb.Values(resource, resourceId, key, value)
 	}
 
 	return sb
