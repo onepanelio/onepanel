@@ -944,6 +944,24 @@ func (c *Client) SuspendWorkflowExecution(namespace, uid string) (err error) {
 }
 
 func (c *Client) TerminateWorkflowExecution(namespace, uid string) (err error) {
+	query, args, err := sb.Update("workflow_executions").
+		Set("phase", "Terminated").
+		Set("started_at", time.Time.UTC(time.Now())).
+		Set("finished_at", time.Time.UTC(time.Now())).
+		Where(sq.Eq{
+			"uid":       uid,
+			"namespace": namespace,
+		}).
+		ToSql()
+
+	if err != nil {
+		return err
+	}
+
+	if _, err := c.DB.Exec(query, args...); err != nil {
+		return err
+	}
+
 	err = argoutil.TerminateWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), uid)
 
 	return
@@ -1242,6 +1260,7 @@ func (c *Client) GetWorkflowExecutionStatisticsForTemplates(workflowTemplates ..
 		COUNT(*) FILTER (WHERE finished_at IS NULL AND (phase = 'Running' OR phase = 'Pending')) running,
 		COUNT(*) FILTER (WHERE finished_at IS NOT NULL AND phase = 'Succeeded') completed,
 		COUNT(*) FILTER (WHERE finished_at IS NOT NULL AND (phase = 'Failed' OR phase = 'Error')) failed,
+		COUNT(*) FILTER (WHERE phase = 'Terminated') terminated,
 		COUNT(*) total`
 
 	query, args, err := sb.Select(statsSelect).

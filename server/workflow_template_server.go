@@ -38,6 +38,7 @@ func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 			Running:      wft.WorkflowExecutionStatisticReport.Running,
 			Completed:    wft.WorkflowExecutionStatisticReport.Completed,
 			Failed:       wft.WorkflowExecutionStatisticReport.Failed,
+			Terminated:   wft.WorkflowExecutionStatisticReport.Terminated,
 		}
 	}
 
