@@ -2,6 +2,7 @@
 CREATE TABLE workflow_template_versions
 (
     id                      serial PRIMARY KEY,
+    uid                     varchar(30) UNIQUE NOT NULL CHECK(uid <> ''),
     workflow_template_id    integer NOT NULL REFERENCES workflow_templates ON DELETE CASCADE,
     version                 integer NOT NULL,
     is_latest               boolean NOT NULL,
