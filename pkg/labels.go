@@ -379,12 +379,12 @@ func (c *Client) UpdateK8sLabelResource(namespace, resource string, obj interfac
 			return err
 		}
 	} else if resource == TypeWorkflowExecution {
-		workflowExecution, ok := obj.(v1alpha1.Workflow)
+		workflowExecution, ok := obj.(*v1alpha1.Workflow)
 		if !ok {
 			return fmt.Errorf("unable to convert object to workflow")
 		}
 
-		if _, err := c.ArgoprojV1alpha1().Workflows(namespace).Update(&workflowExecution); err != nil {
+		if _, err := c.ArgoprojV1alpha1().Workflows(namespace).Update(workflowExecution); err != nil {
 			return err
 		}
 	} else if resource == TypeCronWorkflow {
