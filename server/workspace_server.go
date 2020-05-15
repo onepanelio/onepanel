@@ -28,6 +28,7 @@ func apiWorkspace(wt *v1.Workspace, config map[string]string) *api.Workspace {
 		CreatedAt: wt.CreatedAt.UTC().Format(time.RFC3339),
 		Url:       protocol + wt.URL,
 	}
+	res.Parameters = converter.ParametersToAPI(wt.Parameters)
 
 	res.Status = &api.WorkspaceStatus{
 		Phase: string(wt.Status.Phase),
@@ -123,6 +124,15 @@ func (s *WorkspaceServer) GetWorkspace(ctx context.Context, req *api.GetWorkspac
 	}
 
 	apiWorkspace := apiWorkspace(workspace, sysConfig)
+
+	// We add the template parameters because they have additional information on the options for certain parameters.
+	// e.g. select types need to know the options so they can display them, and the selected option properly.
+	templateParameters, err := v1.ParseParametersFromManifest([]byte(workspace.WorkflowTemplateVersion.Manifest))
+	if err != nil {
+		return nil, err
+	}
+
+	apiWorkspace.TemplateParameters = converter.ParametersToAPI(templateParameters)
 
 	return apiWorkspace, nil
 }
