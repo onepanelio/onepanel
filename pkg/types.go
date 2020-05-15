@@ -192,6 +192,7 @@ type WorkflowExecutionStatisticReport struct {
 	Running            int32
 	Completed          int32
 	Failed             int32
+	Terminated         int32
 }
 
 type CronWorkflowStatisticReport struct {
