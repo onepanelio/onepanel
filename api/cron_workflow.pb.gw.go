@@ -131,15 +131,15 @@ func request_CronWorkflowService_UpdateCronWorkflow_0(ctx context.Context, marsh
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "namespace", err)
 	}
 
-	val, ok = pathParams["name"]
+	val, ok = pathParams["uid"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "name")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "uid")
 	}
 
-	protoReq.Name, err = runtime.String(val)
+	protoReq.Uid, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "name", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "uid", err)
 	}
 
 	msg, err := client.UpdateCronWorkflow(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -177,15 +177,15 @@ func local_request_CronWorkflowService_UpdateCronWorkflow_0(ctx context.Context,
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "namespace", err)
 	}
 
-	val, ok = pathParams["name"]
+	val, ok = pathParams["uid"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "name")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "uid")
 	}
 
-	protoReq.Name, err = runtime.String(val)
+	protoReq.Uid, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "name", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "uid", err)
 	}
 
 	msg, err := server.UpdateCronWorkflow(ctx, &protoReq)
@@ -215,15 +215,15 @@ func request_CronWorkflowService_GetCronWorkflow_0(ctx context.Context, marshale
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "namespace", err)
 	}
 
-	val, ok = pathParams["name"]
+	val, ok = pathParams["uid"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "name")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "uid")
 	}
 
-	protoReq.Name, err = runtime.String(val)
+	protoReq.Uid, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "name", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "uid", err)
 	}
 
 	msg, err := client.GetCronWorkflow(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -253,15 +253,15 @@ func local_request_CronWorkflowService_GetCronWorkflow_0(ctx context.Context, ma
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "namespace", err)
 	}
 
-	val, ok = pathParams["name"]
+	val, ok = pathParams["uid"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "name")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "uid")
 	}
 
-	protoReq.Name, err = runtime.String(val)
+	protoReq.Uid, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "name", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "uid", err)
 	}
 
 	msg, err := server.GetCronWorkflow(ctx, &protoReq)
@@ -451,15 +451,15 @@ func request_CronWorkflowService_TerminateCronWorkflow_0(ctx context.Context, ma
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "namespace", err)
 	}
 
-	val, ok = pathParams["name"]
+	val, ok = pathParams["uid"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "name")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "uid")
 	}
 
-	protoReq.Name, err = runtime.String(val)
+	protoReq.Uid, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "name", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "uid", err)
 	}
 
 	msg, err := client.TerminateCronWorkflow(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -489,15 +489,15 @@ func local_request_CronWorkflowService_TerminateCronWorkflow_0(ctx context.Conte
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "namespace", err)
 	}
 
-	val, ok = pathParams["name"]
+	val, ok = pathParams["uid"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "name")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "uid")
 	}
 
-	protoReq.Name, err = runtime.String(val)
+	protoReq.Uid, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "name", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "uid", err)
 	}
 
 	msg, err := server.TerminateCronWorkflow(ctx, &protoReq)
@@ -797,15 +797,15 @@ func RegisterCronWorkflowServiceHandlerClient(ctx context.Context, mux *runtime.
 var (
 	pattern_CronWorkflowService_CreateCronWorkflow_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"apis", "v1beta1", "namespace", "cron_workflow"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_CronWorkflowService_UpdateCronWorkflow_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"apis", "v1beta1", "namespace", "cron_workflow", "name"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_CronWorkflowService_UpdateCronWorkflow_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"apis", "v1beta1", "namespace", "cron_workflow", "uid"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_CronWorkflowService_GetCronWorkflow_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"apis", "v1beta1", "namespace", "cron_workflow", "name"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_CronWorkflowService_GetCronWorkflow_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"apis", "v1beta1", "namespace", "cron_workflow", "uid"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_CronWorkflowService_ListCronWorkflows_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"apis", "v1beta1", "namespace", "cron_workflows"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_CronWorkflowService_ListCronWorkflows_1 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"apis", "v1beta1", "namespace", "cron_workflows", "workflow_template_name"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_CronWorkflowService_TerminateCronWorkflow_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"apis", "v1beta1", "namespace", "cron_workflows", "name", "terminate"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_CronWorkflowService_TerminateCronWorkflow_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"apis", "v1beta1", "namespace", "cron_workflows", "uid", "terminate"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (

@@ -4,11 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/go-uuid"
 	"github.com/onepanelio/core/pkg/util/pagination"
-	"regexp"
+	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"strconv"
-	"strings"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -23,11 +21,11 @@ import (
 )
 
 func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
-	uid, err := workflowTemplate.GenerateUID()
+	uid, err := uid2.GenerateUID(workflowTemplate.Name)
 	if err != nil {
 		return nil, err
 	}
-
+	workflowTemplate.UID = uid
 	tx, err := c.DB.Begin()
 	if err != nil {
 		return nil, err
@@ -50,15 +48,12 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, err
 	}
 
-	versionUid, err := uuid.GenerateUUID()
-	if err != nil {
-		return nil, err
-	}
+	versionUID := strconv.FormatInt(versionUnix, 10)
 
 	workflowTemplateVersion := WorkflowTemplateVersion{}
 	err = sb.Insert("workflow_template_versions").
 		SetMap(sq.Eq{
-			"uid":                  versionUid,
+			"uid":                  versionUID,
 			"workflow_template_id": workflowTemplate.ID,
 			"version":              versionUnix,
 			"is_latest":            true,
@@ -86,7 +81,7 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, err
 	}
 
-	argoWft.Labels[label.WorkflowTemplateVersionUid] = versionUid
+	argoWft.Labels[label.WorkflowTemplateVersionUid] = versionUID
 	argoWft, err = c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Create(argoWft)
 	if err != nil {
 		return nil, err
@@ -435,10 +430,7 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 		return nil, err
 	}
 
-	uid, err := uuid.GenerateUUID()
-	if err != nil {
-		return nil, err
-	}
+	uid := strconv.FormatInt(versionUnix, 10)
 	workflowTemplateVersionId := uint64(0)
 	err = sb.Insert("workflow_template_versions").
 		SetMap(sq.Eq{
@@ -659,8 +651,10 @@ func createArgoWorkflowTemplate(workflowTemplate *WorkflowTemplate, version int6
 		return nil, err
 	}
 
-	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
-	worfklowTemplateName := strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`))
+	worfklowTemplateName, err := uid2.GenerateUID(workflowTemplate.Name)
+	if err != nil {
+		return nil, err
+	}
 
 	argoWft.Name = fmt.Sprintf("%v-v%v", worfklowTemplateName, version)
 

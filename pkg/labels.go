@@ -347,22 +347,12 @@ func (c *Client) getK8sLabelResourceWorkflowTemplateVersion(namespace, uid strin
 }
 
 func (c *Client) getK8sLabelResourceWorkflowExecution(namespace, uid string) (source interface{}, result *v1.ObjectMeta, err error) {
-	labelSelect := fmt.Sprintf("%v=%v", label.WorkflowUid, uid)
-
-	workflows, err := c.ArgoprojV1alpha1().Workflows(namespace).List(v1.ListOptions{
-		LabelSelector: labelSelect,
-	})
+	workflow, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(uid, v1.GetOptions{})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	if workflows.Items.Len() != 1 {
-		return nil, nil, fmt.Errorf("no argo resource found")
-	}
-
-	item := workflows.Items[0]
-
-	return item, &item.ObjectMeta, nil
+	return workflow, &workflow.ObjectMeta, nil
 }
 
 func (c *Client) getK8sLabelResourceCronWorkflow(namespace, uid string) (source interface{}, result *v1.ObjectMeta, err error) {

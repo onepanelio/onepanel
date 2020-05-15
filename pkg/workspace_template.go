@@ -8,8 +8,10 @@ import (
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/asaskevich/govalidator"
 	"github.com/onepanelio/core/pkg/util"
+	"github.com/onepanelio/core/pkg/util/env"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
+	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"google.golang.org/grpc/codes"
 	networking "istio.io/api/networking/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
@@ -58,6 +60,12 @@ func generateArguments(spec *WorkspaceSpec, config map[string]string) (err error
 	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
 		Name:  "sys-host",
 		Value: ptr.String(config["ONEPANEL_DOMAIN"]),
+		Type:  "input.hidden",
+	})
+	// UID placeholder
+	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
+		Name:  "sys-uid",
+		Value: ptr.String("uid"),
 		Type:  "input.hidden",
 	})
 
@@ -155,7 +163,14 @@ func createVirtualServiceManifest(spec *WorkspaceSpec) (virtualServiceManifest s
 func createStatefulSetManifest(workspaceSpec *WorkspaceSpec, config map[string]string) (statefulSetManifest string, err error) {
 	var volumeClaims []map[string]interface{}
 	volumeClaimsMapped := make(map[string]bool)
-	for _, c := range workspaceSpec.Containers {
+	for i, c := range workspaceSpec.Containers {
+		container := &workspaceSpec.Containers[i]
+		env.AddDefaultEnvVarsToContainer(container)
+		env.PrependEnvVarToContainer(container, "ONEPANEL_API_URL", config["ONEPANEL_API_URL"])
+		env.PrependEnvVarToContainer(container, "ONEPANEL_FQDN", config["ONEPANEL_FQDN"])
+		env.PrependEnvVarToContainer(container, "ONEPANEL_DOMAIN", config["ONEPANEL_DOMAIN"])
+		env.PrependEnvVarToContainer(container, "PROVIDER_TYPE", config["PROVIDER_TYPE"])
+
 		for _, v := range c.VolumeMounts {
 			if volumeClaimsMapped[v.Name] {
 				continue
@@ -412,10 +427,11 @@ metadata:
 }
 
 func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *WorkspaceTemplate) (*WorkspaceTemplate, error) {
-	uid, err := workspaceTemplate.GenerateUID()
+	uid, err := uid2.GenerateUID(workspaceTemplate.Name)
 	if err != nil {
 		return nil, err
 	}
+	workspaceTemplate.UID = uid
 
 	tx, err := c.DB.Begin()
 	if err != nil {

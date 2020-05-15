@@ -19,12 +19,12 @@ import (
 )
 
 const (
-	artifactRepositoryEndpointKey       = "artifactRepositoryS3Endpoint"
-	artifactRepositoryBucketKey         = "artifactRepositoryS3Bucket"
-	artifactRepositoryRegionKey         = "artifactRepositoryS3Region"
-	artifactRepositoryInsecureKey       = "artifactRepositoryS3Insecure"
-	artifactRepositoryAccessKeyValueKey = "artifactRepositoryS3AccessKey"
-	artifactRepositorySecretKeyValueKey = "artifactRepositoryS3SecretKey"
+	ArtifactRepositoryEndpointKey       = "artifactRepositoryS3Endpoint"
+	ArtifactRepositoryBucketKey         = "artifactRepositoryS3Bucket"
+	ArtifactRepositoryRegionKey         = "artifactRepositoryS3Region"
+	ArtifactRepositoryInsecureKey       = "artifactRepositoryS3Insecure"
+	ArtifactRepositoryAccessKeyValueKey = "artifactRepositoryS3AccessKey"
+	ArtifactRepositorySecretKeyValueKey = "artifactRepositoryS3SecretKey"
 )
 
 type Config = rest.Config
@@ -108,12 +108,12 @@ func (c *Client) GetNamespaceConfig(namespace string) (config map[string]string,
 	s3Conf := ArtifactRepositoryS3Config{}
 
 	err = yaml.Unmarshal([]byte(configMap.Data["artifactRepository"]), &s3Conf)
-	config[artifactRepositoryEndpointKey] = s3Conf.S3.Endpoint
-	config[artifactRepositoryBucketKey] = s3Conf.S3.Bucket
-	config[artifactRepositoryRegionKey] = s3Conf.S3.Region
-	config[artifactRepositoryInsecureKey] = s3Conf.S3.Insecure
-	config[artifactRepositoryAccessKeyValueKey] = s3Conf.S3.AccessKeySecret.Key
-	config[artifactRepositorySecretKeyValueKey] = s3Conf.S3.SecretKeySecret.Key
+	config[ArtifactRepositoryEndpointKey] = s3Conf.S3.Endpoint
+	config[ArtifactRepositoryBucketKey] = s3Conf.S3.Bucket
+	config[ArtifactRepositoryRegionKey] = s3Conf.S3.Region
+	config[ArtifactRepositoryInsecureKey] = s3Conf.S3.Insecure
+	config[ArtifactRepositoryAccessKeyValueKey] = s3Conf.S3.AccessKeySecret.Key
+	config[ArtifactRepositorySecretKeyValueKey] = s3Conf.S3.SecretKeySecret.Key
 
 	secret, err := c.GetSecret(namespace, "onepanel")
 	if err != nil {
@@ -123,16 +123,16 @@ func (c *Client) GetNamespaceConfig(namespace string) (config map[string]string,
 		}).Error("getNamespaceConfig failed getting secret.")
 		return
 	}
-	accessKey, _ := base64.StdEncoding.DecodeString(secret.Data[artifactRepositoryAccessKeyValueKey])
-	config[artifactRepositoryAccessKeyValueKey] = string(accessKey)
-	secretKey, _ := base64.StdEncoding.DecodeString(secret.Data[artifactRepositorySecretKeyValueKey])
-	config[artifactRepositorySecretKeyValueKey] = string(secretKey)
+	accessKey, _ := base64.StdEncoding.DecodeString(secret.Data[ArtifactRepositoryAccessKeyValueKey])
+	config[ArtifactRepositoryAccessKeyValueKey] = string(accessKey)
+	secretKey, _ := base64.StdEncoding.DecodeString(secret.Data[ArtifactRepositorySecretKeyValueKey])
+	config[ArtifactRepositorySecretKeyValueKey] = string(secretKey)
 
 	return
 }
 
 func (c *Client) GetS3Client(namespace string, config map[string]string) (s3Client *s3.Client, err error) {
-	insecure, err := strconv.ParseBool(config[artifactRepositoryInsecureKey])
+	insecure, err := strconv.ParseBool(config[ArtifactRepositoryInsecureKey])
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -142,10 +142,10 @@ func (c *Client) GetS3Client(namespace string, config map[string]string) (s3Clie
 		return
 	}
 	s3Client, err = s3.NewClient(s3.Config{
-		Endpoint:  config[artifactRepositoryEndpointKey],
-		Region:    config[artifactRepositoryRegionKey],
-		AccessKey: config[artifactRepositoryAccessKeyValueKey],
-		SecretKey: config[artifactRepositorySecretKeyValueKey],
+		Endpoint:  config[ArtifactRepositoryEndpointKey],
+		Region:    config[ArtifactRepositoryRegionKey],
+		AccessKey: config[ArtifactRepositoryAccessKeyValueKey],
+		SecretKey: config[ArtifactRepositorySecretKeyValueKey],
 		InSecure:  insecure,
 	})
 	if err != nil {
