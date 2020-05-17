@@ -302,14 +302,8 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	}
 	opts.GenerateName += "-"
 
-	workflowUid, err := uuid.GenerateUUID()
-	if err != nil {
-		return nil, err
-	}
-
 	(*opts.Labels)[workflowTemplateUIDLabelKey] = workflowTemplate.UID
 	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
-	(*opts.Labels)[label.WorkflowUid] = workflowUid
 	label.MergeLabelsPrefix(*opts.Labels, workflow.Labels, label.TagPrefix)
 
 	// @todo we need to enforce the below requirement in API.
@@ -368,10 +362,8 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	workflow.ID = id
 	workflow.Name = createdWorkflow.Name
 	workflow.CreatedAt = createdWorkflow.CreationTimestamp.UTC()
-	workflow.UID = workflowUid
+	workflow.UID = createdWorkflow.Name
 	workflow.WorkflowTemplate = workflowTemplate
-	// Manifests could get big, don't return them in this case.
-	workflow.WorkflowTemplate.Manifest = ""
 
 	return workflow, nil
 }
@@ -1448,7 +1440,7 @@ func (c *Client) getWorkflowExecutionAndTemplate(namespace string, uid string) (
 		Join("workflow_templates wt ON wtv.workflow_template_id = wt.id").
 		Where(sq.Eq{
 			"wt.namespace": namespace,
-			"we.name":      uid,
+			"we.uid":       uid,
 		}).
 		ToSql()
 	if err != nil {
