@@ -14,11 +14,13 @@ import (
 )
 
 const (
-	TypeWorkflowTemplate        string = "workflow_template"
-	TypeWorkflowTemplateVersion string = "workflow_template_version"
-	TypeWorkflowExecution       string = "workflow_execution"
-	TypeCronWorkflow            string = "cron_workflow"
-	TypeWorkspace               string = "workspace"
+	TypeWorkflowTemplate         string = "workflow_template"
+	TypeWorkflowTemplateVersion  string = "workflow_template_version"
+	TypeWorkflowExecution        string = "workflow_execution"
+	TypeCronWorkflow             string = "cron_workflow"
+	TypeWorkspaceTemplate        string = "workspace_template"
+	TypeWorkspaceTemplateVersion string = "workspace_template_version"
+	TypeWorkspace                string = "workspace"
 )
 
 func TypeToTableName(value string) string {
@@ -31,6 +33,10 @@ func TypeToTableName(value string) string {
 		return "workflow_executions"
 	case TypeCronWorkflow:
 		return "cron_workflows"
+	case TypeWorkspaceTemplate:
+		return "workspace_templates"
+	case TypeWorkspaceTemplateVersion:
+		return "workspace_template_versions"
 	case TypeWorkspace:
 		return "workspace"
 	}
@@ -173,7 +179,10 @@ type WorkflowTemplate struct {
 	Labels                           map[string]string
 	WorkflowExecutionStatisticReport *WorkflowExecutionStatisticReport
 	CronWorkflowsStatisticsReport    *CronWorkflowStatisticReport
-	WorkflowTemplateVersionId        uint64 `db:"workflow_template_version_id"` // Reference to the associated workflow template version.
+	// todo rename to have ID suffix
+	WorkflowTemplateVersionId uint64  `db:"workflow_template_version_id"` // Reference to the associated workflow template version.
+	Resource                  *string // utility in case we are specifying a workflow template for a specific resource
+	ResourceUID               *string // see Resource field
 }
 
 type Label struct {
@@ -611,6 +620,36 @@ func CronWorkflowsToIds(resources []*CronWorkflow) (ids []uint64) {
 	// This is to make sure we don't have duplicates
 	for _, resource := range resources {
 		mappedIds[resource.ID] = true
+	}
+
+	for id := range mappedIds {
+		ids = append(ids, id)
+	}
+
+	return
+}
+
+func WorkspaceTemplatesToIds(resources []*WorkspaceTemplate) (ids []uint64) {
+	mappedIds := make(map[uint64]bool)
+
+	// This is to make sure we don't have duplicates
+	for _, resource := range resources {
+		mappedIds[resource.ID] = true
+	}
+
+	for id := range mappedIds {
+		ids = append(ids, id)
+	}
+
+	return
+}
+
+func WorkspaceTemplatesToVersionIds(resources []*WorkspaceTemplate) (ids []uint64) {
+	mappedIds := make(map[uint64]bool)
+
+	// This is to make sure we don't have duplicates
+	for _, resource := range resources {
+		mappedIds[resource.WorkspaceTemplateVersionID] = true
 	}
 
 	for id := range mappedIds {

@@ -440,6 +440,8 @@ func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	defer tx.Rollback()
 
 	workspaceTemplate.WorkflowTemplate.IsSystem = true
+	workspaceTemplate.WorkflowTemplate.Resource = ptr.String(TypeWorkspaceTemplate)
+	workspaceTemplate.WorkflowTemplate.ResourceUID = ptr.String(uid)
 	workspaceTemplate.WorkflowTemplate, err = c.CreateWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate)
 	if err != nil {
 		return nil, err
@@ -462,18 +464,30 @@ func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 		return nil, util.NewUserErrorWrap(err, "Workspace template")
 	}
 
-	_, err = sb.Insert("workspace_template_versions").
+	workspaceTemplateVersionID := uint64(0)
+	err = sb.Insert("workspace_template_versions").
 		SetMap(sq.Eq{
 			"version":               workspaceTemplate.Version,
 			"is_latest":             workspaceTemplate.IsLatest,
 			"manifest":              workspaceTemplate.Manifest,
 			"workspace_template_id": workspaceTemplate.ID,
 		}).
+		Suffix("RETURNING id").
 		RunWith(tx).
-		Exec()
+		QueryRow().
+		Scan(&workspaceTemplateVersionID)
 	if err != nil {
 		_, err := c.ArchiveWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID)
 		return nil, err
+	}
+
+	if len(workspaceTemplate.Labels) != 0 {
+		_, err = c.InsertLabelsBuilder(TypeWorkspaceTemplateVersion, workspaceTemplateVersionID, workspaceTemplate.Labels).
+			RunWith(tx).
+			Exec()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -496,7 +510,7 @@ func (c *Client) workspaceTemplatesSelectBuilder(namespace string) sq.SelectBuil
 
 func (c *Client) workspaceTemplateVersionsSelectBuilder(namespace, uid string) sq.SelectBuilder {
 	sb := c.workspaceTemplatesSelectBuilder(namespace).
-		Columns("wtv.created_at \"created_at\"", "wtv.version", "wtv.manifest", "wft.id \"workflow_template.id\"", "wft.uid \"workflow_template.uid\"", "wftv.version \"workflow_template.version\"", "wftv.manifest \"workflow_template.manifest\"").
+		Columns("wtv.id \"workspace_template_version_id\"", "wtv.created_at \"created_at\"", "wtv.version", "wtv.manifest", "wft.id \"workflow_template.id\"", "wft.uid \"workflow_template.uid\"", "wftv.version \"workflow_template.version\"", "wftv.manifest \"workflow_template.manifest\"").
 		Join("workspace_template_versions wtv ON wtv.workspace_template_id = wt.id").
 		Join("workflow_templates wft ON wft.id = wt.workflow_template_id").
 		Join("workflow_template_versions wftv ON wftv.workflow_template_id = wft.id").
@@ -661,6 +675,7 @@ func (c *Client) UpdateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	}
 	defer tx.Rollback()
 
+	updatedWorkflowTemplate.Labels = workspaceTemplate.Labels
 	workflowTemplateVersion, err := c.CreateWorkflowTemplateVersion(namespace, updatedWorkflowTemplate)
 	if err != nil {
 		return nil, err
@@ -680,17 +695,29 @@ func (c *Client) UpdateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 		return nil, err
 	}
 
-	_, err = sb.Insert("workspace_template_versions").
+	workspaceTemplateVersionID := uint64(0)
+	err = sb.Insert("workspace_template_versions").
 		SetMap(sq.Eq{
 			"version":               workspaceTemplate.Version,
 			"is_latest":             workspaceTemplate.IsLatest,
 			"manifest":              workspaceTemplate.Manifest,
 			"workspace_template_id": workspaceTemplate.ID,
 		}).
+		Suffix("RETURNING id").
 		RunWith(tx).
-		Exec()
+		QueryRow().
+		Scan(&workspaceTemplateVersionID)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(workspaceTemplate.Labels) != 0 {
+		_, err = c.InsertLabelsBuilder(TypeWorkspaceTemplateVersion, workspaceTemplateVersionID, workspaceTemplate.Labels).
+			RunWith(tx).
+			Exec()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -731,6 +758,19 @@ func (c *Client) ListWorkspaceTemplateVersions(namespace, uid string) (workspace
 	}
 	if err = c.DB.Select(&workspaceTemplates, query, args...); err != nil {
 		return
+	}
+
+	ids := WorkspaceTemplatesToVersionIds(workspaceTemplates)
+
+	labelsMap, err := c.GetDbLabelsMapped(TypeWorkspaceTemplateVersion, ids...)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, workspaceTemplate := range workspaceTemplates {
+		if labels, ok := labelsMap[workspaceTemplate.WorkspaceTemplateVersionID]; ok {
+			workspaceTemplate.Labels = labels
+		}
 	}
 
 	return

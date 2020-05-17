@@ -5,6 +5,7 @@ package api;
 import "google/api/annotations.proto";
 import "workflow_template.proto";
 import "google/protobuf/empty.proto";
+import "label.proto";
 
 service WorkspaceTemplateService {
     // Get the generated WorkflowTemplate for a WorkspaceTemplate
@@ -59,6 +60,7 @@ message WorkspaceTemplate {
     bool isLatest = 5;
     string createdAt = 6;
     WorkflowTemplate workflowTemplate = 7;
+    repeated KeyValue labels = 8;
 }
 
 message GenerateWorkspaceTemplateWorkflowTemplateRequest {

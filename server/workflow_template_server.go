@@ -51,20 +51,6 @@ func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 	return res
 }
 
-func mapToKeyValue(input map[string]string) []*api.KeyValue {
-	var result []*api.KeyValue
-	for key, value := range input {
-		keyValue := &api.KeyValue{
-			Key:   key,
-			Value: value,
-		}
-
-		result = append(result, keyValue)
-	}
-
-	return result
-}
-
 func (s *WorkflowTemplateServer) CreateWorkflowTemplate(ctx context.Context, req *api.CreateWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflowtemplates", "")
@@ -104,6 +90,16 @@ func (s *WorkflowTemplateServer) CreateWorkflowTemplateVersion(ctx context.Conte
 	if err != nil {
 		return nil, err
 	}
+
+	if len(workflowTemplate.Labels) != 0 {
+		_, err = client.InsertLabelsBuilder(v1.TypeWorkflowTemplateVersion, workflowTemplate.ID, workflowTemplate.Labels).
+			RunWith(client.DB).
+			Exec()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	req.WorkflowTemplate.Uid = workflowTemplate.UID
 	req.WorkflowTemplate.Name = workflowTemplate.Name
 	req.WorkflowTemplate.Version = workflowTemplate.Version

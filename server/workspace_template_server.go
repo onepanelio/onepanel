@@ -6,6 +6,7 @@ import (
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/server/auth"
+	"github.com/onepanelio/core/server/converter"
 	"time"
 )
 
@@ -19,6 +20,7 @@ func apiWorkspaceTemplate(wt *v1.WorkspaceTemplate) *api.WorkspaceTemplate {
 		Manifest:  wt.Manifest,
 		IsLatest:  wt.IsLatest,
 		CreatedAt: wt.CreatedAt.UTC().Format(time.RFC3339),
+		Labels:    converter.MappingToKeyValue(wt.Labels),
 	}
 
 	if wt.WorkflowTemplate != nil {
@@ -69,6 +71,7 @@ func (s *WorkspaceTemplateServer) CreateWorkspaceTemplate(ctx context.Context, r
 	workspaceTemplate := &v1.WorkspaceTemplate{
 		Name:     req.WorkspaceTemplate.Name,
 		Manifest: req.WorkspaceTemplate.Manifest,
+		Labels:   converter.APIKeyValueToLabel(req.WorkspaceTemplate.Labels),
 	}
 	workspaceTemplate, err = client.CreateWorkspaceTemplate(req.Namespace, workspaceTemplate)
 	if err != nil {
@@ -90,6 +93,7 @@ func (s *WorkspaceTemplateServer) UpdateWorkspaceTemplate(ctx context.Context, r
 	workspaceTemplate := &v1.WorkspaceTemplate{
 		UID:      req.Uid,
 		Manifest: req.WorkspaceTemplate.Manifest,
+		Labels:   converter.APIKeyValueToLabel(req.WorkspaceTemplate.Labels),
 	}
 	workspaceTemplate, err = client.UpdateWorkspaceTemplate(req.Namespace, workspaceTemplate)
 	if err != nil {
