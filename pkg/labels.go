@@ -43,21 +43,6 @@ func (c *Client) ListLabels(resource string, uid string) (labels []*Label, err e
 	return
 }
 
-func GetResourceIdBuilder(resource, uid string) (*sq.SelectBuilder, error) {
-	tableName := TypeToTableName(resource)
-	if tableName == "" {
-		return nil, fmt.Errorf("unknown resources '%v'", resource)
-	}
-
-	sb := sb.Select("id").
-		From(tableName).
-		Where(sq.Eq{
-			"uid": uid,
-		})
-
-	return &sb, nil
-}
-
 func (c *Client) AddLabels(namespace, resource, uid string, keyValues map[string]string) error {
 	tx, err := c.DB.Begin()
 	if err != nil {
@@ -122,10 +107,6 @@ func (c *Client) AddLabels(namespace, resource, uid string, keyValues map[string
 }
 
 func (c *Client) ReplaceLabels(namespace, resource, uid string, keyValues map[string]string) error {
-	if len(keyValues) == 0 {
-		return nil
-	}
-
 	tx, err := c.DB.Begin()
 	if err != nil {
 		return err
@@ -154,10 +135,6 @@ func (c *Client) ReplaceLabels(namespace, resource, uid string, keyValues map[st
 }
 
 func (c *Client) ReplaceLabelsUsingKnownID(namespace, resource string, resourceID uint64, uid string, keyValues map[string]string) error {
-	if len(keyValues) == 0 {
-		return nil
-	}
-
 	tx, err := c.DB.Begin()
 	if err != nil {
 		return err
