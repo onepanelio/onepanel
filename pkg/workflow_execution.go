@@ -733,7 +733,7 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName
 	var (
 		stream    io.ReadCloser
 		s3Client  *s3.Client
-		config    map[string]string
+		config    *NamespaceConfig
 		endOffset int
 	)
 
@@ -747,10 +747,10 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName
 				"ContainerName": containerName,
 				"Error":         err.Error(),
 			}).Error("Can't get configuration.")
-			return nil, util.NewUserError(codes.PermissionDenied, "Can't get configuration.")
+			return nil, util.NewUserError(codes.NotFound, "Can't get configuration.")
 		}
 
-		s3Client, err = c.GetS3Client(namespace, config)
+		s3Client, err = c.GetS3Client(namespace, config.ArtifactRepository.S3)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"Namespace":     namespace,
@@ -759,7 +759,7 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName
 				"ContainerName": containerName,
 				"Error":         err.Error(),
 			}).Error("Can't connect to S3 storage.")
-			return nil, util.NewUserError(codes.PermissionDenied, "Can't connect to S3 storage.")
+			return nil, util.NewUserError(codes.NotFound, "Can't connect to S3 storage.")
 		}
 
 		opts := s3.GetObjectOptions{}
@@ -769,7 +769,7 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName
 		}
 		opts.SetRange(0, int64(endOffset))
 
-		stream, err = s3Client.GetObject(config[ArtifactRepositoryBucketKey], "artifacts/"+namespace+"/"+uid+"/"+podName+"/"+containerName+".log", opts)
+		stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, "artifacts/"+namespace+"/"+uid+"/"+podName+"/"+containerName+".log", opts)
 	} else {
 		stream, err = c.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{
 			Container:  containerName,
@@ -822,7 +822,7 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, uid, podName string) (me
 	var (
 		stream   io.ReadCloser
 		s3Client *s3.Client
-		config   map[string]string
+		config   *NamespaceConfig
 	)
 
 	config, err = c.GetNamespaceConfig(namespace)
@@ -833,10 +833,10 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, uid, podName string) (me
 			"PodName":   podName,
 			"Error":     err.Error(),
 		}).Error("Can't get configuration.")
-		return nil, util.NewUserError(codes.PermissionDenied, "Can't get configuration.")
+		return nil, util.NewUserError(codes.NotFound, "Can't get configuration.")
 	}
 
-	s3Client, err = c.GetS3Client(namespace, config)
+	s3Client, err = c.GetS3Client(namespace, config.ArtifactRepository.S3)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -844,12 +844,12 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, uid, podName string) (me
 			"PodName":   podName,
 			"Error":     err.Error(),
 		}).Error("Can't connect to S3 storage.")
-		return nil, util.NewUserError(codes.PermissionDenied, "Can't connect to S3 storage.")
+		return nil, util.NewUserError(codes.NotFound, "Can't connect to S3 storage.")
 	}
 
 	opts := s3.GetObjectOptions{}
 
-	stream, err = s3Client.GetObject(config[ArtifactRepositoryBucketKey], "artifacts/"+namespace+"/"+uid+"/"+podName+"/sys-metrics.json", opts)
+	stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, "artifacts/"+namespace+"/"+uid+"/"+podName+"/sys-metrics.json", opts)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -969,13 +969,13 @@ func (c *Client) GetArtifact(namespace, uid, key string) (data []byte, err error
 		return
 	}
 
-	s3Client, err := c.GetS3Client(namespace, config)
+	s3Client, err := c.GetS3Client(namespace, config.ArtifactRepository.S3)
 	if err != nil {
 		return
 	}
 
 	opts := s3.GetObjectOptions{}
-	stream, err := s3Client.GetObject(config[ArtifactRepositoryBucketKey], key, opts)
+	stream, err := s3Client.GetObject(config.ArtifactRepository.S3.Bucket, key, opts)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -1000,7 +1000,7 @@ func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
 		return
 	}
 
-	s3Client, err := c.GetS3Client(namespace, config)
+	s3Client, err := c.GetS3Client(namespace, config.ArtifactRepository.S3)
 	if err != nil {
 		return
 	}
@@ -1015,7 +1015,7 @@ func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
 
 	doneCh := make(chan struct{})
 	defer close(doneCh)
-	for objInfo := range s3Client.ListObjectsV2(config[ArtifactRepositoryBucketKey], key, false, doneCh) {
+	for objInfo := range s3Client.ListObjectsV2(config.ArtifactRepository.S3.Bucket, key, false, doneCh) {
 		if objInfo.Key == key {
 			continue
 		}

@@ -490,24 +490,6 @@ type File struct {
 	Directory    bool
 }
 
-type ArtifactRepositoryS3Config struct {
-	S3 struct {
-		Bucket          string
-		Endpoint        string
-		Insecure        string
-		Region          string
-		AccessKeySecret struct {
-			Name string
-			Key  string
-		}
-		SecretKeySecret struct {
-			Name string
-			Key  string
-		}
-		Key string
-	}
-}
-
 // Given a path, returns the parent path, asssuming a '/' delimitor
 // Result does not have a trailing slash.
 // -> a/b/c/d would return a/b/c
