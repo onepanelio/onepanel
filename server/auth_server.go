@@ -76,9 +76,9 @@ func (a *AuthServer) IsValidToken(ctx context.Context, req *api.IsValidTokenRequ
 
 	client := ctx.Value("kubeClient").(*v1.Client)
 
-	_, err2, _ := a.isAuthorized(err, client)
-	if err2 != nil {
-		return nil, err2
+	_, err, _ = a.isAuthorized(err, client)
+	if err != nil {
+		return nil, err
 	}
 
 	config, err := client.GetSystemConfig()
