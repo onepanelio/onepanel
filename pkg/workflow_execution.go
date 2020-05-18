@@ -338,14 +338,8 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 		return nil, err
 	}
 
-	if len(workflow.Labels) > 0 {
-		_, err = c.InsertLabelsBuilder(TypeWorkflowExecution, id, workflow.Labels).
-			RunWith(c.DB).
-			Exec()
-
-		if err != nil {
-			return nil, err
-		}
+	if _, err := c.InsertLabels(TypeWorkflowExecution, id, workflow.Labels); err != nil {
+		return nil, err
 	}
 
 	if createdWorkflow == nil {
@@ -1426,7 +1420,8 @@ func workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, wo
 
 func workflowExecutionsSelectBuilder(namespace, workflowTemplateUID, workflowTemplateVersion string) sq.SelectBuilder {
 	sb := workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, workflowTemplateVersion)
-	sb = sb.Columns("we.id", "we.created_at", "we.uid", "we.name", "we.phase", "we.started_at", "we.finished_at", `wtv.version "workflow_template.version"`)
+	sb = sb.Columns(getWorkflowExecutionColumns("we", "")...).
+		Columns(`wtv.version "workflow_template.version"`)
 
 	return sb
 }

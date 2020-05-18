@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"database/sql"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
@@ -241,15 +242,26 @@ func (c *Client) DeleteLabels(namespace, resource, uid string, keyValues map[str
 	return nil
 }
 
-func (c *Client) InsertLabelsBuilder(resource string, resourceId uint64, keyValues map[string]string) sq.InsertBuilder {
+func (c *Client) InsertLabelsBuilder(resource string, resourceID uint64, keyValues map[string]string) sq.InsertBuilder {
 	sb := sb.Insert("labels").
 		Columns("resource", "resource_id", "key", "value")
 
 	for key, value := range keyValues {
-		sb = sb.Values(resource, resourceId, key, value)
+		sb = sb.Values(resource, resourceID, key, value)
 	}
 
 	return sb
+}
+
+// Inserts the labels for the resource. If no labels are provided, does nothing and returns nil, nil.
+func (c *Client) InsertLabels(resource string, resourceID uint64, keyValues map[string]string) (sql.Result, error) {
+	if len(keyValues) == 0 {
+		return nil, nil
+	}
+
+	return c.InsertLabelsBuilder(resource, resourceID, keyValues).
+		RunWith(c.DB).
+		Exec()
 }
 
 func (c *Client) GetDbLabels(resource string, ids ...uint64) (labels []*Label, err error) {
