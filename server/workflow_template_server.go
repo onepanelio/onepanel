@@ -91,13 +91,8 @@ func (s *WorkflowTemplateServer) CreateWorkflowTemplateVersion(ctx context.Conte
 		return nil, err
 	}
 
-	if len(workflowTemplate.Labels) != 0 {
-		_, err = client.InsertLabelsBuilder(v1.TypeWorkflowTemplateVersion, workflowTemplate.ID, workflowTemplate.Labels).
-			RunWith(client.DB).
-			Exec()
-		if err != nil {
-			return nil, err
-		}
+	if _, err := client.InsertLabels(v1.TypeWorkflowTemplateVersion, workflowTemplate.WorkflowTemplateVersionId, workflowTemplate.Labels); err != nil {
+		return nil, err
 	}
 
 	req.WorkflowTemplate.Uid = workflowTemplate.UID

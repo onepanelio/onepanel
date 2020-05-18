@@ -456,6 +456,7 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 		return nil, err
 	}
 
+	workflowTemplate.WorkflowTemplateVersionId = workflowTemplateVersionId
 	latest, err := c.getArgoWorkflowTemplate(namespace, workflowTemplate.UID, "latest")
 	if err != nil {
 		log.WithFields(log.Fields{
