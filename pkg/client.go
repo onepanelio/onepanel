@@ -1,10 +1,8 @@
 package v1
 
 import (
-	"encoding/base64"
 	"errors"
 	sq "github.com/Masterminds/squirrel"
-	"github.com/ghodss/yaml"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"regexp"
 	"strconv"
@@ -16,15 +14,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-)
-
-const (
-	ArtifactRepositoryEndpointKey       = "artifactRepositoryS3Endpoint"
-	ArtifactRepositoryBucketKey         = "artifactRepositoryS3Bucket"
-	ArtifactRepositoryRegionKey         = "artifactRepositoryS3Region"
-	ArtifactRepositoryInsecureKey       = "artifactRepositoryS3Insecure"
-	ArtifactRepositoryAccessKeyValueKey = "artifactRepositoryS3AccessKey"
-	ArtifactRepositorySecretKeyValueKey = "artifactRepositoryS3SecretKey"
 )
 
 type Config = rest.Config
@@ -75,64 +64,8 @@ func NewClient(config *Config, db *sqlx.DB) (client *Client, err error) {
 	return &Client{Interface: kubeClient, argoprojV1alpha1: argoClient, DB: db}, nil
 }
 
-func (c *Client) GetSystemConfig() (config map[string]string, err error) {
-	namespace := "onepanel"
-	configMap, err := c.GetConfigMap(namespace, "onepanel")
-	if err != nil {
-		return
-	}
-	config = configMap.Data
-
-	secret, err := c.GetSecret(namespace, "onepanel")
-	if err != nil {
-		return
-	}
-	databaseUsername, _ := base64.StdEncoding.DecodeString(secret.Data["databaseUsername"])
-	config["databaseUsername"] = string(databaseUsername)
-	databasePassword, _ := base64.StdEncoding.DecodeString(secret.Data["databasePassword"])
-	config["databasePassword"] = string(databasePassword)
-
-	return
-}
-
-func (c *Client) GetNamespaceConfig(namespace string) (config map[string]string, err error) {
-	configMap, err := c.GetConfigMap(namespace, "onepanel")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"Error":     err.Error(),
-		}).Error("getNamespaceConfig failed getting config map.")
-		return
-	}
-	config = configMap.Data
-	s3Conf := ArtifactRepositoryS3Config{}
-
-	err = yaml.Unmarshal([]byte(configMap.Data["artifactRepository"]), &s3Conf)
-	config[ArtifactRepositoryEndpointKey] = s3Conf.S3.Endpoint
-	config[ArtifactRepositoryBucketKey] = s3Conf.S3.Bucket
-	config[ArtifactRepositoryRegionKey] = s3Conf.S3.Region
-	config[ArtifactRepositoryInsecureKey] = s3Conf.S3.Insecure
-	config[ArtifactRepositoryAccessKeyValueKey] = s3Conf.S3.AccessKeySecret.Key
-	config[ArtifactRepositorySecretKeyValueKey] = s3Conf.S3.SecretKeySecret.Key
-
-	secret, err := c.GetSecret(namespace, "onepanel")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"Error":     err.Error(),
-		}).Error("getNamespaceConfig failed getting secret.")
-		return
-	}
-	accessKey, _ := base64.StdEncoding.DecodeString(secret.Data[ArtifactRepositoryAccessKeyValueKey])
-	config[ArtifactRepositoryAccessKeyValueKey] = string(accessKey)
-	secretKey, _ := base64.StdEncoding.DecodeString(secret.Data[ArtifactRepositorySecretKeyValueKey])
-	config[ArtifactRepositorySecretKeyValueKey] = string(secretKey)
-
-	return
-}
-
-func (c *Client) GetS3Client(namespace string, config map[string]string) (s3Client *s3.Client, err error) {
-	insecure, err := strconv.ParseBool(config[ArtifactRepositoryInsecureKey])
+func (c *Client) GetS3Client(namespace string, config *ArtifactRepositoryS3Config) (s3Client *s3.Client, err error) {
+	insecure, err := strconv.ParseBool(config.Insecure)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -142,10 +75,10 @@ func (c *Client) GetS3Client(namespace string, config map[string]string) (s3Clie
 		return
 	}
 	s3Client, err = s3.NewClient(s3.Config{
-		Endpoint:  config[ArtifactRepositoryEndpointKey],
-		Region:    config[ArtifactRepositoryRegionKey],
-		AccessKey: config[ArtifactRepositoryAccessKeyValueKey],
-		SecretKey: config[ArtifactRepositorySecretKeyValueKey],
+		Endpoint:  config.Endpoint,
+		Region:    config.Region,
+		AccessKey: config.AccessKey,
+		SecretKey: config.Secretkey,
 		InSecure:  insecure,
 	})
 	if err != nil {
