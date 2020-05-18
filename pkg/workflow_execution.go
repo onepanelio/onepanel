@@ -128,6 +128,14 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		},
 	})
 
+	systemConfig, err := c.GetSystemConfig()
+	if err != nil {
+		return err
+	}
+	namespaceConfig, err := c.GetNamespaceConfig(namespace)
+	if err != nil {
+		return err
+	}
 	for i, template := range wf.Spec.Templates {
 		// Do not inject Istio sidecars in workflows
 		if template.Metadata.Annotations == nil {
@@ -155,18 +163,28 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 			},
 		})
 
+		if len(template.Inputs.Artifacts) > 0 {
+			for j, artifact := range template.Inputs.Artifacts {
+				if artifact.S3 != nil && artifact.S3.Key != "" && artifact.S3.Bucket == "" {
+					s3Config := namespaceConfig.ArtifactRepository.S3
+					artifact.S3.Endpoint = s3Config.Endpoint
+					artifact.S3.Bucket = s3Config.Bucket
+					artifact.S3.Region = s3Config.Region
+					artifact.S3.Insecure = ptr.Bool(s3Config.Insecure)
+					artifact.S3.SecretKeySecret = s3Config.SecretKeySecret
+					artifact.S3.AccessKeySecret = s3Config.AccessKeySecret
+					wf.Spec.Templates[i].Inputs.Artifacts[j] = artifact
+				}
+			}
+		}
+
 		//Generate ENV vars from secret, if there is a container present in the workflow
 		//Get template ENV vars, avoid over-writing them with secret values
 		env.AddDefaultEnvVarsToContainer(template.Container)
-
-		config, sysErr := c.GetSystemConfig()
-		if sysErr != nil {
-			return sysErr
-		}
-		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_API_URL", config["ONEPANEL_API_URL"])
-		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_FQDN", config["ONEPANEL_FQDN"])
-		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_DOMAIN", config["ONEPANEL_DOMAIN"])
-		env.PrependEnvVarToContainer(template.Container, "PROVIDER_TYPE", config["PROVIDER_TYPE"])
+		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_API_URL", systemConfig["ONEPANEL_API_URL"])
+		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_FQDN", systemConfig["ONEPANEL_FQDN"])
+		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_DOMAIN", systemConfig["ONEPANEL_DOMAIN"])
+		env.PrependEnvVarToContainer(template.Container, "PROVIDER_TYPE", systemConfig["PROVIDER_TYPE"])
 
 	}
 

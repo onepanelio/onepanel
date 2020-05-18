@@ -3,17 +3,15 @@ package v1
 import (
 	"errors"
 	sq "github.com/Masterminds/squirrel"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"regexp"
-	"strconv"
-
 	argoprojv1alpha1 "github.com/argoproj/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
 	"github.com/jmoiron/sqlx"
 	"github.com/onepanelio/core/pkg/util/s3"
 	log "github.com/sirupsen/logrus"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"regexp"
 )
 
 type Config = rest.Config
@@ -65,21 +63,12 @@ func NewClient(config *Config, db *sqlx.DB) (client *Client, err error) {
 }
 
 func (c *Client) GetS3Client(namespace string, config *ArtifactRepositoryS3Config) (s3Client *s3.Client, err error) {
-	insecure, err := strconv.ParseBool(config.Insecure)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"ConfigMap": config,
-			"Error":     err.Error(),
-		}).Error("getS3Client failed when parsing bool.")
-		return
-	}
 	s3Client, err = s3.NewClient(s3.Config{
 		Endpoint:  config.Endpoint,
 		Region:    config.Region,
 		AccessKey: config.AccessKey,
 		SecretKey: config.Secretkey,
-		InSecure:  insecure,
+		InSecure:  config.Insecure,
 	})
 	if err != nil {
 		log.WithFields(log.Fields{
