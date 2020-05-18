@@ -169,12 +169,14 @@ func (c *Client) ReplaceLabelsUsingKnownID(namespace, resource string, resourceI
 		return err
 	}
 
-	if meta.Labels == nil {
-		meta.Labels = make(map[string]string)
-	}
-	label.MergeLabelsPrefix(meta.Labels, keyValues, label.TagPrefix)
-	if err := c.UpdateK8sLabelResource(namespace, resource, source); err != nil {
-		return err
+	if meta != nil {
+		if meta.Labels == nil {
+			meta.Labels = make(map[string]string)
+		}
+		label.MergeLabelsPrefix(meta.Labels, keyValues, label.TagPrefix)
+		if err := c.UpdateK8sLabelResource(namespace, resource, source); err != nil {
+			return err
+		}
 	}
 
 	return nil

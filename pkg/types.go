@@ -38,7 +38,7 @@ func TypeToTableName(value string) string {
 	case TypeWorkspaceTemplateVersion:
 		return "workspace_template_versions"
 	case TypeWorkspace:
-		return "workspace"
+		return "workspaces"
 	}
 
 	return ""
