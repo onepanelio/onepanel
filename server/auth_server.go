@@ -54,9 +54,9 @@ func (a *AuthServer) IsAuthorized(ctx context.Context, request *api.IsAuthorized
 	}
 	//User auth check
 	client := ctx.Value("kubeClient").(*v1.Client)
-	_, err2, _ := a.isAuthorized(err, client)
-	if err2 != nil {
-		return nil, err2
+	err = a.isValidToken(err, client)
+	if err != nil {
+		return nil, err
 	}
 	//Check the request
 	allowed, err := auth.IsAuthorized(client, request.Namespace, request.Verb, request.Group, request.Resource, request.ResourceName)
@@ -76,7 +76,7 @@ func (a *AuthServer) IsValidToken(ctx context.Context, req *api.IsValidTokenRequ
 
 	client := ctx.Value("kubeClient").(*v1.Client)
 
-	_, err, _ = a.isAuthorized(err, client)
+	err = a.isValidToken(err, client)
 	if err != nil {
 		return nil, err
 	}
@@ -91,26 +91,26 @@ func (a *AuthServer) IsValidToken(ctx context.Context, req *api.IsValidTokenRequ
 	return res, nil
 }
 
-func (a *AuthServer) isAuthorized(err error, client *v1.Client) (*api.IsValidTokenResponse, error, bool) {
+func (a *AuthServer) isValidToken(err error, client *v1.Client) error {
 	namespaces, err := client.ListOnepanelEnabledNamespaces()
 	if err != nil {
 		if err.Error() == "Unauthorized" {
-			return nil, status.Error(codes.Unauthenticated, "Unauthenticated."), true
+			return status.Error(codes.Unauthenticated, "Unauthenticated.")
 		}
-		return nil, err, true
+		return err
 	}
 	if len(namespaces) == 0 {
-		return nil, errors.New("No namespaces for onepanel setup."), true
+		return errors.New("No namespaces for onepanel setup.")
 	}
 	namespace := namespaces[0]
 
 	allowed, err := auth.IsAuthorized(client, "", "get", "", "namespaces", namespace.Name)
 	if err != nil {
-		return nil, err, true
+		return err
 	}
 
 	if !allowed {
-		return nil, status.Error(codes.Unauthenticated, "Unauthenticated."), true
+		return status.Error(codes.Unauthenticated, "Unauthenticated.")
 	}
-	return nil, nil, false
+	return nil
 }
