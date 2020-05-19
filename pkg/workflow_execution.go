@@ -85,21 +85,23 @@ func UnmarshalWorkflows(wfBytes []byte, strict bool) (wfs []wfv1.Workflow, err e
 	return
 }
 
-func addEnvToTemplate(template *wfv1.Template, key string, value string) {
-	//Flag to prevent over-writing user's envs
-	overwriteUserEnv := true
-	for _, templateEnv := range template.Container.Env {
-		if templateEnv.Name == key {
-			overwriteUserEnv = false
-			break
-		}
+// appendArtifactRepositoryConfigIfMissing appends default artifact repository config to artifacts that have a key.
+// Artifacts that contain anything other than key are skipped.
+// It returns a boolean indicating whether additional config was added or not.
+func appendArtifactRepositoryConfigIfMissing(artifact *wfv1.Artifact, namespaceConfig *NamespaceConfig) (appended bool) {
+	if artifact.S3 != nil && artifact.S3.Key != "" && artifact.S3.Bucket == "" {
+		s3Config := namespaceConfig.ArtifactRepository.S3
+		artifact.S3.Endpoint = s3Config.Endpoint
+		artifact.S3.Bucket = s3Config.Bucket
+		artifact.S3.Region = s3Config.Region
+		artifact.S3.Insecure = ptr.Bool(s3Config.Insecure)
+		artifact.S3.SecretKeySecret = s3Config.SecretKeySecret
+		artifact.S3.AccessKeySecret = s3Config.AccessKeySecret
+
+		return true
 	}
-	if overwriteUserEnv {
-		template.Container.Env = append(template.Container.Env, corev1.EnvVar{
-			Name:  key,
-			Value: value,
-		})
-	}
+
+	return false
 }
 
 func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (err error) {
@@ -128,6 +130,14 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		},
 	})
 
+	systemConfig, err := c.GetSystemConfig()
+	if err != nil {
+		return err
+	}
+	namespaceConfig, err := c.GetNamespaceConfig(namespace)
+	if err != nil {
+		return err
+	}
 	for i, template := range wf.Spec.Templates {
 		// Do not inject Istio sidecars in workflows
 		if template.Metadata.Annotations == nil {
@@ -155,19 +165,28 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 			},
 		})
 
+		// Extend artifact credentials if only key is provided
+		for j, artifact := range template.Outputs.Artifacts {
+			if appendArtifactRepositoryConfigIfMissing(&artifact, namespaceConfig) {
+				wf.Spec.Templates[i].Outputs.Artifacts[j] = artifact
+			}
+		}
+
+		for j, artifact := range template.Inputs.Artifacts {
+			if appendArtifactRepositoryConfigIfMissing(&artifact, namespaceConfig) {
+				wf.Spec.Templates[i].Inputs.Artifacts[j] = artifact
+			}
+		}
+
 		//Generate ENV vars from secret, if there is a container present in the workflow
 		//Get template ENV vars, avoid over-writing them with secret values
 		env.AddDefaultEnvVarsToContainer(template.Container)
-
-		config, sysErr := c.GetSystemConfig()
-		if sysErr != nil {
-			return sysErr
-		}
-		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_API_URL", config["ONEPANEL_API_URL"])
-		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_FQDN", config["ONEPANEL_FQDN"])
-		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_DOMAIN", config["ONEPANEL_DOMAIN"])
-		env.PrependEnvVarToContainer(template.Container, "PROVIDER_TYPE", config["PROVIDER_TYPE"])
-
+		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_API_URL", systemConfig["ONEPANEL_API_URL"])
+		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_FQDN", systemConfig["ONEPANEL_FQDN"])
+		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_DOMAIN", systemConfig["ONEPANEL_DOMAIN"])
+		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_PROVIDER_TYPE", systemConfig["PROVIDER_TYPE"])
+		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_RESOURCE_NAMESPACE", "{{workflow.namespace}}")
+		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_RESOURCE_UID", "{{workflow.name}}")
 	}
 
 	return
