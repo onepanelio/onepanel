@@ -818,7 +818,7 @@ func (c *Client) archiveWorkspaceTemplate(namespace, uid string) error {
 	return nil
 }
 
-// WorkspaceTemplateHasRunningWorkspaces returns true if there are non-terminated workspaces that are
+// WorkspaceTemplateHasRunningWorkspaces returns true if there are non-terminated (or terminating) workspaces that are
 // based of this template. False otherwise.
 func (c *Client) WorkspaceTemplateHasRunningWorkspaces(namespace string, uid string) (bool, error) {
 	runningCount := 0
@@ -831,7 +831,7 @@ func (c *Client) WorkspaceTemplateHasRunningWorkspaces(namespace string, uid str
 				"wt.namespace": namespace,
 				"wt.uid":       uid,
 			}, sq.NotEq{
-				"w.phase": "Terminated",
+				"w.phase": []string{"Terminated", "Terminating"},
 			}}).
 		RunWith(c.DB).
 		QueryRow().
