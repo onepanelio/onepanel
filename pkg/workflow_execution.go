@@ -85,23 +85,6 @@ func UnmarshalWorkflows(wfBytes []byte, strict bool) (wfs []wfv1.Workflow, err e
 	return
 }
 
-func addEnvToTemplate(template *wfv1.Template, key string, value string) {
-	//Flag to prevent over-writing user's envs
-	overwriteUserEnv := true
-	for _, templateEnv := range template.Container.Env {
-		if templateEnv.Name == key {
-			overwriteUserEnv = false
-			break
-		}
-	}
-	if overwriteUserEnv {
-		template.Container.Env = append(template.Container.Env, corev1.EnvVar{
-			Name:  key,
-			Value: value,
-		})
-	}
-}
-
 func appendArtifactRepositoryConfigIfMissing(artifact *wfv1.Artifact, namespaceConfig *NamespaceConfig) bool {
 	if artifact.S3 != nil && artifact.S3.Key != "" && artifact.S3.Bucket == "" {
 		s3Config := namespaceConfig.ArtifactRepository.S3

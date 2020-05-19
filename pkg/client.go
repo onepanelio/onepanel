@@ -1,17 +1,14 @@
 package v1
 
 import (
-	"errors"
 	sq "github.com/Masterminds/squirrel"
 	argoprojv1alpha1 "github.com/argoproj/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
 	"github.com/jmoiron/sqlx"
 	"github.com/onepanelio/core/pkg/util/s3"
 	log "github.com/sirupsen/logrus"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"regexp"
 )
 
 type Config = rest.Config
@@ -80,28 +77,4 @@ func (c *Client) GetS3Client(namespace string, config *ArtifactRepositoryS3Confi
 	}
 
 	return
-}
-
-func GetBearerToken(namespace string) (string, error) {
-	kubeConfig := NewConfig()
-	client, err := NewClient(kubeConfig, nil)
-	if err != nil {
-		log.Fatalf("Failed to connect to Kubernetes cluster: %v", err)
-	}
-
-	secrets, err := client.CoreV1().Secrets(namespace).List(v1.ListOptions{})
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"Error":     err.Error(),
-		}).Error("Failed to get default service account token.")
-		return "", err
-	}
-	re := regexp.MustCompile(`^default-token-`)
-	for _, secret := range secrets.Items {
-		if re.Find([]byte(secret.ObjectMeta.Name)) != nil {
-			return string(secret.Data["token"]), nil
-		}
-	}
-	return "", errors.New("could not find a token")
 }
