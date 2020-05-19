@@ -85,7 +85,10 @@ func UnmarshalWorkflows(wfBytes []byte, strict bool) (wfs []wfv1.Workflow, err e
 	return
 }
 
-func appendArtifactRepositoryConfigIfMissing(artifact *wfv1.Artifact, namespaceConfig *NamespaceConfig) bool {
+// appendArtifactRepositoryConfigIfMissing appends default artifact repository config to artifacts that have a key.
+// Artifacts that contain anything other than key are skipped.
+// It returns a boolean indicating whether additional config was added or not.
+func appendArtifactRepositoryConfigIfMissing(artifact *wfv1.Artifact, namespaceConfig *NamespaceConfig) (appended bool) {
 	if artifact.S3 != nil && artifact.S3.Key != "" && artifact.S3.Bucket == "" {
 		s3Config := namespaceConfig.ArtifactRepository.S3
 		artifact.S3.Endpoint = s3Config.Endpoint
