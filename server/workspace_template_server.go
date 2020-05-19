@@ -174,3 +174,19 @@ func (s *WorkspaceTemplateServer) ListWorkspaceTemplateVersions(ctx context.Cont
 		WorkspaceTemplates: workspaceTemplates,
 	}, nil
 }
+
+func (s *WorkspaceTemplateServer) ArchiveWorkspaceTemplate(ctx context.Context, req *api.ArchiveWorkspaceTemplateRequest) (*api.WorkspaceTemplate, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "argoproj.io", "workflowtemplates", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	if err := client.ArchiveWorkspaceTemplate(req.Namespace, req.Uid); err != nil {
+		return nil, err
+	}
+
+	return &api.WorkspaceTemplate{
+		IsArchived: true,
+	}, nil
+}

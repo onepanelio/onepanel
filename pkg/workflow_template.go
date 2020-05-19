@@ -191,6 +191,7 @@ func (c *Client) getWorkflowTemplateById(id uint64) (workflowTemplate *WorkflowT
 }
 
 // @todo remove argoworkflow template here
+// If version is 0, the latest workflow template is fetched.
 func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (workflowTemplate *WorkflowTemplate, err error) {
 	workflowTemplate = &WorkflowTemplate{
 		WorkflowExecutionStatisticReport: &WorkflowExecutionStatisticReport{},
