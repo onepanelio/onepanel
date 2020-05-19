@@ -843,6 +843,10 @@ func (c *Client) WorkspaceTemplateHasRunningWorkspaces(namespace string, uid str
 	return runningCount > 0, nil
 }
 
+// ArchiveWorkspaceTemplate marks the database record as archived and
+// deletes the argo workflow templates associated to the workspace.
+//
+// No checks are made to see if this action is valid, or if there is a database record.
 func (c *Client) ArchiveWorkspaceTemplate(namespace string, uid string) error {
 	if err := c.archiveWorkspaceTemplate(namespace, uid); err != nil {
 		log.WithFields(log.Fields{
