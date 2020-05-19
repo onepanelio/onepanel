@@ -23,12 +23,12 @@
   "paths": {
     "/apis/v1beta1/auth/token": {
       "post": {
-        "operationId": "IsValidToken",
+        "operationId": "IsAuthorized",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/IsValidTokenResponse"
+              "$ref": "#/definitions/IsAuthorizedResponse"
             }
           },
           "default": {
@@ -38,16 +38,6 @@
             }
           }
         },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/TokenWrapper"
-            }
-          }
-        ],
         "tags": [
           "AuthService"
         ]
@@ -2569,6 +2559,15 @@
           "items": {
             "$ref": "#/definitions/Metric"
           }
+        }
+      }
+    },
+    "IsAuthorizedResponse": {
+      "type": "object",
+      "properties": {
+        "authorized": {
+          "type": "boolean",
+          "format": "boolean"
         }
       }
     },
