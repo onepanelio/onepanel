@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"database/sql"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
@@ -41,21 +42,6 @@ func (c *Client) ListLabels(resource string, uid string) (labels []*Label, err e
 	err = c.DB.Select(&labels, query, args...)
 
 	return
-}
-
-func GetResourceIdBuilder(resource, uid string) (*sq.SelectBuilder, error) {
-	tableName := TypeToTableName(resource)
-	if tableName == "" {
-		return nil, fmt.Errorf("unknown resources '%v'", resource)
-	}
-
-	sb := sb.Select("id").
-		From(tableName).
-		Where(sq.Eq{
-			"uid": uid,
-		})
-
-	return &sb, nil
 }
 
 func (c *Client) AddLabels(namespace, resource, uid string, keyValues map[string]string) error {
@@ -133,7 +119,7 @@ func (c *Client) ReplaceLabels(namespace, resource, uid string, keyValues map[st
 		return fmt.Errorf("unknown resources '%v'", resource)
 	}
 
-	resourceId := uint64(0)
+	resourceID := uint64(0)
 	err = sb.Select("id").
 		From(tableName).
 		Where(sq.Eq{
@@ -141,15 +127,25 @@ func (c *Client) ReplaceLabels(namespace, resource, uid string, keyValues map[st
 		}).
 		RunWith(tx).
 		QueryRow().
-		Scan(&resourceId)
+		Scan(&resourceID)
 	if err != nil {
 		return err
 	}
 
+	return c.ReplaceLabelsUsingKnownID(namespace, resource, resourceID, uid, keyValues)
+}
+
+func (c *Client) ReplaceLabelsUsingKnownID(namespace, resource string, resourceID uint64, uid string, keyValues map[string]string) error {
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
 	_, err = sb.Delete("labels").
 		Where(sq.Eq{
 			"resource":    resource,
-			"resource_id": resourceId,
+			"resource_id": resourceID,
 		}).RunWith(tx).
 		Exec()
 	if err != nil {
@@ -157,7 +153,7 @@ func (c *Client) ReplaceLabels(namespace, resource, uid string, keyValues map[st
 	}
 
 	if len(keyValues) > 0 {
-		_, err = c.InsertLabelsBuilder(resource, resourceId, keyValues).
+		_, err = c.InsertLabelsBuilder(resource, resourceID, keyValues).
 			RunWith(tx).
 			Exec()
 		if err != nil {
@@ -173,12 +169,14 @@ func (c *Client) ReplaceLabels(namespace, resource, uid string, keyValues map[st
 		return err
 	}
 
-	if meta.Labels == nil {
-		meta.Labels = make(map[string]string)
-	}
-	label.MergeLabelsPrefix(meta.Labels, keyValues, label.TagPrefix)
-	if err := c.UpdateK8sLabelResource(namespace, resource, source); err != nil {
-		return err
+	if meta != nil {
+		if meta.Labels == nil {
+			meta.Labels = make(map[string]string)
+		}
+		label.MergeLabelsPrefix(meta.Labels, keyValues, label.TagPrefix)
+		if err := c.UpdateK8sLabelResource(namespace, resource, source); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -246,15 +244,26 @@ func (c *Client) DeleteLabels(namespace, resource, uid string, keyValues map[str
 	return nil
 }
 
-func (c *Client) InsertLabelsBuilder(resource string, resourceId uint64, keyValues map[string]string) sq.InsertBuilder {
+func (c *Client) InsertLabelsBuilder(resource string, resourceID uint64, keyValues map[string]string) sq.InsertBuilder {
 	sb := sb.Insert("labels").
 		Columns("resource", "resource_id", "key", "value")
 
 	for key, value := range keyValues {
-		sb = sb.Values(resource, resourceId, key, value)
+		sb = sb.Values(resource, resourceID, key, value)
 	}
 
 	return sb
+}
+
+// Inserts the labels for the resource. If no labels are provided, does nothing and returns nil, nil.
+func (c *Client) InsertLabels(resource string, resourceID uint64, keyValues map[string]string) (sql.Result, error) {
+	if len(keyValues) == 0 {
+		return nil, nil
+	}
+
+	return c.InsertLabelsBuilder(resource, resourceID, keyValues).
+		RunWith(c.DB).
+		Exec()
 }
 
 func (c *Client) GetDbLabels(resource string, ids ...uint64) (labels []*Label, err error) {
@@ -290,6 +299,9 @@ func (c *Client) GetDbLabels(resource string, ids ...uint64) (labels []*Label, e
 	return
 }
 
+// TODO rename Db to be DB per go conventions
+// Returns a map where the key is the id of the resource
+// and the value is the labels as a map[string]string
 func (c *Client) GetDbLabelsMapped(resource string, ids ...uint64) (result map[uint64]map[string]string, err error) {
 	dbLabels, err := c.GetDbLabels(resource, ids...)
 	if err != nil {
@@ -316,6 +328,8 @@ func (c *Client) GetK8sLabelResource(namespace, resource, uid string) (source in
 		return c.getK8sLabelResourceWorkflowExecution(namespace, uid)
 	case TypeCronWorkflow:
 		return c.getK8sLabelResourceCronWorkflow(namespace, uid)
+	case TypeWorkspaceTemplateVersion:
+		return c.getK8sLabelResourceWorkspaceTemplate(namespace, uid)
 	}
 
 	return nil, nil, nil
@@ -368,6 +382,25 @@ func (c *Client) getK8sLabelResourceCronWorkflow(namespace, uid string) (source 
 	return item, &item.ObjectMeta, nil
 }
 
+func (c *Client) getK8sLabelResourceWorkspaceTemplate(namespace, uid string) (source interface{}, result *v1.ObjectMeta, err error) {
+	labelSelect := fmt.Sprintf("%v=%v", label.WorkspaceTemplateVersionUid, uid)
+
+	workflowTemplates, err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).List(v1.ListOptions{
+		LabelSelector: labelSelect,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if workflowTemplates.Items.Len() != 1 {
+		return nil, nil, fmt.Errorf("no argo resource found")
+	}
+
+	item := workflowTemplates.Items[0]
+
+	return item, &item.ObjectMeta, nil
+}
+
 func (c *Client) UpdateK8sLabelResource(namespace, resource string, obj interface{}) error {
 	if resource == TypeWorkflowTemplateVersion {
 		workflowTemplate, ok := obj.(v1alpha1.WorkflowTemplate)
@@ -379,12 +412,12 @@ func (c *Client) UpdateK8sLabelResource(namespace, resource string, obj interfac
 			return err
 		}
 	} else if resource == TypeWorkflowExecution {
-		workflowExecution, ok := obj.(v1alpha1.Workflow)
+		workflowExecution, ok := obj.(*v1alpha1.Workflow)
 		if !ok {
 			return fmt.Errorf("unable to convert object to workflow")
 		}
 
-		if _, err := c.ArgoprojV1alpha1().Workflows(namespace).Update(&workflowExecution); err != nil {
+		if _, err := c.ArgoprojV1alpha1().Workflows(namespace).Update(workflowExecution); err != nil {
 			return err
 		}
 	} else if resource == TypeCronWorkflow {
@@ -394,6 +427,15 @@ func (c *Client) UpdateK8sLabelResource(namespace, resource string, obj interfac
 		}
 
 		if _, err := c.ArgoprojV1alpha1().CronWorkflows(namespace).Update(&cronWorkflow); err != nil {
+			return err
+		}
+	} else if resource == TypeWorkspaceTemplateVersion {
+		workflowTemplate, ok := obj.(v1alpha1.WorkflowTemplate)
+		if !ok {
+			return fmt.Errorf("unable to convert object to WorkflowTemplate")
+		}
+
+		if _, err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Update(&workflowTemplate); err != nil {
 			return err
 		}
 	}

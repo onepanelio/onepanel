@@ -20,15 +20,15 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
+func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, *WorkflowTemplateVersion, error) {
 	uid, err := uid2.GenerateUID(workflowTemplate.Name)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	workflowTemplate.UID = uid
 	tx, err := c.DB.Begin()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer tx.Rollback()
 
@@ -45,12 +45,12 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		RunWith(tx).
 		QueryRow().Scan(&workflowTemplate.ID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	versionUID := strconv.FormatInt(versionUnix, 10)
 
-	workflowTemplateVersion := WorkflowTemplateVersion{}
+	workflowTemplateVersion := &WorkflowTemplateVersion{}
 	err = sb.Insert("workflow_template_versions").
 		SetMap(sq.Eq{
 			"uid":                  versionUID,
@@ -61,9 +61,10 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		}).
 		Suffix("RETURNING id").
 		RunWith(tx).
-		QueryRow().Scan(&workflowTemplateVersion.ID)
+		QueryRow().
+		Scan(&workflowTemplateVersion.ID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if len(workflowTemplate.Labels) > 0 {
@@ -72,31 +73,38 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 			Exec()
 
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
 	argoWft, err := createArgoWorkflowTemplate(workflowTemplate, versionUnix)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	argoWft.Labels[label.WorkflowTemplateVersionUid] = versionUID
+
+	if workflowTemplate.Resource != nil && workflowTemplate.ResourceUID != nil {
+		if *workflowTemplate.Resource == TypeWorkspaceTemplate {
+			argoWft.Labels[label.WorkspaceTemplateVersionUid] = *workflowTemplate.ResourceUID
+		}
+	}
+
 	argoWft, err = c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Create(argoWft)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if err = tx.Commit(); err != nil {
 		if err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Delete(argoWft.Name, &v1.DeleteOptions{}); err != nil {
 			log.Printf("Unable to delete argo workflow template")
 		}
-		return nil, err
+		return nil, nil, err
 	}
 
 	workflowTemplate.Version = versionUnix
 
-	return workflowTemplate, nil
+	return workflowTemplate, workflowTemplateVersion, nil
 }
 
 func (c *Client) workflowTemplatesSelectBuilder(namespace string) sq.SelectBuilder {
@@ -183,6 +191,7 @@ func (c *Client) getWorkflowTemplateById(id uint64) (workflowTemplate *WorkflowT
 }
 
 // @todo remove argoworkflow template here
+// If version is 0, the latest workflow template is fetched.
 func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (workflowTemplate *WorkflowTemplate, err error) {
 	workflowTemplate = &WorkflowTemplate{
 		WorkflowExecutionStatisticReport: &WorkflowExecutionStatisticReport{},
@@ -378,7 +387,7 @@ func (c *Client) CreateWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
 	}
 
-	workflowTemplate, err := c.createWorkflowTemplate(namespace, workflowTemplate)
+	workflowTemplate, _, err := c.createWorkflowTemplate(namespace, workflowTemplate)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":        namespace,
@@ -442,20 +451,13 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 		}).
 		Suffix("RETURNING id").
 		RunWith(tx).
-		QueryRow().Scan(&workflowTemplateVersionId)
+		QueryRow().
+		Scan(&workflowTemplateVersionId)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(workflowTemplate.Labels) != 0 {
-		_, err = c.InsertLabelsBuilder(TypeWorkflowTemplateVersion, workflowTemplateVersionId, workflowTemplate.Labels).
-			RunWith(tx).
-			Exec()
-		if err != nil {
-			return nil, err
-		}
-	}
-
+	workflowTemplate.WorkflowTemplateVersionId = workflowTemplateVersionId
 	latest, err := c.getArgoWorkflowTemplate(namespace, workflowTemplate.UID, "latest")
 	if err != nil {
 		log.WithFields(log.Fields{

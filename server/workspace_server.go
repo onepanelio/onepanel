@@ -72,8 +72,8 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 		WorkspaceTemplate: &v1.WorkspaceTemplate{
 			UID:     req.Body.WorkspaceTemplateUid,
 			Version: req.Body.WorkspaceTemplateVersion,
-			Labels:  converter.APIKeyValueToLabel(req.Body.Labels),
 		},
+		Labels: converter.APIKeyValueToLabel(req.Body.Labels),
 	}
 
 	for _, param := range req.Body.Parameters {

@@ -9,9 +9,11 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/env"
+	"github.com/onepanelio/core/pkg/util/label"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	networking "istio.io/api/networking/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
@@ -440,6 +442,8 @@ func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	defer tx.Rollback()
 
 	workspaceTemplate.WorkflowTemplate.IsSystem = true
+	workspaceTemplate.WorkflowTemplate.Resource = ptr.String(TypeWorkspaceTemplate)
+	workspaceTemplate.WorkflowTemplate.ResourceUID = ptr.String(uid)
 	workspaceTemplate.WorkflowTemplate, err = c.CreateWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate)
 	if err != nil {
 		return nil, err
@@ -462,18 +466,30 @@ func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 		return nil, util.NewUserErrorWrap(err, "Workspace template")
 	}
 
-	_, err = sb.Insert("workspace_template_versions").
+	workspaceTemplateVersionID := uint64(0)
+	err = sb.Insert("workspace_template_versions").
 		SetMap(sq.Eq{
 			"version":               workspaceTemplate.Version,
 			"is_latest":             workspaceTemplate.IsLatest,
 			"manifest":              workspaceTemplate.Manifest,
 			"workspace_template_id": workspaceTemplate.ID,
 		}).
+		Suffix("RETURNING id").
 		RunWith(tx).
-		Exec()
+		QueryRow().
+		Scan(&workspaceTemplateVersionID)
 	if err != nil {
 		_, err := c.ArchiveWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID)
 		return nil, err
+	}
+
+	if len(workspaceTemplate.Labels) != 0 {
+		_, err = c.InsertLabelsBuilder(TypeWorkspaceTemplateVersion, workspaceTemplateVersionID, workspaceTemplate.Labels).
+			RunWith(tx).
+			Exec()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -485,7 +501,7 @@ func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 }
 
 func (c *Client) workspaceTemplatesSelectBuilder(namespace string) sq.SelectBuilder {
-	sb := sb.Select("wt.id", "wt.created_at", "wt.uid", "wt.name", `wt.workflow_template_id "workflow_template.id"`).
+	sb := sb.Select(getWorkspaceTemplateColumns("wt", "")...).
 		From("workspace_templates wt").
 		Where(sq.Eq{
 			"wt.namespace": namespace,
@@ -496,7 +512,7 @@ func (c *Client) workspaceTemplatesSelectBuilder(namespace string) sq.SelectBuil
 
 func (c *Client) workspaceTemplateVersionsSelectBuilder(namespace, uid string) sq.SelectBuilder {
 	sb := c.workspaceTemplatesSelectBuilder(namespace).
-		Columns("wtv.created_at \"created_at\"", "wtv.version", "wtv.manifest", "wft.id \"workflow_template.id\"", "wft.uid \"workflow_template.uid\"", "wftv.version \"workflow_template.version\"", "wftv.manifest \"workflow_template.manifest\"").
+		Columns("wtv.id \"workspace_template_version_id\"", "wtv.created_at \"created_at\"", "wtv.version", "wtv.manifest", "wft.id \"workflow_template.id\"", "wft.uid \"workflow_template.uid\"", "wftv.version \"workflow_template.version\"", "wftv.manifest \"workflow_template.manifest\"").
 		Join("workspace_template_versions wtv ON wtv.workspace_template_id = wt.id").
 		Join("workflow_templates wft ON wft.id = wt.workflow_template_id").
 		Join("workflow_template_versions wftv ON wftv.workflow_template_id = wft.id").
@@ -610,6 +626,7 @@ func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 }
 
 // GetWorkspaceTemplate return a workspaceTemplate and its corresponding workflowTemplate
+// if version is 0, the latest version is returned.
 func (c *Client) GetWorkspaceTemplate(namespace, uid string, version int64) (workspaceTemplate *WorkspaceTemplate, err error) {
 	workspaceTemplate = &WorkspaceTemplate{}
 	sb := c.workspaceTemplateVersionsSelectBuilder(namespace, uid).
@@ -661,6 +678,7 @@ func (c *Client) UpdateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	}
 	defer tx.Rollback()
 
+	updatedWorkflowTemplate.Labels = workspaceTemplate.Labels
 	workflowTemplateVersion, err := c.CreateWorkflowTemplateVersion(namespace, updatedWorkflowTemplate)
 	if err != nil {
 		return nil, err
@@ -680,17 +698,29 @@ func (c *Client) UpdateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 		return nil, err
 	}
 
-	_, err = sb.Insert("workspace_template_versions").
+	workspaceTemplateVersionID := uint64(0)
+	err = sb.Insert("workspace_template_versions").
 		SetMap(sq.Eq{
 			"version":               workspaceTemplate.Version,
 			"is_latest":             workspaceTemplate.IsLatest,
 			"manifest":              workspaceTemplate.Manifest,
 			"workspace_template_id": workspaceTemplate.ID,
 		}).
+		Suffix("RETURNING id").
 		RunWith(tx).
-		Exec()
+		QueryRow().
+		Scan(&workspaceTemplateVersionID)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(workspaceTemplate.Labels) != 0 {
+		_, err = c.InsertLabelsBuilder(TypeWorkspaceTemplateVersion, workspaceTemplateVersionID, workspaceTemplate.Labels).
+			RunWith(tx).
+			Exec()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -702,6 +732,9 @@ func (c *Client) UpdateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 
 func (c *Client) ListWorkspaceTemplates(namespace string, paginator *pagination.PaginationRequest) (workspaceTemplates []*WorkspaceTemplate, err error) {
 	sb := c.workspaceTemplatesSelectBuilder(namespace).
+		Where(sq.Eq{
+			"wt.is_archived": false,
+		}).
 		OrderBy("wt.created_at DESC")
 	sb = *paginator.ApplyToSelect(&sb)
 
@@ -733,6 +766,19 @@ func (c *Client) ListWorkspaceTemplateVersions(namespace, uid string) (workspace
 		return
 	}
 
+	ids := WorkspaceTemplatesToVersionIds(workspaceTemplates)
+
+	labelsMap, err := c.GetDbLabelsMapped(TypeWorkspaceTemplateVersion, ids...)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, workspaceTemplate := range workspaceTemplates {
+		if labels, ok := labelsMap[workspaceTemplate.WorkspaceTemplateVersionID]; ok {
+			workspaceTemplate.Labels = labels
+		}
+	}
+
 	return
 }
 
@@ -740,10 +786,67 @@ func (c *Client) CountWorkspaceTemplates(namespace string) (count int, err error
 	err = sb.Select("count(*)").
 		From("workspace_templates wt").
 		Where(sq.Eq{
-			"wt.namespace": namespace,
-		}).RunWith(c.DB).
+			"wt.namespace":   namespace,
+			"wt.is_archived": false,
+		}).
+		RunWith(c.DB).
 		QueryRow().
 		Scan(&count)
 
 	return
+}
+
+func (c *Client) archiveWorkspaceTemplate(namespace, uid string) error {
+	query, args, err := sb.Update("workspace_templates").
+		Set("is_archived", true).
+		Where(sq.Eq{
+			"uid":       uid,
+			"namespace": namespace,
+		}).
+		ToSql()
+
+	if err != nil {
+		return err
+	}
+
+	if _, err := c.DB.Exec(query, args...); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Client) ArchiveWorkspaceTemplate(namespace string, uid string) error {
+	workspaceTemplate, err := c.GetWorkspaceTemplate(namespace, uid, 0)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"UID":       uid,
+			"Error":     err.Error(),
+		}).Error("Get Workspace Template failed.")
+		return util.NewUserError(codes.Unknown, "Unable to get workspace template.")
+	}
+	if workspaceTemplate == nil {
+		return util.NewUserError(codes.NotFound, "Workspace template not found.")
+	}
+
+	if err := c.archiveWorkspaceTemplate(namespace, uid); err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"UID":       uid,
+			"Error":     err.Error(),
+		}).Error("Archive Workspace Template failed.")
+		return util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
+	}
+
+	// The workflow templates associated with a workspace template share the same uid.
+	labelSelector := label.WorkflowTemplateUid + "=" + uid
+	err = c.ArgoprojV1alpha1().WorkflowTemplates(namespace).DeleteCollection(nil, metav1.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

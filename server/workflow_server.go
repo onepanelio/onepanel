@@ -36,6 +36,7 @@ func apiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecu
 		Name:      wf.Name,
 		Phase:     string(wf.Phase),
 		Manifest:  wf.Manifest,
+		Labels:    converter.MappingToKeyValue(wf.Labels),
 	}
 
 	if wf.StartedAt != nil && !wf.StartedAt.IsZero() {
@@ -154,6 +155,14 @@ func (s *WorkflowServer) GetWorkflowExecution(ctx context.Context, req *api.GetW
 	wf, err := client.GetWorkflowExecution(req.Namespace, req.Uid)
 	if err != nil {
 		return nil, err
+	}
+
+	mappedLabels, err := client.GetDbLabelsMapped(v1.TypeWorkflowExecution, wf.ID)
+	if err != nil {
+		return nil, err
+	}
+	if labels, ok := mappedLabels[wf.ID]; ok {
+		wf.Labels = labels
 	}
 
 	return apiWorkflowExecution(wf), nil

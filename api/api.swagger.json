@@ -1815,6 +1815,42 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/workspace_templates/{uid}/archive": {
+      "put": {
+        "operationId": "ArchiveWorkspaceTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkspaceTemplate"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceTemplateService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workspace_templates/{uid}/versions": {
       "get": {
         "operationId": "ListWorkspaceTemplateVersions",
@@ -3167,6 +3203,16 @@
         },
         "workflowTemplate": {
           "$ref": "#/definitions/WorkflowTemplate"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/KeyValue"
+          }
+        },
+        "isArchived": {
+          "type": "boolean",
+          "format": "boolean"
         }
       }
     },
