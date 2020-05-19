@@ -102,6 +102,22 @@ func addEnvToTemplate(template *wfv1.Template, key string, value string) {
 	}
 }
 
+func appendArtifactRepositoryConfigIfMissing(artifact *wfv1.Artifact, namespaceConfig *NamespaceConfig) bool {
+	if artifact.S3 != nil && artifact.S3.Key != "" && artifact.S3.Bucket == "" {
+		s3Config := namespaceConfig.ArtifactRepository.S3
+		artifact.S3.Endpoint = s3Config.Endpoint
+		artifact.S3.Bucket = s3Config.Bucket
+		artifact.S3.Region = s3Config.Region
+		artifact.S3.Insecure = ptr.Bool(s3Config.Insecure)
+		artifact.S3.SecretKeySecret = s3Config.SecretKeySecret
+		artifact.S3.AccessKeySecret = s3Config.AccessKeySecret
+
+		return true
+	}
+
+	return false
+}
+
 func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (err error) {
 	if opts.PodGCStrategy == nil {
 		if wf.Spec.PodGC == nil {
@@ -163,16 +179,18 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 			},
 		})
 
+		// Extend artifact credentials if only key is provided
+		if len(template.Outputs.Artifacts) > 0 {
+			for j, artifact := range template.Outputs.Artifacts {
+				if appendArtifactRepositoryConfigIfMissing(&artifact, namespaceConfig) {
+					wf.Spec.Templates[i].Outputs.Artifacts[j] = artifact
+				}
+			}
+		}
+
 		if len(template.Inputs.Artifacts) > 0 {
 			for j, artifact := range template.Inputs.Artifacts {
-				if artifact.S3 != nil && artifact.S3.Key != "" && artifact.S3.Bucket == "" {
-					s3Config := namespaceConfig.ArtifactRepository.S3
-					artifact.S3.Endpoint = s3Config.Endpoint
-					artifact.S3.Bucket = s3Config.Bucket
-					artifact.S3.Region = s3Config.Region
-					artifact.S3.Insecure = ptr.Bool(s3Config.Insecure)
-					artifact.S3.SecretKeySecret = s3Config.SecretKeySecret
-					artifact.S3.AccessKeySecret = s3Config.AccessKeySecret
+				if appendArtifactRepositoryConfigIfMissing(&artifact, namespaceConfig) {
 					wf.Spec.Templates[i].Inputs.Artifacts[j] = artifact
 				}
 			}
