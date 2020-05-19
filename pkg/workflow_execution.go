@@ -163,19 +163,15 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		})
 
 		// Extend artifact credentials if only key is provided
-		if len(template.Outputs.Artifacts) > 0 {
-			for j, artifact := range template.Outputs.Artifacts {
-				if appendArtifactRepositoryConfigIfMissing(&artifact, namespaceConfig) {
-					wf.Spec.Templates[i].Outputs.Artifacts[j] = artifact
-				}
+		for j, artifact := range template.Outputs.Artifacts {
+			if appendArtifactRepositoryConfigIfMissing(&artifact, namespaceConfig) {
+				wf.Spec.Templates[i].Outputs.Artifacts[j] = artifact
 			}
 		}
 
-		if len(template.Inputs.Artifacts) > 0 {
-			for j, artifact := range template.Inputs.Artifacts {
-				if appendArtifactRepositoryConfigIfMissing(&artifact, namespaceConfig) {
-					wf.Spec.Templates[i].Inputs.Artifacts[j] = artifact
-				}
+		for j, artifact := range template.Inputs.Artifacts {
+			if appendArtifactRepositoryConfigIfMissing(&artifact, namespaceConfig) {
+				wf.Spec.Templates[i].Inputs.Artifacts[j] = artifact
 			}
 		}
 
