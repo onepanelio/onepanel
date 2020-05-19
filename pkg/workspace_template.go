@@ -818,20 +818,32 @@ func (c *Client) archiveWorkspaceTemplate(namespace, uid string) error {
 	return nil
 }
 
-func (c *Client) ArchiveWorkspaceTemplate(namespace string, uid string) error {
-	workspaceTemplate, err := c.GetWorkspaceTemplate(namespace, uid, 0)
+// WorkspaceTemplateHasRunningWorkspaces returns true if there are non-terminated workspaces that are
+// based of this template. False otherwise.
+func (c *Client) WorkspaceTemplateHasRunningWorkspaces(namespace string, uid string) (bool, error) {
+	runningCount := 0
+
+	err := sb.Select("COUNT(*)").
+		From("workspaces w").
+		Join("workspace_templates wt ON wt.id = w.workspace_template_id").
+		Where(sq.And{
+			sq.Eq{
+				"wt.namespace": namespace,
+				"wt.uid":       uid,
+			}, sq.NotEq{
+				"w.phase": "Terminated",
+			}}).
+		RunWith(c.DB).
+		QueryRow().
+		Scan(&runningCount)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"UID":       uid,
-			"Error":     err.Error(),
-		}).Error("Get Workspace Template failed.")
-		return util.NewUserError(codes.Unknown, "Unable to get workspace template.")
-	}
-	if workspaceTemplate == nil {
-		return util.NewUserError(codes.NotFound, "Workspace template not found.")
+		return false, err
 	}
 
+	return runningCount > 0, nil
+}
+
+func (c *Client) ArchiveWorkspaceTemplate(namespace string, uid string) error {
 	if err := c.archiveWorkspaceTemplate(namespace, uid); err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -843,7 +855,7 @@ func (c *Client) ArchiveWorkspaceTemplate(namespace string, uid string) error {
 
 	// The workflow templates associated with a workspace template share the same uid.
 	labelSelector := label.WorkflowTemplateUid + "=" + uid
-	err = c.ArgoprojV1alpha1().WorkflowTemplates(namespace).DeleteCollection(nil, metav1.ListOptions{
+	err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).DeleteCollection(nil, metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 	if err != nil {

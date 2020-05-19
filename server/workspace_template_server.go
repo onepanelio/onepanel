@@ -182,6 +182,22 @@ func (s *WorkspaceTemplateServer) ArchiveWorkspaceTemplate(ctx context.Context, 
 		return nil, err
 	}
 
+	workspaceTemplate, err := client.GetWorkspaceTemplate(req.Namespace, req.Uid, 0)
+	if err != nil {
+		return nil, util.NewUserError(codes.Unknown, "Unable to get workspace template.")
+	}
+	if workspaceTemplate == nil {
+		return nil, util.NewUserError(codes.NotFound, "Workspace template not found.")
+	}
+
+	hasRunning, err := client.WorkspaceTemplateHasRunningWorkspaces(req.Namespace, req.Uid)
+	if err != nil {
+		return nil, util.NewUserError(codes.Unknown, "Unable to get check running workspaces")
+	}
+	if hasRunning {
+		return nil, util.NewUserError(codes.FailedPrecondition, "Unable to archive workspace template. There are running workspaces that use it.")
+	}
+
 	if err := client.ArchiveWorkspaceTemplate(req.Namespace, req.Uid); err != nil {
 		return nil, err
 	}
