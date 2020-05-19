@@ -185,8 +185,9 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_API_URL", systemConfig["ONEPANEL_API_URL"])
 		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_FQDN", systemConfig["ONEPANEL_FQDN"])
 		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_DOMAIN", systemConfig["ONEPANEL_DOMAIN"])
-		env.PrependEnvVarToContainer(template.Container, "PROVIDER_TYPE", systemConfig["PROVIDER_TYPE"])
-
+		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_PROVIDER_TYPE", systemConfig["PROVIDER_TYPE"])
+		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_RESOURCE_NAMESPACE", "{{workflow.namespace}}")
+		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_RESOURCE_UID", "{{workflow.name}}")
 	}
 
 	return
