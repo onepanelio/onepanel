@@ -180,14 +180,7 @@ func (s *WorkflowServer) WatchWorkflowExecution(req *api.WatchWorkflowExecutionR
 		return err
 	}
 
-	wf := &v1.WorkflowExecution{}
-	ticker := time.NewTicker(time.Second)
-	for {
-		select {
-		case wf = <-watcher:
-		case <-ticker.C:
-		}
-
+	for wf := range watcher {
 		if wf == nil {
 			break
 		}
