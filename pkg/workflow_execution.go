@@ -1430,7 +1430,7 @@ func injectWorkflowExecutionStatusCaller(wf *wfv1.Workflow, phase wfv1.NodePhase
 	if err != nil {
 		return err
 	}
-	containerTemplate, err := getCURLNodeTemplate("sys-send-status", http.MethodPost, curlPath, string(statusBytes), wfv1.Inputs{})
+	containerTemplate, err := getCURLNodeTemplate("sys-send-status", http.MethodPut, curlPath, string(statusBytes), wfv1.Inputs{})
 	if err != nil {
 		return err
 	}
