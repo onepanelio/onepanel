@@ -626,7 +626,8 @@ func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, 
 	}
 
 	//clean up workflow templates
-	workflowTemplateName := uid + "-v" + strconv.FormatInt(workflowTemplate.Version, 10)
+	wfTempVer := strconv.FormatInt(workflowTemplate.Version, 10)
+	workflowTemplateName := uid + "-v" + wfTempVer
 	err = c.DeleteWorkflowTemplate(namespace, workflowTemplateName)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -671,6 +672,45 @@ func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, 
 			return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
 		}
 	}
+
+	//workflow executions
+	paginator := pagination.NewRequest(0, 100)
+	for {
+		wfs, err := c.ListWorkflowExecutions(namespace, uid, wfTempVer, &paginator)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"Namespace": namespace,
+				"UID":       uid,
+				"Error":     err.Error(),
+			}).Error("Get Workflow Executions failed.")
+			return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
+		}
+		if len(wfs) == 0 {
+			break
+		}
+		for _, wf := range wfs {
+			err = c.DeleteWorkflowExecution(namespace, wf.UID)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"Error":     err.Error(),
+				}).Error("Delete Workflow Execution k8s failed.")
+				return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
+			}
+			err = c.DeleteWorkflowExecutionDb(wf.UID)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"Error":     err.Error(),
+				}).Error("Delete Workflow Execution DB failed.")
+				return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
+			}
+		}
+	}
+
+	archived, err = c.archiveWorkflowTemplate(namespace, uid) //db only
 	if !archived || err != nil {
 		if err != nil {
 			log.WithFields(log.Fields{

@@ -1463,3 +1463,24 @@ func (c *Client) getWorkflowExecutionAndTemplate(namespace string, uid string) (
 
 	return
 }
+
+func (c *Client) DeleteWorkflowExecution(namespace, uid string) error {
+	err := c.ArgoprojV1alpha1().Workflows(namespace).Delete(uid, nil)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+func (c *Client) DeleteWorkflowExecutionDb(workflowUid string) error {
+	query := `DELETE FROM workflow_executions
+			 WHERE uid = $1`
+
+	if _, err := c.DB.Exec(query, workflowUid); err != nil {
+		return err
+	}
+	return nil
+}
