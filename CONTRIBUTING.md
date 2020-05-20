@@ -119,3 +119,35 @@ This should connect your developing core to the minikube db.
 
 After this, build main.go and run the executable.
 - Or use your IDE equivalent
+
+## Code Structure & Organization
+
+```shell script
+utils/*.go
+```
+
+Utils are intended to stand-alone.
+- They do not track state
+- They are meant to mutate metadata
+
+Do not add onepanel specific code in here.
+- Such as "Client"
+
+```shell script
+pkg/*.go
+```
+Code here has to be package friendly.
+- Meaning, you can pull the code out into it's own package as needed
+
+That's why you see
+```shell script
+workspace_template.go
+workspace_template_test.go
+workspace_template_types.go
+```
+These can be pulled out into their own package or into a new v2 directory if needed.
+
+You can add
+- kubernetes specific operations
+- database specific operations
+- types
