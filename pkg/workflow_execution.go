@@ -1421,6 +1421,8 @@ func injectInitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, workflowTemp
 	return nil
 }
 
+// injectWorkflowExecutionStatusCaller injects a template that calls a webhook to update execution status
+// It injects the template as an entrypoint template and makes the current entrypoint template a dependent.
 func injectWorkflowExecutionStatusCaller(wf *wfv1.Workflow, phase wfv1.NodePhase) error {
 	curlPath := "/apis/v1beta1/{{workflow.namespace}}/workflow_executions/{{workflow.name}}/status"
 	status := WorkflowExecutionStatus{

@@ -455,6 +455,7 @@ type WorkflowExecution struct {
 	Labels           map[string]string
 }
 
+// TODO: reference this in WorkflowExecution
 type WorkflowExecutionStatus struct {
 	Phase      wfv1.NodePhase `json:"phase"`
 	StartedAt  *time.Time     `db:"started_at" json:"startedAt"`
