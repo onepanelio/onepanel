@@ -456,9 +456,9 @@ type WorkflowExecution struct {
 }
 
 type WorkflowExecutionStatus struct {
-	Phase      wfv1.NodePhase
-	StartedAt  *time.Time `db:"started_at"`
-	FinishedAt *time.Time `db:"finished_at"`
+	Phase      wfv1.NodePhase `json:"phase"`
+	StartedAt  *time.Time     `db:"started_at" json:"startedAt"`
+	FinishedAt *time.Time     `db:"finished_at" json:"finishedAt"`
 }
 
 func (we *WorkflowExecution) LoadParametersFromBytes() ([]Parameter, error) {
