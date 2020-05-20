@@ -455,6 +455,12 @@ type WorkflowExecution struct {
 	Labels           map[string]string
 }
 
+type WorkflowExecutionStatus struct {
+	Phase      wfv1.NodePhase
+	StartedAt  *time.Time `db:"started_at"`
+	FinishedAt *time.Time `db:"finished_at"`
+}
+
 func (we *WorkflowExecution) LoadParametersFromBytes() ([]Parameter, error) {
 	loadedParameters := make([]Parameter, 0)
 
