@@ -13,6 +13,7 @@ import (
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"io"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/watch"
 	"net/http"
 	"strconv"
 	"strings"
@@ -658,12 +659,46 @@ func (c *Client) WatchWorkflowExecution(namespace, uid string) (<-chan *Workflow
 	go func() {
 		var workflow *wfv1.Workflow
 		ok := true
+		var next watch.Event
 
 		for {
 			select {
-			case next := <-watcher.ResultChan():
+			case next = <-watcher.ResultChan():
+				// -------
+
+				if next.Type == "" {
+					workflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Get(uid, metav1.GetOptions{})
+					if err != nil {
+						log.WithFields(log.Fields{
+							"Namespace": namespace,
+							"UID":       uid,
+							"Workflow":  workflow,
+							"Error":     err.Error(),
+						}).Error("Unable to get workflow.")
+					}
+
+					if workflow.Status.Phase == wfv1.NodeRunning {
+						watcher, err = c.ArgoprojV1alpha1().Workflows(namespace).Watch(metav1.ListOptions{
+							FieldSelector: fieldSelector.String(),
+						})
+						if err != nil {
+							log.WithFields(log.Fields{
+								"Namespace": namespace,
+								"UID":       uid,
+								"Error":     err.Error(),
+							}).Error("Watch Workflow error.")
+						} else {
+							continue
+						}
+					}
+
+				}
+
+				// -------
 				workflow, ok = next.Object.(*wfv1.Workflow)
 			case <-ticker.C:
+				time.Sleep(time.Millisecond * 200)
+				continue
 			}
 
 			if workflow == nil && ok {
@@ -686,6 +721,10 @@ func (c *Client) WatchWorkflowExecution(namespace, uid string) (<-chan *Workflow
 				if workflow == nil {
 					break
 				}
+			}
+
+			if workflow == nil {
+				log.Printf("We hit a bad spot where the workflow is nil")
 			}
 
 			manifest, err := json.Marshal(workflow)
