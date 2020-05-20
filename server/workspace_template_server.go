@@ -4,9 +4,11 @@ import (
 	"context"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
+	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/onepanelio/core/server/converter"
+	"google.golang.org/grpc/codes"
 	"time"
 )
 
@@ -180,6 +182,22 @@ func (s *WorkspaceTemplateServer) ArchiveWorkspaceTemplate(ctx context.Context, 
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "argoproj.io", "workflowtemplates", "")
 	if err != nil || !allowed {
 		return nil, err
+	}
+
+	workspaceTemplate, err := client.GetWorkspaceTemplate(req.Namespace, req.Uid, 0)
+	if err != nil {
+		return nil, util.NewUserError(codes.Unknown, "Unable to get workspace template.")
+	}
+	if workspaceTemplate == nil {
+		return nil, util.NewUserError(codes.NotFound, "Workspace template not found.")
+	}
+
+	hasRunning, err := client.WorkspaceTemplateHasRunningWorkspaces(req.Namespace, req.Uid)
+	if err != nil {
+		return nil, util.NewUserError(codes.Unknown, "Unable to get check running workspaces")
+	}
+	if hasRunning {
+		return nil, util.NewUserError(codes.FailedPrecondition, "Unable to archive workspace template. There are running workspaces that use it.")
 	}
 
 	if err := client.ArchiveWorkspaceTemplate(req.Namespace, req.Uid); err != nil {
