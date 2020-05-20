@@ -611,7 +611,11 @@ func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 		return nil, err
 	}
 	if existingWorkspaceTemplate != nil {
-		return nil, util.NewUserError(codes.AlreadyExists, "Workspace template already exists.")
+		message := fmt.Sprintf("Workspace template with the name '%v' already exists", workspaceTemplate.Name)
+		if existingWorkspaceTemplate.IsArchived {
+			message = fmt.Sprintf("An archived workspace template with the name '%v' already exists", workspaceTemplate.Name)
+		}
+		return nil, util.NewUserError(codes.AlreadyExists, message)
 	}
 
 	workspaceTemplate.WorkflowTemplate, err = c.generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate)
