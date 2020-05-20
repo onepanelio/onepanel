@@ -509,43 +509,25 @@ func (c *Client) createCronWorkflow(namespace string, workflowTemplateId *uint64
 }
 
 func (c *Client) TerminateCronWorkflow(namespace, uid string) (err error) {
-	query, args, err := sb.Select(cronWorkflowColumns("wtv.version")...).
-		From("cron_workflows cw").
-		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
-		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
-		Where(sq.Eq{
-			"wt.namespace": namespace,
-			"cw.name":      uid,
-		}).
-		ToSql()
-
-	cronWorkflow := &CronWorkflow{}
-	if err := c.DB.Get(cronWorkflow, query, args...); err != nil {
+	err, cronWorkflow := c.SelectCronWorkflowWithExtraColumns(namespace, uid, "wtv.version")
+	if err != nil {
 		return err
 	}
-
-	query = `DELETE FROM workflow_executions
+	query := `DELETE FROM workflow_executions
 			 WHERE cron_workflow_id = $1`
 
 	if _, err := c.DB.Exec(query, cronWorkflow.ID); err != nil {
 		return err
 	}
 
-	query = `DELETE FROM cron_workflows 
-			  USING workflow_template_versions, workflow_templates
-			  WHERE cron_workflows.workflow_template_version_id = workflow_template_versions.id 
-			   AND workflow_template_versions.workflow_template_id = workflow_templates.id 
-			   AND workflow_templates.namespace = $1 
-			   AND cron_workflows.name = $2`
-	if _, err := c.DB.Exec(query, namespace, uid); err != nil {
+	err = c.DeleteCronWorkflowDb(namespace, uid)
+	if err != nil {
 		return err
 	}
-
-	err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Delete(uid, nil)
-	if err != nil && strings.Contains(err.Error(), "not found") {
-		err = nil
+	err = c.DeleteCronWorkflow(namespace, uid)
+	if err != nil {
+		return err
 	}
-
 	return
 }
 
@@ -667,4 +649,51 @@ func cronWorkflowColumns(extraColumns ...string) []string {
 	}
 
 	return results
+}
+
+func (c *Client) SelectCronWorkflowWithExtraColumns(namespace, uid string, extraColumns ...string) (error, *CronWorkflow) {
+	query, args, err := sb.Select(cronWorkflowColumns(extraColumns...)...).
+		From("cron_workflows cw").
+		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
+		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
+		Where(sq.Eq{
+			"wt.namespace": namespace,
+			"cw.name":      uid,
+		}).
+		ToSql()
+
+	if err != nil {
+		return err, nil
+	}
+
+	cronWorkflow := &CronWorkflow{}
+	if err = c.DB.Get(cronWorkflow, query, args...); err != nil {
+		return err, nil
+	}
+
+	return nil, cronWorkflow
+}
+
+func (c *Client) DeleteCronWorkflowDb(namespace, uid string) error {
+	query := `DELETE FROM cron_workflows 
+			  USING workflow_template_versions, workflow_templates
+			  WHERE cron_workflows.workflow_template_version_id = workflow_template_versions.id 
+			   AND workflow_template_versions.workflow_template_id = workflow_templates.id 
+			   AND workflow_templates.namespace = $1 
+			   AND cron_workflows.name = $2`
+	if _, err := c.DB.Exec(query, namespace, uid); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) DeleteCronWorkflow(namespace, uid string) error {
+	err := c.ArgoprojV1alpha1().CronWorkflows(namespace).Delete(uid, nil)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil
+		}
+		return err
+	}
+	return nil
 }
