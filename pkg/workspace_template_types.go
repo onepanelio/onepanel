@@ -10,7 +10,7 @@ type WorkspaceTemplate struct {
 	UID                        string
 	CreatedAt                  time.Time  `db:"created_at"`
 	ModifiedAt                 *time.Time `db:"modified_at"`
-	IsArchived                 string     `db:"is_archived"`
+	IsArchived                 bool       `db:"is_archived"`
 	Name                       string     `valid:"stringlength(3|30)~Name should be between 3 to 30 characters,required"`
 	Namespace                  string
 	Version                    int64
