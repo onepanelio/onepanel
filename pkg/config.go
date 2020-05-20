@@ -2,11 +2,11 @@ package v1
 
 import (
 	"encoding/base64"
-	"github.com/ghodss/yaml"
 	"github.com/onepanelio/core/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 func (c *Client) getConfigMap(namespace, name string) (configMap *ConfigMap, err error) {
@@ -55,7 +55,7 @@ func (c *Client) GetNamespaceConfig(namespace string) (config *NamespaceConfig, 
 		ArtifactRepository: ArtifactRepositoryConfig{},
 	}
 
-	err = yaml.Unmarshal([]byte(configMap.Data["config"]), &config)
+	err = yaml.Unmarshal([]byte(configMap.Data["artifactRepository"]), &config.ArtifactRepository)
 	if err != nil || config.ArtifactRepository.S3 == nil {
 		return nil, util.NewUserError(codes.NotFound, "Artifact repository config not found.")
 	}

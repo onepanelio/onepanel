@@ -119,6 +119,12 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		}
 	}
 
+	// Get artifact repository config from current namespace
+	wf.Spec.ArtifactRepositoryRef = &wfv1.ArtifactRepositoryRef{
+		ConfigMap: "onepanel",
+		Key:       "artifactRepository",
+	}
+
 	// Create dev/shm volume
 	wf.Spec.Volumes = append(wf.Spec.Volumes, corev1.Volume{
 		Name: "sys-dshm",
