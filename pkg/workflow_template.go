@@ -7,6 +7,7 @@ import (
 	"github.com/onepanelio/core/pkg/util/pagination"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"strconv"
+	"strings"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -611,7 +612,7 @@ func (c *Client) ListWorkflowTemplates(namespace string, paginator *pagination.P
 }
 
 func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, err error) {
-	workflowTemplate, err := c.getWorkflowTemplate(namespace, uid, 0)
+	workflowTemplate, err := c.getWorkflowTemplate(namespace, uid, 0) //version=0 means latest
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -624,7 +625,17 @@ func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, 
 		return false, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}
 
-	archived, err = c.archiveWorkflowTemplate(namespace, uid)
+	//clean up workflow templates
+	workflowTemplateName := uid + "-v" + strconv.FormatInt(workflowTemplate.Version, 10)
+	err = c.DeleteWorkflowTemplate(namespace, workflowTemplateName)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"UID":       uid,
+			"Error":     err.Error(),
+		}).Error("Delete Workflow Template failed.")
+		return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
+	}
 	if !archived || err != nil {
 		if err != nil {
 			log.WithFields(log.Fields{
@@ -760,4 +771,15 @@ func (c *Client) GetWorkflowTemplateLabels(namespace, name, prefix string, versi
 	labels = label.RemovePrefix(prefix, labels)
 
 	return
+}
+
+func (c *Client) DeleteWorkflowTemplate(namespace, uid string) error {
+	err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Delete(uid, nil)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil
+		}
+		return err
+	}
+	return nil
 }
