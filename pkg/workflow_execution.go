@@ -1476,10 +1476,14 @@ func (c *Client) DeleteWorkflowExecution(namespace, uid string) error {
 }
 
 func (c *Client) DeleteWorkflowExecutionDb(workflowUid string) error {
-	query := `DELETE FROM workflow_executions
-			 WHERE uid = $1`
+	query, args, err := sb.Delete("workflow_executions").Where(sq.Eq{
+		"uid": workflowUid,
+	}).ToSql()
+	if err != nil {
+		return err
+	}
 
-	if _, err := c.DB.Exec(query, workflowUid); err != nil {
+	if _, err := c.DB.Exec(query, args); err != nil {
 		return err
 	}
 	return nil

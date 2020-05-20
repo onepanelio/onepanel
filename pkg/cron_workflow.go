@@ -513,10 +513,12 @@ func (c *Client) TerminateCronWorkflow(namespace, uid string) (err error) {
 	if err != nil {
 		return err
 	}
-	query := `DELETE FROM workflow_executions
-			 WHERE cron_workflow_id = $1`
 
-	if _, err := c.DB.Exec(query, cronWorkflow.ID); err != nil {
+	query, args, err := sb.Delete("workflow_executions").Where(sq.Eq{
+		"cron_workflow_id": cronWorkflow.ID,
+	}).ToSql()
+
+	if _, err := c.DB.Exec(query, args...); err != nil {
 		return err
 	}
 
@@ -675,13 +677,29 @@ func (c *Client) SelectCronWorkflowWithExtraColumns(namespace, uid string, extra
 }
 
 func (c *Client) DeleteCronWorkflowDb(namespace, uid string) error {
-	query := `DELETE FROM cron_workflows 
-			  USING workflow_template_versions, workflow_templates
-			  WHERE cron_workflows.workflow_template_version_id = workflow_template_versions.id 
-			   AND workflow_template_versions.workflow_template_id = workflow_templates.id 
-			   AND workflow_templates.namespace = $1 
-			   AND cron_workflows.name = $2`
-	if _, err := c.DB.Exec(query, namespace, uid); err != nil {
+	query, args, err := sb.Select("id").From("cron_workflows").
+		Where(sq.Eq{
+			"uid": uid,
+		}).ToSql()
+
+	if err != nil {
+		return err
+	}
+	cronWf := &CronWorkflow{}
+	err = c.DB.Get(cronWf, query, args...)
+	if err != nil {
+		return err
+	}
+
+	query, args, err = sb.Delete("cron_workflows").Where(sq.Eq{
+		"id": cronWf.ID,
+	}).ToSql()
+
+	if err != nil {
+		return err
+	}
+
+	if _, err := c.DB.Exec(query, args...); err != nil {
 		return err
 	}
 	return nil
