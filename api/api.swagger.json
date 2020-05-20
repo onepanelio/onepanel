@@ -1138,6 +1138,50 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/workflow_executions/{uid}/status": {
+      "put": {
+        "operationId": "UpdateWorkflowExecutionStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WorkflowExecutionStatus"
+            }
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workflow_executions/{uid}/terminate": {
       "put": {
         "operationId": "TerminateWorkflowExecution",
@@ -3068,6 +3112,14 @@
         "terminated": {
           "type": "integer",
           "format": "int32"
+        }
+      }
+    },
+    "WorkflowExecutionStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "type": "string"
         }
       }
     },

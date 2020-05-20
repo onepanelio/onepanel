@@ -455,6 +455,13 @@ type WorkflowExecution struct {
 	Labels           map[string]string
 }
 
+// TODO: reference this in WorkflowExecution
+type WorkflowExecutionStatus struct {
+	Phase      wfv1.NodePhase `json:"phase"`
+	StartedAt  *time.Time     `db:"started_at" json:"startedAt"`
+	FinishedAt *time.Time     `db:"finished_at" json:"finishedAt"`
+}
+
 func (we *WorkflowExecution) LoadParametersFromBytes() ([]Parameter, error) {
 	loadedParameters := make([]Parameter, 0)
 
@@ -611,36 +618,6 @@ func CronWorkflowsToIds(resources []*CronWorkflow) (ids []uint64) {
 	return
 }
 
-func WorkspaceTemplatesToIds(resources []*WorkspaceTemplate) (ids []uint64) {
-	mappedIds := make(map[uint64]bool)
-
-	// This is to make sure we don't have duplicates
-	for _, resource := range resources {
-		mappedIds[resource.ID] = true
-	}
-
-	for id := range mappedIds {
-		ids = append(ids, id)
-	}
-
-	return
-}
-
-func WorkspaceTemplatesToVersionIds(resources []*WorkspaceTemplate) (ids []uint64) {
-	mappedIds := make(map[uint64]bool)
-
-	// This is to make sure we don't have duplicates
-	for _, resource := range resources {
-		mappedIds[resource.WorkspaceTemplateVersionID] = true
-	}
-
-	for id := range mappedIds {
-		ids = append(ids, id)
-	}
-
-	return
-}
-
 // Returns a list of column names prefixed with alias, and named to destination. Extra columns are added to the end of the list.
 // Setting destination to empty string will not apply any destination.
 // Example - with destination
@@ -685,20 +662,6 @@ func getWorkflowTemplateVersionColumns(alias string, destination string, extraCo
 // see formatColumnSelect
 func getWorkflowExecutionColumns(alias string, destination string, extraColumns ...string) []string {
 	columns := []string{"id", "created_at", "uid", "name", "parameters", "phase", "started_at", "finished_at"}
-	return formatColumnSelect(columns, alias, destination, extraColumns...)
-}
-
-// returns all of the columns for workspace modified by alias, destination.
-// see formatColumnSelect
-func getWorkspaceColumns(alias string, destination string, extraColumns ...string) []string {
-	columns := []string{"id", "created_at", "modified_at", "uid", "name", "namespace", "parameters", "workspace_template_id", "workspace_template_version", "url"}
-	return formatColumnSelect(columns, alias, destination, extraColumns...)
-}
-
-// returns all of the columns for workspace template modified by alias, destination.
-// see formatColumnSelect
-func getWorkspaceTemplateColumns(alias string, destination string, extraColumns ...string) []string {
-	columns := []string{"id", "uid", "created_at", "modified_at", "name", "namespace", "is_archived", "workflow_template_id"}
 	return formatColumnSelect(columns, alias, destination, extraColumns...)
 }
 

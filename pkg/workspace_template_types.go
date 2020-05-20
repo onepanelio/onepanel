@@ -20,3 +20,25 @@ type WorkspaceTemplate struct {
 	Labels                     map[string]string
 	WorkflowTemplateID         uint64 `db:"workflow_template_id"`
 }
+
+func WorkspaceTemplatesToVersionIds(resources []*WorkspaceTemplate) (ids []uint64) {
+	mappedIds := make(map[uint64]bool)
+
+	// This is to make sure we don't have duplicates
+	for _, resource := range resources {
+		mappedIds[resource.WorkspaceTemplateVersionID] = true
+	}
+
+	for id := range mappedIds {
+		ids = append(ids, id)
+	}
+
+	return
+}
+
+// returns all of the columns for workspace template modified by alias, destination.
+// see formatColumnSelect
+func getWorkspaceTemplateColumns(alias string, destination string, extraColumns ...string) []string {
+	columns := []string{"id", "uid", "created_at", "modified_at", "name", "namespace", "is_archived", "workflow_template_id"}
+	return formatColumnSelect(columns, alias, destination, extraColumns...)
+}

@@ -3,11 +3,12 @@ package server
 import (
 	"context"
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/server/converter"
 	"google.golang.org/grpc/codes"
-	argov1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sort"
 	"strings"
 	"time"
@@ -113,7 +114,8 @@ func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, req
 		phase = v1alpha1.NodeSucceeded
 	}
 
-	workflow, err := client.ArgoprojV1alpha1().Workflows(req.Namespace).Get(req.Uid, argov1.GetOptions{})
+	// TODO: This needs to be moved to pkg
+	workflow, err := client.ArgoprojV1alpha1().Workflows(req.Namespace).Get(req.Uid, metav1.GetOptions{})
 	if err != nil {
 		return &empty.Empty{}, err
 	}
@@ -370,4 +372,19 @@ func (s *WorkflowServer) ListFiles(ctx context.Context, req *api.ListFilesReques
 		Files:      apiFiles,
 		ParentPath: parentPath,
 	}, nil
+}
+
+func (s *WorkflowServer) UpdateWorkflowExecutionStatus(ctx context.Context, req *api.UpdateWorkflowExecutionStatusRequest) (*empty.Empty, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "workflows", req.Uid)
+	if err != nil || !allowed {
+		return &empty.Empty{}, err
+	}
+
+	status := &v1.WorkflowExecutionStatus{
+		Phase: wfv1.NodePhase(req.Status.Phase),
+	}
+	err = client.UpdateWorkflowExecutionStatus(req.Namespace, req.Uid, status)
+
+	return &empty.Empty{}, err
 }
