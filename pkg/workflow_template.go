@@ -636,6 +636,41 @@ func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, 
 		}).Error("Delete Workflow Template failed.")
 		return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
 	}
+
+	//cron workflows
+	cronWorkflows := []*CronWorkflow{}
+	sb := c.cronWorkflowSelectBuilder(namespace, uid).
+		OrderBy("cw.created_at DESC")
+
+	query, args, err := sb.ToSql()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"UID":       uid,
+			"Error":     err.Error(),
+		}).Error("Get Cron Workflows SQL failed.")
+		return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
+	}
+
+	if err := c.DB.Select(&cronWorkflows, query, args...); err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"UID":       uid,
+			"Error":     err.Error(),
+		}).Error("Get Cron Workflows failed.")
+		return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
+	}
+	for _, cwf := range cronWorkflows {
+		err = c.TerminateCronWorkflow(namespace, cwf.Name)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"Namespace": namespace,
+				"UID":       uid,
+				"Error":     err.Error(),
+			}).Error("Delete Cron Workflow failed.")
+			return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
+		}
+	}
 	if !archived || err != nil {
 		if err != nil {
 			log.WithFields(log.Fields{
