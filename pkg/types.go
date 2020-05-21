@@ -76,6 +76,7 @@ type CronWorkflow struct {
 	Version                   int64
 	WorkflowTemplateVersionId uint64 `db:"workflow_template_version_id"`
 	Manifest                  string
+	Namespace                 string `db:"namespace"`
 }
 
 func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]Parameter, error) {

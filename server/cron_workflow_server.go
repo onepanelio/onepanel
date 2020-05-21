@@ -23,9 +23,10 @@ func apiCronWorkflow(cwf *v1.CronWorkflow) (cronWorkflow *api.CronWorkflow) {
 	}
 
 	cronWorkflow = &api.CronWorkflow{
-		Name:     cwf.Name,
-		Labels:   converter.MappingToKeyValue(cwf.Labels),
-		Manifest: cwf.Manifest,
+		Name:      cwf.Name,
+		Labels:    converter.MappingToKeyValue(cwf.Labels),
+		Manifest:  cwf.Manifest,
+		Namespace: cwf.Namespace,
 	}
 
 	if cwf.WorkflowExecution != nil {
@@ -79,6 +80,7 @@ func (c *CronWorkflowServer) CreateCronWorkflow(ctx context.Context, req *api.Cr
 		WorkflowExecution: workflow,
 		Manifest:          req.CronWorkflow.Manifest,
 		Labels:            converter.APIKeyValueToLabel(req.CronWorkflow.Labels),
+		Namespace:         req.Namespace,
 	}
 
 	cwf, err := client.CreateCronWorkflow(req.Namespace, &cronWorkflow)
@@ -125,6 +127,7 @@ func (c *CronWorkflowServer) UpdateCronWorkflow(ctx context.Context, req *api.Up
 		WorkflowExecution: workflow,
 		Manifest:          req.CronWorkflow.Manifest,
 		Labels:            converter.APIKeyValueToLabel(req.CronWorkflow.Labels),
+		Namespace:         req.Namespace,
 	}
 
 	cwf, err := client.UpdateCronWorkflow(req.Namespace, req.Uid, &cronWorkflow)

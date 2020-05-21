@@ -255,6 +255,7 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 			"name":                         cronWorkflow.Name,
 			"workflow_template_version_id": workflowTemplate.WorkflowTemplateVersionId,
 			"manifest":                     cronWorkflow.Manifest,
+			"namespace":                    namespace,
 		}).
 		Suffix("RETURNING id").
 		RunWith(tx).
@@ -554,13 +555,13 @@ func (c *Client) cronWorkflowSelectBuilder(namespace string, workflowTemplateUid
 }
 
 func (c *Client) cronWorkflowSelectBuilderNamespaceName(namespace string, uid string) sq.SelectBuilder {
-	sb := sb.Select("cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.workflow_template_version_id").
+	sb := sb.Select("cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.workflow_template_version_id", "cw.namespace").
 		Columns("cw.manifest", "wtv.version").
 		From("cron_workflows cw").
 		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{
-			"wt.namespace": namespace,
+			"cw.namespace": namespace,
 			"cw.name":      uid,
 		})
 
@@ -644,7 +645,7 @@ func (c *Client) GetCronWorkflowStatisticsForTemplates(workflowTemplates ...*Wor
 }
 
 func cronWorkflowColumns(extraColumns ...string) []string {
-	results := []string{"cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.workflow_template_version_id", "cw.manifest"}
+	results := []string{"cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.workflow_template_version_id", "cw.manifest", "cw.namespace"}
 
 	for _, str := range extraColumns {
 		results = append(results, str)
@@ -679,7 +680,8 @@ func (c *Client) SelectCronWorkflowWithExtraColumns(namespace, uid string, extra
 func (c *Client) DeleteCronWorkflowDb(namespace, uid string) error {
 	query, args, err := sb.Select("id").From("cron_workflows").
 		Where(sq.Eq{
-			"uid": uid,
+			"uid":       uid,
+			"namespace": namespace,
 		}).ToSql()
 
 	if err != nil {
