@@ -2492,6 +2492,9 @@
           "items": {
             "$ref": "#/definitions/KeyValue"
           }
+        },
+        "namespace": {
+          "type": "string"
         }
       }
     },
