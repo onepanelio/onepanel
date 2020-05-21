@@ -549,6 +549,8 @@ func (c *Client) GetWorkflowExecution(namespace, uid string) (workflow *Workflow
 	workflow = &WorkflowExecution{}
 
 	query, args, err := sb.Select(getWorkflowExecutionColumns("we", "")...).
+		Columns(getWorkflowTemplateColumns("wt", "workflow_template")...).
+		Columns(`wtv.manifest "workflow_template.manifest"`).
 		From("workflow_executions we").
 		Join("workflow_template_versions wtv ON wtv.id = we.workflow_template_version_id").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
@@ -598,7 +600,6 @@ func (c *Client) GetWorkflowExecution(namespace, uid string) (workflow *Workflow
 		return nil, util.NewUserError(codes.NotFound, "Cannot get Workflow Template.")
 	}
 
-	// TODO: Do we need to parse parameters into workflow.Parameters?
 	manifest, err := json.Marshal(wf)
 	if err != nil {
 		log.WithFields(log.Fields{
