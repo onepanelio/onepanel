@@ -87,8 +87,7 @@ func UnmarshalWorkflows(wfBytes []byte, strict bool) (wfs []wfv1.Workflow, err e
 
 // appendArtifactRepositoryConfigIfMissing appends default artifact repository config to artifacts that have a key.
 // Artifacts that contain anything other than key are skipped.
-// It returns a boolean indicating whether additional config was added or not.
-func appendArtifactRepositoryConfigIfMissing(artifact *wfv1.Artifact, namespaceConfig *NamespaceConfig) (appended bool) {
+func injectArtifactRepositoryConfig(artifact *wfv1.Artifact, namespaceConfig *NamespaceConfig) {
 	if artifact.S3 != nil && artifact.S3.Key != "" && artifact.S3.Bucket == "" {
 		s3Config := namespaceConfig.ArtifactRepository.S3
 		artifact.S3.Endpoint = s3Config.Endpoint
@@ -97,11 +96,12 @@ func appendArtifactRepositoryConfigIfMissing(artifact *wfv1.Artifact, namespaceC
 		artifact.S3.Insecure = ptr.Bool(s3Config.Insecure)
 		artifact.S3.SecretKeySecret = s3Config.SecretKeySecret
 		artifact.S3.AccessKeySecret = s3Config.AccessKeySecret
-
-		return true
 	}
 
-	return false
+	// Default to no compression for artifacts
+	artifact.Archive = &wfv1.ArchiveStrategy{
+		None: &wfv1.NoneStrategy{},
+	}
 }
 
 func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (err error) {
@@ -173,15 +173,13 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 
 		// Extend artifact credentials if only key is provided
 		for j, artifact := range template.Outputs.Artifacts {
-			if appendArtifactRepositoryConfigIfMissing(&artifact, namespaceConfig) {
-				wf.Spec.Templates[i].Outputs.Artifacts[j] = artifact
-			}
+			injectArtifactRepositoryConfig(&artifact, namespaceConfig)
+			wf.Spec.Templates[i].Outputs.Artifacts[j] = artifact
 		}
 
 		for j, artifact := range template.Inputs.Artifacts {
-			if appendArtifactRepositoryConfigIfMissing(&artifact, namespaceConfig) {
-				wf.Spec.Templates[i].Inputs.Artifacts[j] = artifact
-			}
+			injectArtifactRepositoryConfig(&artifact, namespaceConfig)
+			wf.Spec.Templates[i].Inputs.Artifacts[j] = artifact
 		}
 
 		//Generate ENV vars from secret, if there is a container present in the workflow
