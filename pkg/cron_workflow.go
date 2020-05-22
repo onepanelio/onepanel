@@ -546,19 +546,6 @@ func (c *Client) ArchiveCronWorkflow(namespace, uid string) (err error) {
 	return
 }
 
-func unmarshalCronWorkflows(cwfBytes []byte, strict bool) (cwfs wfv1.CronWorkflow, err error) {
-	var cwf wfv1.CronWorkflow
-	var jsonOpts []argojson.JSONOpt
-	if strict {
-		jsonOpts = append(jsonOpts, argojson.DisallowUnknownFields)
-	}
-	err = argojson.Unmarshal(cwfBytes, &cwf, jsonOpts...)
-	if err == nil {
-		return cwf, nil
-	}
-	return
-}
-
 func (c *Client) cronWorkflowSelectBuilder(namespace string, workflowTemplateUid string) sq.SelectBuilder {
 	sb := c.cronWorkflowSelectBuilderNoColumns(namespace, workflowTemplateUid).
 		Columns(getCronWorkflowColumns("wtv.version")...)
@@ -651,28 +638,4 @@ func getCronWorkflowColumns(extraColumns ...string) []string {
 	}
 
 	return results
-}
-
-func (c *Client) selectCronWorkflowWithWorkflowTemplateVersion(namespace, uid string, extraColumns ...string) (error, *CronWorkflow) {
-	query, args, err := sb.Select(getCronWorkflowColumns(extraColumns...)...).
-		From("cron_workflows cw").
-		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
-		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
-		Where(sq.Eq{
-			"wt.namespace":   namespace,
-			"cw.name":        uid,
-			"cw.is_archived": false,
-		}).
-		ToSql()
-
-	if err != nil {
-		return err, nil
-	}
-
-	cronWorkflow := &CronWorkflow{}
-	if err = c.DB.Get(cronWorkflow, query, args...); err != nil {
-		return err, nil
-	}
-
-	return nil, cronWorkflow
 }
