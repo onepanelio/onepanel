@@ -651,13 +651,13 @@ func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, 
 		return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
 	}
 	for _, cwf := range cronWorkflows {
-		err = c.TerminateCronWorkflow(namespace, cwf.Name)
+		err = c.ArchiveCronWorkflow(namespace, cwf.Name)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"Namespace": namespace,
 				"UID":       uid,
 				"Error":     err.Error(),
-			}).Error("Delete Cron Workflow failed.")
+			}).Error("Archive Cron Workflow failed.")
 			return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
 		}
 	}

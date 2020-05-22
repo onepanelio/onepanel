@@ -510,36 +510,38 @@ func (c *Client) createCronWorkflow(namespace string, workflowTemplateId *uint64
 }
 
 func (c *Client) TerminateCronWorkflow(namespace, uid string) (err error) {
-	err, cronWorkflow := c.SelectCronWorkflowWithWorkflowTemplateVersion(namespace, uid, "wtv.version")
+	err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Delete(uid, nil)
 	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil
+		}
 		return err
 	}
-	tx, err := c.DB.Begin()
+
+	_, err = sb.Delete("cron_workflows").
+		Where(sq.Eq{
+			"uid":       uid,
+			"namespace": namespace,
+		}).RunWith(c.DB).Exec()
+
+	return
+}
+
+func (c *Client) ArchiveCronWorkflow(namespace, uid string) (err error) {
+	err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Delete(uid, nil)
 	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil
+		}
 		return err
 	}
-	defer tx.Rollback()
-	_, err = sb.Update("workflow_executions").
+
+	_, err = sb.Update("cron_workflows").
 		Set("is_archived", true).
 		Where(sq.Eq{
-			"cron_workflow_id": cronWorkflow.ID,
-		}).RunWith(tx).Exec()
-
-	if err != nil {
-		return err
-	}
-	if err := tx.Commit(); err != nil {
-		return err
-	}
-
-	err = c.ArchiveCronWorkflowDB(namespace, uid)
-	if err != nil {
-		return err
-	}
-	err = c.DeleteCronWorkflowK8S(namespace, uid)
-	if err != nil {
-		return err
-	}
+			"uid":       uid,
+			"namespace": namespace,
+		}).RunWith(c.DB).Exec()
 	return
 }
 
@@ -687,68 +689,4 @@ func (c *Client) SelectCronWorkflowWithWorkflowTemplateVersion(namespace, uid st
 	}
 
 	return nil, cronWorkflow
-}
-
-func (c *Client) DeleteCronWorkflowDB(namespace, uid string) error {
-	query, args, err := sb.Select("id").From("cron_workflows").
-		Where(sq.Eq{
-			"uid":       uid,
-			"namespace": namespace,
-		}).ToSql()
-
-	if err != nil {
-		return err
-	}
-	cronWf := &CronWorkflow{}
-	err = c.DB.Get(cronWf, query, args...)
-	if err != nil {
-		return err
-	}
-
-	query, args, err = sb.Delete("cron_workflows").Where(sq.Eq{
-		"id": cronWf.ID,
-	}).ToSql()
-
-	if err != nil {
-		return err
-	}
-
-	if _, err := c.DB.Exec(query, args...); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c *Client) ArchiveCronWorkflowDB(namespace, uid string) error {
-	tx, err := c.DB.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	_, err = sb.Update("cron_workflows").
-		Set("is_archived", true).
-		Where(sq.Eq{
-			"uid":       uid,
-			"namespace": namespace,
-		}).RunWith(tx).Exec()
-	if err != nil {
-		return err
-	}
-	if err := tx.Commit(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *Client) DeleteCronWorkflowK8S(namespace, uid string) error {
-	err := c.ArgoprojV1alpha1().CronWorkflows(namespace).Delete(uid, nil)
-	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			return nil
-		}
-		return err
-	}
-	return nil
 }
