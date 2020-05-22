@@ -570,8 +570,9 @@ func (c *Client) cronWorkflowSelectBuilderNamespaceName(namespace string, uid st
 		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{
-			"cw.namespace": namespace,
-			"cw.name":      uid,
+			"cw.namespace":   namespace,
+			"cw.name":        uid,
+			"cw.is_archived": false,
 		})
 
 	return sb
@@ -583,8 +584,9 @@ func (c *Client) cronWorkflowSelectBuilderNoColumns(namespace string, workflowTe
 		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{
-			"wt.namespace": namespace,
-			"wt.uid":       workflowTemplateUid,
+			"wt.namespace":   namespace,
+			"wt.uid":         workflowTemplateUid,
+			"cw.is_archived": false,
 		})
 
 	return sb
@@ -669,8 +671,9 @@ func (c *Client) SelectCronWorkflowWithWorkflowTemplateVersion(namespace, uid st
 		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{
-			"wt.namespace": namespace,
-			"cw.name":      uid,
+			"wt.namespace":   namespace,
+			"cw.name":        uid,
+			"cw.is_archived": false,
 		}).
 		ToSql()
 

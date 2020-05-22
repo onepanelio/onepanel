@@ -538,8 +538,9 @@ func (c *Client) GetWorkflowExecution(namespace, uid string) (workflow *Workflow
 		Join("workflow_template_versions wtv ON wtv.id = we.workflow_template_version_id").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{
-			"wt.namespace": namespace,
-			"we.name":      uid,
+			"wt.namespace":   namespace,
+			"we.name":        uid,
+			"we.is_archived": false,
 		}).
 		ToSql()
 	if err != nil {
@@ -1444,8 +1445,9 @@ func (c *Client) getWorkflowExecutionAndTemplate(namespace string, uid string) (
 		Join("workflow_template_versions wtv ON we.workflow_template_version_id = wtv.id").
 		Join("workflow_templates wt ON wtv.workflow_template_id = wt.id").
 		Where(sq.Eq{
-			"wt.namespace": namespace,
-			"we.name":      uid,
+			"wt.namespace":   namespace,
+			"we.name":        uid,
+			"we.is_archived": false,
 		}).
 		ToSql()
 	if err != nil {
