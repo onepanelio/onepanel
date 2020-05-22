@@ -338,26 +338,6 @@ func (c *Client) CountWorkflowTemplates(namespace string) (count int, err error)
 	return
 }
 
-func (c *Client) archiveWorkflowTemplate(namespace, uid string) (bool, error) {
-	query, args, err := sb.Update("workflow_templates").
-		Set("is_archived", true).
-		Where(sq.Eq{
-			"uid":       uid,
-			"namespace": namespace,
-		}).
-		ToSql()
-
-	if err != nil {
-		return false, err
-	}
-
-	if _, err := c.DB.Exec(query, args...); err != nil {
-		return false, err
-	}
-
-	return true, nil
-}
-
 func (c *Client) validateWorkflowTemplate(namespace string, workflowTemplate *WorkflowTemplate) (err error) {
 	// validate workflow template
 	finalBytes, err := workflowTemplate.WrapSpec()
@@ -690,30 +670,30 @@ func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, 
 		}
 	}
 
-	archived, err = c.archiveWorkflowTemplate(namespace, uid) //db only
-	if !archived || err != nil {
-		if err != nil {
-			log.WithFields(log.Fields{
-				"Namespace": namespace,
-				"UID":       uid,
-				"Error":     err.Error(),
-			}).Error("Archive Workflow Template failed.")
-		}
-		return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
-	}
+	_, err = sq.Update("workflow_templates").
+		Set("is_archived", true).
+		Where(sq.Eq{
+			"uid":       uid,
+			"namespace": namespace,
+		}).RunWith(c.DB).Exec()
 
-	//clean up workflow templates
-	err = c.DeleteWorkflowTemplateK8S(namespace, workflowTemplateName)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"UID":       uid,
 			"Error":     err.Error(),
-		}).Error("Delete Workflow Template failed.")
+		}).Error("Archive Workflow Template DB failed.")
 		return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
 	}
 
-	return
+	err = c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Delete(workflowTemplateName, nil)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return true, nil
+		}
+		return false, err
+	}
+	return true, nil
 }
 
 func createArgoWorkflowTemplate(workflowTemplate *WorkflowTemplate, version int64) (*v1alpha1.WorkflowTemplate, error) {
@@ -837,15 +817,4 @@ func (c *Client) GetWorkflowTemplateLabels(namespace, name, prefix string, versi
 	labels = label.RemovePrefix(prefix, labels)
 
 	return
-}
-
-func (c *Client) DeleteWorkflowTemplateK8S(namespace, uid string) error {
-	err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Delete(uid, nil)
-	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			return nil
-		}
-		return err
-	}
-	return nil
 }
