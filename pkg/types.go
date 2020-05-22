@@ -14,11 +14,13 @@ import (
 )
 
 const (
-	TypeWorkflowTemplate        string = "workflow_template"
-	TypeWorkflowTemplateVersion string = "workflow_template_version"
-	TypeWorkflowExecution       string = "workflow_execution"
-	TypeCronWorkflow            string = "cron_workflow"
-	TypeWorkspace               string = "workspace"
+	TypeWorkflowTemplate         string = "workflow_template"
+	TypeWorkflowTemplateVersion  string = "workflow_template_version"
+	TypeWorkflowExecution        string = "workflow_execution"
+	TypeCronWorkflow             string = "cron_workflow"
+	TypeWorkspaceTemplate        string = "workspace_template"
+	TypeWorkspaceTemplateVersion string = "workspace_template_version"
+	TypeWorkspace                string = "workspace"
 )
 
 func TypeToTableName(value string) string {
@@ -31,8 +33,12 @@ func TypeToTableName(value string) string {
 		return "workflow_executions"
 	case TypeCronWorkflow:
 		return "cron_workflows"
+	case TypeWorkspaceTemplate:
+		return "workspace_templates"
+	case TypeWorkspaceTemplateVersion:
+		return "workspace_template_versions"
 	case TypeWorkspace:
-		return "workspace"
+		return "workspaces"
 	}
 
 	return ""
@@ -174,7 +180,10 @@ type WorkflowTemplate struct {
 	Labels                           map[string]string
 	WorkflowExecutionStatisticReport *WorkflowExecutionStatisticReport
 	CronWorkflowsStatisticsReport    *CronWorkflowStatisticReport
-	WorkflowTemplateVersionId        uint64 `db:"workflow_template_version_id"` // Reference to the associated workflow template version.
+	// todo rename to have ID suffix
+	WorkflowTemplateVersionId uint64  `db:"workflow_template_version_id"` // Reference to the associated workflow template version.
+	Resource                  *string // utility in case we are specifying a workflow template for a specific resource
+	ResourceUID               *string // see Resource field
 }
 
 type Label struct {
@@ -447,6 +456,13 @@ type WorkflowExecution struct {
 	Labels           map[string]string
 }
 
+// TODO: reference this in WorkflowExecution
+type WorkflowExecutionStatus struct {
+	Phase      wfv1.NodePhase `json:"phase"`
+	StartedAt  *time.Time     `db:"started_at" json:"startedAt"`
+	FinishedAt *time.Time     `db:"finished_at" json:"finishedAt"`
+}
+
 func (we *WorkflowExecution) LoadParametersFromBytes() ([]Parameter, error) {
 	loadedParameters := make([]Parameter, 0)
 
@@ -646,21 +662,7 @@ func getWorkflowTemplateVersionColumns(alias string, destination string, extraCo
 // returns all of the columns for workflowExecution modified by alias, destination.
 // see formatColumnSelect
 func getWorkflowExecutionColumns(alias string, destination string, extraColumns ...string) []string {
-	columns := []string{"id", "created_at", "uid", "name", "parameters"}
-	return formatColumnSelect(columns, alias, destination, extraColumns...)
-}
-
-// returns all of the columns for workspace modified by alias, destination.
-// see formatColumnSelect
-func getWorkspaceColumns(alias string, destination string, extraColumns ...string) []string {
-	columns := []string{"id", "created_at", "modified_at", "uid", "name", "namespace", "parameters", "workspace_template_id", "workspace_template_version", "url"}
-	return formatColumnSelect(columns, alias, destination, extraColumns...)
-}
-
-// returns all of the columns for workspace template modified by alias, destination.
-// see formatColumnSelect
-func getWorkspaceTemplateColumns(alias string, destination string, extraColumns ...string) []string {
-	columns := []string{"id", "uid", "created_at", "modified_at", "name", "namespace", "is_archived", "workflow_template_id"}
+	columns := []string{"id", "created_at", "uid", "name", "parameters", "phase", "started_at", "finished_at"}
 	return formatColumnSelect(columns, alias, destination, extraColumns...)
 }
 

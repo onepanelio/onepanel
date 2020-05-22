@@ -92,6 +92,13 @@ service WorkflowService {
             body: "statistics"
         };
     }
+
+    rpc UpdateWorkflowExecutionStatus (UpdateWorkflowExecutionStatusRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            put: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/status"
+            body: "status"
+        };
+    }
 }
 
 message CreateWorkflowExecutionBody {
@@ -233,4 +240,14 @@ message CronStartWorkflowExecutionStatisticRequest {
     string namespace = 1;
     string uid = 2;
     Statistics statistics = 3;
+}
+
+message WorkflowExecutionStatus {
+    string phase = 1;
+}
+
+message UpdateWorkflowExecutionStatusRequest {
+    string namespace = 1;
+    string uid = 2;
+    WorkflowExecutionStatus status = 3;
 }

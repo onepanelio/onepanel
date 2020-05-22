@@ -66,6 +66,13 @@ func (w *Workspace) GenerateUID() (string, error) {
 	return w.UID, nil
 }
 
+// returns all of the columns for workspace modified by alias, destination.
+// see formatColumnSelect
+func getWorkspaceColumns(alias string, destination string, extraColumns ...string) []string {
+	columns := []string{"id", "created_at", "modified_at", "uid", "name", "namespace", "parameters", "workspace_template_id", "workspace_template_version", "url"}
+	return formatColumnSelect(columns, alias, destination, extraColumns...)
+}
+
 // returns all of the columns for WorkspaceStatus modified by alias, destination.
 // see formatColumnSelect
 func getWorkspaceStatusColumns(alias string, destination string, extraColumns ...string) []string {

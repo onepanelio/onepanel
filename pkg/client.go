@@ -1,12 +1,7 @@
 package v1
 
 import (
-	"errors"
 	sq "github.com/Masterminds/squirrel"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"regexp"
-	"strconv"
-
 	argoprojv1alpha1 "github.com/argoproj/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
 	"github.com/jmoiron/sqlx"
 	"github.com/onepanelio/core/pkg/util/s3"
@@ -65,21 +60,12 @@ func NewClient(config *Config, db *sqlx.DB) (client *Client, err error) {
 }
 
 func (c *Client) GetS3Client(namespace string, config *ArtifactRepositoryS3Config) (s3Client *s3.Client, err error) {
-	insecure, err := strconv.ParseBool(config.Insecure)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"ConfigMap": config,
-			"Error":     err.Error(),
-		}).Error("getS3Client failed when parsing bool.")
-		return
-	}
 	s3Client, err = s3.NewClient(s3.Config{
 		Endpoint:  config.Endpoint,
 		Region:    config.Region,
 		AccessKey: config.AccessKey,
 		SecretKey: config.Secretkey,
-		InSecure:  insecure,
+		InSecure:  config.Insecure,
 	})
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -91,28 +77,4 @@ func (c *Client) GetS3Client(namespace string, config *ArtifactRepositoryS3Confi
 	}
 
 	return
-}
-
-func GetBearerToken(namespace string) (string, error) {
-	kubeConfig := NewConfig()
-	client, err := NewClient(kubeConfig, nil)
-	if err != nil {
-		log.Fatalf("Failed to connect to Kubernetes cluster: %v", err)
-	}
-
-	secrets, err := client.CoreV1().Secrets(namespace).List(v1.ListOptions{})
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"Error":     err.Error(),
-		}).Error("Failed to get default service account token.")
-		return "", err
-	}
-	re := regexp.MustCompile(`^default-token-`)
-	for _, secret := range secrets.Items {
-		if re.Find([]byte(secret.ObjectMeta.Name)) != nil {
-			return string(secret.Data["token"]), nil
-		}
-	}
-	return "", errors.New("could not find a token")
 }

@@ -119,7 +119,8 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 		}).
 		Suffix("RETURNING id, created_at").
 		RunWith(c.DB).
-		QueryRow().Scan(&workspace.ID, &workspace.CreatedAt)
+		QueryRow().
+		Scan(&workspace.ID, &workspace.CreatedAt)
 	if err != nil {
 		return nil, util.NewUserErrorWrap(err, "Workspace")
 	}
@@ -177,6 +178,10 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 
 	workspace, err = c.createWorkspace(namespace, parameters, workspace)
 	if err != nil {
+		return nil, err
+	}
+
+	if _, err := c.InsertLabels(TypeWorkspace, workspace.ID, workspace.Labels); err != nil {
 		return nil, err
 	}
 

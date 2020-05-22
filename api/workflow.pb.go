@@ -1449,6 +1449,116 @@ func (x *CronStartWorkflowExecutionStatisticRequest) GetStatistics() *Statistics
 	return nil
 }
 
+type WorkflowExecutionStatus struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Phase string `protobuf:"bytes,1,opt,name=phase,proto3" json:"phase,omitempty"`
+}
+
+func (x *WorkflowExecutionStatus) Reset() {
+	*x = WorkflowExecutionStatus{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_workflow_proto_msgTypes[22]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *WorkflowExecutionStatus) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorkflowExecutionStatus) ProtoMessage() {}
+
+func (x *WorkflowExecutionStatus) ProtoReflect() protoreflect.Message {
+	mi := &file_workflow_proto_msgTypes[22]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WorkflowExecutionStatus.ProtoReflect.Descriptor instead.
+func (*WorkflowExecutionStatus) Descriptor() ([]byte, []int) {
+	return file_workflow_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *WorkflowExecutionStatus) GetPhase() string {
+	if x != nil {
+		return x.Phase
+	}
+	return ""
+}
+
+type UpdateWorkflowExecutionStatusRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Namespace string                   `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	Uid       string                   `protobuf:"bytes,2,opt,name=uid,proto3" json:"uid,omitempty"`
+	Status    *WorkflowExecutionStatus `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+}
+
+func (x *UpdateWorkflowExecutionStatusRequest) Reset() {
+	*x = UpdateWorkflowExecutionStatusRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_workflow_proto_msgTypes[23]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *UpdateWorkflowExecutionStatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateWorkflowExecutionStatusRequest) ProtoMessage() {}
+
+func (x *UpdateWorkflowExecutionStatusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_workflow_proto_msgTypes[23]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateWorkflowExecutionStatusRequest.ProtoReflect.Descriptor instead.
+func (*UpdateWorkflowExecutionStatusRequest) Descriptor() ([]byte, []int) {
+	return file_workflow_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *UpdateWorkflowExecutionStatusRequest) GetNamespace() string {
+	if x != nil {
+		return x.Namespace
+	}
+	return ""
+}
+
+func (x *UpdateWorkflowExecutionStatusRequest) GetUid() string {
+	if x != nil {
+		return x.Uid
+	}
+	return ""
+}
+
+func (x *UpdateWorkflowExecutionStatusRequest) GetStatus() *WorkflowExecutionStatus {
+	if x != nil {
+		return x.Status
+	}
+	return nil
+}
+
 var File_workflow_proto protoreflect.FileDescriptor
 
 var file_workflow_proto_rawDesc = []byte{
@@ -1637,7 +1747,19 @@ var file_workflow_proto_rawDesc = []byte{
 	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x75, 0x69, 0x64, 0x12, 0x2f, 0x0a, 0x0a, 0x73, 0x74,
 	0x61, 0x74, 0x69, 0x73, 0x74, 0x69, 0x63, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f,
 	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x69, 0x73, 0x74, 0x69, 0x63, 0x73, 0x52,
-	0x0a, 0x73, 0x74, 0x61, 0x74, 0x69, 0x73, 0x74, 0x69, 0x63, 0x73, 0x32, 0xf6, 0x10, 0x0a, 0x0f,
+	0x0a, 0x73, 0x74, 0x61, 0x74, 0x69, 0x73, 0x74, 0x69, 0x63, 0x73, 0x22, 0x2f, 0x0a, 0x17, 0x57,
+	0x6f, 0x72, 0x6b, 0x66, 0x6c, 0x6f, 0x77, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e,
+	0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x14, 0x0a, 0x05, 0x70, 0x68, 0x61, 0x73, 0x65, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x70, 0x68, 0x61, 0x73, 0x65, 0x22, 0x8c, 0x01, 0x0a,
+	0x24, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x57, 0x6f, 0x72, 0x6b, 0x66, 0x6c, 0x6f, 0x77, 0x45,
+	0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1c, 0x0a, 0x09, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61,
+	0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70,
+	0x61, 0x63, 0x65, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x03, 0x75, 0x69, 0x64, 0x12, 0x34, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18,
+	0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x57, 0x6f, 0x72, 0x6b,
+	0x66, 0x6c, 0x6f, 0x77, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61,
+	0x74, 0x75, 0x73, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x32, 0xa7, 0x12, 0x0a, 0x0f,
 	0x57, 0x6f, 0x72, 0x6b, 0x66, 0x6c, 0x6f, 0x77, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12,
 	0x93, 0x01, 0x0a, 0x17, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x57, 0x6f, 0x72, 0x6b, 0x66, 0x6c,
 	0x6f, 0x77, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x23, 0x2e, 0x61, 0x70,
@@ -1773,7 +1895,18 @@ var file_workflow_proto_rawDesc = []byte{
 	0x77, 0x5f, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x2f, 0x7b, 0x75, 0x69,
 	0x64, 0x7d, 0x2f, 0x63, 0x72, 0x6f, 0x6e, 0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x73, 0x74,
 	0x61, 0x74, 0x69, 0x73, 0x74, 0x69, 0x63, 0x73, 0x3a, 0x0a, 0x73, 0x74, 0x61, 0x74, 0x69, 0x73,
-	0x74, 0x69, 0x63, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x74, 0x69, 0x63, 0x73, 0x12, 0xae, 0x01, 0x0a, 0x1d, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x57,
+	0x6f, 0x72, 0x6b, 0x66, 0x6c, 0x6f, 0x77, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e,
+	0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x29, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x55, 0x70, 0x64,
+	0x61, 0x74, 0x65, 0x57, 0x6f, 0x72, 0x6b, 0x66, 0x6c, 0x6f, 0x77, 0x45, 0x78, 0x65, 0x63, 0x75,
+	0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x4a, 0x82, 0xd3, 0xe4, 0x93, 0x02,
+	0x44, 0x1a, 0x3a, 0x2f, 0x61, 0x70, 0x69, 0x73, 0x2f, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31,
+	0x2f, 0x7b, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x7d, 0x2f, 0x77, 0x6f, 0x72,
+	0x6b, 0x66, 0x6c, 0x6f, 0x77, 0x5f, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x73,
+	0x2f, 0x7b, 0x75, 0x69, 0x64, 0x7d, 0x2f, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x3a, 0x06, 0x73,
+	0x74, 0x61, 0x74, 0x75, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1788,7 +1921,7 @@ func file_workflow_proto_rawDescGZIP() []byte {
 	return file_workflow_proto_rawDescData
 }
 
-var file_workflow_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_workflow_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_workflow_proto_goTypes = []interface{}{
 	(*CreateWorkflowExecutionBody)(nil),                // 0: api.CreateWorkflowExecutionBody
 	(*CreateWorkflowExecutionRequest)(nil),             // 1: api.CreateWorkflowExecutionRequest
@@ -1812,55 +1945,60 @@ var file_workflow_proto_goTypes = []interface{}{
 	(*Statistics)(nil),                                 // 19: api.Statistics
 	(*AddWorkflowExecutionStatisticRequest)(nil),       // 20: api.AddWorkflowExecutionStatisticRequest
 	(*CronStartWorkflowExecutionStatisticRequest)(nil), // 21: api.CronStartWorkflowExecutionStatisticRequest
-	(*Parameter)(nil),                                  // 22: api.Parameter
-	(*KeyValue)(nil),                                   // 23: api.KeyValue
-	(*Metric)(nil),                                     // 24: api.Metric
-	(*WorkflowTemplate)(nil),                           // 25: api.WorkflowTemplate
-	(*empty.Empty)(nil),                                // 26: google.protobuf.Empty
+	(*WorkflowExecutionStatus)(nil),                    // 22: api.WorkflowExecutionStatus
+	(*UpdateWorkflowExecutionStatusRequest)(nil),       // 23: api.UpdateWorkflowExecutionStatusRequest
+	(*Parameter)(nil),                                  // 24: api.Parameter
+	(*KeyValue)(nil),                                   // 25: api.KeyValue
+	(*Metric)(nil),                                     // 26: api.Metric
+	(*WorkflowTemplate)(nil),                           // 27: api.WorkflowTemplate
+	(*empty.Empty)(nil),                                // 28: google.protobuf.Empty
 }
 var file_workflow_proto_depIdxs = []int32{
-	22, // 0: api.CreateWorkflowExecutionBody.parameters:type_name -> api.Parameter
-	23, // 1: api.CreateWorkflowExecutionBody.labels:type_name -> api.KeyValue
+	24, // 0: api.CreateWorkflowExecutionBody.parameters:type_name -> api.Parameter
+	25, // 1: api.CreateWorkflowExecutionBody.labels:type_name -> api.KeyValue
 	0,  // 2: api.CreateWorkflowExecutionRequest.body:type_name -> api.CreateWorkflowExecutionBody
-	24, // 3: api.GetWorkflowExecutionMetricsResponse.metrics:type_name -> api.Metric
+	26, // 3: api.GetWorkflowExecutionMetricsResponse.metrics:type_name -> api.Metric
 	14, // 4: api.ListWorkflowExecutionsResponse.workflowExecutions:type_name -> api.WorkflowExecution
-	22, // 5: api.WorkflowExecution.parameters:type_name -> api.Parameter
-	25, // 6: api.WorkflowExecution.workflowTemplate:type_name -> api.WorkflowTemplate
-	23, // 7: api.WorkflowExecution.labels:type_name -> api.KeyValue
+	24, // 5: api.WorkflowExecution.parameters:type_name -> api.Parameter
+	27, // 6: api.WorkflowExecution.workflowTemplate:type_name -> api.WorkflowTemplate
+	25, // 7: api.WorkflowExecution.labels:type_name -> api.KeyValue
 	16, // 8: api.ListFilesResponse.files:type_name -> api.File
 	19, // 9: api.AddWorkflowExecutionStatisticRequest.statistics:type_name -> api.Statistics
 	19, // 10: api.CronStartWorkflowExecutionStatisticRequest.statistics:type_name -> api.Statistics
-	1,  // 11: api.WorkflowService.CreateWorkflowExecution:input_type -> api.CreateWorkflowExecutionRequest
-	2,  // 12: api.WorkflowService.CloneWorkflowExecution:input_type -> api.CloneWorkflowExecutionRequest
-	3,  // 13: api.WorkflowService.GetWorkflowExecution:input_type -> api.GetWorkflowExecutionRequest
-	11, // 14: api.WorkflowService.ListWorkflowExecutions:input_type -> api.ListWorkflowExecutionsRequest
-	5,  // 15: api.WorkflowService.WatchWorkflowExecution:input_type -> api.WatchWorkflowExecutionRequest
-	8,  // 16: api.WorkflowService.GetWorkflowExecutionLogs:input_type -> api.GetWorkflowExecutionLogsRequest
-	9,  // 17: api.WorkflowService.GetWorkflowExecutionMetrics:input_type -> api.GetWorkflowExecutionMetricsRequest
-	6,  // 18: api.WorkflowService.ResubmitWorkflowExecution:input_type -> api.ResubmitWorkflowExecutionRequest
-	7,  // 19: api.WorkflowService.TerminateWorkflowExecution:input_type -> api.TerminateWorkflowExecutionRequest
-	4,  // 20: api.WorkflowService.GetArtifact:input_type -> api.GetArtifactRequest
-	17, // 21: api.WorkflowService.ListFiles:input_type -> api.ListFilesRequest
-	20, // 22: api.WorkflowService.AddWorkflowExecutionStatistics:input_type -> api.AddWorkflowExecutionStatisticRequest
-	21, // 23: api.WorkflowService.CronStartWorkflowExecutionStatistic:input_type -> api.CronStartWorkflowExecutionStatisticRequest
-	14, // 24: api.WorkflowService.CreateWorkflowExecution:output_type -> api.WorkflowExecution
-	14, // 25: api.WorkflowService.CloneWorkflowExecution:output_type -> api.WorkflowExecution
-	14, // 26: api.WorkflowService.GetWorkflowExecution:output_type -> api.WorkflowExecution
-	12, // 27: api.WorkflowService.ListWorkflowExecutions:output_type -> api.ListWorkflowExecutionsResponse
-	14, // 28: api.WorkflowService.WatchWorkflowExecution:output_type -> api.WorkflowExecution
-	13, // 29: api.WorkflowService.GetWorkflowExecutionLogs:output_type -> api.LogEntry
-	10, // 30: api.WorkflowService.GetWorkflowExecutionMetrics:output_type -> api.GetWorkflowExecutionMetricsResponse
-	14, // 31: api.WorkflowService.ResubmitWorkflowExecution:output_type -> api.WorkflowExecution
-	26, // 32: api.WorkflowService.TerminateWorkflowExecution:output_type -> google.protobuf.Empty
-	15, // 33: api.WorkflowService.GetArtifact:output_type -> api.ArtifactResponse
-	18, // 34: api.WorkflowService.ListFiles:output_type -> api.ListFilesResponse
-	26, // 35: api.WorkflowService.AddWorkflowExecutionStatistics:output_type -> google.protobuf.Empty
-	26, // 36: api.WorkflowService.CronStartWorkflowExecutionStatistic:output_type -> google.protobuf.Empty
-	24, // [24:37] is the sub-list for method output_type
-	11, // [11:24] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	22, // 11: api.UpdateWorkflowExecutionStatusRequest.status:type_name -> api.WorkflowExecutionStatus
+	1,  // 12: api.WorkflowService.CreateWorkflowExecution:input_type -> api.CreateWorkflowExecutionRequest
+	2,  // 13: api.WorkflowService.CloneWorkflowExecution:input_type -> api.CloneWorkflowExecutionRequest
+	3,  // 14: api.WorkflowService.GetWorkflowExecution:input_type -> api.GetWorkflowExecutionRequest
+	11, // 15: api.WorkflowService.ListWorkflowExecutions:input_type -> api.ListWorkflowExecutionsRequest
+	5,  // 16: api.WorkflowService.WatchWorkflowExecution:input_type -> api.WatchWorkflowExecutionRequest
+	8,  // 17: api.WorkflowService.GetWorkflowExecutionLogs:input_type -> api.GetWorkflowExecutionLogsRequest
+	9,  // 18: api.WorkflowService.GetWorkflowExecutionMetrics:input_type -> api.GetWorkflowExecutionMetricsRequest
+	6,  // 19: api.WorkflowService.ResubmitWorkflowExecution:input_type -> api.ResubmitWorkflowExecutionRequest
+	7,  // 20: api.WorkflowService.TerminateWorkflowExecution:input_type -> api.TerminateWorkflowExecutionRequest
+	4,  // 21: api.WorkflowService.GetArtifact:input_type -> api.GetArtifactRequest
+	17, // 22: api.WorkflowService.ListFiles:input_type -> api.ListFilesRequest
+	20, // 23: api.WorkflowService.AddWorkflowExecutionStatistics:input_type -> api.AddWorkflowExecutionStatisticRequest
+	21, // 24: api.WorkflowService.CronStartWorkflowExecutionStatistic:input_type -> api.CronStartWorkflowExecutionStatisticRequest
+	23, // 25: api.WorkflowService.UpdateWorkflowExecutionStatus:input_type -> api.UpdateWorkflowExecutionStatusRequest
+	14, // 26: api.WorkflowService.CreateWorkflowExecution:output_type -> api.WorkflowExecution
+	14, // 27: api.WorkflowService.CloneWorkflowExecution:output_type -> api.WorkflowExecution
+	14, // 28: api.WorkflowService.GetWorkflowExecution:output_type -> api.WorkflowExecution
+	12, // 29: api.WorkflowService.ListWorkflowExecutions:output_type -> api.ListWorkflowExecutionsResponse
+	14, // 30: api.WorkflowService.WatchWorkflowExecution:output_type -> api.WorkflowExecution
+	13, // 31: api.WorkflowService.GetWorkflowExecutionLogs:output_type -> api.LogEntry
+	10, // 32: api.WorkflowService.GetWorkflowExecutionMetrics:output_type -> api.GetWorkflowExecutionMetricsResponse
+	14, // 33: api.WorkflowService.ResubmitWorkflowExecution:output_type -> api.WorkflowExecution
+	28, // 34: api.WorkflowService.TerminateWorkflowExecution:output_type -> google.protobuf.Empty
+	15, // 35: api.WorkflowService.GetArtifact:output_type -> api.ArtifactResponse
+	18, // 36: api.WorkflowService.ListFiles:output_type -> api.ListFilesResponse
+	28, // 37: api.WorkflowService.AddWorkflowExecutionStatistics:output_type -> google.protobuf.Empty
+	28, // 38: api.WorkflowService.CronStartWorkflowExecutionStatistic:output_type -> google.protobuf.Empty
+	28, // 39: api.WorkflowService.UpdateWorkflowExecutionStatus:output_type -> google.protobuf.Empty
+	26, // [26:40] is the sub-list for method output_type
+	12, // [12:26] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_workflow_proto_init() }
@@ -2137,6 +2275,30 @@ func file_workflow_proto_init() {
 				return nil
 			}
 		}
+		file_workflow_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*WorkflowExecutionStatus); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_workflow_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UpdateWorkflowExecutionStatusRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -2144,7 +2306,7 @@ func file_workflow_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_workflow_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   22,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -2185,6 +2347,7 @@ type WorkflowServiceClient interface {
 	ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error)
 	AddWorkflowExecutionStatistics(ctx context.Context, in *AddWorkflowExecutionStatisticRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	CronStartWorkflowExecutionStatistic(ctx context.Context, in *CronStartWorkflowExecutionStatisticRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	UpdateWorkflowExecutionStatus(ctx context.Context, in *UpdateWorkflowExecutionStatusRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type workflowServiceClient struct {
@@ -2358,6 +2521,15 @@ func (c *workflowServiceClient) CronStartWorkflowExecutionStatistic(ctx context.
 	return out, nil
 }
 
+func (c *workflowServiceClient) UpdateWorkflowExecutionStatus(ctx context.Context, in *UpdateWorkflowExecutionStatusRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/api.WorkflowService/UpdateWorkflowExecutionStatus", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WorkflowServiceServer is the server API for WorkflowService service.
 type WorkflowServiceServer interface {
 	// Creates a Workflow
@@ -2375,6 +2547,7 @@ type WorkflowServiceServer interface {
 	ListFiles(context.Context, *ListFilesRequest) (*ListFilesResponse, error)
 	AddWorkflowExecutionStatistics(context.Context, *AddWorkflowExecutionStatisticRequest) (*empty.Empty, error)
 	CronStartWorkflowExecutionStatistic(context.Context, *CronStartWorkflowExecutionStatisticRequest) (*empty.Empty, error)
+	UpdateWorkflowExecutionStatus(context.Context, *UpdateWorkflowExecutionStatusRequest) (*empty.Empty, error)
 }
 
 // UnimplementedWorkflowServiceServer can be embedded to have forward compatible implementations.
@@ -2419,6 +2592,9 @@ func (*UnimplementedWorkflowServiceServer) AddWorkflowExecutionStatistics(contex
 }
 func (*UnimplementedWorkflowServiceServer) CronStartWorkflowExecutionStatistic(context.Context, *CronStartWorkflowExecutionStatisticRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CronStartWorkflowExecutionStatistic not implemented")
+}
+func (*UnimplementedWorkflowServiceServer) UpdateWorkflowExecutionStatus(context.Context, *UpdateWorkflowExecutionStatusRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateWorkflowExecutionStatus not implemented")
 }
 
 func RegisterWorkflowServiceServer(s *grpc.Server, srv WorkflowServiceServer) {
@@ -2665,6 +2841,24 @@ func _WorkflowService_CronStartWorkflowExecutionStatistic_Handler(srv interface{
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WorkflowService_UpdateWorkflowExecutionStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateWorkflowExecutionStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkflowServiceServer).UpdateWorkflowExecutionStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.WorkflowService/UpdateWorkflowExecutionStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkflowServiceServer).UpdateWorkflowExecutionStatus(ctx, req.(*UpdateWorkflowExecutionStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _WorkflowService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "api.WorkflowService",
 	HandlerType: (*WorkflowServiceServer)(nil),
@@ -2712,6 +2906,10 @@ var _WorkflowService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CronStartWorkflowExecutionStatistic",
 			Handler:    _WorkflowService_CronStartWorkflowExecutionStatistic_Handler,
+		},
+		{
+			MethodName: "UpdateWorkflowExecutionStatus",
+			Handler:    _WorkflowService_UpdateWorkflowExecutionStatus_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

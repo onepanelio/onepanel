@@ -23,12 +23,12 @@
   "paths": {
     "/apis/v1beta1/auth/token": {
       "post": {
-        "operationId": "IsValidToken",
+        "operationId": "IsAuthorized",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/IsValidTokenResponse"
+              "$ref": "#/definitions/IsAuthorizedResponse"
             }
           },
           "default": {
@@ -38,16 +38,6 @@
             }
           }
         },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/TokenWrapper"
-            }
-          }
-        ],
         "tags": [
           "AuthService"
         ]
@@ -1148,6 +1138,50 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/workflow_executions/{uid}/status": {
+      "put": {
+        "operationId": "UpdateWorkflowExecutionStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WorkflowExecutionStatus"
+            }
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workflow_executions/{uid}/terminate": {
       "put": {
         "operationId": "TerminateWorkflowExecution",
@@ -1818,6 +1852,42 @@
             "schema": {
               "$ref": "#/definitions/WorkspaceTemplate"
             }
+          }
+        ],
+        "tags": [
+          "WorkspaceTemplateService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workspace_templates/{uid}/archive": {
+      "put": {
+        "operationId": "ArchiveWorkspaceTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkspaceTemplate"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "tags": [
@@ -2575,6 +2645,15 @@
         }
       }
     },
+    "IsAuthorizedResponse": {
+      "type": "object",
+      "properties": {
+        "authorized": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
     "IsValidTokenResponse": {
       "type": "object",
       "properties": {
@@ -3039,6 +3118,14 @@
         }
       }
     },
+    "WorkflowExecutionStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "type": "string"
+        }
+      }
+    },
     "WorkflowTemplate": {
       "type": "object",
       "properties": {
@@ -3171,6 +3258,16 @@
         },
         "workflowTemplate": {
           "$ref": "#/definitions/WorkflowTemplate"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/KeyValue"
+          }
+        },
+        "isArchived": {
+          "type": "boolean",
+          "format": "boolean"
         }
       }
     },

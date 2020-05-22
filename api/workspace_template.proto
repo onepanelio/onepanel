@@ -5,6 +5,7 @@ package api;
 import "google/api/annotations.proto";
 import "workflow_template.proto";
 import "google/protobuf/empty.proto";
+import "label.proto";
 
 service WorkspaceTemplateService {
     // Get the generated WorkflowTemplate for a WorkspaceTemplate
@@ -28,6 +29,13 @@ service WorkspaceTemplateService {
         option (google.api.http) = {
             put: "/apis/v1beta1/{namespace}/workspace_templates/{uid}"
             body: "workspaceTemplate"
+        };
+    }
+
+    // Archives a WorkspaceTemplate
+    rpc ArchiveWorkspaceTemplate (ArchiveWorkspaceTemplateRequest) returns (WorkspaceTemplate) {
+        option (google.api.http) = {
+            put: "/apis/v1beta1/{namespace}/workspace_templates/{uid}/archive"
         };
     }
 
@@ -59,6 +67,8 @@ message WorkspaceTemplate {
     bool isLatest = 5;
     string createdAt = 6;
     WorkflowTemplate workflowTemplate = 7;
+    repeated KeyValue labels = 8;
+    bool isArchived = 9;
 }
 
 message GenerateWorkspaceTemplateWorkflowTemplateRequest {
@@ -82,6 +92,11 @@ message GetWorkspaceTemplateRequest {
     string namespace = 1;
     string uid = 2;
     int64 version = 3;
+}
+
+message ArchiveWorkspaceTemplateRequest {
+    string namespace = 1;
+    string uid = 2;
 }
 
 message ListWorkspaceTemplatesRequest {

@@ -1,21 +1,17 @@
 package v1
 
+import corev1 "k8s.io/api/core/v1"
+
 type ArtifactRepositoryS3Config struct {
 	KeyFormat       string
 	Bucket          string
 	Endpoint        string
-	Insecure        string
+	Insecure        bool
 	Region          string
-	AccessKeySecret struct {
-		Name string
-		Key  string
-	}
-	SecretKeySecret struct {
-		Name string
-		Key  string
-	}
-	AccessKey string
-	Secretkey string
+	AccessKeySecret corev1.SecretKeySelector
+	SecretKeySecret corev1.SecretKeySelector
+	AccessKey       string
+	Secretkey       string
 }
 
 type ArtifactRepositoryConfig struct {
