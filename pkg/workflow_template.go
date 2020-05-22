@@ -613,10 +613,10 @@ func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, 
 
 	//cron workflows
 	cronWorkflows := []*CronWorkflow{}
-	sb := c.cronWorkflowSelectBuilder(namespace, uid).
+	cwfSB := c.cronWorkflowSelectBuilder(namespace, uid).
 		OrderBy("cw.created_at DESC")
 
-	query, args, err := sb.ToSql()
+	query, args, err := cwfSB.ToSql()
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -674,7 +674,7 @@ func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, 
 		}
 	}
 
-	_, err = sq.Update("workflow_templates").
+	_, err = sb.Update("workflow_templates").
 		Set("is_archived", true).
 		Where(sq.Eq{
 			"uid":       uid,
