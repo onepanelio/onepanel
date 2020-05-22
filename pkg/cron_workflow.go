@@ -668,7 +668,7 @@ func getCronWorkflowColumns(extraColumns ...string) []string {
 	return results
 }
 
-func (c *Client) SelectCronWorkflowWithWorkflowTemplateVersion(namespace, uid string, extraColumns ...string) (error, *CronWorkflow) {
+func (c *Client) selectCronWorkflowWithWorkflowTemplateVersion(namespace, uid string, extraColumns ...string) (error, *CronWorkflow) {
 	query, args, err := sb.Select(getCronWorkflowColumns(extraColumns...)...).
 		From("cron_workflows cw").
 		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
