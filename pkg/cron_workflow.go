@@ -510,7 +510,7 @@ func (c *Client) createCronWorkflow(namespace string, workflowTemplateId *uint64
 }
 
 func (c *Client) TerminateCronWorkflow(namespace, uid string) (err error) {
-	err, cronWorkflow := c.SelectCronWorkflowWithExtraColumns(namespace, uid, "wtv.version")
+	err, cronWorkflow := c.SelectCronWorkflowWithWorkflowTemplateVersion(namespace, uid, "wtv.version")
 	if err != nil {
 		return err
 	}
@@ -529,11 +529,11 @@ func (c *Client) TerminateCronWorkflow(namespace, uid string) (err error) {
 		return err
 	}
 
-	err = c.DeleteCronWorkflowDb(namespace, uid)
+	err = c.ArchiveCronWorkflowDB(namespace, uid)
 	if err != nil {
 		return err
 	}
-	err = c.DeleteCronWorkflow(namespace, uid)
+	err = c.DeleteCronWorkflowK8S(namespace, uid)
 	if err != nil {
 		return err
 	}
@@ -660,7 +660,7 @@ func cronWorkflowColumns(extraColumns ...string) []string {
 	return results
 }
 
-func (c *Client) SelectCronWorkflowWithExtraColumns(namespace, uid string, extraColumns ...string) (error, *CronWorkflow) {
+func (c *Client) SelectCronWorkflowWithWorkflowTemplateVersion(namespace, uid string, extraColumns ...string) (error, *CronWorkflow) {
 	query, args, err := sb.Select(cronWorkflowColumns(extraColumns...)...).
 		From("cron_workflows cw").
 		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
@@ -683,7 +683,7 @@ func (c *Client) SelectCronWorkflowWithExtraColumns(namespace, uid string, extra
 	return nil, cronWorkflow
 }
 
-func (c *Client) DeleteCronWorkflowDb(namespace, uid string) error {
+func (c *Client) DeleteCronWorkflowDB(namespace, uid string) error {
 	query, args, err := sb.Select("id").From("cron_workflows").
 		Where(sq.Eq{
 			"uid":       uid,
@@ -731,6 +731,8 @@ func (c *Client) ArchiveCronWorkflowDB(namespace, uid string) error {
 	}
 	return nil
 }
+
+func (c *Client) DeleteCronWorkflowK8S(namespace, uid string) error {
 	err := c.ArgoprojV1alpha1().CronWorkflows(namespace).Delete(uid, nil)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {

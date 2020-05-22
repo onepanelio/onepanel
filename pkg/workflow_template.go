@@ -628,7 +628,7 @@ func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, 
 	//clean up workflow templates
 	wfTempVer := strconv.FormatInt(workflowTemplate.Version, 10)
 	workflowTemplateName := uid + "-v" + wfTempVer
-	err = c.DeleteWorkflowTemplate(namespace, workflowTemplateName)
+	err = c.DeleteWorkflowTemplateK8S(namespace, workflowTemplateName)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -689,7 +689,7 @@ func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, 
 			break
 		}
 		for _, wf := range wfs {
-			err = c.DeleteWorkflowExecution(namespace, wf.UID)
+			err = c.DeleteWorkflowExecutionK8S(namespace, wf.UID)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"Namespace": namespace,
@@ -698,7 +698,7 @@ func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, 
 				}).Error("Delete Workflow Execution k8s failed.")
 				return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
 			}
-			err = c.DeleteWorkflowExecutionDb(wf.UID)
+			err = c.ArchiveWorkflowExecutionDB(namespace, wf.UID)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"Namespace": namespace,
@@ -848,7 +848,7 @@ func (c *Client) GetWorkflowTemplateLabels(namespace, name, prefix string, versi
 	return
 }
 
-func (c *Client) DeleteWorkflowTemplate(namespace, uid string) error {
+func (c *Client) DeleteWorkflowTemplateK8S(namespace, uid string) error {
 	err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Delete(uid, nil)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
