@@ -526,7 +526,10 @@ func (c *Client) getWorkspaceTemplateByName(namespace, name string) (workspaceTe
 	workspaceTemplate = &WorkspaceTemplate{}
 
 	sb := c.workspaceTemplatesSelectBuilder(namespace).
-		Where(sq.Eq{"wt.name": name}).
+		Where(sq.Eq{
+			"wt.name":     name,
+			"is_archived": false,
+		}).
 		Limit(1)
 	query, args, err := sb.ToSql()
 	if err != nil {
