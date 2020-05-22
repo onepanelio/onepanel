@@ -528,6 +528,9 @@ func (c *Client) TerminateCronWorkflow(namespace, uid string) (err error) {
 	if err != nil {
 		return err
 	}
+	if err := tx.Commit(); err != nil {
+		return err
+	}
 
 	err = c.ArchiveCronWorkflowDB(namespace, uid)
 	if err != nil {
@@ -729,6 +732,10 @@ func (c *Client) ArchiveCronWorkflowDB(namespace, uid string) error {
 	if err != nil {
 		return err
 	}
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
