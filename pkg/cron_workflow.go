@@ -256,6 +256,7 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 			"workflow_template_version_id": workflowTemplate.WorkflowTemplateVersionId,
 			"manifest":                     cronWorkflow.Manifest,
 			"namespace":                    namespace,
+			"is_archived":                  false,
 		}).
 		Suffix("RETURNING id").
 		RunWith(tx).

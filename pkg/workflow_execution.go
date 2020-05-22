@@ -425,6 +425,7 @@ func (c *Client) insertPreWorkflowExecutionStatistic(namespace, name string, wor
 		"created_at":                   createdAt.UTC(),
 		"phase":                        wfv1.NodePending,
 		"parameters":                   string(parametersJson),
+		"is_archived":                  false,
 	}
 
 	err = sb.Insert("workflow_executions").
