@@ -1412,8 +1412,9 @@ func injectInitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, workflowTemp
 
 func workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, workflowTemplateVersion string) sq.SelectBuilder {
 	whereMap := sq.Eq{
-		"wt.namespace": namespace,
-		"wt.uid":       workflowTemplateUID,
+		"wt.namespace":   namespace,
+		"wt.uid":         workflowTemplateUID,
+		"we.is_archived": false,
 	}
 	if workflowTemplateVersion != "" {
 		whereMap["wtv.version"] = workflowTemplateVersion
