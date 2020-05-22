@@ -1478,20 +1478,6 @@ func (c *Client) DeleteWorkflowExecutionK8S(namespace, uid string) error {
 	return nil
 }
 
-func (c *Client) DeleteWorkflowExecutionDB(workflowUid string) error {
-	query, args, err := sb.Delete("workflow_executions").Where(sq.Eq{
-		"uid": workflowUid,
-	}).ToSql()
-	if err != nil {
-		return err
-	}
-
-	if _, err := c.DB.Exec(query, args); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (c *Client) ArchiveWorkflowExecutionDB(namespace, uid string) error {
 	tx, err := c.DB.Begin()
 	if err != nil {
