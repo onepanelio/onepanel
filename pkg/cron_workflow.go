@@ -514,12 +514,18 @@ func (c *Client) TerminateCronWorkflow(namespace, uid string) (err error) {
 	if err != nil {
 		return err
 	}
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	_, err = sb.Update("workflow_executions").
+		Set("is_archived", true).
+		Where(sq.Eq{
+			"cron_workflow_id": cronWorkflow.ID,
+		}).RunWith(tx).Exec()
 
-	query, args, err := sb.Delete("workflow_executions").Where(sq.Eq{
-		"cron_workflow_id": cronWorkflow.ID,
-	}).ToSql()
-
-	if _, err := c.DB.Exec(query, args...); err != nil {
+	if err != nil {
 		return err
 	}
 
@@ -707,7 +713,24 @@ func (c *Client) DeleteCronWorkflowDb(namespace, uid string) error {
 	return nil
 }
 
-func (c *Client) DeleteCronWorkflow(namespace, uid string) error {
+func (c *Client) ArchiveCronWorkflowDB(namespace, uid string) error {
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = sb.Update("cron_workflows").
+		Set("is_archived", true).
+		Where(sq.Eq{
+			"uid":       uid,
+			"namespace": namespace,
+		}).RunWith(tx).Exec()
+	if err != nil {
+		return err
+	}
+	return nil
+}
 	err := c.ArgoprojV1alpha1().CronWorkflows(namespace).Delete(uid, nil)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {

@@ -1488,3 +1488,19 @@ func (c *Client) DeleteWorkflowExecutionDb(workflowUid string) error {
 	}
 	return nil
 }
+
+func (c *Client) ArchiveWorkflowExecutionDB(namespace, uid string) error {
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	_, err = sb.Update("workflow_executions").Set("is_archived", true).Where(sq.Eq{
+		"uid":       uid,
+		"namespace": namespace,
+	}).RunWith(tx).Exec()
+	if err != nil {
+		return err
+	}
+	return nil
+}
