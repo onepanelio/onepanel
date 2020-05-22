@@ -629,13 +629,3 @@ func (c *Client) GetCronWorkflowStatisticsForTemplates(workflowTemplates ...*Wor
 
 	return
 }
-
-func getCronWorkflowColumns(extraColumns ...string) []string {
-	results := []string{"cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.workflow_template_version_id", "cw.manifest", "cw.namespace"}
-
-	for _, str := range extraColumns {
-		results = append(results, str)
-	}
-
-	return results
-}
