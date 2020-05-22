@@ -196,6 +196,26 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 	return
 }
 
+func (c *Client) ArchiveWorkflowExecution(namespace, uid string) error {
+	_, err := sb.Update("workflow_executions").Set("is_archived", true).Where(sq.Eq{
+		"uid":       uid,
+		"namespace": namespace,
+	}).RunWith(c.DB).Exec()
+	if err != nil {
+		return err
+	}
+
+	err = c.ArgoprojV1alpha1().Workflows(namespace).Delete(uid, nil)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil
+		}
+		return err
+	}
+
+	return nil
+}
+
 /*
 	Name is == to UID, no user friendly name.
 	Workflow execution name == uid, example: name = my-friendly-wf-name-8skjz, uid = my-friendly-wf-name-8skjz
@@ -419,6 +439,7 @@ func (c *Client) insertPreWorkflowExecutionStatistic(namespace, name string, wor
 		"created_at":                   createdAt.UTC(),
 		"phase":                        wfv1.NodePending,
 		"parameters":                   string(parametersJson),
+		"is_archived":                  false,
 	}
 
 	err = sb.Insert("workflow_executions").
@@ -555,8 +576,9 @@ func (c *Client) GetWorkflowExecution(namespace, uid string) (workflow *Workflow
 		Join("workflow_template_versions wtv ON wtv.id = we.workflow_template_version_id").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{
-			"wt.namespace": namespace,
-			"we.name":      uid,
+			"wt.namespace":   namespace,
+			"we.name":        uid,
+			"we.is_archived": false,
 		}).
 		ToSql()
 	if err != nil {
@@ -1486,8 +1508,9 @@ func injectWorkflowExecutionStatusCaller(wf *wfv1.Workflow, phase wfv1.NodePhase
 
 func workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, workflowTemplateVersion string) sq.SelectBuilder {
 	whereMap := sq.Eq{
-		"wt.namespace": namespace,
-		"wt.uid":       workflowTemplateUID,
+		"wt.namespace":   namespace,
+		"wt.uid":         workflowTemplateUID,
+		"we.is_archived": false,
 	}
 	if workflowTemplateVersion != "" {
 		whereMap["wtv.version"] = workflowTemplateVersion
@@ -1518,8 +1541,9 @@ func (c *Client) getWorkflowExecutionAndTemplate(namespace string, uid string) (
 		Join("workflow_template_versions wtv ON we.workflow_template_version_id = wtv.id").
 		Join("workflow_templates wt ON wtv.workflow_template_id = wt.id").
 		Where(sq.Eq{
-			"wt.namespace": namespace,
-			"we.uid":       uid,
+			"wt.namespace":   namespace,
+			"we.name":        uid,
+			"we.is_archived": false,
 		}).
 		ToSql()
 	if err != nil {

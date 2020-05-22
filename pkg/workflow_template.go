@@ -7,6 +7,7 @@ import (
 	"github.com/onepanelio/core/pkg/util/pagination"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"strconv"
+	"strings"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -200,7 +201,10 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (work
 	sb := c.workflowTemplatesSelectBuilder(namespace).
 		Columns("wtv.manifest", "wtv.version", "wtv.id workflow_template_version_id").
 		Join("workflow_template_versions wtv ON wt.id = wtv.workflow_template_id").
-		Where(sq.Eq{"wt.uid": uid})
+		Where(sq.Eq{
+			"wt.uid":         uid,
+			"wt.is_archived": false,
+		})
 
 	if version == 0 {
 		sb = sb.Where(sq.Eq{"wtv.is_latest": true})
@@ -341,26 +345,6 @@ func (c *Client) CountWorkflowTemplates(namespace string) (count int, err error)
 		Scan(&count)
 
 	return
-}
-
-func (c *Client) archiveWorkflowTemplate(namespace, uid string) (bool, error) {
-	query, args, err := sb.Update("workflow_templates").
-		Set("is_archived", true).
-		Where(sq.Eq{
-			"uid":       uid,
-			"namespace": namespace,
-		}).
-		ToSql()
-
-	if err != nil {
-		return false, err
-	}
-
-	if _, err := c.DB.Exec(query, args...); err != nil {
-		return false, err
-	}
-
-	return true, nil
 }
 
 func (c *Client) validateWorkflowTemplate(namespace string, workflowTemplate *WorkflowTemplate) (err error) {
@@ -609,8 +593,12 @@ func (c *Client) ListWorkflowTemplates(namespace string, paginator *pagination.P
 	return
 }
 
+func (c *Client) getLatestWorkflowTemplate(namespace, uid string) (*WorkflowTemplate, error) {
+	return c.getWorkflowTemplate(namespace, uid, 0) //version=0 means latest
+}
+
 func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, err error) {
-	workflowTemplate, err := c.getWorkflowTemplate(namespace, uid, 0)
+	workflowTemplate, err := c.getLatestWorkflowTemplate(namespace, uid)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -622,20 +610,96 @@ func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, 
 	if workflowTemplate == nil {
 		return false, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}
+	wfTempVer := strconv.FormatInt(workflowTemplate.Version, 10)
+	workflowTemplateName := uid + "-v" + wfTempVer
 
-	archived, err = c.archiveWorkflowTemplate(namespace, uid)
-	if !archived || err != nil {
+	//cron workflows
+	cronWorkflows := []*CronWorkflow{}
+	cwfSB := c.cronWorkflowSelectBuilder(namespace, uid).
+		OrderBy("cw.created_at DESC")
+
+	query, args, err := cwfSB.ToSql()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"UID":       uid,
+			"Error":     err.Error(),
+		}).Error("Get Cron Workflows SQL failed.")
+		return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
+	}
+
+	if err := c.DB.Select(&cronWorkflows, query, args...); err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"UID":       uid,
+			"Error":     err.Error(),
+		}).Error("Get Cron Workflows failed.")
+		return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
+	}
+	for _, cwf := range cronWorkflows {
+		err = c.ArchiveCronWorkflow(namespace, cwf.Name)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"Namespace": namespace,
 				"UID":       uid,
 				"Error":     err.Error(),
-			}).Error("Archive Workflow Template failed.")
+			}).Error("Archive Cron Workflow failed.")
+			return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
 		}
+	}
+
+	//workflow executions
+	paginator := pagination.NewRequest(0, 100)
+	for {
+		wfs, err := c.ListWorkflowExecutions(namespace, uid, wfTempVer, &paginator)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"Namespace": namespace,
+				"UID":       uid,
+				"Error":     err.Error(),
+			}).Error("Get Workflow Executions failed.")
+			return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
+		}
+		if len(wfs) == 0 {
+			break
+		}
+		for _, wf := range wfs {
+			err = c.ArchiveWorkflowExecution(namespace, wf.UID)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"Error":     err.Error(),
+				}).Error("Archive Workflow Execution.")
+				return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
+			}
+		}
+	}
+
+	_, err = sb.Update("workflow_templates").
+		Set("is_archived", true).
+		Where(sq.Eq{
+			"uid":       uid,
+			"namespace": namespace,
+		}).RunWith(c.DB).Exec()
+
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"UID":       uid,
+			"Error":     err.Error(),
+		}).Error("Archive Workflow Template DB failed.")
 		return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
 	}
 
-	return
+	err = c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Delete(workflowTemplateName, nil)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return true, nil
+		}
+		return false, err
+	}
+	return true, nil
 }
 
 func createArgoWorkflowTemplate(workflowTemplate *WorkflowTemplate, version int64) (*v1alpha1.WorkflowTemplate, error) {

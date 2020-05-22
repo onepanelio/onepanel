@@ -82,6 +82,7 @@ type CronWorkflow struct {
 	Version                   int64
 	WorkflowTemplateVersionId uint64 `db:"workflow_template_version_id"`
 	Manifest                  string
+	Namespace                 string `db:"namespace"`
 }
 
 func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]Parameter, error) {
@@ -663,6 +664,18 @@ func getWorkflowTemplateVersionColumns(alias string, destination string, extraCo
 func getWorkflowExecutionColumns(alias string, destination string, extraColumns ...string) []string {
 	columns := []string{"id", "created_at", "uid", "name", "parameters", "phase", "started_at", "finished_at"}
 	return formatColumnSelect(columns, alias, destination, extraColumns...)
+}
+
+// returns all of the columns for cronWorkflow modified by alias, destination.
+// see formatColumnSelect
+func getCronWorkflowColumns(extraColumns ...string) []string {
+	results := []string{"cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.workflow_template_version_id", "cw.manifest", "cw.namespace"}
+
+	for _, str := range extraColumns {
+		results = append(results, str)
+	}
+
+	return results
 }
 
 func LabelsToMapping(labels ...*Label) map[string]string {

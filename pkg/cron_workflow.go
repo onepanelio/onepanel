@@ -255,6 +255,8 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 			"name":                         cronWorkflow.Name,
 			"workflow_template_version_id": workflowTemplate.WorkflowTemplateVersionId,
 			"manifest":                     cronWorkflow.Manifest,
+			"namespace":                    namespace,
+			"is_archived":                  false,
 		}).
 		Suffix("RETURNING id").
 		RunWith(tx).
@@ -283,7 +285,7 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 func (c *Client) GetCronWorkflow(namespace, uid string) (cronWorkflow *CronWorkflow, err error) {
 	cronWorkflow = &CronWorkflow{}
 
-	err = c.cronWorkflowSelectBuilderNamespaceName(namespace, uid).
+	err = c.cronWorkflowSelectBuilderNoColumns(namespace, uid).
 		RunWith(c.DB).
 		QueryRow().
 		Scan(cronWorkflow)
@@ -509,76 +511,44 @@ func (c *Client) createCronWorkflow(namespace string, workflowTemplateId *uint64
 }
 
 func (c *Client) TerminateCronWorkflow(namespace, uid string) (err error) {
-	query, args, err := sb.Select(cronWorkflowColumns("wtv.version")...).
-		From("cron_workflows cw").
-		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
-		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
-		Where(sq.Eq{
-			"wt.namespace": namespace,
-			"cw.name":      uid,
-		}).
-		ToSql()
-
-	cronWorkflow := &CronWorkflow{}
-	if err := c.DB.Get(cronWorkflow, query, args...); err != nil {
-		return err
-	}
-
-	query = `DELETE FROM workflow_executions
-			 WHERE cron_workflow_id = $1`
-
-	if _, err := c.DB.Exec(query, cronWorkflow.ID); err != nil {
-		return err
-	}
-
-	query = `DELETE FROM cron_workflows 
-			  USING workflow_template_versions, workflow_templates
-			  WHERE cron_workflows.workflow_template_version_id = workflow_template_versions.id 
-			   AND workflow_template_versions.workflow_template_id = workflow_templates.id 
-			   AND workflow_templates.namespace = $1 
-			   AND cron_workflows.name = $2`
-	if _, err := c.DB.Exec(query, namespace, uid); err != nil {
-		return err
-	}
-
 	err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Delete(uid, nil)
-	if err != nil && strings.Contains(err.Error(), "not found") {
-		err = nil
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil
+		}
+		return err
 	}
+
+	_, err = sb.Delete("cron_workflows").
+		Where(sq.Eq{
+			"uid":       uid,
+			"namespace": namespace,
+		}).RunWith(c.DB).Exec()
 
 	return
 }
 
-func unmarshalCronWorkflows(cwfBytes []byte, strict bool) (cwfs wfv1.CronWorkflow, err error) {
-	var cwf wfv1.CronWorkflow
-	var jsonOpts []argojson.JSONOpt
-	if strict {
-		jsonOpts = append(jsonOpts, argojson.DisallowUnknownFields)
+func (c *Client) ArchiveCronWorkflow(namespace, uid string) (err error) {
+	err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Delete(uid, nil)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil
+		}
+		return err
 	}
-	err = argojson.Unmarshal(cwfBytes, &cwf, jsonOpts...)
-	if err == nil {
-		return cwf, nil
-	}
+
+	_, err = sb.Update("cron_workflows").
+		Set("is_archived", true).
+		Where(sq.Eq{
+			"uid":       uid,
+			"namespace": namespace,
+		}).RunWith(c.DB).Exec()
 	return
 }
 
 func (c *Client) cronWorkflowSelectBuilder(namespace string, workflowTemplateUid string) sq.SelectBuilder {
 	sb := c.cronWorkflowSelectBuilderNoColumns(namespace, workflowTemplateUid).
-		Columns(cronWorkflowColumns("wtv.version")...)
-
-	return sb
-}
-
-func (c *Client) cronWorkflowSelectBuilderNamespaceName(namespace string, uid string) sq.SelectBuilder {
-	sb := sb.Select("cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.workflow_template_version_id").
-		Columns("cw.manifest", "wtv.version").
-		From("cron_workflows cw").
-		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
-		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
-		Where(sq.Eq{
-			"wt.namespace": namespace,
-			"cw.name":      uid,
-		})
+		Columns(getCronWorkflowColumns("wtv.version")...)
 
 	return sb
 }
@@ -589,8 +559,9 @@ func (c *Client) cronWorkflowSelectBuilderNoColumns(namespace string, workflowTe
 		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{
-			"wt.namespace": namespace,
-			"wt.uid":       workflowTemplateUid,
+			"wt.namespace":   namespace,
+			"wt.uid":         workflowTemplateUid,
+			"cw.is_archived": false,
 		})
 
 	return sb
@@ -657,14 +628,4 @@ func (c *Client) GetCronWorkflowStatisticsForTemplates(workflowTemplates ...*Wor
 	}
 
 	return
-}
-
-func cronWorkflowColumns(extraColumns ...string) []string {
-	results := []string{"cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.workflow_template_version_id", "cw.manifest"}
-
-	for _, str := range extraColumns {
-		results = append(results, str)
-	}
-
-	return results
 }
