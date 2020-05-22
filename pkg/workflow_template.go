@@ -624,19 +624,8 @@ func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, 
 	if workflowTemplate == nil {
 		return false, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}
-
-	//clean up workflow templates
 	wfTempVer := strconv.FormatInt(workflowTemplate.Version, 10)
 	workflowTemplateName := uid + "-v" + wfTempVer
-	err = c.DeleteWorkflowTemplateK8S(namespace, workflowTemplateName)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"UID":       uid,
-			"Error":     err.Error(),
-		}).Error("Delete Workflow Template failed.")
-		return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
-	}
 
 	//cron workflows
 	cronWorkflows := []*CronWorkflow{}
@@ -719,6 +708,17 @@ func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, 
 				"Error":     err.Error(),
 			}).Error("Archive Workflow Template failed.")
 		}
+		return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
+	}
+
+	//clean up workflow templates
+	err = c.DeleteWorkflowTemplateK8S(namespace, workflowTemplateName)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"UID":       uid,
+			"Error":     err.Error(),
+		}).Error("Delete Workflow Template failed.")
 		return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
 	}
 
