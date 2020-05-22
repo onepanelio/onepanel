@@ -678,22 +678,13 @@ func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, 
 			break
 		}
 		for _, wf := range wfs {
-			err = c.DeleteWorkflowExecutionK8S(namespace, wf.UID)
+			err = c.ArchiveWorkflowExecution(namespace, wf.UID)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"Namespace": namespace,
 					"UID":       uid,
 					"Error":     err.Error(),
-				}).Error("Delete Workflow Execution k8s failed.")
-				return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
-			}
-			err = c.ArchiveWorkflowExecutionDB(namespace, wf.UID)
-			if err != nil {
-				log.WithFields(log.Fields{
-					"Namespace": namespace,
-					"UID":       uid,
-					"Error":     err.Error(),
-				}).Error("Delete Workflow Execution DB failed.")
+				}).Error("Archive Workflow Execution.")
 				return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
 			}
 		}

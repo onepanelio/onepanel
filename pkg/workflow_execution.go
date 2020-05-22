@@ -173,6 +173,26 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 	return
 }
 
+func (c *Client) ArchiveWorkflowExecution(namespace, uid string) error {
+	_, err := sb.Update("workflow_executions").Set("is_archived", true).Where(sq.Eq{
+		"uid":       uid,
+		"namespace": namespace,
+	}).RunWith(c.DB).Exec()
+	if err != nil {
+		return err
+	}
+
+	err = c.ArgoprojV1alpha1().Workflows(namespace).Delete(uid, nil)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil
+		}
+		return err
+	}
+
+	return nil
+}
+
 /*
 	Name is == to UID, no user friendly name.
 	Workflow execution name == uid, example: name = my-friendly-wf-name-8skjz, uid = my-friendly-wf-name-8skjz
@@ -1465,34 +1485,4 @@ func (c *Client) getWorkflowExecutionAndTemplate(namespace string, uid string) (
 	}
 
 	return
-}
-
-func (c *Client) DeleteWorkflowExecutionK8S(namespace, uid string) error {
-	err := c.ArgoprojV1alpha1().Workflows(namespace).Delete(uid, nil)
-	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			return nil
-		}
-		return err
-	}
-	return nil
-}
-
-func (c *Client) ArchiveWorkflowExecutionDB(namespace, uid string) error {
-	tx, err := c.DB.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-	_, err = sb.Update("workflow_executions").Set("is_archived", true).Where(sq.Eq{
-		"uid":       uid,
-		"namespace": namespace,
-	}).RunWith(tx).Exec()
-	if err != nil {
-		return err
-	}
-	if err := tx.Commit(); err != nil {
-		return err
-	}
-	return nil
 }
