@@ -639,6 +639,9 @@ func (c *Client) GetWorkspaceTemplate(namespace, uid string, version int64) (wor
 	workspaceTemplate = &WorkspaceTemplate{}
 	sb := c.workspaceTemplateVersionsSelectBuilder(namespace, uid).
 		Limit(1)
+
+	sb = sb.Where(sq.Eq{"wt.is_archived": false})
+
 	if version == 0 {
 		sb = sb.Where(sq.Eq{
 			"wtv.is_latest":  true,
