@@ -561,7 +561,7 @@ func unmarshalCronWorkflows(cwfBytes []byte, strict bool) (cwfs wfv1.CronWorkflo
 
 func (c *Client) cronWorkflowSelectBuilder(namespace string, workflowTemplateUid string) sq.SelectBuilder {
 	sb := c.cronWorkflowSelectBuilderNoColumns(namespace, workflowTemplateUid).
-		Columns(cronWorkflowColumns("wtv.version")...)
+		Columns(getCronWorkflowColumns("wtv.version")...)
 
 	return sb
 }
@@ -658,7 +658,7 @@ func (c *Client) GetCronWorkflowStatisticsForTemplates(workflowTemplates ...*Wor
 	return
 }
 
-func cronWorkflowColumns(extraColumns ...string) []string {
+func getCronWorkflowColumns(extraColumns ...string) []string {
 	results := []string{"cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.workflow_template_version_id", "cw.manifest", "cw.namespace"}
 
 	for _, str := range extraColumns {
@@ -669,7 +669,7 @@ func cronWorkflowColumns(extraColumns ...string) []string {
 }
 
 func (c *Client) SelectCronWorkflowWithWorkflowTemplateVersion(namespace, uid string, extraColumns ...string) (error, *CronWorkflow) {
-	query, args, err := sb.Select(cronWorkflowColumns(extraColumns...)...).
+	query, args, err := sb.Select(getCronWorkflowColumns(extraColumns...)...).
 		From("cron_workflows cw").
 		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
