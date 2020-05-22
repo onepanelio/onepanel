@@ -591,8 +591,12 @@ func (c *Client) ListWorkflowTemplates(namespace string, paginator *pagination.P
 	return
 }
 
+func (c *Client) getLatestWorkflowTemplate(namespace, uid string) (*WorkflowTemplate, error) {
+	return c.getWorkflowTemplate(namespace, uid, 0) //version=0 means latest
+}
+
 func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, err error) {
-	workflowTemplate, err := c.getWorkflowTemplate(namespace, uid, 0) //version=0 means latest
+	workflowTemplate, err := c.getLatestWorkflowTemplate(namespace, uid)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
