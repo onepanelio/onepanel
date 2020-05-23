@@ -431,7 +431,7 @@ metadata:
 }
 
 func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *WorkspaceTemplate) (*WorkspaceTemplate, error) {
-	uid, err := uid2.GenerateUID(workspaceTemplate.Name)
+	uid, err := uid2.GenerateUID(workspaceTemplate.Name, 30)
 	if err != nil {
 		return nil, err
 	}

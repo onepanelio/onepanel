@@ -22,7 +22,7 @@ import (
 )
 
 func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, *WorkflowTemplateVersion, error) {
-	uid, err := uid2.GenerateUID(workflowTemplate.Name)
+	uid, err := uid2.GenerateUID(workflowTemplate.Name, 30)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -717,7 +717,7 @@ func createArgoWorkflowTemplate(workflowTemplate *WorkflowTemplate, version int6
 		return nil, err
 	}
 
-	worfklowTemplateName, err := uid2.GenerateUID(workflowTemplate.Name)
+	worfklowTemplateName, err := uid2.GenerateUID(workflowTemplate.Name, 30)
 	if err != nil {
 		return nil, err
 	}

@@ -38,7 +38,7 @@ func (c *Client) UpdateCronWorkflow(namespace string, uid string, cronWorkflow *
 
 	// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
 	opts := &WorkflowExecutionOptions{}
-	opts.GenerateName, err = uid2.GenerateUID(workflowTemplate.Name)
+	opts.GenerateName, err = uid2.GenerateUID(workflowTemplate.Name, 63)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +164,7 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 
 	//// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
 	opts := &WorkflowExecutionOptions{}
-	opts.GenerateName, err = uid2.GenerateUID(workflowTemplate.Name)
+	opts.GenerateName, err = uid2.GenerateUID(workflowTemplate.Name, 63)
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +235,7 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 	cronWorkflow.Name = argoCreatedCronWorkflow.Name
 	cronWorkflow.CreatedAt = argoCreatedCronWorkflow.CreationTimestamp.UTC()
 
-	cronWorkflow.UID, err = uid2.GenerateUID(argoCreatedCronWorkflow.Name)
+	cronWorkflow.UID, err = uid2.GenerateUID(argoCreatedCronWorkflow.Name, 63)
 	if err != nil {
 		return nil, err
 	}
