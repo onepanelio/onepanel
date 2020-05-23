@@ -33,8 +33,8 @@ type WorkspaceStatus struct {
 type Workspace struct {
 	ID                       uint64
 	Namespace                string
-	UID                      string
-	Name                     string `valid:"stringlength(3|30)~Name should be between 3 to 30 characters,dns,required"`
+	UID                      string `valid:"stringlength(3|30)~UID should be between 3 to 30 characters,dns,required"`
+	Name                     string `valid:"stringlength(3|30)~Name should be between 3 to 30 characters,required"`
 	Labels                   map[string]string
 	Parameters               []Parameter
 	ParametersBytes          []byte                   `db:"parameters"` // to load from database
