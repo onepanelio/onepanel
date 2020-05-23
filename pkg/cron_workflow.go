@@ -513,13 +513,45 @@ func (c *Client) createCronWorkflow(namespace string, workflowTemplateId *uint64
 func (c *Client) TerminateCronWorkflow(namespace, uid string) (err error) {
 	err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Delete(uid, nil)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			return nil
+		if !strings.Contains(err.Error(), "not found") {
+			return err
 		}
+	}
+
+	cronWorkflow, err := c.selectCronWorkflowWithWorkflowTemplateVersion(namespace, uid)
+	if err != nil {
 		return err
 	}
 
-	_, err = sb.Delete("cron_workflows").
+	//workflow executions
+	var workflows []*WorkflowExecution
+	query, args, err := sb.Select().
+		Columns(getWorkflowExecutionColumns("we", "")...).
+		From("workflow_executions we").
+		Where(sq.Eq{
+			"cron_workflow_id": cronWorkflow.ID,
+		}).ToSql()
+	if err != nil {
+		return err
+	}
+	if err := c.DB.Select(&workflows, query, args...); err != nil {
+		return err
+	}
+
+	for _, wf := range workflows {
+		err = c.ArchiveWorkflowExecution(namespace, wf.UID)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"Namespace": namespace,
+				"UID":       uid,
+				"Error":     err.Error(),
+			}).Error("Archive Workflow Execution Failed.")
+			return err
+		}
+	}
+
+	_, err = sb.Update("cron_workflows").
+		Set("is_archived", true).
 		Where(sq.Eq{
 			"uid":       uid,
 			"namespace": namespace,
@@ -628,4 +660,28 @@ func (c *Client) GetCronWorkflowStatisticsForTemplates(workflowTemplates ...*Wor
 	}
 
 	return
+}
+
+func (c *Client) selectCronWorkflowWithWorkflowTemplateVersion(namespace, uid string, extraColumns ...string) (*CronWorkflow, error) {
+	query, args, err := sb.Select(getCronWorkflowColumns(extraColumns...)...).
+		From("cron_workflows cw").
+		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
+		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
+		Where(sq.Eq{
+			"wt.namespace":   namespace,
+			"cw.name":        uid,
+			"cw.is_archived": false,
+		}).
+		ToSql()
+
+	if err != nil {
+		return nil, err
+	}
+
+	cronWorkflow := &CronWorkflow{}
+	if err = c.DB.Get(cronWorkflow, query, args...); err != nil {
+		return nil, err
+	}
+
+	return cronWorkflow, nil
 }
