@@ -850,7 +850,7 @@ func (c *Client) WorkspaceTemplateHasRunningWorkspaces(namespace string, uid str
 				"wt.namespace": namespace,
 				"wt.uid":       uid,
 			}, sq.NotEq{
-				"w.phase": []string{"Terminated", "Terminating"},
+				"w.phase": []string{"Terminated"},
 			}}).
 		RunWith(c.DB).
 		QueryRow().
