@@ -9,7 +9,6 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/env"
-	"github.com/onepanelio/core/pkg/util/label"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
@@ -527,7 +526,10 @@ func (c *Client) getWorkspaceTemplateByName(namespace, name string) (workspaceTe
 	workspaceTemplate = &WorkspaceTemplate{}
 
 	sb := c.workspaceTemplatesSelectBuilder(namespace).
-		Where(sq.Eq{"wt.name": name}).
+		Where(sq.Eq{
+			"wt.name":     name,
+			"is_archived": false,
+		}).
 		Limit(1)
 	query, args, err := sb.ToSql()
 	if err != nil {
@@ -637,6 +639,9 @@ func (c *Client) GetWorkspaceTemplate(namespace, uid string, version int64) (wor
 	workspaceTemplate = &WorkspaceTemplate{}
 	sb := c.workspaceTemplateVersionsSelectBuilder(namespace, uid).
 		Limit(1)
+
+	sb = sb.Where(sq.Eq{"wt.is_archived": false})
+
 	if version == 0 {
 		sb = sb.Where(sq.Eq{
 			"wtv.is_latest":  true,
@@ -802,24 +807,34 @@ func (c *Client) CountWorkspaceTemplates(namespace string) (count int, err error
 	return
 }
 
-func (c *Client) archiveWorkspaceTemplate(namespace, uid string) error {
-	query, args, err := sb.Update("workspace_templates").
+// archiveWorkspaceTemplateDB marks the Workspace template identified by (namespace, uid) and is_archived=false, as archived.
+//
+// This method returns (true, nil) when the database record was successfully archived.
+// If there was no record to archive, (false, nil) is returned.
+func (c *Client) archiveWorkspaceTemplateDB(namespace, uid string) (archived bool, err error) {
+	result, err := sb.Update("workspace_templates").
 		Set("is_archived", true).
 		Where(sq.Eq{
-			"uid":       uid,
-			"namespace": namespace,
+			"uid":         uid,
+			"namespace":   namespace,
+			"is_archived": false,
 		}).
-		ToSql()
-
+		RunWith(c.DB).
+		Exec()
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	if _, err := c.DB.Exec(query, args...); err != nil {
-		return err
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return false, err
 	}
 
-	return nil
+	if rowsAffected == 0 {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 // WorkspaceTemplateHasRunningWorkspaces returns true if there are non-terminated (or terminating) workspaces that are
@@ -847,28 +862,48 @@ func (c *Client) WorkspaceTemplateHasRunningWorkspaces(namespace string, uid str
 	return runningCount > 0, nil
 }
 
-// ArchiveWorkspaceTemplate marks the database record as archived and
-// deletes the argo workflow templates associated to the workspace.
+// ArchiveWorkspaceTemplate archives and deletes resources associated with the workspace template.
+// If there is an already archived workspace template, it is left intact, only the un-archived one is considered.
 //
-// No checks are made to see if this action is valid, or if there is a database record.
-func (c *Client) ArchiveWorkspaceTemplate(namespace string, uid string) error {
-	if err := c.archiveWorkspaceTemplate(namespace, uid); err != nil {
+// If there is no workspace template identified by the parameters, an error is returned with code NotFound.
+//
+// No checks are otherwise made to see if this action is valid.
+//
+// In particular, this action
+//
+// * Marks Workspace Template database record as archived.
+//
+// * Marks associated Workflow template as archived
+//
+// * Marks associated Workflow executions as archived
+//
+// * Deletes Workflow Executions in k8s
+func (c *Client) ArchiveWorkspaceTemplate(namespace string, uid string) (archived bool, err error) {
+	workspaceTemplate, err := c.GetWorkspaceTemplate(namespace, uid, 0)
+	if err != nil {
+		return false, util.NewUserError(codes.Unknown, "Unable to get workspace template.")
+	}
+	if workspaceTemplate == nil {
+		return false, util.NewUserError(codes.NotFound, "Workspace template not found.")
+	}
+
+	archived, err = c.archiveWorkspaceTemplateDB(namespace, uid)
+	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"UID":       uid,
 			"Error":     err.Error(),
 		}).Error("Archive Workspace Template failed.")
-		return util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
+		return false, util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
+	}
+	if !archived {
+		return false, nil
 	}
 
-	// The workflow templates associated with a workspace template share the same uid.
-	labelSelector := label.WorkflowTemplateUid + "=" + uid
-	err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).DeleteCollection(nil, metav1.ListOptions{
-		LabelSelector: labelSelector,
-	})
+	archived, err = c.ArchiveWorkflowTemplate(namespace, workspaceTemplate.UID)
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	return nil
+	return true, nil
 }

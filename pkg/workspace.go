@@ -169,8 +169,7 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
 	}
 
-	workspaceTemplate, err := c.GetWorkspaceTemplate(namespace,
-		workspace.WorkspaceTemplate.UID, workspace.WorkspaceTemplate.Version)
+	workspaceTemplate, err := c.GetWorkspaceTemplate(namespace, workspace.WorkspaceTemplate.UID, workspace.WorkspaceTemplate.Version)
 	if err != nil {
 		return nil, util.NewUserError(codes.NotFound, "Workspace template not found.")
 	}
