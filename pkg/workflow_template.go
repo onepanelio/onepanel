@@ -273,7 +273,7 @@ func (c *Client) getWorkflowTemplateByName(namespace, name string, version int64
 }
 
 func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTemplateVersions []*WorkflowTemplate, err error) {
-	dbVersions, err := c.listDbWorkflowTemplateVersions(namespace, uid)
+	dbVersions, err := c.listDBWorkflowTemplateVersions(namespace, uid)
 	if err != nil {
 		return nil, err
 	}
@@ -402,7 +402,11 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 	}
 	defer tx.Rollback()
 
-	wftSb := c.workflowTemplatesSelectBuilder(namespace).Where(sq.Eq{"wt.uid": workflowTemplate.UID})
+	wftSb := c.workflowTemplatesSelectBuilder(namespace).
+		Where(sq.Eq{
+			"wt.uid":         workflowTemplate.UID,
+			"wt.is_archived": false,
+		})
 	query, args, err := wftSb.ToSql()
 	if err != nil {
 		return nil, err
@@ -779,13 +783,16 @@ func (c *Client) listArgoWorkflowTemplates(namespace, workflowTemplateUid string
 	return &templates, nil
 }
 
-func (c *Client) listDbWorkflowTemplateVersions(namespace, workflowTemplateUid string) ([]*WorkflowTemplateVersion, error) {
+func (c *Client) listDBWorkflowTemplateVersions(namespace, workflowTemplateUID string) ([]*WorkflowTemplateVersion, error) {
 	versions := make([]*WorkflowTemplateVersion, 0)
 
 	sb := c.workflowTemplatesVersionSelectBuilder(namespace).
 		Columns(`wt.id "workflow_template.id"`, `wt.created_at "workflow_template.created_at"`).
 		Columns(`wt.name "workflow_template.name"`, `wt.is_archived "workflow_template.is_archived"`).
-		Where(sq.Eq{"wt.uid": workflowTemplateUid}).
+		Where(sq.Eq{
+			"wt.uid":         workflowTemplateUID,
+			"wt.is_archived": false,
+		}).
 		OrderBy("wtv.created_at DESC")
 
 	query, args, err := sb.ToSql()
