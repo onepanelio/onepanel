@@ -329,10 +329,7 @@ func local_request_CronWorkflowService_ListCronWorkflows_0(ctx context.Context, 
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "namespace", err)
 	}
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_CronWorkflowService_ListCronWorkflows_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_CronWorkflowService_ListCronWorkflows_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -423,10 +420,7 @@ func local_request_CronWorkflowService_ListCronWorkflows_1(ctx context.Context, 
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "workflow_template_name", err)
 	}
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_CronWorkflowService_ListCronWorkflows_1); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_CronWorkflowService_ListCronWorkflows_1); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -435,8 +429,8 @@ func local_request_CronWorkflowService_ListCronWorkflows_1(ctx context.Context, 
 
 }
 
-func request_CronWorkflowService_TerminateCronWorkflow_0(ctx context.Context, marshaler runtime.Marshaler, client CronWorkflowServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq TerminateCronWorkflowRequest
+func request_CronWorkflowService_DeleteCronWorkflow_0(ctx context.Context, marshaler runtime.Marshaler, client CronWorkflowServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq DeleteCronWorkflowRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -468,13 +462,13 @@ func request_CronWorkflowService_TerminateCronWorkflow_0(ctx context.Context, ma
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "uid", err)
 	}
 
-	msg, err := client.TerminateCronWorkflow(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.DeleteCronWorkflow(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_CronWorkflowService_TerminateCronWorkflow_0(ctx context.Context, marshaler runtime.Marshaler, server CronWorkflowServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq TerminateCronWorkflowRequest
+func local_request_CronWorkflowService_DeleteCronWorkflow_0(ctx context.Context, marshaler runtime.Marshaler, server CronWorkflowServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq DeleteCronWorkflowRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -506,7 +500,7 @@ func local_request_CronWorkflowService_TerminateCronWorkflow_0(ctx context.Conte
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "uid", err)
 	}
 
-	msg, err := server.TerminateCronWorkflow(ctx, &protoReq)
+	msg, err := server.DeleteCronWorkflow(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -616,7 +610,7 @@ func RegisterCronWorkflowServiceHandlerServer(ctx context.Context, mux *runtime.
 
 	})
 
-	mux.Handle("DELETE", pattern_CronWorkflowService_TerminateCronWorkflow_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("DELETE", pattern_CronWorkflowService_DeleteCronWorkflow_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -625,14 +619,14 @@ func RegisterCronWorkflowServiceHandlerServer(ctx context.Context, mux *runtime.
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_CronWorkflowService_TerminateCronWorkflow_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_CronWorkflowService_DeleteCronWorkflow_0(rctx, inboundMarshaler, server, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_CronWorkflowService_TerminateCronWorkflow_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_CronWorkflowService_DeleteCronWorkflow_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -777,7 +771,7 @@ func RegisterCronWorkflowServiceHandlerClient(ctx context.Context, mux *runtime.
 
 	})
 
-	mux.Handle("DELETE", pattern_CronWorkflowService_TerminateCronWorkflow_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("DELETE", pattern_CronWorkflowService_DeleteCronWorkflow_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -786,14 +780,14 @@ func RegisterCronWorkflowServiceHandlerClient(ctx context.Context, mux *runtime.
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_CronWorkflowService_TerminateCronWorkflow_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_CronWorkflowService_DeleteCronWorkflow_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_CronWorkflowService_TerminateCronWorkflow_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_CronWorkflowService_DeleteCronWorkflow_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -811,7 +805,7 @@ var (
 
 	pattern_CronWorkflowService_ListCronWorkflows_1 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"apis", "v1beta1", "namespace", "cron_workflows", "workflow_template_name"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_CronWorkflowService_TerminateCronWorkflow_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"apis", "v1beta1", "namespace", "cron_workflows", "uid", "terminate"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_CronWorkflowService_DeleteCronWorkflow_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"apis", "v1beta1", "namespace", "cron_workflows", "uid"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
@@ -825,5 +819,5 @@ var (
 
 	forward_CronWorkflowService_ListCronWorkflows_1 = runtime.ForwardResponseMessage
 
-	forward_CronWorkflowService_TerminateCronWorkflow_0 = runtime.ForwardResponseMessage
+	forward_CronWorkflowService_DeleteCronWorkflow_0 = runtime.ForwardResponseMessage
 )

@@ -24,7 +24,7 @@ service AuthService {
 
     rpc IsAuthorized(IsAuthorizedRequest) returns (IsAuthorizedResponse) {
         option (google.api.http) = {
-            post: "/apis/v1beta1/auth/token"
+            post: "/apis/v1beta1/auth"
         };
     }
 }
@@ -50,7 +50,7 @@ message IsValidTokenRequest {
 }
 
 message IsValidTokenResponse {
-    string domain = 2;
+    string domain = 1;
 }
 
 message IsWorkspaceAuthenticatedRequest {

@@ -89,10 +89,7 @@ func local_request_AuthService_IsWorkspaceAuthenticated_0(ctx context.Context, m
 	var protoReq IsWorkspaceAuthenticatedRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_AuthService_IsWorkspaceAuthenticated_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_AuthService_IsWorkspaceAuthenticated_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -308,7 +305,7 @@ var (
 
 	pattern_AuthService_IsWorkspaceAuthenticated_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"apis", "v1beta1", "auth", "token"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_AuthService_IsAuthorized_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"apis", "v1beta1", "auth", "token"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_AuthService_IsAuthorized_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"apis", "v1beta1", "auth"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
