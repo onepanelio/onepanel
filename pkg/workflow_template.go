@@ -670,7 +670,7 @@ func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, 
 					"Namespace": namespace,
 					"UID":       uid,
 					"Error":     err.Error(),
-				}).Error("Archive Workflow Execution.")
+				}).Error("Archive Workflow Execution Failed.")
 				return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
 			}
 		}
