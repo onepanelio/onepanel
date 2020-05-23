@@ -10,6 +10,7 @@ import (
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
+	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"google.golang.org/grpc/codes"
 	"time"
 )
@@ -72,11 +73,11 @@ func mergeWorkspaceParameters(existingParameters, newParameters []Parameter) (pa
 // sys-resource-action
 // sys-host
 func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, workspaceAction, resourceAction string, config map[string]string) (err error) {
-	host := fmt.Sprintf("%v--%v.%v", workspace.Name, namespace, config["ONEPANEL_DOMAIN"])
-	if _, err = workspace.GenerateUID(); err != nil {
+	workspace.UID, err = uid2.GenerateUID(workspace.Name, 30)
+	if err != nil {
 		return
 	}
-
+	host := fmt.Sprintf("%v--%v.%v", workspace.UID, namespace, config["ONEPANEL_DOMAIN"])
 	systemParameters := []Parameter{
 		{
 			Name:  "sys-workspace-action",
