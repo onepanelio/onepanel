@@ -21,7 +21,7 @@
     "application/json"
   ],
   "paths": {
-    "/apis/v1beta1/auth/token": {
+    "/apis/v1beta1/auth": {
       "post": {
         "operationId": "IsAuthorized",
         "responses": {
@@ -38,6 +38,38 @@
             }
           }
         },
+        "tags": [
+          "AuthService"
+        ]
+      }
+    },
+    "/apis/v1beta1/auth/token": {
+      "post": {
+        "operationId": "IsValidToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/IsValidTokenResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TokenWrapper"
+            }
+          }
+        ],
         "tags": [
           "AuthService"
         ]
@@ -283,9 +315,9 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/cron_workflows/{uid}/terminate": {
+    "/apis/v1beta1/{namespace}/cron_workflows/{uid}": {
       "delete": {
-        "operationId": "TerminateCronWorkflow",
+        "operationId": "DeleteCronWorkflow",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -2549,6 +2581,9 @@
       "type": "object",
       "properties": {
         "name": {
+          "type": "string"
+        },
+        "uid": {
           "type": "string"
         },
         "manifest": {
