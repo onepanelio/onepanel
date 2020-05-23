@@ -280,7 +280,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateId uint64, wor
 		return 0, nil, err
 	}
 
-	uid, err := uid2.GenerateUID(createdWorkflow.Name)
+	uid, err := uid2.GenerateUID(createdWorkflow.Name, 63)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -344,7 +344,7 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 		Labels:     &map[string]string{},
 		Parameters: workflow.Parameters,
 	}
-	opts.GenerateName, err = uid2.GenerateUID(workflowTemplate.Name)
+	opts.GenerateName, err = uid2.GenerateUID(workflowTemplate.Name, 63)
 	if err != nil {
 		return nil, err
 	}
