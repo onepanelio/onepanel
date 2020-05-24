@@ -5,15 +5,16 @@ import (
 )
 
 const (
-	OnepanelPrefix             = "onepanel.io/"
-	TagPrefix                  = "tags.onepanel.io/"
-	WorkflowTemplate           = OnepanelPrefix + "workflow-template"
-	WorkflowTemplateUid        = OnepanelPrefix + "workflow-template-uid"
-	WorkflowTemplateVersionUid = OnepanelPrefix + "workflow-template-version-uid"
-	WorkflowUid                = OnepanelPrefix + "workflow-uid"
-	CronWorkflowUid            = OnepanelPrefix + "cron-workflow-uid"
-	Version                    = OnepanelPrefix + "version"
-	VersionLatest              = OnepanelPrefix + "version-latest"
+	OnepanelPrefix              = "onepanel.io/"
+	TagPrefix                   = "tags.onepanel.io/"
+	WorkflowTemplate            = OnepanelPrefix + "workflow-template"
+	WorkflowTemplateUid         = OnepanelPrefix + "workflow-template-uid"
+	WorkflowTemplateVersionUid  = OnepanelPrefix + "workflow-template-version-uid"
+	WorkspaceTemplateVersionUid = OnepanelPrefix + "workspace-template-version-uid"
+	WorkflowUid                 = OnepanelPrefix + "workflow-uid"
+	CronWorkflowUid             = OnepanelPrefix + "cron-workflow-uid"
+	Version                     = OnepanelPrefix + "version"
+	VersionLatest               = OnepanelPrefix + "version-latest"
 )
 
 // Function that modifies an input string

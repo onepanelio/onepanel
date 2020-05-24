@@ -11,8 +11,9 @@ type WorkspacePhase string
 
 // Workspace phases
 const (
-	WorkspaceStarted     WorkspacePhase = "Started"
+	WorkspaceLaunching   WorkspacePhase = "Launching"
 	WorkspaceRunning     WorkspacePhase = "Running"
+	WorkspaceUpdating    WorkspacePhase = "Updating"
 	WorkspacePausing     WorkspacePhase = "Pausing"
 	WorkspacePaused      WorkspacePhase = "Paused"
 	WorkspaceTerminating WorkspacePhase = "Terminating"
@@ -20,30 +21,29 @@ const (
 )
 
 type WorkspaceStatus struct {
-	Phase        WorkspacePhase
-	StartedAt    *time.Time `db:"started_at"`
-	PausedAt     *time.Time `db:"paused_at"`
-	TerminatedAt *time.Time `db:"terminated_at"`
+	Phase        WorkspacePhase `db:"phase"`
+	StartedAt    *time.Time     `db:"started_at"`
+	PausedAt     *time.Time     `db:"paused_at"`
+	TerminatedAt *time.Time     `db:"terminated_at"`
+	UpdatedAt    *time.Time     `db:"updated_at"`
 }
 
 type Workspace struct {
 	ID                       uint64
 	Namespace                string
-	UID                      string
-	Name                     string `valid:"stringlength(3|63)~Name should be between 3 to 63 characters,dns,required"`
+	UID                      string `valid:"stringlength(3|30)~UID should be between 3 to 30 characters,dns,required"`
+	Name                     string `valid:"stringlength(3|30)~Name should be between 3 to 30 characters,required"`
 	Labels                   map[string]string
-	Phase                    string
 	Parameters               []Parameter
-	ParametersBytes          []byte `db:"parameters"` // to load from database
-	Status                   WorkspaceStatus
-	CreatedAt                time.Time          `db:"created_at"`
-	ModifiedAt               *time.Time         `db:"modified_at"`
-	StartedAt                *time.Time         `db:"started_at"`
-	PausedAt                 *time.Time         `db:"paused_at"`
-	TerminatedAt             *time.Time         `db:"terminated_at"`
-	WorkspaceTemplate        *WorkspaceTemplate `db:"workspace_template" valid:"-"`
-	WorkspaceTemplateID      uint64             `db:"workspace_template_id"`
-	WorkspaceTemplateVersion uint64             `db:"workspace_template_version"`
+	ParametersBytes          []byte                   `db:"parameters"` // to load from database
+	Status                   WorkspaceStatus          `db:"status"`
+	CreatedAt                time.Time                `db:"created_at"`
+	ModifiedAt               *time.Time               `db:"modified_at"`
+	WorkspaceTemplate        *WorkspaceTemplate       `db:"workspace_template" valid:"-"`
+	WorkspaceTemplateID      uint64                   `db:"workspace_template_id"`
+	WorkspaceTemplateVersion uint64                   `db:"workspace_template_version"`
+	URL                      string                   `db:"url"`                       // the path to the workspace, a url that you can access via http
+	WorkflowTemplateVersion  *WorkflowTemplateVersion `db:"workflow_template_version"` // helper to store data from workflow template version
 }
 
 type WorkspaceSpec struct {
@@ -52,4 +52,18 @@ type WorkspaceSpec struct {
 	Ports                 []corev1.ServicePort       `json:"ports" protobuf:"bytes,4,opt,name=ports"`
 	Routes                []*networking.HTTPRoute    `json:"routes" protobuf:"bytes,5,opt,name=routes"`
 	PostExecutionWorkflow *wfv1.WorkflowTemplateSpec `json:"postExecutionWorkflow" protobuf:"bytes,6,opt,name=postExecutionWorkflow"`
+}
+
+// returns all of the columns for workspace modified by alias, destination.
+// see formatColumnSelect
+func getWorkspaceColumns(alias string, destination string, extraColumns ...string) []string {
+	columns := []string{"id", "created_at", "modified_at", "uid", "name", "namespace", "parameters", "workspace_template_id", "workspace_template_version", "url"}
+	return formatColumnSelect(columns, alias, destination, extraColumns...)
+}
+
+// returns all of the columns for WorkspaceStatus modified by alias, destination.
+// see formatColumnSelect
+func getWorkspaceStatusColumns(alias string, destination string, extraColumns ...string) []string {
+	columns := []string{"phase", "started_at", "paused_at", "terminated_at"}
+	return formatColumnSelect(columns, alias, destination, extraColumns...)
 }

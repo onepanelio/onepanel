@@ -38,6 +38,7 @@ func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 			Running:      wft.WorkflowExecutionStatisticReport.Running,
 			Completed:    wft.WorkflowExecutionStatisticReport.Completed,
 			Failed:       wft.WorkflowExecutionStatisticReport.Failed,
+			Terminated:   wft.WorkflowExecutionStatisticReport.Terminated,
 		}
 	}
 
@@ -48,20 +49,6 @@ func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 	}
 
 	return res
-}
-
-func mapToKeyValue(input map[string]string) []*api.KeyValue {
-	var result []*api.KeyValue
-	for key, value := range input {
-		keyValue := &api.KeyValue{
-			Key:   key,
-			Value: value,
-		}
-
-		result = append(result, keyValue)
-	}
-
-	return result
 }
 
 func (s *WorkflowTemplateServer) CreateWorkflowTemplate(ctx context.Context, req *api.CreateWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
@@ -103,6 +90,11 @@ func (s *WorkflowTemplateServer) CreateWorkflowTemplateVersion(ctx context.Conte
 	if err != nil {
 		return nil, err
 	}
+
+	if _, err := client.InsertLabels(v1.TypeWorkflowTemplateVersion, workflowTemplate.WorkflowTemplateVersionId, workflowTemplate.Labels); err != nil {
+		return nil, err
+	}
+
 	req.WorkflowTemplate.Uid = workflowTemplate.UID
 	req.WorkflowTemplate.Name = workflowTemplate.Name
 	req.WorkflowTemplate.Version = workflowTemplate.Version

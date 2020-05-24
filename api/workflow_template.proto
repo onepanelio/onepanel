@@ -126,6 +126,7 @@ message WorkflowExecutionStatisticReport {
     int32 running = 3;
     int32 completed = 4;
     int32 failed = 5;
+    int32 terminated = 6;
 }
 
 message CronWorkflowStatisticsReport {

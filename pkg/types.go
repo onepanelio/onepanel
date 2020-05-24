@@ -10,15 +10,17 @@ import (
 	"time"
 
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/google/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	TypeWorkflowTemplate        string = "workflow_template"
-	TypeWorkflowTemplateVersion string = "workflow_template_version"
-	TypeWorkflowExecution       string = "workflow_execution"
-	TypeCronWorkflow            string = "cron_workflow"
+	TypeWorkflowTemplate         string = "workflow_template"
+	TypeWorkflowTemplateVersion  string = "workflow_template_version"
+	TypeWorkflowExecution        string = "workflow_execution"
+	TypeCronWorkflow             string = "cron_workflow"
+	TypeWorkspaceTemplate        string = "workspace_template"
+	TypeWorkspaceTemplateVersion string = "workspace_template_version"
+	TypeWorkspace                string = "workspace"
 )
 
 func TypeToTableName(value string) string {
@@ -31,6 +33,12 @@ func TypeToTableName(value string) string {
 		return "workflow_executions"
 	case TypeCronWorkflow:
 		return "cron_workflows"
+	case TypeWorkspaceTemplate:
+		return "workspace_templates"
+	case TypeWorkspaceTemplateVersion:
+		return "workspace_template_versions"
+	case TypeWorkspace:
+		return "workspaces"
 	}
 
 	return ""
@@ -74,6 +82,7 @@ type CronWorkflow struct {
 	Version                   int64
 	WorkflowTemplateVersionId uint64 `db:"workflow_template_version_id"`
 	Manifest                  string
+	Namespace                 string `db:"namespace"`
 }
 
 func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]Parameter, error) {
@@ -166,11 +175,15 @@ type WorkflowTemplate struct {
 	Versions                         int64 `db:"versions"` // How many versions there are of this template total.
 	IsLatest                         bool
 	IsArchived                       bool `db:"is_archived"`
+	IsSystem                         bool `db:"is_system"`
 	ArgoWorkflowTemplate             *wfv1.WorkflowTemplate
 	Labels                           map[string]string
 	WorkflowExecutionStatisticReport *WorkflowExecutionStatisticReport
 	CronWorkflowsStatisticsReport    *CronWorkflowStatisticReport
-	WorkflowTemplateVersionId        uint64 `db:"workflow_template_version_id"` // Reference to the associated workflow template version.
+	// todo rename to have ID suffix
+	WorkflowTemplateVersionId uint64  `db:"workflow_template_version_id"` // Reference to the associated workflow template version.
+	Resource                  *string // utility in case we are specifying a workflow template for a specific resource
+	ResourceUID               *string // see Resource field
 }
 
 type Label struct {
@@ -189,6 +202,7 @@ type WorkflowExecutionStatisticReport struct {
 	Running            int32
 	Completed          int32
 	Failed             int32
+	Terminated         int32
 }
 
 type CronWorkflowStatisticReport struct {
@@ -276,16 +290,6 @@ func (wt *WorkflowTemplate) GetParametersKeyString() (map[string]string, error) 
 	}
 
 	return result, nil
-}
-
-func (wt *WorkflowTemplate) GenerateUID() (string, error) {
-	uid, err := uuid.NewRandom()
-	if err != nil {
-		return "", err
-	}
-	wt.UID = uid.String()
-
-	return wt.UID, nil
 }
 
 func (wt *WorkflowTemplate) UpdateManifestParameters(params []Parameter) error {
@@ -452,6 +456,13 @@ type WorkflowExecution struct {
 	Labels           map[string]string
 }
 
+// TODO: reference this in WorkflowExecution
+type WorkflowExecutionStatus struct {
+	Phase      wfv1.NodePhase `json:"phase"`
+	StartedAt  *time.Time     `db:"started_at" json:"startedAt"`
+	FinishedAt *time.Time     `db:"finished_at" json:"finishedAt"`
+}
+
 func (we *WorkflowExecution) LoadParametersFromBytes() ([]Parameter, error) {
 	loadedParameters := make([]Parameter, 0)
 
@@ -494,24 +505,6 @@ type File struct {
 	ContentType  string
 	LastModified time.Time
 	Directory    bool
-}
-
-type ArtifactRepositoryS3Config struct {
-	S3 struct {
-		Bucket          string
-		Endpoint        string
-		Insecure        string
-		Region          string
-		AccessKeySecret struct {
-			Name string
-			Key  string
-		}
-		SecretKeySecret struct {
-			Name string
-			Key  string
-		}
-		Key string
-	}
 }
 
 // Given a path, returns the parent path, asssuming a '/' delimitor
@@ -659,18 +652,30 @@ func getWorkflowTemplateColumns(alias string, destination string, extraColumns .
 	return formatColumnSelect(columns, alias, destination, extraColumns...)
 }
 
-// returns all of the columns for workflowExecution modified by alias, destination.
+// returns all of the columns for workflow template versions modified by alias, destination.
 // see formatColumnSelect
-func getWorkflowExecutionColumns(alias string, destination string, extraColumns ...string) []string {
-	columns := []string{"id", "created_at", "uid", "name", "parameters"}
+func getWorkflowTemplateVersionColumns(alias string, destination string, extraColumns ...string) []string {
+	columns := []string{"id", "uid", "created_at", "version", "is_latest", "manifest"}
 	return formatColumnSelect(columns, alias, destination, extraColumns...)
 }
 
-// returns all of the columns for workspace modified by alias, destination.
+// returns all of the columns for workflowExecution modified by alias, destination.
 // see formatColumnSelect
-func getWorkspaceColumns(alias string, destination string, extraColumns ...string) []string {
-	columns := []string{"id", "created_at", "modified_at", "uid", "name", "namespace", "phase", "parameters", "workspace_template_id", "workspace_template_version", "started_at", "paused_at", "terminated_at"}
+func getWorkflowExecutionColumns(alias string, destination string, extraColumns ...string) []string {
+	columns := []string{"id", "created_at", "uid", "name", "parameters", "phase", "started_at", "finished_at"}
 	return formatColumnSelect(columns, alias, destination, extraColumns...)
+}
+
+// returns all of the columns for cronWorkflow modified by alias, destination.
+// see formatColumnSelect
+func getCronWorkflowColumns(extraColumns ...string) []string {
+	results := []string{"cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.workflow_template_version_id", "cw.manifest", "cw.namespace"}
+
+	for _, str := range extraColumns {
+		results = append(results, str)
+	}
+
+	return results
 }
 
 func LabelsToMapping(labels ...*Label) map[string]string {

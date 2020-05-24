@@ -12,7 +12,13 @@ service WorkspaceService {
 	rpc CreateWorkspace (CreateWorkspaceRequest) returns (Workspace) {
 		option (google.api.http) = {
             post: "/apis/v1beta1/{namespace}/workspaces"
-            body: "workspace"
+            body: "body"
+        };
+	}
+
+	rpc GetWorkspace (GetWorkspaceRequest) returns (Workspace) {
+		option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workspaces/{uid}"
         };
 	}
 
@@ -29,9 +35,22 @@ service WorkspaceService {
         };
 	}
 
+	rpc UpdateWorkspace (UpdateWorkspaceRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+            put: "/apis/v1beta1/{namespace}/workspaces/{uid}"
+            body: "body"
+        };
+	}
+
 	rpc PauseWorkspace (PauseWorkspaceRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
             put: "/apis/v1beta1/{namespace}/workspaces/{uid}/pause"
+        };
+	}
+
+	rpc ResumeWorkspace (ResumeWorkspaceRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+            put: "/apis/v1beta1/{namespace}/workspaces/{uid}/resume"
         };
 	}
 
@@ -51,6 +70,8 @@ message Workspace {
 	WorkspaceTemplate workspaceTemplate = 6;
 	WorkspaceStatus status = 7;
 	repeated KeyValue labels = 8;
+	string url = 9;
+	repeated Parameter templateParameters = 10;
 }
 
 message WorkspaceStatus {
@@ -60,15 +81,40 @@ message WorkspaceStatus {
 	string terminatedAt = 4;
 }
 
+message CreateWorkspaceBody {
+	string workspaceTemplateUid = 1;
+	int64 workspaceTemplateVersion = 2;
+
+	repeated Parameter parameters = 3;
+	repeated KeyValue labels = 4;
+}
+
 message CreateWorkspaceRequest {
 	string namespace = 1;
-	Workspace workspace = 2;
+
+	CreateWorkspaceBody body = 2;
+}
+
+message GetWorkspaceRequest {
+	string namespace = 1;
+	string uid = 2;
 }
 
 message UpdateWorkspaceStatusRequest {
 	string namespace = 1;
 	string uid = 2;
 	WorkspaceStatus status = 3;
+}
+
+message UpdateWorkspaceBody {
+	repeated Parameter parameters = 1;
+	repeated KeyValue labels = 2;
+}
+
+message UpdateWorkspaceRequest {
+	string namespace = 1;
+	string uid = 2;
+	UpdateWorkspaceBody body = 3;
 }
 
 message ListWorkspaceRequest {
@@ -86,6 +132,11 @@ message ListWorkspaceResponse {
 }
 
 message PauseWorkspaceRequest {
+	string namespace = 1;
+	string uid = 2;
+}
+
+message ResumeWorkspaceRequest {
 	string namespace = 1;
 	string uid = 2;
 }

@@ -4,8 +4,11 @@ import (
 	"context"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
+	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/server/auth"
+	"github.com/onepanelio/core/server/converter"
+	"google.golang.org/grpc/codes"
 	"time"
 )
 
@@ -19,6 +22,7 @@ func apiWorkspaceTemplate(wt *v1.WorkspaceTemplate) *api.WorkspaceTemplate {
 		Manifest:  wt.Manifest,
 		IsLatest:  wt.IsLatest,
 		CreatedAt: wt.CreatedAt.UTC().Format(time.RFC3339),
+		Labels:    converter.MappingToKeyValue(wt.Labels),
 	}
 
 	if wt.WorkflowTemplate != nil {
@@ -69,6 +73,7 @@ func (s *WorkspaceTemplateServer) CreateWorkspaceTemplate(ctx context.Context, r
 	workspaceTemplate := &v1.WorkspaceTemplate{
 		Name:     req.WorkspaceTemplate.Name,
 		Manifest: req.WorkspaceTemplate.Manifest,
+		Labels:   converter.APIKeyValueToLabel(req.WorkspaceTemplate.Labels),
 	}
 	workspaceTemplate, err = client.CreateWorkspaceTemplate(req.Namespace, workspaceTemplate)
 	if err != nil {
@@ -82,14 +87,15 @@ func (s *WorkspaceTemplateServer) CreateWorkspaceTemplate(ctx context.Context, r
 
 func (s *WorkspaceTemplateServer) UpdateWorkspaceTemplate(ctx context.Context, req *api.UpdateWorkspaceTemplateRequest) (*api.WorkspaceTemplate, error) {
 	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "workflowtemplates", req.Name)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "workflowtemplates", req.Uid)
 	if err != nil || !allowed {
 		return nil, err
 	}
 
 	workspaceTemplate := &v1.WorkspaceTemplate{
-		Name:     req.Name,
+		UID:      req.Uid,
 		Manifest: req.WorkspaceTemplate.Manifest,
+		Labels:   converter.APIKeyValueToLabel(req.WorkspaceTemplate.Labels),
 	}
 	workspaceTemplate, err = client.UpdateWorkspaceTemplate(req.Namespace, workspaceTemplate)
 	if err != nil {
@@ -168,5 +174,30 @@ func (s *WorkspaceTemplateServer) ListWorkspaceTemplateVersions(ctx context.Cont
 	return &api.ListWorkspaceTemplateVersionsResponse{
 		Count:              int32(len(workspaceTemplateVersions)),
 		WorkspaceTemplates: workspaceTemplates,
+	}, nil
+}
+
+func (s *WorkspaceTemplateServer) ArchiveWorkspaceTemplate(ctx context.Context, req *api.ArchiveWorkspaceTemplateRequest) (*api.WorkspaceTemplate, error) {
+	client := ctx.Value("kubeClient").(*v1.Client)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "argoproj.io", "workflowtemplates", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	hasRunning, err := client.WorkspaceTemplateHasRunningWorkspaces(req.Namespace, req.Uid)
+	if err != nil {
+		return nil, util.NewUserError(codes.Unknown, "Unable to get check running workspaces")
+	}
+	if hasRunning {
+		return nil, util.NewUserError(codes.FailedPrecondition, "Unable to archive workspace template. There are running workspaces that use it.")
+	}
+
+	archived, err := client.ArchiveWorkspaceTemplate(req.Namespace, req.Uid)
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.WorkspaceTemplate{
+		IsArchived: archived,
 	}, nil
 }

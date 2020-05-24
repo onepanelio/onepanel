@@ -8,14 +8,14 @@ import (
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/label"
 	"github.com/onepanelio/core/pkg/util/pagination"
+	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"regexp"
 	"strings"
 )
 
-func (c *Client) UpdateCronWorkflow(namespace string, name string, cronWorkflow *CronWorkflow) (*CronWorkflow, error) {
+func (c *Client) UpdateCronWorkflow(namespace string, uid string, cronWorkflow *CronWorkflow) (*CronWorkflow, error) {
 	err := c.cronWorkflowSelectBuilderNoColumns(namespace, cronWorkflow.WorkflowExecution.WorkflowTemplate.UID).
 		Columns("cw.id").
 		RunWith(c.DB).
@@ -38,8 +38,11 @@ func (c *Client) UpdateCronWorkflow(namespace string, name string, cronWorkflow 
 
 	// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
 	opts := &WorkflowExecutionOptions{}
-	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
-	opts.GenerateName = strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`)) + "-"
+	opts.GenerateName, err = uid2.GenerateUID(workflowTemplate.Name, 63)
+	if err != nil {
+		return nil, err
+	}
+	opts.GenerateName += "-"
 	for _, param := range workflow.Parameters {
 		opts.Parameters = append(opts.Parameters, Parameter{
 			Name:  param.Name,
@@ -89,7 +92,7 @@ func (c *Client) UpdateCronWorkflow(namespace string, name string, cronWorkflow 
 
 	wf := workflows[0]
 	argoCronWorkflow.Spec.WorkflowSpec = wf.Spec
-	_, err = c.updateCronWorkflow(namespace, name, &workflowTemplate.ID, &wf, &argoCronWorkflow, opts)
+	_, err = c.updateCronWorkflow(namespace, uid, &workflowTemplate.ID, &wf, &argoCronWorkflow, opts)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":    namespace,
@@ -161,8 +164,11 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 
 	//// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
 	opts := &WorkflowExecutionOptions{}
-	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
-	opts.GenerateName = strings.ToLower(re.ReplaceAllString(workflowTemplate.Name, `-`)) + "-"
+	opts.GenerateName, err = uid2.GenerateUID(workflowTemplate.Name, 63)
+	if err != nil {
+		return nil, err
+	}
+	opts.GenerateName += "-"
 	for _, param := range workflow.Parameters {
 		opts.Parameters = append(opts.Parameters, Parameter{
 			Name:  param.Name,
@@ -228,7 +234,11 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 
 	cronWorkflow.Name = argoCreatedCronWorkflow.Name
 	cronWorkflow.CreatedAt = argoCreatedCronWorkflow.CreationTimestamp.UTC()
-	cronWorkflow.UID = string(argoCreatedCronWorkflow.ObjectMeta.UID)
+
+	cronWorkflow.UID, err = uid2.GenerateUID(argoCreatedCronWorkflow.Name, 63)
+	if err != nil {
+		return nil, err
+	}
 	cronWorkflow.WorkflowExecution.WorkflowTemplate = workflowTemplate
 	// Manifests could get big, don't return them in this case.
 	cronWorkflow.WorkflowExecution.WorkflowTemplate.Manifest = ""
@@ -245,6 +255,8 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 			"name":                         cronWorkflow.Name,
 			"workflow_template_version_id": workflowTemplate.WorkflowTemplateVersionId,
 			"manifest":                     cronWorkflow.Manifest,
+			"namespace":                    namespace,
+			"is_archived":                  false,
 		}).
 		Suffix("RETURNING id").
 		RunWith(tx).
@@ -270,10 +282,10 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 	return cronWorkflow, nil
 }
 
-func (c *Client) GetCronWorkflow(namespace, name string) (cronWorkflow *CronWorkflow, err error) {
+func (c *Client) GetCronWorkflow(namespace, uid string) (cronWorkflow *CronWorkflow, err error) {
 	cronWorkflow = &CronWorkflow{}
 
-	err = c.cronWorkflowSelectBuilderNamespaceName(namespace, name).
+	err = c.cronWorkflowSelectBuilderNoColumns(namespace, uid).
 		RunWith(c.DB).
 		QueryRow().
 		Scan(cronWorkflow)
@@ -429,11 +441,11 @@ func (c *Client) buildCronWorkflowDefinition(namespace string, workflowTemplateI
 		cwf.ObjectMeta.Labels = *opts.Labels
 	}
 
-	err = injectExitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
+	err = injectExitHandlerWorkflowExecutionStatistic(wf, workflowTemplateId)
 	if err != nil {
 		return nil, err
 	}
-	err = injectInitHandlerWorkflowExecutionStatistic(wf, namespace, workflowTemplateId)
+	err = injectInitHandlerWorkflowExecutionStatistic(wf, workflowTemplateId)
 	if err != nil {
 		return nil, err
 	}
@@ -457,13 +469,13 @@ func (c *Client) buildCronWorkflowDefinition(namespace string, workflowTemplateI
 	return cwf, nil
 }
 
-func (c *Client) updateCronWorkflow(namespace string, name string, workflowTemplateId *uint64, wf *wfv1.Workflow, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (updatedCronWorkflow *wfv1.CronWorkflow, err error) {
+func (c *Client) updateCronWorkflow(namespace string, uid string, workflowTemplateId *uint64, wf *wfv1.Workflow, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (updatedCronWorkflow *wfv1.CronWorkflow, err error) {
 	//Make sure the CronWorkflow exists before we edit it
-	toUpdateCWF, err := c.ArgoprojV1alpha1().CronWorkflows(namespace).Get(name, metav1.GetOptions{})
+	toUpdateCWF, err := c.ArgoprojV1alpha1().CronWorkflows(namespace).Get(uid, metav1.GetOptions{})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
-			"Name":      name,
+			"UID":       uid,
 			"Error":     err.Error(),
 		}).Error("CronWorkflow not found.")
 		return nil, util.NewUserError(codes.NotFound, "CronWorkflow not found.")
@@ -474,7 +486,7 @@ func (c *Client) updateCronWorkflow(namespace string, name string, workflowTempl
 		return
 	}
 
-	cwf.Name = name
+	cwf.Name = uid
 	cwf.ResourceVersion = toUpdateCWF.ResourceVersion
 	updatedCronWorkflow, err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Update(cwf)
 	if err != nil {
@@ -498,77 +510,77 @@ func (c *Client) createCronWorkflow(namespace string, workflowTemplateId *uint64
 	return
 }
 
-func (c *Client) TerminateCronWorkflow(namespace, name string) (err error) {
-	query, args, err := sb.Select(cronWorkflowColumns("wtv.version")...).
-		From("cron_workflows cw").
-		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
-		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
+func (c *Client) TerminateCronWorkflow(namespace, uid string) (err error) {
+	err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Delete(uid, nil)
+	if err != nil {
+		if !strings.Contains(err.Error(), "not found") {
+			return err
+		}
+	}
+
+	cronWorkflow, err := c.selectCronWorkflowWithWorkflowTemplateVersion(namespace, uid)
+	if err != nil {
+		return err
+	}
+
+	//workflow executions
+	var workflows []*WorkflowExecution
+	query, args, err := sb.Select().
+		Columns(getWorkflowExecutionColumns("we", "")...).
+		From("workflow_executions we").
 		Where(sq.Eq{
-			"wt.namespace": namespace,
-			"cw.name":      name,
-		}).
-		ToSql()
-
-	cronWorkflow := &CronWorkflow{}
-	if err := c.DB.Get(cronWorkflow, query, args...); err != nil {
+			"cron_workflow_id": cronWorkflow.ID,
+		}).ToSql()
+	if err != nil {
+		return err
+	}
+	if err := c.DB.Select(&workflows, query, args...); err != nil {
 		return err
 	}
 
-	query = `DELETE FROM workflow_executions
-			 WHERE cron_workflow_id = $1`
-
-	if _, err := c.DB.Exec(query, cronWorkflow.ID); err != nil {
-		return err
+	for _, wf := range workflows {
+		err = c.ArchiveWorkflowExecution(namespace, wf.UID)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"Namespace": namespace,
+				"UID":       uid,
+				"Error":     err.Error(),
+			}).Error("Archive Workflow Execution Failed.")
+			return err
+		}
 	}
 
-	query = `DELETE FROM cron_workflows 
-			  USING workflow_template_versions, workflow_templates
-			  WHERE cron_workflows.workflow_template_version_id = workflow_template_versions.id 
-			   AND workflow_template_versions.workflow_template_id = workflow_templates.id 
-			   AND workflow_templates.namespace = $1 
-			   AND cron_workflows.name = $2`
-	if _, err := c.DB.Exec(query, namespace, name); err != nil {
-		return err
-	}
-
-	err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Delete(name, nil)
-	if err != nil && strings.Contains(err.Error(), "not found") {
-		err = nil
-	}
+	_, err = sb.Update("cron_workflows").
+		Set("is_archived", true).
+		Where(sq.Eq{
+			"uid":       uid,
+			"namespace": namespace,
+		}).RunWith(c.DB).Exec()
 
 	return
 }
 
-func unmarshalCronWorkflows(cwfBytes []byte, strict bool) (cwfs wfv1.CronWorkflow, err error) {
-	var cwf wfv1.CronWorkflow
-	var jsonOpts []argojson.JSONOpt
-	if strict {
-		jsonOpts = append(jsonOpts, argojson.DisallowUnknownFields)
+func (c *Client) ArchiveCronWorkflow(namespace, uid string) (err error) {
+	err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Delete(uid, nil)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil
+		}
+		return err
 	}
-	err = argojson.Unmarshal(cwfBytes, &cwf, jsonOpts...)
-	if err == nil {
-		return cwf, nil
-	}
+
+	_, err = sb.Update("cron_workflows").
+		Set("is_archived", true).
+		Where(sq.Eq{
+			"uid":       uid,
+			"namespace": namespace,
+		}).RunWith(c.DB).Exec()
 	return
 }
 
 func (c *Client) cronWorkflowSelectBuilder(namespace string, workflowTemplateUid string) sq.SelectBuilder {
 	sb := c.cronWorkflowSelectBuilderNoColumns(namespace, workflowTemplateUid).
-		Columns(cronWorkflowColumns("wtv.version")...)
-
-	return sb
-}
-
-func (c *Client) cronWorkflowSelectBuilderNamespaceName(namespace string, name string) sq.SelectBuilder {
-	sb := sb.Select("cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.workflow_template_version_id").
-		Columns("cw.manifest", "wtv.version").
-		From("cron_workflows cw").
-		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
-		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
-		Where(sq.Eq{
-			"wt.namespace": namespace,
-			"cw.name":      name,
-		})
+		Columns(getCronWorkflowColumns("wtv.version")...)
 
 	return sb
 }
@@ -579,8 +591,9 @@ func (c *Client) cronWorkflowSelectBuilderNoColumns(namespace string, workflowTe
 		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{
-			"wt.namespace": namespace,
-			"wt.uid":       workflowTemplateUid,
+			"wt.namespace":   namespace,
+			"wt.uid":         workflowTemplateUid,
+			"cw.is_archived": false,
 		})
 
 	return sb
@@ -649,12 +662,26 @@ func (c *Client) GetCronWorkflowStatisticsForTemplates(workflowTemplates ...*Wor
 	return
 }
 
-func cronWorkflowColumns(extraColumns ...string) []string {
-	results := []string{"cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.workflow_template_version_id", "cw.manifest"}
+func (c *Client) selectCronWorkflowWithWorkflowTemplateVersion(namespace, uid string, extraColumns ...string) (*CronWorkflow, error) {
+	query, args, err := sb.Select(getCronWorkflowColumns(extraColumns...)...).
+		From("cron_workflows cw").
+		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
+		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
+		Where(sq.Eq{
+			"wt.namespace":   namespace,
+			"cw.name":        uid,
+			"cw.is_archived": false,
+		}).
+		ToSql()
 
-	for _, str := range extraColumns {
-		results = append(results, str)
+	if err != nil {
+		return nil, err
 	}
 
-	return results
+	cronWorkflow := &CronWorkflow{}
+	if err = c.DB.Get(cronWorkflow, query, args...); err != nil {
+		return nil, err
+	}
+
+	return cronWorkflow, nil
 }
