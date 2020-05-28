@@ -260,17 +260,6 @@ metadata:
   name: {{inputs.parameters.sys-pvc-name}}-{{workflow.parameters.sys-uid}}-0
 `
 
-	if spec.PostExecutionWorkflow == nil {
-		spec.PostExecutionWorkflow = &wfv1.WorkflowTemplateSpec{}
-		spec.PostExecutionWorkflow.Entrypoint = "main"
-		spec.PostExecutionWorkflow.Templates = []wfv1.Template{
-			{
-				Name: "main",
-				DAG:  &wfv1.DAGTemplate{},
-			},
-		}
-	}
-
 	templates := []wfv1.Template{
 		{
 			Name: "workspace",
@@ -354,11 +343,6 @@ metadata:
 						},
 						When: "{{workflow.parameters.sys-workspace-action}} == delete",
 					},
-					{
-						Name:         spec.PostExecutionWorkflow.Entrypoint,
-						Template:     spec.PostExecutionWorkflow.Entrypoint,
-						Dependencies: []string{"stateful-set", "delete-stateful-set"},
-					},
 				},
 			},
 		},
@@ -423,6 +407,14 @@ metadata:
 	templates = append(templates, *curlNodeTemplate)
 	// Add postExecutionWorkflow if it exists
 	if spec.PostExecutionWorkflow != nil {
+		dag := wfv1.DAGTask{
+			Name:         spec.PostExecutionWorkflow.Entrypoint,
+			Template:     spec.PostExecutionWorkflow.Entrypoint,
+			Dependencies: []string{"stateful-set", "delete-stateful-set"},
+		}
+
+		templates[0].DAG.Tasks = append(templates[0].DAG.Tasks, dag)
+
 		templates = append(templates, spec.PostExecutionWorkflow.Templates...)
 	}
 
