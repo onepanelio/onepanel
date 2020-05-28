@@ -116,7 +116,6 @@ func init() {
 
 func Up20200528140124(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
-	//time.Sleep(2 * time.Second)
 
 	client, err := getClient()
 	if err != nil {
