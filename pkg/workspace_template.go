@@ -263,6 +263,7 @@ metadata:
 		{
 			Name: "workspace",
 			DAG: &wfv1.DAGTemplate{
+				FailFast: ptr.Bool(false),
 				Tasks: []wfv1.DAGTask{
 					{
 						Name:     "service",
