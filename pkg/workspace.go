@@ -292,6 +292,15 @@ func (c *Client) ListWorkspaces(namespace string, paginator *pagination.Paginati
 		return nil, err
 	}
 
+	labelMap, err := c.GetDbLabelsMapped(TypeWorkspace, WorkspacesToIds(workspaces)...)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, workspace := range workspaces {
+		workspace.Labels = labelMap[workspace.ID]
+	}
+
 	return
 }
 
