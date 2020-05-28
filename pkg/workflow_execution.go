@@ -1406,9 +1406,6 @@ func injectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, workflowTemp
 	if wf.Spec.OnExit != "" {
 		for _, t := range wf.Spec.Templates {
 			if t.Name == wf.Spec.OnExit {
-				lasTaskIndex := len(t.DAG.Tasks) - 1
-				dagTask.Dependencies = []string{t.DAG.Tasks[lasTaskIndex].Name}
-
 				t.DAG.Tasks = append(t.DAG.Tasks, dagTask)
 
 				break
