@@ -259,6 +259,18 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{inputs.parameters.sys-pvc-name}}-{{workflow.parameters.sys-uid}}-0
 `
+
+	if spec.PostExecutionWorkflow == nil {
+		spec.PostExecutionWorkflow = &wfv1.WorkflowTemplateSpec{}
+		spec.PostExecutionWorkflow.Entrypoint = "main"
+		spec.PostExecutionWorkflow.Templates = []wfv1.Template{
+			{
+				Name: "main",
+				DAG:  &wfv1.DAGTemplate{},
+			},
+		}
+	}
+
 	templates := []wfv1.Template{
 		{
 			Name: "workspace",
