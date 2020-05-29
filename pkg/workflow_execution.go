@@ -825,7 +825,8 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName
 		}
 		opts.SetRange(0, int64(endOffset))
 
-		stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, "artifacts/"+namespace+"/"+uid+"/"+podName+"/"+containerName+".log", opts)
+		key := config.ArtifactRepository.S3.FormatKey(namespace, uid, podName) + "/" + containerName + ".log"
+		stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, key, opts)
 	} else {
 		stream, err = c.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{
 			Container:  containerName,
@@ -905,7 +906,8 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, uid, podName string) (me
 
 	opts := s3.GetObjectOptions{}
 
-	stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, "artifacts/"+namespace+"/"+uid+"/"+podName+"/sys-metrics.json", opts)
+	key := config.ArtifactRepository.S3.FormatKey(namespace, uid, podName) + "/sys-metrics.json"
+	stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, key, opts)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
