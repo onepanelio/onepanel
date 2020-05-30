@@ -31,6 +31,14 @@ func (c *Client) ListLabels(resource string, uid string) (labels []*Label, err e
 	case TypeCronWorkflow:
 		sb = sb.Join("cron_workflows cw ON cw.id = l.resource_id").
 			Where(sq.Eq{"cw.uid": uid})
+	case TypeWorkspace:
+		sb = sb.Join("workspaces ws ON ws.id = l.resource_id").
+			Where(sq.And{
+				sq.Eq{"ws.uid": uid},
+				sq.NotEq{"ws.phase": "Terminated"},
+			})
+	default:
+		return nil, fmt.Errorf("unsupported label resource %v", resource)
 	}
 
 	query, args, sqlErr := sb.ToSql()
@@ -119,12 +127,24 @@ func (c *Client) ReplaceLabels(namespace, resource, uid string, keyValues map[st
 		return fmt.Errorf("unknown resources '%v'", resource)
 	}
 
+	var whereCondition interface{} = nil
+	if resource == TypeWorkspace {
+		whereCondition = sq.And{
+			sq.Eq{"uid": uid},
+			sq.NotEq{"phase": "Terminated"},
+		}
+	} else if resource == TypeWorkspaceTemplate || resource == TypeWorkflowExecution {
+		whereCondition =
+			sq.Eq{
+				"uid":         uid,
+				"is_archived": false,
+			}
+	}
+
 	resourceID := uint64(0)
 	err = sb.Select("id").
 		From(tableName).
-		Where(sq.Eq{
-			"uid": uid,
-		}).
+		Where(whereCondition).
 		RunWith(tx).
 		QueryRow().
 		Scan(&resourceID)
