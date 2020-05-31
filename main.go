@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	_ "github.com/onepanelio/core/db"
 	"net"
 	"net/http"
 
