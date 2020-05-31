@@ -108,7 +108,7 @@ postExecutionWorkflow:
        - -c
 `
 
-const cvatTemplateName = "cvat"
+const cvatTemplateName = "CVAT"
 
 func init() {
 	goose.AddMigration(Up20200528140124, Down20200528140124)
