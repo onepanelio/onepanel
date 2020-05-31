@@ -32,7 +32,7 @@ containers:
   - containerPort: 6379
     name: tcp
 - name: cvat
-  image: onepanel/cvat:v0.6.23
+  image: onepanel/cvat:v0.6.24
   command: ["/bin/bash", "-c"]
   args: ["/usr/bin/supervisord && /usr/bin/python3 ~/manage.py shell --command='import os;from django.contrib.auth.models import User;u = User(username=os.getenv('DJANGO_SUPERUSER_USERNAME','admin'));u.set_password(os.getenv('DJANGO_SUPERUSER_PASSWORD','admin'));u.is_superuser = True;u.is_staff = True;u.save();'"]
   env:
@@ -59,7 +59,7 @@ containers:
   - name: models
     mountPath: /home/django/models
 - name: cvat-ui
-  image: onepanel/cvat-ui:v0.6.23
+  image: onepanel/cvat-ui:v0.6.24
   ports:
   - containerPort: 80
     name: http
