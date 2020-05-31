@@ -2,8 +2,6 @@ package migration
 
 import (
 	"database/sql"
-	"fmt"
-	"github.com/jmoiron/sqlx"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/pressly/goose"
 	"log"
@@ -67,28 +65,10 @@ postExecutionWorkflow:
        - sh
        - -c`
 
-const jupyterLabTemplateName = "jupyterlab"
+const jupyterLabTemplateName = "JupyterLab"
 
 func init() {
 	goose.AddMigration(Up20200525160514, Down20200525160514)
-}
-
-func getClient() (*v1.Client, error) {
-	kubeConfig := v1.NewConfig()
-	client, err := v1.NewClient(kubeConfig, nil)
-	if err != nil {
-		return nil, err
-	}
-	config, err := client.GetSystemConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	databaseDataSourceName := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
-		"localhost", "admin", "admin", "onepanel-core")
-	client.DB = sqlx.MustConnect(config["databaseDriverName"], databaseDataSourceName)
-
-	return client, nil
 }
 
 func Up20200525160514(tx *sql.Tx) error {
