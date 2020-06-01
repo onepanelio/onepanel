@@ -254,12 +254,16 @@ func unmarshalWorkflowTemplate(spec *WorkspaceSpec, serviceManifest, virtualServ
 		}
 	}
 
+	getStatefulSetManifest := `apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{workflow.parameters.sys-uid}}
+`
 	deletePVCManifest := `apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: {{inputs.parameters.sys-pvc-name}}-{{workflow.parameters.sys-uid}}-0
 `
-
 	templates := []wfv1.Template{
 		{
 			Name: "workspace",
@@ -280,6 +284,20 @@ metadata:
 						Template:     "stateful-set-resource",
 						Dependencies: []string{"virtual-service"},
 						When:         "{{workflow.parameters.sys-workspace-action}} == create || {{workflow.parameters.sys-workspace-action}} == update",
+					},
+					{
+						Name:         "get-stateful-set",
+						Template:     "get-stateful-set-resource",
+						Dependencies: []string{"stateful-set"},
+						When:         "{{workflow.parameters.sys-workspace-action}} == create || {{workflow.parameters.sys-workspace-action}} == update",
+						Arguments: wfv1.Arguments{
+							Parameters: []wfv1.Parameter{
+								{
+									Name:  "update-revision",
+									Value: ptr.String("{{tasks.stateful-set.outputs.parameters.update-revision}}"),
+								},
+							},
+						},
 					},
 					{
 						Name:         "delete-stateful-set",
@@ -305,7 +323,7 @@ metadata:
 					{
 						Name:         "sys-set-phase-running",
 						Template:     "sys-update-status",
-						Dependencies: []string{"stateful-set"},
+						Dependencies: []string{"get-stateful-set"},
 						Arguments: wfv1.Arguments{
 							Parameters: []wfv1.Parameter{
 								{
@@ -364,9 +382,29 @@ metadata:
 		{
 			Name: "stateful-set-resource",
 			Resource: &wfv1.ResourceTemplate{
-				Action:           "{{workflow.parameters.sys-resource-action}}",
-				Manifest:         containersManifest,
-				SuccessCondition: "status.readyReplicas > 0",
+				Action:   "{{workflow.parameters.sys-resource-action}}",
+				Manifest: containersManifest,
+			},
+			Outputs: wfv1.Outputs{
+				Parameters: []wfv1.Parameter{
+					{
+						Name: "update-revision",
+						ValueFrom: &wfv1.ValueFrom{
+							JSONPath: "{.status.updateRevision}",
+						},
+					},
+				},
+			},
+		},
+		{
+			Name: "get-stateful-set-resource",
+			Inputs: wfv1.Inputs{
+				Parameters: []wfv1.Parameter{{Name: "update-revision"}},
+			},
+			Resource: &wfv1.ResourceTemplate{
+				Action:           "get",
+				Manifest:         getStatefulSetManifest,
+				SuccessCondition: "status.readyReplicas > 0, status.currentRevision == {{inputs.parameters.update-revision}}",
 			},
 		},
 		{
@@ -411,7 +449,7 @@ metadata:
 		dag := wfv1.DAGTask{
 			Name:         spec.PostExecutionWorkflow.Entrypoint,
 			Template:     spec.PostExecutionWorkflow.Entrypoint,
-			Dependencies: []string{"stateful-set", "delete-stateful-set"},
+			Dependencies: []string{"sys-set-phase-running", "sys-set-phase-paused", "sys-set-phase-terminated"},
 		}
 
 		templates[0].DAG.Tasks = append(templates[0].DAG.Tasks, dag)
