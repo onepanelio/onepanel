@@ -382,8 +382,9 @@ metadata:
 		{
 			Name: "stateful-set-resource",
 			Resource: &wfv1.ResourceTemplate{
-				Action:   "{{workflow.parameters.sys-resource-action}}",
-				Manifest: containersManifest,
+				Action:           "{{workflow.parameters.sys-resource-action}}",
+				Manifest:         containersManifest,
+				SuccessCondition: "status.readyReplicas > 0",
 			},
 			Outputs: wfv1.Outputs{
 				Parameters: []wfv1.Parameter{
