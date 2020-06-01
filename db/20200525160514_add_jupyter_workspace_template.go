@@ -108,7 +108,7 @@ func Down20200525160514(tx *sql.Tx) error {
 	}
 
 	for _, namespace := range namespaces {
-		if err := client.DeleteWorkspace(namespace.Name, jupyterLabTemplateName); err != nil {
+		if _, err := client.ArchiveWorkspaceTemplate(namespace.Name, jupyterLabTemplateName); err != nil {
 			log.Printf("error %v", err.Error())
 		}
 	}

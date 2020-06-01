@@ -407,3 +407,7 @@ func (c *Client) ResumeWorkspace(namespace, uid string) (err error) {
 func (c *Client) DeleteWorkspace(namespace, uid string) (err error) {
 	return c.updateWorkspace(namespace, uid, "delete", "delete", &WorkspaceStatus{Phase: WorkspaceTerminating})
 }
+
+func (c *Client) ArchiveWorkspace(namespace, uid string) (err error) {
+	return c.updateWorkspace(namespace, uid, "delete", "delete", &WorkspaceStatus{Phase: WorkspaceTerminating})
+}

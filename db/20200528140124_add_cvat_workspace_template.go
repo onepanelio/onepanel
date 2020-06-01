@@ -155,7 +155,7 @@ func Down20200528140124(tx *sql.Tx) error {
 	}
 
 	for _, namespace := range namespaces {
-		if err := client.DeleteWorkspace(namespace.Name, cvatTemplateName); err != nil {
+		if _, err := client.ArchiveWorkspaceTemplate(namespace.Name, cvatTemplateName); err != nil {
 			log.Printf("error %v", err.Error())
 		}
 	}

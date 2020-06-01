@@ -905,6 +905,16 @@ func (c *Client) ArchiveWorkspaceTemplate(namespace string, uid string) (archive
 		return false, nil
 	}
 
+	err = c.ArchiveWorkspace(namespace, uid)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"UID":       uid,
+			"Error":     err.Error(),
+		}).Error("Archive Workspace Template k8s failed.")
+		return false, util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
+	}
+
 	archived, err = c.ArchiveWorkflowTemplate(namespace, workspaceTemplate.UID)
 	if err != nil {
 		return false, err
