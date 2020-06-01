@@ -339,6 +339,7 @@ func (c *Client) CountWorkflowTemplates(namespace string) (count int, err error)
 		Where(sq.Eq{
 			"wt.namespace":   namespace,
 			"wt.is_archived": false,
+			"wt.is_system":   false,
 		}).
 		RunWith(c.DB.DB).
 		QueryRow().
