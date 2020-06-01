@@ -3167,6 +3167,9 @@
         "createdAt": {
           "type": "string"
         },
+        "modifiedAt": {
+          "type": "string"
+        },
         "uid": {
           "type": "string"
         },
