@@ -49,7 +49,7 @@ Make sure that your `$GOBIN` is in your `$PATH`.
 
 Generate Go and Swagger APIs:
 ```bash
-make api
+make api version=1.0.0
 ```
 
 ## Minikube Debugging and Development
