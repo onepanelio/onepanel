@@ -31,6 +31,10 @@ func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 		Labels:     converter.MappingToKeyValue(wft.Labels),
 	}
 
+	if wft.ModifiedAt != nil {
+		res.ModifiedAt = wft.ModifiedAt.UTC().Format(time.RFC3339)
+	}
+
 	if wft.WorkflowExecutionStatisticReport != nil {
 		res.Stats = &api.WorkflowExecutionStatisticReport{
 			Total:        wft.WorkflowExecutionStatisticReport.Total,
@@ -134,6 +138,12 @@ func (s *WorkflowTemplateServer) GetWorkflowTemplate(ctx context.Context, req *a
 	if err != nil {
 		return nil, err
 	}
+
+	versionsCount, err := client.CountWorkflowTemplateVersions(req.Namespace, req.Uid)
+	if err != nil {
+		return nil, err
+	}
+	workflowTemplate.Versions = int64(versionsCount)
 
 	return apiWorkflowTemplate(workflowTemplate), nil
 }

@@ -135,18 +135,18 @@ message CronWorkflowStatisticsReport {
 
 message WorkflowTemplate {
     string createdAt = 1;
-    string uid = 2;
-    string name = 3;
-    int64 version = 4;
-    int64 versions = 5;
-    string manifest = 6;
-    bool isLatest = 7;
-    bool isArchived = 8;
-    repeated KeyValue labels = 9;
+    string modifiedAt = 2;
+    string uid = 3;
+    string name = 4;
+    int64 version = 5;
+    int64 versions = 6;
+    string manifest = 7;
+    bool isLatest = 8;
+    bool isArchived = 9;
+    repeated KeyValue labels = 10;
 
-    WorkflowExecutionStatisticReport stats = 10;
-    CronWorkflowStatisticsReport cronStats = 11;
-
+    WorkflowExecutionStatisticReport stats = 11;
+    CronWorkflowStatisticsReport cronStats = 12;
 }
 
 message GetWorkflowTemplateLabelsRequest {

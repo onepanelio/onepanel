@@ -198,8 +198,10 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (work
 		WorkflowExecutionStatisticReport: &WorkflowExecutionStatisticReport{},
 	}
 
+	// A new workflow template version is created upon a change, so we use it's createdAt
+	// as a modified_at for the workflow template.
 	sb := c.workflowTemplatesSelectBuilder(namespace).
-		Columns("wtv.manifest", "wtv.version", "wtv.id workflow_template_version_id").
+		Columns("wtv.manifest", "wtv.version", "wtv.id workflow_template_version_id", "wtv.created_at modified_at").
 		Join("workflow_template_versions wtv ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{
 			"wt.uid":         uid,
@@ -536,6 +538,25 @@ func (c *Client) GetWorkflowTemplateByName(namespace, name string, version int64
 	if workflowTemplate == nil {
 		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
 	}
+
+	return
+}
+
+// CountWorkflowTemplateVersions returns the number of versions a non-archived WorkflowTemplate has.
+func (c *Client) CountWorkflowTemplateVersions(namespace, uid string) (count uint64, err error) {
+	count = 0
+
+	err = sb.Select("COUNT(*)").
+		From("workflow_templates wt").
+		Join("workflow_template_versions wtv ON wtv.workflow_template_id = wt.id").
+		Where(sq.Eq{
+			"wt.namespace":   namespace,
+			"wt.uid":         uid,
+			"wt.is_archived": false,
+		}).
+		RunWith(c.DB).
+		QueryRow().
+		Scan(&count)
 
 	return
 }
