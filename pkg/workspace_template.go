@@ -468,8 +468,13 @@ func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 		RunWith(tx).
 		QueryRow().Scan(&workspaceTemplate.ID, &workspaceTemplate.CreatedAt)
 	if err != nil {
-		_, err := c.ArchiveWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID)
-		return nil, util.NewUserErrorWrap(err, "Workspace template")
+		_, errCleanUp := c.ArchiveWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID)
+		errorMsg := "Error with insert into workspace_templates. "
+		if errCleanUp != nil {
+			errorMsg += "Error with clean-up: ArchiveWorkflowTemplate. "
+			errorMsg += errCleanUp.Error()
+		}
+		return nil, util.NewUserErrorWrap(err, errorMsg) //return the source error
 	}
 
 	workspaceTemplateVersionID := uint64(0)
@@ -486,8 +491,13 @@ func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 		QueryRow().
 		Scan(&workspaceTemplateVersionID)
 	if err != nil {
-		_, err := c.ArchiveWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID)
-		return nil, err
+		_, errCleanUp := c.ArchiveWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID)
+		errorMsg := "Error with insert into workspace_templates_versions. "
+		if errCleanUp != nil {
+			errorMsg += "Error with clean-up: ArchiveWorkflowTemplate. "
+			errorMsg += errCleanUp.Error()
+		}
+		return nil, util.NewUserErrorWrap(err, errorMsg) //return the source error
 	}
 
 	if len(workspaceTemplate.Labels) != 0 {
