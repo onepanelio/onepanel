@@ -11,7 +11,7 @@ Uncomment only one ` /kind <>` line, hit enter to put that in a new line, and re
 
 > /kind enhancement
 > /kind bug
-> /kind documentation
+> /kind docs
 
 
 **What this PR does**:
