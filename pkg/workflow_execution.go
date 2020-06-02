@@ -1527,7 +1527,7 @@ func workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, wo
 func workflowExecutionsSelectBuilder(namespace, workflowTemplateUID, workflowTemplateVersion string) sq.SelectBuilder {
 	sb := workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, workflowTemplateVersion)
 	sb = sb.Columns(getWorkflowExecutionColumns("we", "")...).
-		Columns(`wtv.version "workflow_template.version"`)
+		Columns(`wtv.version "workflow_template.version"`, `wtv.created_at "workflow_template.created_at"`)
 
 	return sb
 }
