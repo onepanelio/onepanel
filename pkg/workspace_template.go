@@ -28,14 +28,9 @@ func parseWorkspaceSpec(template string) (spec *WorkspaceSpec, err error) {
 }
 
 func generateArguments(spec *WorkspaceSpec, config map[string]string) (err error) {
-	if spec.Arguments == nil {
-		spec.Arguments = &Arguments{
-			Parameters: []Parameter{},
-		}
-	}
-
+	systemParameters := make([]Parameter, 0)
 	// Resource action parameter
-	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
+	systemParameters = append(systemParameters, Parameter{
 		Name:        "sys-name",
 		Type:        "input.text",
 		Value:       ptr.String("name"),
@@ -46,25 +41,25 @@ func generateArguments(spec *WorkspaceSpec, config map[string]string) (err error
 
 	// TODO: These can be removed when lint validation of workflows work
 	// Resource action parameter
-	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
+	systemParameters = append(systemParameters, Parameter{
 		Name:  "sys-resource-action",
 		Value: ptr.String("apply"),
 		Type:  "input.hidden",
 	})
 	// Workspace action
-	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
+	systemParameters = append(systemParameters, Parameter{
 		Name:  "sys-workspace-action",
 		Value: ptr.String("create"),
 		Type:  "input.hidden",
 	})
 	// Host
-	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
+	systemParameters = append(systemParameters, Parameter{
 		Name:  "sys-host",
 		Value: ptr.String(config["ONEPANEL_DOMAIN"]),
 		Type:  "input.hidden",
 	})
 	// UID placeholder
-	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
+	systemParameters = append(systemParameters, Parameter{
 		Name:  "sys-uid",
 		Value: ptr.String("uid"),
 		Type:  "input.hidden",
@@ -75,7 +70,7 @@ func generateArguments(spec *WorkspaceSpec, config map[string]string) (err error
 	if err = yaml.Unmarshal([]byte(config["applicationNodePoolOptions"]), &options); err != nil {
 		return
 	}
-	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
+	systemParameters = append(systemParameters, Parameter{
 		Name:        "sys-node-pool",
 		Value:       ptr.String(options[0].Value),
 		Type:        "select.select",
@@ -93,7 +88,7 @@ func generateArguments(spec *WorkspaceSpec, config map[string]string) (err error
 				continue
 			}
 
-			spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
+			systemParameters = append(systemParameters, Parameter{
 				Name:        fmt.Sprintf("sys-%v-volume-size", v.Name),
 				Type:        "input.number",
 				Value:       ptr.String("20480"),
@@ -105,6 +100,13 @@ func generateArguments(spec *WorkspaceSpec, config map[string]string) (err error
 			volumeClaimsMapped[v.Name] = true
 		}
 	}
+
+	if spec.Arguments == nil {
+		spec.Arguments = &Arguments{
+			Parameters: []Parameter{},
+		}
+	}
+	spec.Arguments.Parameters = append(systemParameters, spec.Arguments.Parameters...)
 
 	return
 }
