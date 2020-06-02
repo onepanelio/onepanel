@@ -1,5 +1,4 @@
 <!--  Thanks for sending a pull request!  Here are some tips for you:
-
 1. If this is your first time, please read our contributor guidelines: https://docs.onepanel.ai/docs/getting-started/contributing
 2. Please label this pull request according to what type of issue you are addressing.
 -->
