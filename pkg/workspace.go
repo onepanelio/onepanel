@@ -266,6 +266,38 @@ func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceS
 	return
 }
 
+func (c *Client) ListWorkspacesByTemplateId(namespace string, templateId uint64) (workspaces []*Workspace, err error) {
+	sb := sb.Select(getWorkspaceColumns("w", "")...).
+		From("workspaces w").
+		Where(sq.And{
+			sq.Eq{
+				"w.namespace":             namespace,
+				"w.workspace_template_id": templateId,
+			},
+			sq.NotEq{
+				"phase": WorkspaceTerminated,
+			},
+		})
+	query, args, err := sb.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := c.DB.Select(&workspaces, query, args...); err != nil {
+		return nil, err
+	}
+
+	labelMap, err := c.GetDbLabelsMapped(TypeWorkspace, WorkspacesToIds(workspaces)...)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, workspace := range workspaces {
+		workspace.Labels = labelMap[workspace.ID]
+	}
+	return
+}
+
 func (c *Client) ListWorkspaces(namespace string, paginator *pagination.PaginationRequest) (workspaces []*Workspace, err error) {
 	sb := sb.Select(getWorkspaceColumns("w", "")...).
 		Columns(getWorkspaceStatusColumns("w", "status")...).
