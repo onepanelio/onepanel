@@ -135,7 +135,7 @@ func Up20200528140124(tx *sql.Tx) error {
 
 	for _, namespace := range namespaces {
 		if _, err := client.CreateWorkspaceTemplate(namespace.Name, workspaceTemplate); err != nil {
-			log.Printf("error %v", err.Error())
+			log.Fatalf("error %v", err.Error())
 		}
 	}
 
@@ -161,7 +161,7 @@ func Down20200528140124(tx *sql.Tx) error {
 	}
 	for _, namespace := range namespaces {
 		if _, err := client.ArchiveWorkspaceTemplate(namespace.Name, uid); err != nil {
-			log.Printf("error %v", err.Error())
+			log.Fatalf("error %v", err.Error())
 		}
 	}
 
