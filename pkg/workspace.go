@@ -328,7 +328,9 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 	if err != nil {
 		return util.NewUserError(codes.NotFound, "Workspace not found.")
 	}
-
+	if workspace == nil {
+		return nil
+	}
 	config, err := c.GetSystemConfig()
 	if err != nil {
 		return
