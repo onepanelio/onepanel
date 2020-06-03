@@ -480,7 +480,6 @@ func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	workspaceTemplateVersionID := uint64(0)
 	err = sb.Insert("workspace_template_versions").
 		SetMap(sq.Eq{
-			"uid":                   uid,
 			"version":               workspaceTemplate.Version,
 			"is_latest":             workspaceTemplate.IsLatest,
 			"manifest":              workspaceTemplate.Manifest,
