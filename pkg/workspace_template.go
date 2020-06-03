@@ -895,12 +895,14 @@ func (c *Client) WorkspaceTemplateHasRunningWorkspaces(namespace string, uid str
 //
 // * Deletes Workflow Executions in k8s
 func (c *Client) ArchiveWorkspaceTemplate(namespace string, uid string) (archived bool, err error) {
-	workspaceTemplate, err := c.GetWorkspaceTemplate(namespace, uid, 0)
+	err = c.ArchiveWorkspace(namespace, uid)
 	if err != nil {
-		return false, util.NewUserError(codes.Unknown, "Unable to get workspace template.")
-	}
-	if workspaceTemplate == nil {
-		return false, util.NewUserError(codes.NotFound, "Workspace template not found.")
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"UID":       uid,
+			"Error":     err.Error(),
+		}).Error("Archive Workspace Template k8s failed.")
+		return false, util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
 	}
 
 	archived, err = c.archiveWorkspaceTemplateDB(namespace, uid)
@@ -912,21 +914,18 @@ func (c *Client) ArchiveWorkspaceTemplate(namespace string, uid string) (archive
 		}).Error("Archive Workspace Template failed.")
 		return false, util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
 	}
-	if !archived {
-		return false, nil
-	}
 
-	err = c.ArchiveWorkspace(namespace, uid)
+	workspaceTemplate, err := c.GetWorkspaceTemplate(namespace, uid, 0)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"UID":       uid,
-			"Error":     err.Error(),
-		}).Error("Archive Workspace Template k8s failed.")
-		return false, util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
+		if err != sql.ErrNoRows {
+			return false, util.NewUserError(codes.Unknown, "Unable to get workspace template.")
+		}
+	}
+	if workspaceTemplate == nil {
+		return false, util.NewUserError(codes.NotFound, "Workspace template not found.")
 	}
 
-	archived, err = c.ArchiveWorkflowTemplate(namespace, workspaceTemplate.UID)
+	archived, err = c.ArchiveWorkflowTemplate(namespace, uid)
 	if err != nil {
 		return false, err
 	}
