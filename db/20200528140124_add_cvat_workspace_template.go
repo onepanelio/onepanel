@@ -3,6 +3,7 @@ package migration
 import (
 	"database/sql"
 	v1 "github.com/onepanelio/core/pkg"
+	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"github.com/pressly/goose"
 	"log"
 )
@@ -154,8 +155,12 @@ func Down20200528140124(tx *sql.Tx) error {
 		return err
 	}
 
+	uid, err := uid2.GenerateUID(cvatTemplateName, 30)
+	if err != nil {
+		return err
+	}
 	for _, namespace := range namespaces {
-		if _, err := client.ArchiveWorkspaceTemplate(namespace.Name, cvatTemplateName); err != nil {
+		if _, err := client.ArchiveWorkspaceTemplate(namespace.Name, uid); err != nil {
 			log.Printf("error %v", err.Error())
 		}
 	}
