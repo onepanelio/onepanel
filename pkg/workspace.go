@@ -266,7 +266,7 @@ func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceS
 	return
 }
 
-func (c *Client) ListWorkspacesByTemplateId(namespace string, templateId uint64) (workspaces []*Workspace, err error) {
+func (c *Client) ListWorkspacesByTemplateID(namespace string, templateId uint64) (workspaces []*Workspace, err error) {
 	sb := sb.Select(getWorkspaceColumns("w", "")...).
 		From("workspaces w").
 		Where(sq.And{
