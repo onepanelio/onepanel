@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	"github.com/golang/protobuf/ptypes/empty"
+	"fmt"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/server/auth"
@@ -10,40 +10,22 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-	"strings"
 )
 
-type AuthServer struct{}
-
-func NewAuthServer() *AuthServer {
-	return &AuthServer{}
+type AuthServer struct {
+	fqdns map[string]string // map from namespace -> namespace.domain
 }
-func (a *AuthServer) IsWorkspaceAuthenticated(ctx context.Context, request *api.IsWorkspaceAuthenticatedRequest) (*empty.Empty, error) {
-	if ctx == nil {
-		return &empty.Empty{}, nil
+
+func NewAuthServer(namespaces []*v1.Namespace, config map[string]string) *AuthServer {
+	server := &AuthServer{
+		fqdns: make(map[string]string),
 	}
-	client := ctx.Value("kubeClient").(*v1.Client)
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return &empty.Empty{}, errors.New("Error parsing headers.")
+
+	for _, namespace := range namespaces {
+		server.fqdns[namespace.Name] = namespace.Name + "." + config["ONEPANEL_DOMAIN"]
 	}
-	//Expected format: x-original-authority:[name--default.alexcluster.onepanel.io]
-	xOriginalAuth := md.Get("x-original-authority")[0]
-	fqdn := md.Get("fqdn")[0]
-	if xOriginalAuth == fqdn {
-		return &empty.Empty{}, nil
-	}
-	pos := strings.Index(xOriginalAuth, ".")
-	if pos == -1 {
-		return &empty.Empty{}, errors.New("Error parsing x-original-authority. No '.' character.")
-	}
-	workspaceAndNamespace := xOriginalAuth[0:pos]
-	pieces := strings.Split(workspaceAndNamespace, "--")
-	_, err := auth.IsAuthorized(client, pieces[1], "create", "apps", "statefulsets", pieces[0])
-	if err != nil {
-		return &empty.Empty{}, err
-	}
-	return &empty.Empty{}, nil
+
+	return server
 }
 
 func (a *AuthServer) IsAuthorized(ctx context.Context, request *api.IsAuthorizedRequest) (res *api.IsAuthorizedResponse, err error) {
@@ -52,8 +34,37 @@ func (a *AuthServer) IsAuthorized(ctx context.Context, request *api.IsAuthorized
 		res.Authorized = false
 		return res, status.Error(codes.Unauthenticated, "Unauthenticated.")
 	}
-	//User auth check
+
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return res, status.Error(codes.Unauthenticated, "Unauthenticated.")
+	}
+
+	// If no authorization, we permit access if the x-original-authority == the expected fqdn
+	if md.Get("authorization") == nil {
+		xOriginalAuthorityStrings := md.Get("x-original-authority")
+		if xOriginalAuthorityStrings == nil {
+			return res, status.Error(codes.Unauthenticated, "Unauthenticated.")
+		}
+		xOriginalAuthority := xOriginalAuthorityStrings[0]
+
+		fqdnEnd, ok := a.fqdns[request.Namespace]
+		if !ok {
+			return res, status.Error(codes.Unauthenticated, "Unauthenticated.")
+		}
+		fqdn := fmt.Sprintf("%v--%v", request.GetResourceName(), fqdnEnd)
+
+		if fqdn != xOriginalAuthority {
+			return res, status.Error(codes.Unauthenticated, "Unauthenticated.")
+		}
+
+		res.Authorized = true
+		return res, nil
+	}
+
 	client := ctx.Value("kubeClient").(*v1.Client)
+
+	//User auth check
 	err = a.isValidToken(err, client)
 	if err != nil {
 		return nil, err

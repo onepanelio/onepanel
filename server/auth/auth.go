@@ -108,19 +108,34 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerIntercep
 		}
 
 		// if you don't need the token,
-		if info.FullMethod == "/api.AuthService/IsWorkspaceAuthenticated" {
+		if info.FullMethod == "/api.AuthService/IsAuthorized" {
 			md, ok := metadata.FromIncomingContext(ctx)
 			if !ok {
 				ctx = nil
 				return handler(ctx, req)
 			}
-			xOriginalAuthority := md.Get("x-original-authority")[0]
-			authToken := md.Get("authorization")
-			fqdn := md.Get("fqdn")[0]
-			//len = 0 when user logged out or hasn't logged in yet
-			if len(authToken) == 0 && xOriginalAuthority == fqdn {
-				ctx = nil
-				return handler(ctx, req)
+
+			//Expected format: x-original-authority:[name--default.alexcluster.onepanel.io]
+			if xOriginalAuthStrings := md.Get("x-original-authority"); xOriginalAuthStrings != nil {
+				xOriginalAuth := xOriginalAuthStrings[0]
+				dotIndex := strings.Index(xOriginalAuth, ".")
+				if dotIndex != -1 {
+					workspaceAndNamespace := xOriginalAuth[0:dotIndex]
+					pieces := strings.Split(workspaceAndNamespace, "--")
+					workspaceName := pieces[0]
+					namespace := pieces[1]
+
+					isAuthorizedRequest, ok := req.(*api.IsAuthorizedRequest)
+					if ok {
+						isAuthorizedRequest.Namespace = namespace
+						isAuthorizedRequest.Resource = "statefulsets"
+						isAuthorizedRequest.Group = "apps"
+						isAuthorizedRequest.ResourceName = workspaceName
+						isAuthorizedRequest.Verb = "get"
+
+						return handler(ctx, req)
+					}
+				}
 			}
 		}
 

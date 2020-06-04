@@ -13,18 +13,15 @@ service AuthService {
         };
     }
 
-    rpc IsWorkspaceAuthenticated(IsWorkspaceAuthenticatedRequest) returns (google.protobuf.Empty) {
-        option (google.api.http) = {
-            custom: {
-                kind: "HEAD"
-                path: "/apis/v1beta1/auth/token"
-            }
-        };
-    }
-
     rpc IsAuthorized(IsAuthorizedRequest) returns (IsAuthorizedResponse) {
         option (google.api.http) = {
-            post: "/apis/v1beta1/auth"
+            post: "/apis/v1beta1/auth",
+            additional_bindings : {
+                custom: {
+                    kind: "HEAD"
+                    path: "/apis/v1beta1/auth"
+                };
+            }
         };
     }
 }
