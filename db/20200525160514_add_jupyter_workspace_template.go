@@ -1,3 +1,5 @@
+// Package migration is for carrying out migrations against the database.
+// To support Onepanel Core operations.
 package migration
 
 import (
