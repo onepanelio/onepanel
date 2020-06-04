@@ -268,13 +268,13 @@ func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceS
 
 // ListWorkspacesByTemplateID will return all the workspaces for a given workspace template id.
 // Sourced from database.
-func (c *Client) ListWorkspacesByTemplateID(namespace string, templateId uint64) (workspaces []*Workspace, err error) {
+func (c *Client) ListWorkspacesByTemplateID(namespace string, templateID uint64) (workspaces []*Workspace, err error) {
 	sb := sb.Select(getWorkspaceColumns("w", "")...).
 		From("workspaces w").
 		Where(sq.And{
 			sq.Eq{
 				"w.namespace":             namespace,
-				"w.workspace_template_id": templateId,
+				"w.workspace_template_id": templateID,
 			},
 			sq.NotEq{
 				"phase": WorkspaceTerminated,
