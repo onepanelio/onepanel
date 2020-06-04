@@ -266,6 +266,8 @@ func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceS
 	return
 }
 
+// ListWorkspacesByTemplateID will return all the workspaces for a given workspace template id.
+// Sourced from database.
 func (c *Client) ListWorkspacesByTemplateID(namespace string, templateId uint64) (workspaces []*Workspace, err error) {
 	sb := sb.Select(getWorkspaceColumns("w", "")...).
 		From("workspaces w").
@@ -442,6 +444,8 @@ func (c *Client) DeleteWorkspace(namespace, uid string) (err error) {
 	return c.updateWorkspace(namespace, uid, "delete", "delete", &WorkspaceStatus{Phase: WorkspaceTerminating})
 }
 
+// ArchiveWorkspace archives by setting the workspace to delete or terminate.
+// Kicks off DB archiving and k8s cleaning.
 func (c *Client) ArchiveWorkspace(namespace, uid string) (err error) {
 	return c.updateWorkspace(namespace, uid, "delete", "delete", &WorkspaceStatus{Phase: WorkspaceTerminating})
 }
