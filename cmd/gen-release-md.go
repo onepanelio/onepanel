@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 type User struct {
@@ -91,19 +92,24 @@ func printMarkDown(issues []*Issue, version *string) {
 			continue
 		}
 
-		contributors[iss.User.Login] = iss.User
-		sections[iss.Labels[0].Name] += fmt.Sprintf("- %s ([#%d](%s))\n", iss.Title, iss.Number, iss.URL)
+		parts := strings.Split(iss.Title, ":")
+		if len(parts) > 0 {
+			contributors[iss.User.Login] = iss.User
+			sections[parts[0]] += fmt.Sprintf("- %s ([#%d](%s))\n", iss.Title, iss.Number, iss.URL)
+		}
 	}
 
 	releaseTemplate := fmt.Sprintf(releaseTemplate, *version, *version)
 	fmt.Println(releaseTemplate)
 	fmt.Println("# Changelog\n")
 	fmt.Println("## Features\n")
-	fmt.Println(sections["kind/enhancement"])
+	fmt.Println(sections["feat"])
 	fmt.Println("## Fixes\n")
-	fmt.Println(sections["kind/bug"])
+	fmt.Println(sections["fix"])
 	fmt.Println("## Docs\n")
-	fmt.Println(sections["kind/docs"])
+	fmt.Println(sections["docs"])
+	fmt.Println("## Chores\n")
+	fmt.Println(sections["chore"])
 
 	fmt.Println("# Contributors\n")
 	for _, user := range contributors {
