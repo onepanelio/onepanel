@@ -943,7 +943,7 @@ func (c *Client) ArchiveWorkspaceTemplate(namespace string, uid string) (archive
 		return false, util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
 	}
 	for _, wsTemp := range wsTemps {
-		wsList, err := c.ListWorkspacesByTemplateId(namespace, wsTemp.WorkspaceTemplateVersionID)
+		wsList, err := c.ListWorkspacesByTemplateID(namespace, wsTemp.WorkspaceTemplateVersionID)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"Namespace": namespace,
