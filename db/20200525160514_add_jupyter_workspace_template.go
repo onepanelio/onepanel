@@ -59,14 +59,14 @@ routes:
 #        tasks:
 #        - name: slack-notify
 #          template: slack-notify
-#   -  name: slack-notify
-#      container:
-#        image: technosophos/slack-notify
-#        args:
-#        - SLACK_USERNAME=onepanel SLACK_TITLE="Your workspace is ready" SLACK_ICON=https://www.gravatar.com/avatar/5c4478592fe00878f62f0027be59c1bd SLACK_MESSAGE="Your workspace is now running" ./slack-notify
-#        command:
-#        - sh
-#        - -c
+#   - name: slack-notify
+#     container:
+#       image: technosophos/slack-notify
+#       args:
+#       - SLACK_USERNAME=onepanel SLACK_TITLE="Your workspace is ready" SLACK_ICON=https://www.gravatar.com/avatar/5c4478592fe00878f62f0027be59c1bd SLACK_MESSAGE="Your workspace is now running" ./slack-notify
+#       command:
+#       - sh
+#       - -c
 `
 
 const jupyterLabTemplateName = "JupyterLab"
