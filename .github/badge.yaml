@@ -1,0 +1,6 @@
+types:
+  feat: kind/enhancement
+  fix: kind/bug
+  docs: kind/docs
+  chore: kind/chore
+  
