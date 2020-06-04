@@ -1,17 +1,8 @@
 <!--  Thanks for sending a pull request!  Here are some tips for you:
-1. If this is your first time, please read our contributor guidelines: https://docs.onepanel.ai/docs/getting-started/contributing
-2. Please label this pull request according to what type of issue you are addressing.
+1. Please read our contributor guidelines: https://docs.onepanel.ai/docs/getting-started/contributing
+2. Please prefix the title of this PR based on https://www.conventionalcommits.org/: "feat", "fix", "docs" or "chore"
+3. If this PR is a feature/enhancement, then please create an issue for it first.
 -->
-
-**What type of PR is this?**
-<!--
-Uncomment only one ` /kind <>` line, hit enter to put that in a new line, and remove leading whitespace from that line:
--->
-
-> /kind enhancement
-> /kind bug
-> /kind docs
-
 
 **What this PR does**:
 
