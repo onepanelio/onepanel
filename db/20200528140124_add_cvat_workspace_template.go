@@ -114,6 +114,9 @@ func init() {
 	goose.AddMigration(Up20200528140124, Down20200528140124)
 }
 
+// Up20200528140124 will insert the cvatTemplate to each user.
+// Each user is determined by onepanel enabled namespaces.
+// Any errors reported are logged as fatal.
 func Up20200528140124(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 
@@ -141,6 +144,11 @@ func Up20200528140124(tx *sql.Tx) error {
 	return nil
 }
 
+// Down20200528140124 will attempt to remove cvatTemplate from each user.
+// Each user is determined by onepanel enabled namespaces.
+// DB entries are archived, K8S components are deleted.
+// Active workspaces with that template are terminated.
+// Any errors reported are logged as fatal.
 func Down20200528140124(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 
