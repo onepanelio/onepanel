@@ -1,6 +1,6 @@
 # Helper scripts
 
-### gen-release-md.go
+## gen-release-md.go
 Generates markdown for releases.
 
 Usage:
@@ -8,7 +8,7 @@ Usage:
 go run cmd/gen-release-md.go -v=0.10.0 > /tmp/release.md
 ```
 
-### goose.go
+## goose.go
 Supports both Go and SQL migrations.
 
 ```bash
