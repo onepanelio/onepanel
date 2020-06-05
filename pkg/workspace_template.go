@@ -28,14 +28,9 @@ func parseWorkspaceSpec(template string) (spec *WorkspaceSpec, err error) {
 }
 
 func generateArguments(spec *WorkspaceSpec, config map[string]string) (err error) {
-	if spec.Arguments == nil {
-		spec.Arguments = &Arguments{
-			Parameters: []Parameter{},
-		}
-	}
-
+	systemParameters := make([]Parameter, 0)
 	// Resource action parameter
-	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
+	systemParameters = append(systemParameters, Parameter{
 		Name:        "sys-name",
 		Type:        "input.text",
 		Value:       ptr.String("name"),
@@ -46,25 +41,25 @@ func generateArguments(spec *WorkspaceSpec, config map[string]string) (err error
 
 	// TODO: These can be removed when lint validation of workflows work
 	// Resource action parameter
-	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
+	systemParameters = append(systemParameters, Parameter{
 		Name:  "sys-resource-action",
 		Value: ptr.String("apply"),
 		Type:  "input.hidden",
 	})
 	// Workspace action
-	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
+	systemParameters = append(systemParameters, Parameter{
 		Name:  "sys-workspace-action",
 		Value: ptr.String("create"),
 		Type:  "input.hidden",
 	})
 	// Host
-	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
+	systemParameters = append(systemParameters, Parameter{
 		Name:  "sys-host",
 		Value: ptr.String(config["ONEPANEL_DOMAIN"]),
 		Type:  "input.hidden",
 	})
 	// UID placeholder
-	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
+	systemParameters = append(systemParameters, Parameter{
 		Name:  "sys-uid",
 		Value: ptr.String("uid"),
 		Type:  "input.hidden",
@@ -75,7 +70,7 @@ func generateArguments(spec *WorkspaceSpec, config map[string]string) (err error
 	if err = yaml.Unmarshal([]byte(config["applicationNodePoolOptions"]), &options); err != nil {
 		return
 	}
-	spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
+	systemParameters = append(systemParameters, Parameter{
 		Name:        "sys-node-pool",
 		Value:       ptr.String(options[0].Value),
 		Type:        "select.select",
@@ -93,7 +88,7 @@ func generateArguments(spec *WorkspaceSpec, config map[string]string) (err error
 				continue
 			}
 
-			spec.Arguments.Parameters = append(spec.Arguments.Parameters, Parameter{
+			systemParameters = append(systemParameters, Parameter{
 				Name:        fmt.Sprintf("sys-%v-volume-size", v.Name),
 				Type:        "input.number",
 				Value:       ptr.String("20480"),
@@ -105,6 +100,13 @@ func generateArguments(spec *WorkspaceSpec, config map[string]string) (err error
 			volumeClaimsMapped[v.Name] = true
 		}
 	}
+
+	if spec.Arguments == nil {
+		spec.Arguments = &Arguments{
+			Parameters: []Parameter{},
+		}
+	}
+	spec.Arguments.Parameters = append(systemParameters, spec.Arguments.Parameters...)
 
 	return
 }
@@ -254,6 +256,11 @@ func unmarshalWorkflowTemplate(spec *WorkspaceSpec, serviceManifest, virtualServ
 		}
 	}
 
+	getStatefulSetManifest := `apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{workflow.parameters.sys-uid}}
+`
 	deletePVCManifest := `apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -263,6 +270,7 @@ metadata:
 		{
 			Name: "workspace",
 			DAG: &wfv1.DAGTemplate{
+				FailFast: ptr.Bool(false),
 				Tasks: []wfv1.DAGTask{
 					{
 						Name:     "service",
@@ -278,6 +286,20 @@ metadata:
 						Template:     "stateful-set-resource",
 						Dependencies: []string{"virtual-service"},
 						When:         "{{workflow.parameters.sys-workspace-action}} == create || {{workflow.parameters.sys-workspace-action}} == update",
+					},
+					{
+						Name:         "get-stateful-set",
+						Template:     "get-stateful-set-resource",
+						Dependencies: []string{"stateful-set"},
+						When:         "{{workflow.parameters.sys-workspace-action}} == create || {{workflow.parameters.sys-workspace-action}} == update",
+						Arguments: wfv1.Arguments{
+							Parameters: []wfv1.Parameter{
+								{
+									Name:  "update-revision",
+									Value: ptr.String("{{tasks.stateful-set.outputs.parameters.update-revision}}"),
+								},
+							},
+						},
 					},
 					{
 						Name:         "delete-stateful-set",
@@ -303,7 +325,7 @@ metadata:
 					{
 						Name:         "sys-set-phase-running",
 						Template:     "sys-update-status",
-						Dependencies: []string{"stateful-set"},
+						Dependencies: []string{"get-stateful-set"},
 						Arguments: wfv1.Arguments{
 							Parameters: []wfv1.Parameter{
 								{
@@ -342,11 +364,6 @@ metadata:
 						},
 						When: "{{workflow.parameters.sys-workspace-action}} == delete",
 					},
-					{
-						Name:         spec.PostExecutionWorkflow.Entrypoint,
-						Template:     spec.PostExecutionWorkflow.Entrypoint,
-						Dependencies: []string{"stateful-set", "delete-stateful-set"},
-					},
 				},
 			},
 		},
@@ -370,6 +387,27 @@ metadata:
 				Action:           "{{workflow.parameters.sys-resource-action}}",
 				Manifest:         containersManifest,
 				SuccessCondition: "status.readyReplicas > 0",
+			},
+			Outputs: wfv1.Outputs{
+				Parameters: []wfv1.Parameter{
+					{
+						Name: "update-revision",
+						ValueFrom: &wfv1.ValueFrom{
+							JSONPath: "{.status.updateRevision}",
+						},
+					},
+				},
+			},
+		},
+		{
+			Name: "get-stateful-set-resource",
+			Inputs: wfv1.Inputs{
+				Parameters: []wfv1.Parameter{{Name: "update-revision"}},
+			},
+			Resource: &wfv1.ResourceTemplate{
+				Action:           "get",
+				Manifest:         getStatefulSetManifest,
+				SuccessCondition: "status.readyReplicas > 0, status.currentRevision == {{inputs.parameters.update-revision}}",
 			},
 		},
 		{
@@ -411,6 +449,14 @@ metadata:
 	templates = append(templates, *curlNodeTemplate)
 	// Add postExecutionWorkflow if it exists
 	if spec.PostExecutionWorkflow != nil {
+		dag := wfv1.DAGTask{
+			Name:         spec.PostExecutionWorkflow.Entrypoint,
+			Template:     spec.PostExecutionWorkflow.Entrypoint,
+			Dependencies: []string{"sys-set-phase-running", "sys-set-phase-paused", "sys-set-phase-terminated"},
+		}
+
+		templates[0].DAG.Tasks = append(templates[0].DAG.Tasks, dag)
+
 		templates = append(templates, spec.PostExecutionWorkflow.Templates...)
 	}
 
@@ -463,8 +509,13 @@ func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 		RunWith(tx).
 		QueryRow().Scan(&workspaceTemplate.ID, &workspaceTemplate.CreatedAt)
 	if err != nil {
-		_, err := c.ArchiveWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID)
-		return nil, util.NewUserErrorWrap(err, "Workspace template")
+		_, errCleanUp := c.ArchiveWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID)
+		errorMsg := "Error with insert into workspace_templates. "
+		if errCleanUp != nil {
+			errorMsg += "Error with clean-up: ArchiveWorkflowTemplate. "
+			errorMsg += errCleanUp.Error()
+		}
+		return nil, util.NewUserErrorWrap(err, errorMsg) //return the source error
 	}
 
 	workspaceTemplateVersionID := uint64(0)
@@ -480,8 +531,13 @@ func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 		QueryRow().
 		Scan(&workspaceTemplateVersionID)
 	if err != nil {
-		_, err := c.ArchiveWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID)
-		return nil, err
+		_, errCleanUp := c.ArchiveWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID)
+		errorMsg := "Error with insert into workspace_templates_versions. "
+		if errCleanUp != nil {
+			errorMsg += "Error with clean-up: ArchiveWorkflowTemplate. "
+			errorMsg += errCleanUp.Error()
+		}
+		return nil, util.NewUserErrorWrap(err, errorMsg) //return the source error
 	}
 
 	if len(workspaceTemplate.Labels) != 0 {
@@ -863,15 +919,13 @@ func (c *Client) WorkspaceTemplateHasRunningWorkspaces(namespace string, uid str
 }
 
 // ArchiveWorkspaceTemplate archives and deletes resources associated with the workspace template.
-// If there is an already archived workspace template, it is left intact, only the un-archived one is considered.
-//
-// If there is no workspace template identified by the parameters, an error is returned with code NotFound.
-//
-// No checks are otherwise made to see if this action is valid.
 //
 // In particular, this action
 //
-// * Marks Workspace Template database record as archived.
+// * Code retrieves all un-archived workspace template versions.
+//
+// * Iterates through each version, grabbing all related workspaces.
+//		- Each workspace is archived (k8s cleaned-up, database entry marked archived)
 //
 // * Marks associated Workflow template as archived
 //
@@ -879,31 +933,57 @@ func (c *Client) WorkspaceTemplateHasRunningWorkspaces(namespace string, uid str
 //
 // * Deletes Workflow Executions in k8s
 func (c *Client) ArchiveWorkspaceTemplate(namespace string, uid string) (archived bool, err error) {
-	workspaceTemplate, err := c.GetWorkspaceTemplate(namespace, uid, 0)
-	if err != nil {
-		return false, util.NewUserError(codes.Unknown, "Unable to get workspace template.")
-	}
-	if workspaceTemplate == nil {
-		return false, util.NewUserError(codes.NotFound, "Workspace template not found.")
-	}
-
-	archived, err = c.archiveWorkspaceTemplateDB(namespace, uid)
+	wsTemps, err := c.ListWorkspaceTemplateVersions(namespace, uid)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"UID":       uid,
 			"Error":     err.Error(),
-		}).Error("Archive Workspace Template failed.")
+		}).Error("ListWorkspaceTemplateVersions failed.")
 		return false, util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
 	}
-	if !archived {
-		return false, nil
-	}
+	for _, wsTemp := range wsTemps {
+		wsList, err := c.ListWorkspacesByTemplateID(namespace, wsTemp.WorkspaceTemplateVersionID)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"Namespace": namespace,
+				"UID":       uid,
+				"Error":     err.Error(),
+			}).Error("ListWorkspacesByTemplateId failed.")
+			return false, util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
+		}
 
-	archived, err = c.ArchiveWorkflowTemplate(namespace, workspaceTemplate.UID)
-	if err != nil {
-		return false, err
-	}
+		for _, ws := range wsList {
+			err = c.ArchiveWorkspace(namespace, ws.UID)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"Error":     err.Error(),
+				}).Error("ArchiveWorkspace failed.")
+				return false, util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
+			}
+		}
 
+		_, err = c.archiveWorkspaceTemplateDB(namespace, wsTemp.UID)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"Namespace": namespace,
+				"UID":       uid,
+				"Error":     err.Error(),
+			}).Error("Archive Workspace Template DB Failed.")
+			return false, util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
+		}
+
+		_, err = c.ArchiveWorkflowTemplate(namespace, wsTemp.UID)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"Namespace": namespace,
+				"UID":       uid,
+				"Error":     err.Error(),
+			}).Error("Archive Workflow Template Failed.")
+			return false, util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
+		}
+	}
 	return true, nil
 }

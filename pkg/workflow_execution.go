@@ -825,7 +825,8 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName
 		}
 		opts.SetRange(0, int64(endOffset))
 
-		stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, "artifacts/"+namespace+"/"+uid+"/"+podName+"/"+containerName+".log", opts)
+		key := config.ArtifactRepository.S3.FormatKey(namespace, uid, podName) + "/" + containerName + ".log"
+		stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, key, opts)
 	} else {
 		stream, err = c.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{
 			Container:  containerName,
@@ -905,7 +906,8 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, uid, podName string) (me
 
 	opts := s3.GetObjectOptions{}
 
-	stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, "artifacts/"+namespace+"/"+uid+"/"+podName+"/sys-metrics.json", opts)
+	key := config.ArtifactRepository.S3.FormatKey(namespace, uid, podName) + "/sys-metrics.json"
+	stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, key, opts)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -1406,9 +1408,6 @@ func injectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, workflowTemp
 	if wf.Spec.OnExit != "" {
 		for _, t := range wf.Spec.Templates {
 			if t.Name == wf.Spec.OnExit {
-				lasTaskIndex := len(t.DAG.Tasks) - 1
-				dagTask.Dependencies = []string{t.DAG.Tasks[lasTaskIndex].Name}
-
 				t.DAG.Tasks = append(t.DAG.Tasks, dagTask)
 
 				break
@@ -1528,7 +1527,7 @@ func workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, wo
 func workflowExecutionsSelectBuilder(namespace, workflowTemplateUID, workflowTemplateVersion string) sq.SelectBuilder {
 	sb := workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, workflowTemplateVersion)
 	sb = sb.Columns(getWorkflowExecutionColumns("we", "")...).
-		Columns(`wtv.version "workflow_template.version"`)
+		Columns(`wtv.version "workflow_template.version"`, `wtv.created_at "workflow_template.created_at"`)
 
 	return sb
 }

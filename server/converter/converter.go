@@ -3,6 +3,7 @@ package converter
 import (
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
+	"sort"
 )
 
 func APIKeyValueToLabel(apiKeyValues []*api.KeyValue) map[string]string {
@@ -27,6 +28,10 @@ func MappingToKeyValue(mapping map[string]string) []*api.KeyValue {
 			Value: value,
 		})
 	}
+
+	sort.Slice(keyValues, func(i, j int) bool {
+		return keyValues[i].Key < keyValues[j].Key
+	})
 
 	return keyValues
 }

@@ -619,6 +619,21 @@ func CronWorkflowsToIds(resources []*CronWorkflow) (ids []uint64) {
 	return
 }
 
+func WorkspacesToIds(resources []*Workspace) (ids []uint64) {
+	mappedIds := make(map[uint64]bool)
+
+	// This is to make sure we don't have duplicates
+	for _, resource := range resources {
+		mappedIds[resource.ID] = true
+	}
+
+	for id := range mappedIds {
+		ids = append(ids, id)
+	}
+
+	return
+}
+
 // Returns a list of column names prefixed with alias, and named to destination. Extra columns are added to the end of the list.
 // Setting destination to empty string will not apply any destination.
 // Example - with destination

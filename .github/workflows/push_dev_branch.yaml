@@ -1,8 +1,8 @@
-name: Publish develop docker image
+name: Publish dev docker image
 on:
   push:
     branches:
-      - develop
+      - dev
 jobs:
   build:
     runs-on: ubuntu-latest

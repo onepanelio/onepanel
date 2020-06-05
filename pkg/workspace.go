@@ -266,6 +266,40 @@ func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceS
 	return
 }
 
+// ListWorkspacesByTemplateID will return all the workspaces for a given workspace template id.
+// Sourced from database.
+func (c *Client) ListWorkspacesByTemplateID(namespace string, templateID uint64) (workspaces []*Workspace, err error) {
+	sb := sb.Select(getWorkspaceColumns("w", "")...).
+		From("workspaces w").
+		Where(sq.And{
+			sq.Eq{
+				"w.namespace":             namespace,
+				"w.workspace_template_id": templateID,
+			},
+			sq.NotEq{
+				"phase": WorkspaceTerminated,
+			},
+		})
+	query, args, err := sb.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := c.DB.Select(&workspaces, query, args...); err != nil {
+		return nil, err
+	}
+
+	labelMap, err := c.GetDbLabelsMapped(TypeWorkspace, WorkspacesToIds(workspaces)...)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, workspace := range workspaces {
+		workspace.Labels = labelMap[workspace.ID]
+	}
+	return
+}
+
 func (c *Client) ListWorkspaces(namespace string, paginator *pagination.PaginationRequest) (workspaces []*Workspace, err error) {
 	sb := sb.Select(getWorkspaceColumns("w", "")...).
 		Columns(getWorkspaceStatusColumns("w", "status")...).
@@ -290,6 +324,15 @@ func (c *Client) ListWorkspaces(namespace string, paginator *pagination.Paginati
 
 	if err := c.DB.Select(&workspaces, query, args...); err != nil {
 		return nil, err
+	}
+
+	labelMap, err := c.GetDbLabelsMapped(TypeWorkspace, WorkspacesToIds(workspaces)...)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, workspace := range workspaces {
+		workspace.Labels = labelMap[workspace.ID]
 	}
 
 	return
@@ -319,7 +362,9 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 	if err != nil {
 		return util.NewUserError(codes.NotFound, "Workspace not found.")
 	}
-
+	if workspace == nil {
+		return nil
+	}
 	config, err := c.GetSystemConfig()
 	if err != nil {
 		return
@@ -396,5 +441,11 @@ func (c *Client) ResumeWorkspace(namespace, uid string) (err error) {
 }
 
 func (c *Client) DeleteWorkspace(namespace, uid string) (err error) {
+	return c.updateWorkspace(namespace, uid, "delete", "delete", &WorkspaceStatus{Phase: WorkspaceTerminating})
+}
+
+// ArchiveWorkspace archives by setting the workspace to delete or terminate.
+// Kicks off DB archiving and k8s cleaning.
+func (c *Client) ArchiveWorkspace(namespace, uid string) (err error) {
 	return c.updateWorkspace(namespace, uid, "delete", "delete", &WorkspaceStatus{Phase: WorkspaceTerminating})
 }
