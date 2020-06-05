@@ -9,8 +9,7 @@ import (
 	"github.com/pressly/goose"
 )
 
-const tensorflowWorkflowTemplate = `
-entrypoint: main
+const tensorflowWorkflowTemplate = `entrypoint: main
 arguments:
     parameters:
     - name: source
@@ -38,6 +37,7 @@ templates:
       tasks:
       - name: train-model
         template: pytorch
+# Uncomment section below to send metrics to Slack
 #      - name: notify-in-slack
 #        dependencies: [train-model]
 #        template: slack-notify-success
@@ -72,21 +72,21 @@ templates:
         mountPath: /mnt/data
       - name: output
         mountPath: /mnt/output
-#  - name: slack-notify-success
-#    container:
-#      image: technosophos/slack-notify
-#      command: [sh,-c]
-#      args: ['SLACK_USERNAME=Worker SLACK_TITLE="{{workflow.name}} {{inputs.parameters.status}}" SLACK_ICON=https://www.gravatar.com/avatar/5c4478592fe00878f62f0027be59c1bd SLACK_MESSAGE=$(cat /tmp/metrics.json)} ./slack-notify']
-#    inputs:
-#      parameters:
-#      - name: status
-#      artifacts:
-#      - name: metrics
-#        path: /tmp/metrics.json
-#        optional: true
+  - name: slack-notify-success
+    container:
+      image: technosophos/slack-notify
+      command: [sh,-c]
+      args: ['SLACK_USERNAME=Worker SLACK_TITLE="{{workflow.name}} {{inputs.parameters.status}}" SLACK_ICON=https://www.gravatar.com/avatar/5c4478592fe00878f62f0027be59c1bd SLACK_MESSAGE=$(cat /tmp/metrics.json)} ./slack-notify']
+    inputs:
+      parameters:
+      - name: status
+      artifacts:
+      - name: metrics
+        path: /tmp/metrics.json
+        optional: true
 `
 
-const tensorflowWorkflowTemplateName = "tensorflow"
+const tensorflowWorkflowTemplateName = "TensorFlow Training"
 
 func init() {
 	goose.AddMigration(Up20200605090535, Down20200605090535)
