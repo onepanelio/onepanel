@@ -92,6 +92,9 @@ func init() {
 	goose.AddMigration(Up20200605090535, Down20200605090535)
 }
 
+// Up20200605090535 will insert a tensorflow workflow template to each user.
+// Each user is determined by onepanel enabled namespaces.
+// Any errors reported are logged as fatal.
 func Up20200605090535(tx *sql.Tx) error {
 	client, err := getClient()
 	if err != nil {
@@ -116,6 +119,11 @@ func Up20200605090535(tx *sql.Tx) error {
 	return nil
 }
 
+// Down20200605090535 will attempt to remove tensorflow workflow from each user.
+// Each user is determined by onepanel enabled namespaces.
+// DB entries are archived, K8S components are deleted.
+// Active workflows with that template are terminated.
+// Any errors reported are logged as fatal.
 func Down20200605090535(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	client, err := getClient()

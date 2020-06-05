@@ -92,6 +92,9 @@ func init() {
 	goose.AddMigration(Up20200605090509, Down20200605090509)
 }
 
+// Up20200605090509 will insert a Pytorch workflow template to each user.
+// Each user is determined by onepanel enabled namespaces.
+// Any errors reported are logged as fatal.
 func Up20200605090509(tx *sql.Tx) error {
 	client, err := getClient()
 	if err != nil {
@@ -117,6 +120,11 @@ func Up20200605090509(tx *sql.Tx) error {
 	return nil
 }
 
+// Down20200605090509 will attempt to remove Pytorch workflow from each user.
+// Each user is determined by onepanel enabled namespaces.
+// DB entries are archived, K8S components are deleted.
+// Active workflows with that template are terminated.
+// Any errors reported are logged as fatal.
 func Down20200605090509(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	client, err := getClient()
