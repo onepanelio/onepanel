@@ -122,6 +122,8 @@ After this, build main.go and run the executable.
 
 ## Code Structure & Organization
 
+### `utils` dir
+
 ```shell script
 utils/*.go
 ```
@@ -151,3 +153,24 @@ You can add
 - kubernetes specific operations
 - database specific operations
 - types
+
+### `cmd` dir
+Each source file here is assumed to result in an executable.
+- Hence the `package main` at the top of each
+
+Place each source file into it's own folder.
+Example source file name: `flush_cache.go`
+- Dir structure: `cmd/flush-cache/flush_cache.go`
+
+To avoid errors like this during docker build
+```text
+# github.com/onepanelio/core/cmd
+cmd/goose.go:22:6: main redeclared in this block
+        previous declaration at cmd/gen-release-md.go:136:6
+github.com/onepanelio/core
+```
+Caused by
+```dockerfile
+RUN go install -v ./...
+```
+
