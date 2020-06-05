@@ -38,16 +38,16 @@ templates:
       tasks:
       - name: train-model
         template: pytorch
-      - name: notify-in-slack
-        dependencies: [train-model]
-        template: slack-notify-success
-        arguments:
-          parameters:
-          - name: status
-            value: "{{tasks.train-model.status}}"
-          artifacts:
-          - name: metrics
-            from: "{{tasks.train-model.outputs.artifacts.sys-metrics}}"
+#      - name: notify-in-slack
+#        dependencies: [train-model]
+#        template: slack-notify-success
+#        arguments:
+#          parameters:
+#          - name: status
+#            value: "{{tasks.train-model.status}}"
+#          artifacts:
+#          - name: metrics
+#            from: "{{tasks.train-model.outputs.artifacts.sys-metrics}}"
   - name: pytorch
     inputs:
       artifacts:
