@@ -133,7 +133,7 @@ func Down20200605090535(tx *sql.Tx) error {
 		return err
 	}
 	for _, namespace := range namespaces {
-		if _, err := client.ArchiveWorkspaceTemplate(namespace.Name, uid); err != nil {
+		if _, err := client.ArchiveWorkflowTemplate(namespace.Name, uid); err != nil {
 			log.Fatalf("error %v", err.Error())
 		}
 	}
