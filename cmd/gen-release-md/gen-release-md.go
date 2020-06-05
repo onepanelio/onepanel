@@ -88,7 +88,7 @@ func printMarkDown(issues []*Issue, version *string) {
 	sections := make(map[string]string, 0)
 
 	for _, iss := range issues {
-		if iss.PullRequest == nil || len(iss.Labels) == 0 {
+		if iss.PullRequest == nil {
 			continue
 		}
 
@@ -118,11 +118,17 @@ func printMarkDown(issues []*Issue, version *string) {
 }
 
 // Get issues from repository
-func getIssues(repository string) ([]*Issue, error) {
-	res, err := http.Get(apiPrefix + repository + issuesPathAndQuery)
+func getIssues(repository string, username *string) ([]*Issue, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, apiPrefix+repository+issuesPathAndQuery, nil)
+	if username != nil {
+		req.SetBasicAuth(*username, "")
+	}
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
+
 	defer res.Body.Close()
 
 	issues := make([]*Issue, 0)
@@ -135,12 +141,13 @@ func getIssues(repository string) ([]*Issue, error) {
 
 func main() {
 	version := flag.String("v", "1.0.0", "Version of release, example: -v=1.0.0")
+	username := flag.String("u", "", "GitHub username for request, example: -u=octocat")
 
 	flag.Parse()
 
 	issues := make([]*Issue, 0)
 	for _, repository := range repositories {
-		iss, err := getIssues(repository)
+		iss, err := getIssues(repository, username)
 		if err != nil {
 			return
 		}
