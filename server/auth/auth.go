@@ -127,11 +127,11 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerIntercep
 
 					isAuthorizedRequest, ok := req.(*api.IsAuthorizedRequest)
 					if ok {
-						isAuthorizedRequest.Namespace = namespace
-						isAuthorizedRequest.Resource = "statefulsets"
-						isAuthorizedRequest.Group = "apps"
-						isAuthorizedRequest.ResourceName = workspaceName
-						isAuthorizedRequest.Verb = "get"
+						isAuthorizedRequest.IsAuthorized.Namespace = namespace
+						isAuthorizedRequest.IsAuthorized.Resource = "statefulsets"
+						isAuthorizedRequest.IsAuthorized.Group = "apps"
+						isAuthorizedRequest.IsAuthorized.ResourceName = workspaceName
+						isAuthorizedRequest.IsAuthorized.Verb = "get"
 
 						return handler(ctx, req)
 					}

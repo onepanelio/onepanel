@@ -48,11 +48,11 @@ func (a *AuthServer) IsAuthorized(ctx context.Context, request *api.IsAuthorized
 		}
 		xOriginalAuthority := xOriginalAuthorityStrings[0]
 
-		fqdnEnd, ok := a.fqdns[request.Namespace]
+		fqdnEnd, ok := a.fqdns[request.IsAuthorized.Namespace]
 		if !ok {
 			return res, status.Error(codes.Unauthenticated, "Unauthenticated.")
 		}
-		fqdn := fmt.Sprintf("%v--%v", request.GetResourceName(), fqdnEnd)
+		fqdn := fmt.Sprintf("%v--%v", request.IsAuthorized.ResourceName, fqdnEnd)
 
 		if fqdn != xOriginalAuthority {
 			return res, status.Error(codes.Unauthenticated, "Unauthenticated.")
@@ -70,7 +70,7 @@ func (a *AuthServer) IsAuthorized(ctx context.Context, request *api.IsAuthorized
 		return nil, err
 	}
 	//Check the request
-	allowed, err := auth.IsAuthorized(client, request.Namespace, request.Verb, request.Group, request.Resource, request.ResourceName)
+	allowed, err := auth.IsAuthorized(client, request.IsAuthorized.Namespace, request.IsAuthorized.Verb, request.IsAuthorized.Group, request.IsAuthorized.Resource, request.IsAuthorized.ResourceName)
 	if err != nil {
 		res.Authorized = false
 		return res, err

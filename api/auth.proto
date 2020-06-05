@@ -16,6 +16,7 @@ service AuthService {
     rpc IsAuthorized(IsAuthorizedRequest) returns (IsAuthorizedResponse) {
         option (google.api.http) = {
             post: "/apis/v1beta1/auth",
+            body: "isAuthorized"
             additional_bindings : {
                 custom: {
                     kind: "HEAD"
@@ -26,12 +27,16 @@ service AuthService {
     }
 }
 
-message IsAuthorizedRequest {
+message IsAuthorized {
     string namespace = 1;
     string verb = 2;
     string group = 3;
     string resource = 4;
     string resourceName = 5;
+}
+
+message IsAuthorizedRequest {
+    IsAuthorized isAuthorized = 1;
 }
 
 message IsAuthorizedResponse {
