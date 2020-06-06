@@ -42,7 +42,7 @@ const (
 )
 
 var releaseTemplate = `# Documentation
-See [Documentation](https://docs.onepanel.ai)
+See https://docs.onepanel.ai
 
 # CLI Installation
 
@@ -76,7 +76,12 @@ mv ./opctl-macos-amd64 /usr/local/bin/opctl
 
 # Test installation
 opctl version
-` + "```"
+` + "```" + `
+
+## Windows
+
+Download the attached Windows executable and move it to a folder that is in your PATH environment variable.
+`
 
 var repositories = []string{
 	"onepanelio/core",
