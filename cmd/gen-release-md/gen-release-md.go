@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 )
 
@@ -130,7 +131,13 @@ func printMarkDown(issues []*Issue, version *string) {
 	}
 
 	fmt.Println("# Contributors")
-	for _, user := range contributors {
+	usernames := make([]string, 0)
+	for username := range contributors {
+		usernames = append(usernames, username)
+	}
+	sort.Strings(usernames)
+	for _, username := range usernames {
+		user := contributors[username]
 		fmt.Println(fmt.Sprintf("- <a href=\"%s\"><img src=\"%s\" width=\"12\"/> <strong>%s</strong></a> %s", user.URL, user.AvatarURL, user.Login, user.Login))
 	}
 }
