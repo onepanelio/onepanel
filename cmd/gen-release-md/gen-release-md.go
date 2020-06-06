@@ -153,6 +153,10 @@ func getMilestone(repository string, version, username *string) (*Milestone, err
 	}
 	defer res.Body.Close()
 
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New("API rate limit exceeded")
+	}
+
 	milestones := make([]*Milestone, 0)
 	if err = json.NewDecoder(res.Body).Decode(&milestones); err != nil {
 		return nil, err
@@ -176,6 +180,10 @@ func getIssues(repository string, milestone *Milestone, username *string) ([]*Is
 	}
 	defer res.Body.Close()
 
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New("API rate limit exceeded")
+	}
+
 	issues := make([]*Issue, 0)
 	if err = json.NewDecoder(res.Body).Decode(&issues); err != nil {
 		return nil, err
@@ -185,7 +193,7 @@ func getIssues(repository string, milestone *Milestone, username *string) ([]*Is
 }
 
 func main() {
-	version := flag.String("v", "0.11.0", "Version of release, example: -v=1.0.0")
+	version := flag.String("v", "1.0.0", "Version of release, example: -v=1.0.0")
 	username := flag.String("u", "", "GitHub username for request, example: -u=octocat")
 
 	flag.Parse()
