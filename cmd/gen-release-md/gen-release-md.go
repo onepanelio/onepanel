@@ -10,30 +10,30 @@ import (
 	"strings"
 )
 
-type User struct {
+type user struct {
 	Login     string `json:"login"`
 	URL       string `json:"html_url"`
 	AvatarURL string `json:"avatar_url"`
 }
 
-type Label struct {
+type label struct {
 	Name string `json:"name"`
 }
 
-type PullRequest struct {
+type pullRequest struct {
 	URL string `json:"url"`
 }
 
-type Issue struct {
+type issue struct {
 	Number      int          `json:"number"`
 	URL         string       `json:"html_url"`
 	Title       string       `json:"title"`
-	User        User         `json:"user"`
-	PullRequest *PullRequest `json:"pull_request"`
-	Labels      []Label      `json:"labels"`
+	User        user         `json:"user"`
+	PullRequest *pullRequest `json:"pull_request"`
+	Labels      []label      `json:"labels"`
 }
 
-type Milestone struct {
+type milestone struct {
 	Number int    `json:"number"`
 	Title  string `json:"title"`
 }
@@ -94,8 +94,8 @@ var repositories = []string{
 
 // Parse issues, pulling only PRs and categorize them based on labels
 // Print everything as MD that can be copied into release notes
-func printMarkDown(issues []*Issue, version *string) {
-	contributors := make(map[string]User, 0)
+func printMarkDown(issues []*issue, version *string) {
+	contributors := make(map[string]user, 0)
 	sections := make(map[string]string, 0)
 
 	for _, iss := range issues {
@@ -157,7 +157,7 @@ func httpGet(url string, username *string) (*http.Response, error) {
 }
 
 // Get milestone by title
-func getMilestone(repository string, version, username *string) (*Milestone, error) {
+func getMilestone(repository string, version, username *string) (*milestone, error) {
 	url := fmt.Sprintf("%s%s/milestones", apiPrefix, repository)
 	res, err := httpGet(url, username)
 	if err != nil {
@@ -169,7 +169,7 @@ func getMilestone(repository string, version, username *string) (*Milestone, err
 		return nil, errors.New("API rate limit exceeded")
 	}
 
-	milestones := make([]*Milestone, 0)
+	milestones := make([]*milestone, 0)
 	if err = json.NewDecoder(res.Body).Decode(&milestones); err != nil {
 		return nil, err
 	}
@@ -184,7 +184,7 @@ func getMilestone(repository string, version, username *string) (*Milestone, err
 }
 
 // Get issues from repository
-func getIssues(repository string, milestone *Milestone, username *string) ([]*Issue, error) {
+func getIssues(repository string, milestone *milestone, username *string) ([]*issue, error) {
 	url := fmt.Sprintf("%s%s/issues?state=closed&milestone=%d", apiPrefix, repository, milestone.Number)
 	res, err := httpGet(url, username)
 	if err != nil {
@@ -196,7 +196,7 @@ func getIssues(repository string, milestone *Milestone, username *string) ([]*Is
 		return nil, errors.New("API rate limit exceeded")
 	}
 
-	issues := make([]*Issue, 0)
+	issues := make([]*issue, 0)
 	if err = json.NewDecoder(res.Body).Decode(&issues); err != nil {
 		return nil, err
 	}
@@ -210,7 +210,7 @@ func main() {
 
 	flag.Parse()
 
-	issues := make([]*Issue, 0)
+	issues := make([]*issue, 0)
 	for _, repository := range repositories {
 		mil, err := getMilestone(repository, version, username)
 		if err != nil {
