@@ -16,6 +16,8 @@ import (
 	authorizationv1 "k8s.io/api/authorization/v1"
 )
 
+const ClientContextKey = "client"
+
 func getBearerToken(ctx context.Context) (*string, bool) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -58,7 +60,7 @@ func getClient(ctx context.Context, kubeConfig *v1.Config, db *v1.DB) (context.C
 		return nil, err
 	}
 
-	return context.WithValue(ctx, "kubeClient", client), nil
+	return context.WithValue(ctx, "client", client), nil
 }
 
 func IsAuthorized(c *v1.Client, namespace, verb, group, resource, name string) (allowed bool, err error) {

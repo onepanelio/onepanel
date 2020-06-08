@@ -37,7 +37,7 @@ func NewWorkspaceTemplateServer() *WorkspaceTemplateServer {
 }
 
 func (s WorkspaceTemplateServer) GenerateWorkspaceTemplateWorkflowTemplate(ctx context.Context, req *api.GenerateWorkspaceTemplateWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflowtemplates", "")
 	if err != nil || !allowed {
 		return nil, err
@@ -64,7 +64,7 @@ func (s WorkspaceTemplateServer) GenerateWorkspaceTemplateWorkflowTemplate(ctx c
 }
 
 func (s *WorkspaceTemplateServer) CreateWorkspaceTemplate(ctx context.Context, req *api.CreateWorkspaceTemplateRequest) (*api.WorkspaceTemplate, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflowtemplates", "")
 	if err != nil || !allowed {
 		return nil, err
@@ -86,7 +86,7 @@ func (s *WorkspaceTemplateServer) CreateWorkspaceTemplate(ctx context.Context, r
 }
 
 func (s *WorkspaceTemplateServer) UpdateWorkspaceTemplate(ctx context.Context, req *api.UpdateWorkspaceTemplateRequest) (*api.WorkspaceTemplate, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "workflowtemplates", req.Uid)
 	if err != nil || !allowed {
 		return nil, err
@@ -108,7 +108,7 @@ func (s *WorkspaceTemplateServer) UpdateWorkspaceTemplate(ctx context.Context, r
 }
 
 func (s *WorkspaceTemplateServer) GetWorkspaceTemplate(ctx context.Context, req *api.GetWorkspaceTemplateRequest) (*api.WorkspaceTemplate, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflowtemplates", "")
 	if err != nil || !allowed {
 		return nil, err
@@ -123,7 +123,7 @@ func (s *WorkspaceTemplateServer) GetWorkspaceTemplate(ctx context.Context, req 
 }
 
 func (s *WorkspaceTemplateServer) ListWorkspaceTemplates(ctx context.Context, req *api.ListWorkspaceTemplatesRequest) (*api.ListWorkspaceTemplatesResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflowtemplates", "")
 	if err != nil || !allowed {
 		return nil, err
@@ -155,7 +155,7 @@ func (s *WorkspaceTemplateServer) ListWorkspaceTemplates(ctx context.Context, re
 }
 
 func (s *WorkspaceTemplateServer) ListWorkspaceTemplateVersions(ctx context.Context, req *api.ListWorkspaceTemplateVersionsRequest) (*api.ListWorkspaceTemplateVersionsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "workflowtemplates", "")
 	if err != nil || !allowed {
 		return nil, err
@@ -178,7 +178,7 @@ func (s *WorkspaceTemplateServer) ListWorkspaceTemplateVersions(ctx context.Cont
 }
 
 func (s *WorkspaceTemplateServer) ArchiveWorkspaceTemplate(ctx context.Context, req *api.ArchiveWorkspaceTemplateRequest) (*api.WorkspaceTemplate, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "argoproj.io", "workflowtemplates", "")
 	if err != nil || !allowed {
 		return nil, err
