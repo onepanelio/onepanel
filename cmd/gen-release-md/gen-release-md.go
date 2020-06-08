@@ -92,6 +92,21 @@ var repositories = []string{
 	"onepanelio/core-docs",
 }
 
+func getPrefixSection(prefix string) (section string) {
+	switch prefix {
+	case "feat":
+		fallthrough
+	case "fix":
+		fallthrough
+	case "docs":
+		section = prefix
+	default:
+		section = "other"
+	}
+
+	return
+}
+
 // Parse issues, pulling only PRs and categorize them based on labels
 // Print everything as MD that can be copied into release notes
 func printMarkDown(issues []*issue, version *string) {
@@ -106,7 +121,7 @@ func printMarkDown(issues []*issue, version *string) {
 		parts := strings.Split(iss.Title, ":")
 		if len(parts) > 0 {
 			contributors[iss.User.Login] = iss.User
-			sections[parts[0]] += fmt.Sprintf("- %s ([#%d](%s))\n", iss.Title, iss.Number, iss.URL)
+			sections[getPrefixSection(parts[0])] += fmt.Sprintf("- %s ([#%d](%s))\n", iss.Title, iss.Number, iss.URL)
 		}
 	}
 
@@ -125,9 +140,9 @@ func printMarkDown(issues []*issue, version *string) {
 		fmt.Println("## Docs")
 		fmt.Println(sections["docs"])
 	}
-	if sections["chore"] != "" {
-		fmt.Println("## Chores")
-		fmt.Println(sections["chore"])
+	if sections["other"] != "" {
+		fmt.Println("## Other")
+		fmt.Println(sections["other"])
 	}
 
 	fmt.Println("# Contributors")
