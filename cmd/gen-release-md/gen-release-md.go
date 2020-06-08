@@ -200,7 +200,7 @@ func getMilestone(repository string, version, username *string) (*milestone, err
 
 // Get issues from repository
 func getIssues(repository string, milestone *milestone, username *string) ([]*issue, error) {
-	url := fmt.Sprintf("%s%s/issues?state=closed&milestone=%d", apiPrefix, repository, milestone.Number)
+	url := fmt.Sprintf("%s%s/issues?state=closed&direction=asc&milestone=%d", apiPrefix, repository, milestone.Number)
 	res, err := httpGet(url, username)
 	if err != nil {
 		return nil, err
