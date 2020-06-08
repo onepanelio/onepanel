@@ -12,10 +12,15 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// AuthServer contains logic for checking Authorization of resources in the system
 type AuthServer struct {
 	fqdns map[string]string // map from namespace -> namespace.domain
 }
 
+// NewAuthServer creates a new AuthServer with some pre-cached data.
+// - namespaces are all of the user namespaces in the system
+// - config is the system config.
+//     ONEPANEL_DOMAIN is required at a minimum.
 func NewAuthServer(namespaces []*v1.Namespace, config map[string]string) *AuthServer {
 	server := &AuthServer{
 		fqdns: make(map[string]string),
