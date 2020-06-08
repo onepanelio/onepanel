@@ -60,7 +60,7 @@ func getClient(ctx context.Context, kubeConfig *v1.Config, db *v1.DB) (context.C
 		return nil, err
 	}
 
-	return context.WithValue(ctx, "client", client), nil
+	return context.WithValue(ctx, ClientContextKey, client), nil
 }
 
 func IsAuthorized(c *v1.Client, namespace, verb, group, resource, name string) (allowed bool, err error) {
