@@ -11,5 +11,5 @@ const (
 )
 
 func getClient(ctx context.Context) *v1.Client {
-	return ctx.Value(auth.ClientContextKey).(*v1.Client)
+	return ctx.Value(auth.ContextClientKey).(*v1.Client)
 }
