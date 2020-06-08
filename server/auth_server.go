@@ -2,69 +2,33 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
 // AuthServer contains logic for checking Authorization of resources in the system
 type AuthServer struct {
-	fqdns map[string]string // map from namespace -> namespace.domain
 }
 
-// NewAuthServer creates a new AuthServer with some pre-cached data.
-// - namespaces are all of the user namespaces in the system
-// - config is the system config.
-//     ONEPANEL_DOMAIN is required at a minimum.
-func NewAuthServer(namespaces []*v1.Namespace, config map[string]string) *AuthServer {
-	server := &AuthServer{
-		fqdns: make(map[string]string),
-	}
-
-	for _, namespace := range namespaces {
-		server.fqdns[namespace.Name] = namespace.Name + "." + config["ONEPANEL_DOMAIN"]
-	}
-
+// NewAuthServer creates a new AuthServer
+func NewAuthServer() *AuthServer {
+	server := &AuthServer{}
 	return server
 }
 
+// IsAuthorized checks if the provided action is authorized.
+// No token == unauthorized. This is indicated by a nil ctx.
+// Invalid token == unauthorized.
+// Otherwise, we check with k8s using all of the provided data in the request.
 func (a *AuthServer) IsAuthorized(ctx context.Context, request *api.IsAuthorizedRequest) (res *api.IsAuthorizedResponse, err error) {
 	res = &api.IsAuthorizedResponse{}
 	if ctx == nil {
 		res.Authorized = false
 		return res, status.Error(codes.Unauthenticated, "Unauthenticated.")
-	}
-
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return res, status.Error(codes.Unauthenticated, "Unauthenticated.")
-	}
-
-	// If no authorization, we permit access if the x-original-authority == the expected fqdn
-	if md.Get("authorization") == nil {
-		xOriginalAuthorityStrings := md.Get("x-original-authority")
-		if xOriginalAuthorityStrings == nil {
-			return res, status.Error(codes.Unauthenticated, "Unauthenticated.")
-		}
-		xOriginalAuthority := xOriginalAuthorityStrings[0]
-
-		fqdnEnd, ok := a.fqdns[request.IsAuthorized.Namespace]
-		if !ok {
-			return res, status.Error(codes.Unauthenticated, "Unauthenticated.")
-		}
-		fqdn := fmt.Sprintf("%v--%v", request.IsAuthorized.ResourceName, fqdnEnd)
-
-		if fqdn != xOriginalAuthority {
-			return res, status.Error(codes.Unauthenticated, "Unauthenticated.")
-		}
-
-		res.Authorized = true
-		return res, nil
 	}
 
 	client := ctx.Value("kubeClient").(*v1.Client)

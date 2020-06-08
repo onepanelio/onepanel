@@ -55,11 +55,11 @@ func main() {
 		log.Fatalf("Failed to run database migrations: %v", err)
 	}
 
-	go startRPCServer(db, client, kubeConfig, config)
+	go startRPCServer(db, kubeConfig)
 	startHTTPProxy()
 }
 
-func startRPCServer(db *v1.DB, client *v1.Client, kubeConfig *v1.Config, config map[string]string) {
+func startRPCServer(db *v1.DB, kubeConfig *v1.Config) {
 	log.Printf("Starting RPC server on port %v", *rpcPort)
 	lis, err := net.Listen("tcp", *rpcPort)
 	if err != nil {
@@ -82,11 +82,6 @@ func startRPCServer(db *v1.DB, client *v1.Client, kubeConfig *v1.Config, config 
 	}
 	logEntry := log.NewEntry(stdLogger)
 
-	namespaces, err := client.ListOnepanelEnabledNamespaces()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	s := grpc.NewServer(grpc.UnaryInterceptor(
 		grpc_middleware.ChainUnaryServer(
 			grpc_logrus.UnaryServerInterceptor(logEntry),
@@ -103,7 +98,7 @@ func startRPCServer(db *v1.DB, client *v1.Client, kubeConfig *v1.Config, config 
 	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer())
 	api.RegisterSecretServiceServer(s, server.NewSecretServer())
 	api.RegisterNamespaceServiceServer(s, server.NewNamespaceServer())
-	api.RegisterAuthServiceServer(s, server.NewAuthServer(namespaces, config))
+	api.RegisterAuthServiceServer(s, server.NewAuthServer())
 	api.RegisterLabelServiceServer(s, server.NewLabelServer())
 	api.RegisterWorkspaceTemplateServiceServer(s, server.NewWorkspaceTemplateServer())
 	api.RegisterWorkspaceServiceServer(s, server.NewWorkspaceServer())

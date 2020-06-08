@@ -73,6 +73,7 @@ func IsAuthorized(c *v1.Client, namespace, verb, group, resource, name string) (
 			},
 		},
 	})
+
 	if err != nil {
 		return false, status.Error(codes.PermissionDenied, "Permission denied.")
 	}
@@ -84,6 +85,10 @@ func IsAuthorized(c *v1.Client, namespace, verb, group, resource, name string) (
 	return
 }
 
+// UnaryInterceptor performs authentication checks.
+// The two main cases are:
+//   1. Is the token valid? This is used for logging in.
+//   2. Is there a token? There should be a token for everything except logging in.
 func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		if info.FullMethod == "/api.AuthService/IsValidToken" {
@@ -105,38 +110,6 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerIntercep
 			}
 
 			return handler(ctx, req)
-		}
-
-		// if you don't need the token,
-		if info.FullMethod == "/api.AuthService/IsAuthorized" {
-			md, ok := metadata.FromIncomingContext(ctx)
-			if !ok {
-				ctx = nil
-				return handler(ctx, req)
-			}
-
-			//Expected format: x-original-authority:[name--default.alexcluster.onepanel.io]
-			if xOriginalAuthStrings := md.Get("x-original-authority"); xOriginalAuthStrings != nil {
-				xOriginalAuth := xOriginalAuthStrings[0]
-				dotIndex := strings.Index(xOriginalAuth, ".")
-				if dotIndex != -1 {
-					workspaceAndNamespace := xOriginalAuth[0:dotIndex]
-					pieces := strings.Split(workspaceAndNamespace, "--")
-					workspaceName := pieces[0]
-					namespace := pieces[1]
-
-					isAuthorizedRequest, ok := req.(*api.IsAuthorizedRequest)
-					if ok {
-						isAuthorizedRequest.IsAuthorized.Namespace = namespace
-						isAuthorizedRequest.IsAuthorized.Resource = "statefulsets"
-						isAuthorizedRequest.IsAuthorized.Group = "apps"
-						isAuthorizedRequest.IsAuthorized.ResourceName = workspaceName
-						isAuthorizedRequest.IsAuthorized.Verb = "get"
-
-						return handler(ctx, req)
-					}
-				}
-			}
 		}
 
 		// This guy checks for the token
