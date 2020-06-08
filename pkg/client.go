@@ -21,6 +21,7 @@ type Client struct {
 	kubernetes.Interface
 	argoprojV1alpha1 argoprojv1alpha1.ArgoprojV1alpha1Interface
 	*DB
+	systemConfig map[string]string // cache of SystemConfig
 }
 
 func (c *Client) ArgoprojV1alpha1() argoprojv1alpha1.ArgoprojV1alpha1Interface {
