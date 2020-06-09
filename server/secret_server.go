@@ -23,7 +23,7 @@ func apiSecret(s *v1.Secret) *api.Secret {
 }
 
 func (s *SecretServer) CreateSecret(ctx context.Context, req *api.CreateSecretRequest) (*empty.Empty, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "", "secrets", "")
 	if err != nil || !allowed {
 		return nil, err
@@ -40,7 +40,7 @@ func (s *SecretServer) CreateSecret(ctx context.Context, req *api.CreateSecretRe
 }
 
 func (s *SecretServer) SecretExists(ctx context.Context, req *api.SecretExistsRequest) (secretExists *api.SecretExistsResponse, err error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "", "secrets", req.Name)
 	if err != nil || !allowed {
 		return nil, err
@@ -58,7 +58,7 @@ func (s *SecretServer) SecretExists(ctx context.Context, req *api.SecretExistsRe
 }
 
 func (s *SecretServer) GetSecret(ctx context.Context, req *api.GetSecretRequest) (*api.Secret, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "", "secrets", req.Name)
 	if err != nil || !allowed {
 		return nil, err
@@ -72,7 +72,7 @@ func (s *SecretServer) GetSecret(ctx context.Context, req *api.GetSecretRequest)
 }
 
 func (s *SecretServer) ListSecrets(ctx context.Context, req *api.ListSecretsRequest) (*api.ListSecretsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "", "secrets", "")
 	if err != nil || !allowed {
 		return nil, err
@@ -95,7 +95,7 @@ func (s *SecretServer) ListSecrets(ctx context.Context, req *api.ListSecretsRequ
 }
 
 func (s *SecretServer) DeleteSecret(ctx context.Context, req *api.DeleteSecretRequest) (deleted *api.DeleteSecretResponse, err error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "", "secrets", req.Name)
 	if err != nil || !allowed {
 		return nil, err
@@ -113,7 +113,7 @@ func (s *SecretServer) DeleteSecret(ctx context.Context, req *api.DeleteSecretRe
 }
 
 func (s *SecretServer) DeleteSecretKey(ctx context.Context, req *api.DeleteSecretKeyRequest) (deleted *api.DeleteSecretKeyResponse, err error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "", "secrets", req.SecretName)
 	if err != nil || !allowed {
 		return nil, err
@@ -139,7 +139,7 @@ func (s *SecretServer) DeleteSecretKey(ctx context.Context, req *api.DeleteSecre
 }
 
 func (s *SecretServer) AddSecretKeyValue(ctx context.Context, req *api.AddSecretKeyValueRequest) (updated *api.AddSecretKeyValueResponse, err error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "", "secrets", req.Secret.Name)
 	if err != nil || !allowed {
 		return nil, err
@@ -163,7 +163,7 @@ func (s *SecretServer) AddSecretKeyValue(ctx context.Context, req *api.AddSecret
 }
 
 func (s *SecretServer) UpdateSecretKeyValue(ctx context.Context, req *api.UpdateSecretKeyValueRequest) (updated *api.UpdateSecretKeyValueResponse, err error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "", "secrets", req.Secret.Name)
 	if err != nil || !allowed {
 		return nil, err

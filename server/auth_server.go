@@ -22,7 +22,7 @@ func (a *AuthServer) IsWorkspaceAuthenticated(ctx context.Context, request *api.
 	if ctx == nil {
 		return &empty.Empty{}, nil
 	}
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return &empty.Empty{}, errors.New("Error parsing headers.")
@@ -53,7 +53,7 @@ func (a *AuthServer) IsAuthorized(ctx context.Context, request *api.IsAuthorized
 		return res, status.Error(codes.Unauthenticated, "Unauthenticated.")
 	}
 	//User auth check
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	err = a.isValidToken(err, client)
 	if err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ func (a *AuthServer) IsValidToken(ctx context.Context, req *api.IsValidTokenRequ
 		return nil, status.Error(codes.Unauthenticated, "Unauthenticated.")
 	}
 
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 
 	err = a.isValidToken(err, client)
 	if err != nil {

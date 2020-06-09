@@ -64,7 +64,7 @@ func apiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecu
 }
 
 func (s *WorkflowServer) CreateWorkflowExecution(ctx context.Context, req *api.CreateWorkflowExecutionRequest) (*api.WorkflowExecution, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", "")
 	if err != nil || !allowed {
 		return nil, err
@@ -93,7 +93,7 @@ func (s *WorkflowServer) CreateWorkflowExecution(ctx context.Context, req *api.C
 }
 
 func (s *WorkflowServer) CloneWorkflowExecution(ctx context.Context, req *api.CloneWorkflowExecutionRequest) (*api.WorkflowExecution, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", "")
 	if err != nil || !allowed {
 		return nil, err
@@ -108,7 +108,7 @@ func (s *WorkflowServer) CloneWorkflowExecution(ctx context.Context, req *api.Cl
 }
 
 func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, req *api.AddWorkflowExecutionStatisticRequest) (*empty.Empty, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	phase := v1alpha1.NodeFailed
 	if req.Statistics.WorkflowStatus == "Succeeded" {
 		phase = v1alpha1.NodeSucceeded
@@ -133,7 +133,7 @@ func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, req
 // instead pass in the cron workflow uid, we can load the cron workflow from db that way and get
 // all required data.
 func (s *WorkflowServer) CronStartWorkflowExecutionStatistic(ctx context.Context, req *api.CronStartWorkflowExecutionStatisticRequest) (*empty.Empty, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Uid)
 	if err != nil || !allowed {
 		return &empty.Empty{}, err
@@ -148,7 +148,7 @@ func (s *WorkflowServer) CronStartWorkflowExecutionStatistic(ctx context.Context
 }
 
 func (s *WorkflowServer) GetWorkflowExecution(ctx context.Context, req *api.GetWorkflowExecutionRequest) (*api.WorkflowExecution, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Uid)
 	if err != nil || !allowed {
 		return nil, err
@@ -171,7 +171,7 @@ func (s *WorkflowServer) GetWorkflowExecution(ctx context.Context, req *api.GetW
 }
 
 func (s *WorkflowServer) WatchWorkflowExecution(req *api.WatchWorkflowExecutionRequest, stream api.WorkflowService_WatchWorkflowExecutionServer) error {
-	client := stream.Context().Value("kubeClient").(*v1.Client)
+	client := getClient(stream.Context())
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Uid)
 	if err != nil || !allowed {
 		return err
@@ -195,7 +195,7 @@ func (s *WorkflowServer) WatchWorkflowExecution(req *api.WatchWorkflowExecutionR
 }
 
 func (s *WorkflowServer) GetWorkflowExecutionLogs(req *api.GetWorkflowExecutionLogsRequest, stream api.WorkflowService_GetWorkflowExecutionLogsServer) error {
-	client := stream.Context().Value("kubeClient").(*v1.Client)
+	client := getClient(stream.Context())
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Uid)
 	if err != nil || !allowed {
 		return err
@@ -225,7 +225,7 @@ func (s *WorkflowServer) GetWorkflowExecutionLogs(req *api.GetWorkflowExecutionL
 }
 
 func (s *WorkflowServer) GetWorkflowExecutionMetrics(ctx context.Context, req *api.GetWorkflowExecutionMetricsRequest) (*api.GetWorkflowExecutionMetricsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Uid)
 	if err != nil || !allowed {
 		return nil, err
@@ -252,7 +252,7 @@ func (s *WorkflowServer) GetWorkflowExecutionMetrics(ctx context.Context, req *a
 }
 
 func (s *WorkflowServer) ListWorkflowExecutions(ctx context.Context, req *api.ListWorkflowExecutionsRequest) (*api.ListWorkflowExecutionsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "workflows", "")
 	if err != nil || !allowed {
 		return nil, err
@@ -284,7 +284,7 @@ func (s *WorkflowServer) ListWorkflowExecutions(ctx context.Context, req *api.Li
 }
 
 func (s *WorkflowServer) ResubmitWorkflowExecution(ctx context.Context, req *api.ResubmitWorkflowExecutionRequest) (*api.WorkflowExecution, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflows", req.Uid)
 	if err != nil || !allowed {
 		return nil, err
@@ -299,7 +299,7 @@ func (s *WorkflowServer) ResubmitWorkflowExecution(ctx context.Context, req *api
 }
 
 func (s *WorkflowServer) TerminateWorkflowExecution(ctx context.Context, req *api.TerminateWorkflowExecutionRequest) (*empty.Empty, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "workflows", "")
 	if err != nil || !allowed {
 		return nil, err
@@ -314,7 +314,7 @@ func (s *WorkflowServer) TerminateWorkflowExecution(ctx context.Context, req *ap
 }
 
 func (s *WorkflowServer) GetArtifact(ctx context.Context, req *api.GetArtifactRequest) (*api.ArtifactResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Uid)
 	if err != nil || !allowed {
 		return nil, err
@@ -331,7 +331,7 @@ func (s *WorkflowServer) GetArtifact(ctx context.Context, req *api.GetArtifactRe
 }
 
 func (s *WorkflowServer) ListFiles(ctx context.Context, req *api.ListFilesRequest) (*api.ListFilesResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Uid)
 	if err != nil || !allowed {
 		return nil, err
@@ -375,7 +375,7 @@ func (s *WorkflowServer) ListFiles(ctx context.Context, req *api.ListFilesReques
 }
 
 func (s *WorkflowServer) UpdateWorkflowExecutionStatus(ctx context.Context, req *api.UpdateWorkflowExecutionStatusRequest) (*empty.Empty, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "workflows", req.Uid)
 	if err != nil || !allowed {
 		return &empty.Empty{}, err

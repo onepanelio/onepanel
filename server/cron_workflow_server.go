@@ -45,7 +45,7 @@ func apiCronWorkflow(cwf *v1.CronWorkflow) (cronWorkflow *api.CronWorkflow) {
 }
 
 func (c *CronWorkflowServer) CreateCronWorkflow(ctx context.Context, req *api.CreateCronWorkflowRequest) (*api.CronWorkflow, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "cronworkflows", "")
 	if err != nil || !allowed {
 		return nil, err
@@ -93,7 +93,7 @@ func (c *CronWorkflowServer) CreateCronWorkflow(ctx context.Context, req *api.Cr
 }
 
 func (c *CronWorkflowServer) UpdateCronWorkflow(ctx context.Context, req *api.UpdateCronWorkflowRequest) (*api.CronWorkflow, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "cronworkflows", "")
 	if err != nil || !allowed {
 		return nil, err
@@ -142,7 +142,7 @@ func (c *CronWorkflowServer) UpdateCronWorkflow(ctx context.Context, req *api.Up
 }
 
 func (c *CronWorkflowServer) GetCronWorkflow(ctx context.Context, req *api.GetCronWorkflowRequest) (*api.CronWorkflow, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "cronworkflows", req.Uid)
 	if err != nil || !allowed {
 		return nil, err
@@ -155,7 +155,7 @@ func (c *CronWorkflowServer) GetCronWorkflow(ctx context.Context, req *api.GetCr
 }
 
 func (c *CronWorkflowServer) ListCronWorkflows(ctx context.Context, req *api.ListCronWorkflowRequest) (*api.ListCronWorkflowsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "cronworkflows", "")
 	if err != nil || !allowed {
 		return nil, err
@@ -186,7 +186,7 @@ func (c *CronWorkflowServer) ListCronWorkflows(ctx context.Context, req *api.Lis
 }
 
 func (c *CronWorkflowServer) DeleteCronWorkflow(ctx context.Context, req *api.DeleteCronWorkflowRequest) (*empty.Empty, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "argoproj.io", "cronworkflows", "")
 	if err != nil || !allowed {
 		return nil, err

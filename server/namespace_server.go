@@ -25,7 +25,7 @@ func apiNamespace(ns *v1.Namespace) (namespace *api.Namespace) {
 }
 
 func (s *NamespaceServer) ListNamespaces(ctx context.Context, req *api.ListNamespacesRequest) (*api.ListNamespacesResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, "", "list", "", "namespaces", "")
 	if err != nil || !allowed {
 		return nil, err
@@ -72,7 +72,7 @@ func (s *NamespaceServer) ListNamespaces(ctx context.Context, req *api.ListNames
 }
 
 func (s *NamespaceServer) CreateNamespace(ctx context.Context, createNamespace *api.CreateNamespaceRequest) (*api.Namespace, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, "", "create", "", "namespaces", "")
 	if err != nil || !allowed {
 		return nil, err

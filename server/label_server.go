@@ -56,7 +56,7 @@ func NewLabelServer() *LabelServer {
 func (s *LabelServer) GetLabels(ctx context.Context, req *api.GetLabelsRequest) (*api.GetLabelsResponse, error) {
 	argoResource := resourceIdentifierToArgoResource(req.Resource)
 
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", argoResource, "")
 	if err != nil || !allowed {
 		return nil, err
@@ -75,7 +75,7 @@ func (s *LabelServer) GetLabels(ctx context.Context, req *api.GetLabelsRequest) 
 func (s *LabelServer) AddLabels(ctx context.Context, req *api.AddLabelsRequest) (*api.GetLabelsResponse, error) {
 	argoResource := resourceIdentifierToArgoResource(req.Resource)
 
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", argoResource, "")
 	if err != nil || !allowed {
 		return nil, err
@@ -99,7 +99,7 @@ func (s *LabelServer) AddLabels(ctx context.Context, req *api.AddLabelsRequest) 
 func (s *LabelServer) ReplaceLabels(ctx context.Context, req *api.ReplaceLabelsRequest) (*api.GetLabelsResponse, error) {
 	argoResource := resourceIdentifierToArgoResource(req.Resource)
 
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", argoResource, "")
 	if err != nil || !allowed {
 		return nil, err
@@ -123,7 +123,7 @@ func (s *LabelServer) ReplaceLabels(ctx context.Context, req *api.ReplaceLabelsR
 func (s *LabelServer) DeleteLabel(ctx context.Context, req *api.DeleteLabelRequest) (*api.GetLabelsResponse, error) {
 	argoResource := resourceIdentifierToArgoResource(req.Resource)
 
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	// update verb here since we are not deleting the resource, but labels
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", argoResource, "")
 	if err != nil || !allowed {

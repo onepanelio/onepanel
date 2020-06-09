@@ -62,7 +62,7 @@ func NewWorkspaceServer() *WorkspaceServer {
 }
 
 func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWorkspaceRequest) (*api.Workspace, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "apps", "statefulsets", "")
 	if err != nil || !allowed {
 		return nil, err
@@ -107,7 +107,7 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 }
 
 func (s *WorkspaceServer) GetWorkspace(ctx context.Context, req *api.GetWorkspaceRequest) (*api.Workspace, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "apps", "statefulsets", "")
 	if err != nil || !allowed {
 		return nil, err
@@ -138,7 +138,7 @@ func (s *WorkspaceServer) GetWorkspace(ctx context.Context, req *api.GetWorkspac
 }
 
 func (s *WorkspaceServer) UpdateWorkspaceStatus(ctx context.Context, req *api.UpdateWorkspaceStatusRequest) (*empty.Empty, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "apps", "statefulsets", req.Uid)
 	if err != nil || !allowed {
 		return &empty.Empty{}, err
@@ -153,7 +153,7 @@ func (s *WorkspaceServer) UpdateWorkspaceStatus(ctx context.Context, req *api.Up
 }
 
 func (s *WorkspaceServer) UpdateWorkspace(ctx context.Context, req *api.UpdateWorkspaceRequest) (*empty.Empty, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "apps", "statefulsets", req.Uid)
 	if err != nil || !allowed {
 		return &empty.Empty{}, err
@@ -176,7 +176,7 @@ func (s *WorkspaceServer) UpdateWorkspace(ctx context.Context, req *api.UpdateWo
 }
 
 func (s *WorkspaceServer) ListWorkspaces(ctx context.Context, req *api.ListWorkspaceRequest) (*api.ListWorkspaceResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "statefulsets", "")
 	if err != nil || !allowed {
 		return nil, err
@@ -212,7 +212,7 @@ func (s *WorkspaceServer) ListWorkspaces(ctx context.Context, req *api.ListWorks
 }
 
 func (s *WorkspaceServer) PauseWorkspace(ctx context.Context, req *api.PauseWorkspaceRequest) (*empty.Empty, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "apps", "statefulsets", req.Uid)
 	if err != nil || !allowed {
 		return &empty.Empty{}, err
@@ -224,7 +224,7 @@ func (s *WorkspaceServer) PauseWorkspace(ctx context.Context, req *api.PauseWork
 }
 
 func (s *WorkspaceServer) ResumeWorkspace(ctx context.Context, req *api.ResumeWorkspaceRequest) (*empty.Empty, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "apps", "statefulsets", req.Uid)
 	if err != nil || !allowed {
 		return &empty.Empty{}, err
@@ -236,7 +236,7 @@ func (s *WorkspaceServer) ResumeWorkspace(ctx context.Context, req *api.ResumeWo
 }
 
 func (s *WorkspaceServer) DeleteWorkspace(ctx context.Context, req *api.DeleteWorkspaceRequest) (*empty.Empty, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "apps", "statefulsets", req.Uid)
 	if err != nil || !allowed {
 		return &empty.Empty{}, err
