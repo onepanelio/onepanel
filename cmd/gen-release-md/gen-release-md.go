@@ -2,42 +2,48 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 )
 
-type User struct {
+type user struct {
 	Login     string `json:"login"`
 	URL       string `json:"html_url"`
 	AvatarURL string `json:"avatar_url"`
 }
 
-type Label struct {
+type label struct {
 	Name string `json:"name"`
 }
 
-type PullRequest struct {
+type pullRequest struct {
 	URL string `json:"url"`
 }
 
-type Issue struct {
+type issue struct {
 	Number      int          `json:"number"`
 	URL         string       `json:"html_url"`
 	Title       string       `json:"title"`
-	User        User         `json:"user"`
-	PullRequest *PullRequest `json:"pull_request"`
-	Labels      []Label      `json:"labels"`
+	User        user         `json:"user"`
+	PullRequest *pullRequest `json:"pull_request"`
+	Labels      []label      `json:"labels"`
+}
+
+type milestone struct {
+	Number int    `json:"number"`
+	Title  string `json:"title"`
 }
 
 const (
-	apiPrefix          = "https://api.github.com/repos/"
-	issuesPathAndQuery = "/issues?milestone=3&state=closed"
+	apiPrefix = "https://api.github.com/repos/"
 )
 
 var releaseTemplate = `# Documentation
-See [Documentation](https://docs.onepanel.ai)
+See https://docs.onepanel.ai
 
 # CLI Installation
 
@@ -71,7 +77,12 @@ mv ./opctl-macos-amd64 /usr/local/bin/opctl
 
 # Test installation
 opctl version
-` + "```"
+` + "```" + `
+
+## Windows
+
+Download the [attached executable](https://github.com/onepanelio/core/releases/download/v%s/opctl-windows-amd64.exe), rename it to "opctl" and move it to a folder that is in your PATH environment variable.
+`
 
 var repositories = []string{
 	"onepanelio/core",
@@ -81,10 +92,25 @@ var repositories = []string{
 	"onepanelio/core-docs",
 }
 
+func getPrefixSection(prefix string) (section string) {
+	switch prefix {
+	case "feat":
+		fallthrough
+	case "fix":
+		fallthrough
+	case "docs":
+		section = prefix
+	default:
+		section = "other"
+	}
+
+	return
+}
+
 // Parse issues, pulling only PRs and categorize them based on labels
 // Print everything as MD that can be copied into release notes
-func printMarkDown(issues []*Issue, version *string) {
-	contributors := make(map[string]User, 0)
+func printMarkDown(issues []*issue, version *string) {
+	contributors := make(map[string]user, 0)
 	sections := make(map[string]string, 0)
 
 	for _, iss := range issues {
@@ -95,32 +121,45 @@ func printMarkDown(issues []*Issue, version *string) {
 		parts := strings.Split(iss.Title, ":")
 		if len(parts) > 0 {
 			contributors[iss.User.Login] = iss.User
-			sections[parts[0]] += fmt.Sprintf("- %s ([#%d](%s))\n", iss.Title, iss.Number, iss.URL)
+			sections[getPrefixSection(parts[0])] += fmt.Sprintf("- %s ([#%d](%s))\n", iss.Title, iss.Number, iss.URL)
 		}
 	}
 
-	releaseTemplate := fmt.Sprintf(releaseTemplate, *version, *version)
+	releaseTemplate := fmt.Sprintf(releaseTemplate, *version, *version, *version)
 	fmt.Println(releaseTemplate)
-	fmt.Println("# Changelog\n")
-	fmt.Println("## Features\n")
-	fmt.Println(sections["feat"])
-	fmt.Println("## Fixes\n")
-	fmt.Println(sections["fix"])
-	fmt.Println("## Docs\n")
-	fmt.Println(sections["docs"])
-	fmt.Println("## Chores\n")
-	fmt.Println(sections["chore"])
+	fmt.Println("# Changelog")
+	if sections["feat"] != "" {
+		fmt.Println("## Features")
+		fmt.Println(sections["feat"])
+	}
+	if sections["fix"] != "" {
+		fmt.Println("## Fixes")
+		fmt.Println(sections["fix"])
+	}
+	if sections["docs"] != "" {
+		fmt.Println("## Docs")
+		fmt.Println(sections["docs"])
+	}
+	if sections["other"] != "" {
+		fmt.Println("## Other")
+		fmt.Println(sections["other"])
+	}
 
-	fmt.Println("# Contributors\n")
-	for _, user := range contributors {
+	fmt.Println("# Contributors")
+	usernames := make([]string, 0)
+	for username := range contributors {
+		usernames = append(usernames, username)
+	}
+	sort.Strings(usernames)
+	for _, username := range usernames {
+		user := contributors[username]
 		fmt.Println(fmt.Sprintf("- <a href=\"%s\"><img src=\"%s\" width=\"12\"/> <strong>%s</strong></a> %s", user.URL, user.AvatarURL, user.Login, user.Login))
 	}
 }
 
-// Get issues from repository
-func getIssues(repository string, username *string) ([]*Issue, error) {
+func httpGet(url string, username *string) (*http.Response, error) {
 	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodGet, apiPrefix+repository+issuesPathAndQuery, nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if username != nil {
 		req.SetBasicAuth(*username, "")
 	}
@@ -129,9 +168,50 @@ func getIssues(repository string, username *string) ([]*Issue, error) {
 		return nil, err
 	}
 
+	return res, nil
+}
+
+// Get milestone by title
+func getMilestone(repository string, version, username *string) (*milestone, error) {
+	url := fmt.Sprintf("%s%s/milestones", apiPrefix, repository)
+	res, err := httpGet(url, username)
+	if err != nil {
+		return nil, err
+	}
 	defer res.Body.Close()
 
-	issues := make([]*Issue, 0)
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New("API rate limit exceeded")
+	}
+
+	milestones := make([]*milestone, 0)
+	if err = json.NewDecoder(res.Body).Decode(&milestones); err != nil {
+		return nil, err
+	}
+
+	for _, milestone := range milestones {
+		if milestone.Title == "v"+*version {
+			return milestone, nil
+		}
+	}
+
+	return nil, errors.New("milestone not found")
+}
+
+// Get issues from repository
+func getIssues(repository string, milestone *milestone, username *string) ([]*issue, error) {
+	url := fmt.Sprintf("%s%s/issues?state=closed&direction=asc&milestone=%d", apiPrefix, repository, milestone.Number)
+	res, err := httpGet(url, username)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New("API rate limit exceeded")
+	}
+
+	issues := make([]*issue, 0)
 	if err = json.NewDecoder(res.Body).Decode(&issues); err != nil {
 		return nil, err
 	}
@@ -145,9 +225,15 @@ func main() {
 
 	flag.Parse()
 
-	issues := make([]*Issue, 0)
+	issues := make([]*issue, 0)
 	for _, repository := range repositories {
-		iss, err := getIssues(repository, username)
+		mil, err := getMilestone(repository, version, username)
+		if err != nil {
+			fmt.Printf(err.Error())
+			return
+		}
+
+		iss, err := getIssues(repository, mil, username)
 		if err != nil {
 			return
 		}

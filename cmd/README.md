@@ -5,7 +5,7 @@ Generates markdown for releases.
 
 Usage:
 ```bash
-go run cmd/gen-release-md/gen-release-md.go -v=0.10.0 > /tmp/release.md
+go run cmd/gen-release-md/gen-release-md.go -v=0.10.0 -u=[github-username] > /tmp/release.md
 ```
 
 ## goose.go
