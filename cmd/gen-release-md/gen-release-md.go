@@ -81,7 +81,7 @@ opctl version
 
 ## Windows
 
-Download the attached Windows executable and move it to a folder that is in your PATH environment variable.
+Download the [attached executable](https://github.com/onepanelio/core/releases/download/v%s/opctl-windows-amd64.exe), rename it to "opctl" and move it to a folder that is in your PATH environment variable.
 `
 
 var repositories = []string{
@@ -125,7 +125,7 @@ func printMarkDown(issues []*issue, version *string) {
 		}
 	}
 
-	releaseTemplate := fmt.Sprintf(releaseTemplate, *version, *version)
+	releaseTemplate := fmt.Sprintf(releaseTemplate, *version, *version, *version)
 	fmt.Println(releaseTemplate)
 	fmt.Println("# Changelog")
 	if sections["feat"] != "" {
