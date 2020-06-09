@@ -229,6 +229,7 @@ func main() {
 	for _, repository := range repositories {
 		mil, err := getMilestone(repository, version, username)
 		if err != nil {
+			fmt.Printf(err.Error())
 			return
 		}
 
