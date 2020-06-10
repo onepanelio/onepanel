@@ -21,7 +21,7 @@ type Client struct {
 	kubernetes.Interface
 	argoprojV1alpha1 argoprojv1alpha1.ArgoprojV1alpha1Interface
 	*DB
-	systemConfig map[string]string // cache of SystemConfig
+	systemConfig SystemConfig
 }
 
 func (c *Client) ArgoprojV1alpha1() argoprojv1alpha1.ArgoprojV1alpha1Interface {
@@ -38,7 +38,7 @@ func NewConfig() (config *Config) {
 	return
 }
 
-func NewClient(config *Config, db *sqlx.DB) (client *Client, err error) {
+func NewClient(config *Config, db *sqlx.DB, systemConfig SystemConfig) (client *Client, err error) {
 	if config.BearerToken != "" {
 		config.BearerTokenFile = ""
 		config.Username = ""
@@ -57,7 +57,12 @@ func NewClient(config *Config, db *sqlx.DB) (client *Client, err error) {
 		return
 	}
 
-	return &Client{Interface: kubeClient, argoprojV1alpha1: argoClient, DB: db}, nil
+	return &Client{
+		Interface:        kubeClient,
+		argoprojV1alpha1: argoClient,
+		DB:               db,
+		systemConfig:     systemConfig,
+	}, nil
 }
 
 func (c *Client) GetS3Client(namespace string, config *ArtifactRepositoryS3Config) (s3Client *s3.Client, err error) {

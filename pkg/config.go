@@ -9,6 +9,8 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+type SystemConfig = map[string]string
+
 func (c *Client) getConfigMap(namespace, name string) (configMap *ConfigMap, err error) {
 	cm, err := c.CoreV1().ConfigMaps(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {

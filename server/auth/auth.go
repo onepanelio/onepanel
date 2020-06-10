@@ -46,14 +46,14 @@ func getBearerToken(ctx context.Context) (*string, bool) {
 	return nil, false
 }
 
-func getClient(ctx context.Context, kubeConfig *v1.Config, db *v1.DB) (context.Context, error) {
+func getClient(ctx context.Context, kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfig) (context.Context, error) {
 	bearerToken, ok := getBearerToken(ctx)
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, `Missing or invalid "authorization" header.`)
 	}
 
 	kubeConfig.BearerToken = *bearerToken
-	client, err := v1.NewClient(kubeConfig, db)
+	client, err := v1.NewClient(kubeConfig, db, sysConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func IsAuthorized(c *v1.Client, namespace, verb, group, resource, name string) (
 // The two main cases are:
 //   1. Is the token valid? This is used for logging in.
 //   2. Is there a token? There should be a token for everything except logging in.
-func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerInterceptor {
+func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfig) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		if info.FullMethod == "/api.AuthService/IsValidToken" {
 			md, ok := metadata.FromIncomingContext(ctx)
@@ -104,7 +104,7 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerIntercep
 
 			md.Set("authorization", tokenRequest.Token.Token)
 
-			ctx, err = getClient(ctx, kubeConfig, db)
+			ctx, err = getClient(ctx, kubeConfig, db, sysConfig)
 			if err != nil {
 				ctx = nil
 			}
@@ -141,7 +141,7 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerIntercep
 		}
 
 		// This guy checks for the token
-		ctx, err = getClient(ctx, kubeConfig, db)
+		ctx, err = getClient(ctx, kubeConfig, db, sysConfig)
 		if err != nil {
 			return
 		}
@@ -150,9 +150,9 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerIntercep
 	}
 }
 
-func StreamingInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.StreamServerInterceptor {
+func StreamingInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfig) grpc.StreamServerInterceptor {
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
-		ctx, err := getClient(ss.Context(), kubeConfig, db)
+		ctx, err := getClient(ss.Context(), kubeConfig, db, sysConfig)
 		if err != nil {
 			return
 		}

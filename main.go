@@ -38,11 +38,11 @@ func main() {
 	flag.Parse()
 
 	kubeConfig := v1.NewConfig()
-	client, err := v1.NewClient(kubeConfig, nil)
+	client, err := v1.NewClient(kubeConfig, nil, nil)
 	if err != nil {
 		log.Fatalf("Failed to connect to Kubernetes cluster: %v", err)
 	}
-	config, err := client.GetSystemConfig()
+	sysConfig, err := client.GetSystemConfig()
 	if err != nil {
 		log.Fatalf("Failed to get system config: %v", err)
 	}
@@ -50,16 +50,16 @@ func main() {
 	databaseDataSourceName := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
 		config["databaseHost"], config["databaseUsername"], config["databasePassword"], config["databaseName"])
 
-	db := sqlx.MustConnect(config["databaseDriverName"], databaseDataSourceName)
+	db := sqlx.MustConnect(sysConfig["databaseDriverName"], databaseDataSourceName)
 	if err := goose.Run("up", db.DB, "db"); err != nil {
 		log.Fatalf("Failed to run database migrations: %v", err)
 	}
 
-	go startRPCServer(db, kubeConfig)
+	go startRPCServer(db, kubeConfig, sysConfig)
 	startHTTPProxy()
 }
 
-func startRPCServer(db *v1.DB, kubeConfig *v1.Config) {
+func startRPCServer(db *v1.DB, kubeConfig *v1.Config, sysConfig v1.SystemConfig) {
 	log.Printf("Starting RPC server on port %v", *rpcPort)
 	lis, err := net.Listen("tcp", *rpcPort)
 	if err != nil {
@@ -86,12 +86,12 @@ func startRPCServer(db *v1.DB, kubeConfig *v1.Config) {
 		grpc_middleware.ChainUnaryServer(
 			grpc_logrus.UnaryServerInterceptor(logEntry),
 			grpc_recovery.UnaryServerInterceptor(recoveryOpts...),
-			auth.UnaryInterceptor(kubeConfig, db)),
+			auth.UnaryInterceptor(kubeConfig, db, sysConfig)),
 	), grpc.StreamInterceptor(
 		grpc_middleware.ChainStreamServer(
 			grpc_logrus.StreamServerInterceptor(logEntry),
 			grpc_recovery.StreamServerInterceptor(recoveryOpts...),
-			auth.StreamingInterceptor(kubeConfig, db)),
+			auth.StreamingInterceptor(kubeConfig, db, sysConfig)),
 	))
 	api.RegisterWorkflowTemplateServiceServer(s, server.NewWorkflowTemplateServer())
 	api.RegisterCronWorkflowServiceServer(s, server.NewCronWorkflowServer())
