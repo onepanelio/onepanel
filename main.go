@@ -48,7 +48,7 @@ func main() {
 	}
 
 	databaseDataSourceName := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
-		config["databaseHost"], config["databaseUsername"], config["databasePassword"], config["databaseName"])
+		sysConfig["databaseHost"], sysConfig["databaseUsername"], sysConfig["databasePassword"], sysConfig["databaseName"])
 
 	db := sqlx.MustConnect(sysConfig["databaseDriverName"], databaseDataSourceName)
 	if err := goose.Run("up", db.DB, "db"); err != nil {
