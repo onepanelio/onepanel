@@ -27,29 +27,31 @@ func (c *Client) getConfigMap(namespace, name string) (configMap *ConfigMap, err
 // GetSystemConfig loads various system configurations and bundles them into a map.
 // The configuration is cached once it is loaded, and that cached value is used from here on out.
 func (c *Client) GetSystemConfig() (config map[string]string, err error) {
-	if c.systemConfig == nil {
-		namespace := "onepanel"
-		configMap, configMapErr := c.getConfigMap(namespace, "onepanel")
-		if configMapErr != nil {
-			err = configMapErr
-			return
-		}
-		config = configMap.Data
-
-		secret, secretErr := c.GetSecret(namespace, "onepanel")
-		if secretErr != nil {
-			err = secretErr
-			return
-		}
-		databaseUsername, _ := base64.StdEncoding.DecodeString(secret.Data["databaseUsername"])
-		config["databaseUsername"] = string(databaseUsername)
-		databasePassword, _ := base64.StdEncoding.DecodeString(secret.Data["databasePassword"])
-		config["databasePassword"] = string(databasePassword)
-
-		c.systemConfig = config
+	if c.systemConfig != nil {
+		return c.systemConfig, nil
 	}
 
-	return c.systemConfig, nil
+	namespace := "onepanel"
+	configMap, configMapErr := c.getConfigMap(namespace, "onepanel")
+	if configMapErr != nil {
+		err = configMapErr
+		return
+	}
+	config = configMap.Data
+
+	secret, secretErr := c.GetSecret(namespace, "onepanel")
+	if secretErr != nil {
+		err = secretErr
+		return
+	}
+	databaseUsername, _ := base64.StdEncoding.DecodeString(secret.Data["databaseUsername"])
+	config["databaseUsername"] = string(databaseUsername)
+	databasePassword, _ := base64.StdEncoding.DecodeString(secret.Data["databasePassword"])
+	config["databasePassword"] = string(databasePassword)
+
+	c.systemConfig = config
+
+	return
 }
 
 func (c *Client) GetNamespaceConfig(namespace string) (config *NamespaceConfig, err error) {
