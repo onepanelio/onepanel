@@ -17,12 +17,6 @@ service AuthService {
         option (google.api.http) = {
             post: "/apis/v1beta1/auth",
             body: "isAuthorized"
-            additional_bindings : {
-                custom: {
-                    kind: "HEAD"
-                    path: "/apis/v1beta1/auth"
-                };
-            }
         };
     }
 }
@@ -53,11 +47,4 @@ message IsValidTokenRequest {
 
 message IsValidTokenResponse {
     string domain = 1;
-}
-
-message IsWorkspaceAuthenticatedRequest {
-    string FQDN = 1;
-    string XOriginalMethod = 2;
-    string XOriginalAuthority = 3;
-    string XOriginalUri = 4;
 }

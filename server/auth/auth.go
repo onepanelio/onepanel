@@ -111,6 +111,34 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerIntercep
 
 			return handler(ctx, req)
 		}
+		if info.FullMethod == "/api.AuthService/IsAuthorized" {
+			md, ok := metadata.FromIncomingContext(ctx)
+			if !ok {
+				ctx = nil
+				return handler(ctx, req)
+			}
+
+			//Expected format: x-original-authority:[name--default.alexcluster.onepanel.io]
+			if xOriginalAuthStrings := md.Get("x-original-authority"); xOriginalAuthStrings != nil {
+				xOriginalAuth := xOriginalAuthStrings[0]
+				dotIndex := strings.Index(xOriginalAuth, ".")
+				if dotIndex != -1 {
+					workspaceAndNamespace := xOriginalAuth[0:dotIndex]
+					pieces := strings.Split(workspaceAndNamespace, "--")
+					workspaceName := pieces[0]
+					namespace := pieces[1]
+
+					isAuthorizedRequest, ok := req.(*api.IsAuthorizedRequest)
+					if ok {
+						isAuthorizedRequest.IsAuthorized.Namespace = namespace
+						isAuthorizedRequest.IsAuthorized.Resource = "statefulsets"
+						isAuthorizedRequest.IsAuthorized.Group = "apps"
+						isAuthorizedRequest.IsAuthorized.ResourceName = workspaceName
+						isAuthorizedRequest.IsAuthorized.Verb = "get"
+					}
+				}
+			}
+		}
 
 		// This guy checks for the token
 		ctx, err = getClient(ctx, kubeConfig, db)
