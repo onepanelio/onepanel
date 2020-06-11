@@ -34,16 +34,14 @@ func (c *Client) GetSystemConfig() (config map[string]string, err error) {
 	}
 
 	namespace := "onepanel"
-	configMap, configMapErr := c.getConfigMap(namespace, "onepanel")
-	if configMapErr != nil {
-		err = configMapErr
+	configMap, err := c.getConfigMap(namespace, "onepanel")
+	if err != nil {
 		return
 	}
 	config = configMap.Data
 
-	secret, secretErr := c.GetSecret(namespace, "onepanel")
-	if secretErr != nil {
-		err = secretErr
+	secret, err := c.GetSecret(namespace, "onepanel")
+	if err != nil {
 		return
 	}
 	databaseUsername, _ := base64.StdEncoding.DecodeString(secret.Data["databaseUsername"])
