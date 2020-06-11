@@ -122,7 +122,7 @@ func printMarkDown(issues []*issue, version *string) {
 		parts := strings.Split(iss.Title, ":")
 		if len(parts) > 0 {
 			if user, ok := contributorsMap[iss.User.Login]; ok {
-				user.ContributionsCount += 1
+				user.ContributionsCount++
 				contributorsMap[iss.User.Login] = user
 			} else {
 				iss.User.ContributionsCount = 1
