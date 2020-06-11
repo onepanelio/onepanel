@@ -9,6 +9,10 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+// SystemConfig is configuration loaded from kubernetes config and secrets that includes information about the
+// database, server, etc.
+type SystemConfig = map[string]string
+
 func (c *Client) getConfigMap(namespace, name string) (configMap *ConfigMap, err error) {
 	cm, err := c.CoreV1().ConfigMaps(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
@@ -22,7 +26,13 @@ func (c *Client) getConfigMap(namespace, name string) (configMap *ConfigMap, err
 	return
 }
 
+// GetSystemConfig loads various system configurations and bundles them into a map.
+// The configuration is cached once it is loaded, and that cached value is used from here on out.
 func (c *Client) GetSystemConfig() (config map[string]string, err error) {
+	if c.systemConfig != nil {
+		return c.systemConfig, nil
+	}
+
 	namespace := "onepanel"
 	configMap, err := c.getConfigMap(namespace, "onepanel")
 	if err != nil {
@@ -38,6 +48,8 @@ func (c *Client) GetSystemConfig() (config map[string]string, err error) {
 	config["databaseUsername"] = string(databaseUsername)
 	databasePassword, _ := base64.StdEncoding.DecodeString(secret.Data["databasePassword"])
 	config["databasePassword"] = string(databasePassword)
+
+	c.systemConfig = config
 
 	return
 }

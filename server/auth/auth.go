@@ -53,14 +53,14 @@ func getBearerToken(ctx context.Context) (*string, bool) {
 	return nil, false
 }
 
-func getClient(ctx context.Context, kubeConfig *v1.Config, db *v1.DB) (context.Context, error) {
+func getClient(ctx context.Context, kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfig) (context.Context, error) {
 	bearerToken, ok := getBearerToken(ctx)
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, `Missing or invalid "authorization" header.`)
 	}
 
 	kubeConfig.BearerToken = *bearerToken
-	client, err := v1.NewClient(kubeConfig, db)
+	client, err := v1.NewClient(kubeConfig, db, sysConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -80,6 +80,7 @@ func IsAuthorized(c *v1.Client, namespace, verb, group, resource, name string) (
 			},
 		},
 	})
+
 	if err != nil {
 		return false, status.Error(codes.PermissionDenied, "Permission denied.")
 	}
@@ -91,7 +92,11 @@ func IsAuthorized(c *v1.Client, namespace, verb, group, resource, name string) (
 	return
 }
 
-func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerInterceptor {
+// UnaryInterceptor performs authentication checks.
+// The two main cases are:
+//   1. Is the token valid? This is used for logging in.
+//   2. Is there a token? There should be a token for everything except logging in.
+func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfig) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		if info.FullMethod == "/api.AuthService/IsValidToken" {
 			md, ok := metadata.FromIncomingContext(ctx)
@@ -106,33 +111,44 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerIntercep
 
 			md.Set("authorization", tokenRequest.Token.Token)
 
-			ctx, err = getClient(ctx, kubeConfig, db)
+			ctx, err = getClient(ctx, kubeConfig, db, sysConfig)
 			if err != nil {
 				ctx = nil
 			}
 
 			return handler(ctx, req)
 		}
-
-		// if you don't need the token,
-		if info.FullMethod == "/api.AuthService/IsWorkspaceAuthenticated" {
+		if info.FullMethod == "/api.AuthService/IsAuthorized" {
 			md, ok := metadata.FromIncomingContext(ctx)
 			if !ok {
 				ctx = nil
 				return handler(ctx, req)
 			}
-			xOriginalAuthority := md.Get("x-original-authority")[0]
-			authToken := md.Get("authorization")
-			fqdn := md.Get("fqdn")[0]
-			//len = 0 when user logged out or hasn't logged in yet
-			if len(authToken) == 0 && xOriginalAuthority == fqdn {
-				ctx = nil
-				return handler(ctx, req)
+
+			//Expected format: x-original-authority:[name--default.alexcluster.onepanel.io]
+			if xOriginalAuthStrings := md.Get("x-original-authority"); xOriginalAuthStrings != nil {
+				xOriginalAuth := xOriginalAuthStrings[0]
+				dotIndex := strings.Index(xOriginalAuth, ".")
+				if dotIndex != -1 {
+					workspaceAndNamespace := xOriginalAuth[0:dotIndex]
+					pieces := strings.Split(workspaceAndNamespace, "--")
+					workspaceName := pieces[0]
+					namespace := pieces[1]
+
+					isAuthorizedRequest, ok := req.(*api.IsAuthorizedRequest)
+					if ok {
+						isAuthorizedRequest.IsAuthorized.Namespace = namespace
+						isAuthorizedRequest.IsAuthorized.Resource = "statefulsets"
+						isAuthorizedRequest.IsAuthorized.Group = "apps"
+						isAuthorizedRequest.IsAuthorized.ResourceName = workspaceName
+						isAuthorizedRequest.IsAuthorized.Verb = "get"
+					}
+				}
 			}
 		}
 
 		// This guy checks for the token
-		ctx, err = getClient(ctx, kubeConfig, db)
+		ctx, err = getClient(ctx, kubeConfig, db, sysConfig)
 		if err != nil {
 			return
 		}
@@ -141,9 +157,10 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.UnaryServerIntercep
 	}
 }
 
-func StreamingInterceptor(kubeConfig *v1.Config, db *v1.DB) grpc.StreamServerInterceptor {
+// StreamingInterceptor provides an authentication wrapper around streaming requests.
+func StreamingInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfig) grpc.StreamServerInterceptor {
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
-		ctx, err := getClient(ss.Context(), kubeConfig, db)
+		ctx, err := getClient(ss.Context(), kubeConfig, db, sysConfig)
 		if err != nil {
 			return
 		}

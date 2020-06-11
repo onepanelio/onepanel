@@ -2,50 +2,27 @@ package server
 
 import (
 	"context"
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-	"strings"
 )
 
-type AuthServer struct{}
+// AuthServer contains logic for checking Authorization of resources in the system
+type AuthServer struct {
+}
 
+// NewAuthServer creates a new AuthServer
 func NewAuthServer() *AuthServer {
 	return &AuthServer{}
 }
-func (a *AuthServer) IsWorkspaceAuthenticated(ctx context.Context, request *api.IsWorkspaceAuthenticatedRequest) (*empty.Empty, error) {
-	if ctx == nil {
-		return &empty.Empty{}, nil
-	}
-	client := getClient(ctx)
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return &empty.Empty{}, errors.New("Error parsing headers.")
-	}
-	//Expected format: x-original-authority:[name--default.alexcluster.onepanel.io]
-	xOriginalAuth := md.Get("x-original-authority")[0]
-	fqdn := md.Get("fqdn")[0]
-	if xOriginalAuth == fqdn {
-		return &empty.Empty{}, nil
-	}
-	pos := strings.Index(xOriginalAuth, ".")
-	if pos == -1 {
-		return &empty.Empty{}, errors.New("Error parsing x-original-authority. No '.' character.")
-	}
-	workspaceAndNamespace := xOriginalAuth[0:pos]
-	pieces := strings.Split(workspaceAndNamespace, "--")
-	_, err := auth.IsAuthorized(client, pieces[1], "create", "apps", "statefulsets", pieces[0])
-	if err != nil {
-		return &empty.Empty{}, err
-	}
-	return &empty.Empty{}, nil
-}
 
+// IsAuthorized checks if the provided action is authorized.
+// No token == unauthorized. This is indicated by a nil ctx.
+// Invalid token == unauthorized.
+// Otherwise, we check with k8s using all of the provided data in the request.
 func (a *AuthServer) IsAuthorized(ctx context.Context, request *api.IsAuthorizedRequest) (res *api.IsAuthorizedResponse, err error) {
 	res = &api.IsAuthorizedResponse{}
 	if ctx == nil {
@@ -54,12 +31,14 @@ func (a *AuthServer) IsAuthorized(ctx context.Context, request *api.IsAuthorized
 	}
 	//User auth check
 	client := getClient(ctx)
+
 	err = a.isValidToken(err, client)
 	if err != nil {
 		return nil, err
 	}
+
 	//Check the request
-	allowed, err := auth.IsAuthorized(client, request.Namespace, request.Verb, request.Group, request.Resource, request.ResourceName)
+	allowed, err := auth.IsAuthorized(client, request.IsAuthorized.Namespace, request.IsAuthorized.Verb, request.IsAuthorized.Group, request.IsAuthorized.Resource, request.IsAuthorized.ResourceName)
 	if err != nil {
 		res.Authorized = false
 		return res, err
