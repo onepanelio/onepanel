@@ -8,7 +8,7 @@ import (
 
 func getClient() (*v1.Client, error) {
 	kubeConfig := v1.NewConfig()
-	client, err := v1.NewClient(kubeConfig, nil)
+	client, err := v1.NewClient(kubeConfig, nil, nil)
 	if err != nil {
 		return nil, err
 	}

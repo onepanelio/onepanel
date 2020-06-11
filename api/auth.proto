@@ -13,28 +13,24 @@ service AuthService {
         };
     }
 
-    rpc IsWorkspaceAuthenticated(IsWorkspaceAuthenticatedRequest) returns (google.protobuf.Empty) {
-        option (google.api.http) = {
-            custom: {
-                kind: "HEAD"
-                path: "/apis/v1beta1/auth/token"
-            }
-        };
-    }
-
     rpc IsAuthorized(IsAuthorizedRequest) returns (IsAuthorizedResponse) {
         option (google.api.http) = {
-            post: "/apis/v1beta1/auth"
+            post: "/apis/v1beta1/auth",
+            body: "isAuthorized"
         };
     }
 }
 
-message IsAuthorizedRequest {
+message IsAuthorized {
     string namespace = 1;
     string verb = 2;
     string group = 3;
     string resource = 4;
     string resourceName = 5;
+}
+
+message IsAuthorizedRequest {
+    IsAuthorized isAuthorized = 1;
 }
 
 message IsAuthorizedResponse {
@@ -51,11 +47,4 @@ message IsValidTokenRequest {
 
 message IsValidTokenResponse {
     string domain = 1;
-}
-
-message IsWorkspaceAuthenticatedRequest {
-    string FQDN = 1;
-    string XOriginalMethod = 2;
-    string XOriginalAuthority = 3;
-    string XOriginalUri = 4;
 }

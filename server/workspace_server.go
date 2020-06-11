@@ -177,7 +177,7 @@ func (s *WorkspaceServer) UpdateWorkspace(ctx context.Context, req *api.UpdateWo
 
 func (s *WorkspaceServer) ListWorkspaces(ctx context.Context, req *api.ListWorkspaceRequest) (*api.ListWorkspaceResponse, error) {
 	client := getClient(ctx)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "statefulsets", "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "apps", "statefulsets", "")
 	if err != nil || !allowed {
 		return nil, err
 	}

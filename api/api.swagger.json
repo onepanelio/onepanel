@@ -3,7 +3,7 @@
   "info": {
     "title": "Onepanel",
     "description": "Onepanel API",
-    "version": "0.10.0",
+    "version": "0.11.0",
     "contact": {
       "name": "Onepanel project",
       "url": "https://github.com/onepanelio/core"
@@ -38,6 +38,16 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IsAuthorized"
+            }
+          }
+        ],
         "tags": [
           "AuthService"
         ]
@@ -2677,6 +2687,26 @@
           "items": {
             "$ref": "#/definitions/Metric"
           }
+        }
+      }
+    },
+    "IsAuthorized": {
+      "type": "object",
+      "properties": {
+        "namespace": {
+          "type": "string"
+        },
+        "verb": {
+          "type": "string"
+        },
+        "group": {
+          "type": "string"
+        },
+        "resource": {
+          "type": "string"
+        },
+        "resourceName": {
+          "type": "string"
         }
       }
     },
