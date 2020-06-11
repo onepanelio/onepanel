@@ -147,10 +147,10 @@ func printMarkDown(issues []*issue, version *string) {
 
 	fmt.Println("# Contributors")
 	usernames := make([]string, 0)
-	for username := range contributors {
-		usernames = append(usernames, username)
+	for _, contributor := range contributors {
+		usernames = append(usernames, contributor.Login)
 	}
-	sort.Strings(usernames)
+	sort.Slice(usernames, func(i, j int) bool { return strings.ToLower(usernames[i]) < strings.ToLower(usernames[j]) })
 	for _, username := range usernames {
 		user := contributors[username]
 		fmt.Println(fmt.Sprintf("- <a href=\"%s\"><img src=\"%s\" width=\"12\"/> <strong>%s</strong></a> %s", user.URL, user.AvatarURL, user.Login, user.Login))
