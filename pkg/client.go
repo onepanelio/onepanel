@@ -38,6 +38,8 @@ func NewConfig() (config *Config) {
 	return
 }
 
+// NewClient creates a client to interact with the Onepanel system.
+// It includes access to the database, kubernetes, argo, and configuration.
 func NewClient(config *Config, db *sqlx.DB, systemConfig SystemConfig) (client *Client, err error) {
 	if config.BearerToken != "" {
 		config.BearerTokenFile = ""

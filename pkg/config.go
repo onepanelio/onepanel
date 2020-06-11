@@ -9,6 +9,8 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+// SystemConfig is configuration loaded from kubernetes config and secrets that includes information about the
+// database, server, etc.
 type SystemConfig = map[string]string
 
 func (c *Client) getConfigMap(namespace, name string) (configMap *ConfigMap, err error) {

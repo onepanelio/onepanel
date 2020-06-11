@@ -150,6 +150,7 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfi
 	}
 }
 
+// StreamingInterceptor provides an authentication wrapper around streaming requests.
 func StreamingInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfig) grpc.StreamServerInterceptor {
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
 		ctx, err := getClient(ss.Context(), kubeConfig, db, sysConfig)
