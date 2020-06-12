@@ -5,6 +5,12 @@ import (
 	"flag"
 	"fmt"
 	_ "github.com/onepanelio/core/db"
+	corev1 "k8s.io/api/core/v1"
+	apiv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	k8runtime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/tools/cache"
 	"net"
 	"net/http"
 
@@ -37,29 +43,44 @@ var (
 func main() {
 	flag.Parse()
 
-	kubeConfig := v1.NewConfig()
-	client, err := v1.NewClient(kubeConfig, nil, nil)
-	if err != nil {
-		log.Fatalf("Failed to connect to Kubernetes cluster: %v", err)
-	}
-	sysConfig, err := client.GetSystemConfig()
-	if err != nil {
-		log.Fatalf("Failed to get system config: %v", err)
-	}
+	// stopCh is used to indicate when the RPC server should reload.
+	// We do this when the configuration has been changed, so the server has the latest configuration
+	stopCh := make(chan struct{})
 
-	databaseDataSourceName := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
-		sysConfig["databaseHost"], sysConfig["databaseUsername"], sysConfig["databasePassword"], sysConfig["databaseName"])
+	go func() {
+		for {
+			kubeConfig := v1.NewConfig()
+			client, err := v1.NewClient(kubeConfig, nil, nil)
+			if err != nil {
+				log.Fatalf("Failed to connect to Kubernetes cluster: %v", err)
+			}
 
-	db := sqlx.MustConnect(sysConfig["databaseDriverName"], databaseDataSourceName)
-	if err := goose.Run("up", db.DB, "db"); err != nil {
-		log.Fatalf("Failed to run database migrations: %v", err)
-	}
+			client.ClearSystemConfigCache()
+			sysConfig, err := client.GetSystemConfig()
+			if err != nil {
+				log.Fatalf("Failed to get system config: %v", err)
+			}
 
-	go startRPCServer(db, kubeConfig, sysConfig)
+			databaseDataSourceName := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
+				sysConfig["databaseHost"], sysConfig["databaseUsername"], sysConfig["databasePassword"], sysConfig["databaseName"])
+
+			db := sqlx.MustConnect(sysConfig["databaseDriverName"], databaseDataSourceName)
+			if err := goose.Run("up", db.DB, "db"); err != nil {
+				log.Fatalf("Failed to run database migrations: %v", err)
+			}
+
+			s := startRPCServer(db, kubeConfig, sysConfig, stopCh)
+
+			<-stopCh
+
+			s.Stop()
+		}
+	}()
+
 	startHTTPProxy()
 }
 
-func startRPCServer(db *v1.DB, kubeConfig *v1.Config, sysConfig v1.SystemConfig) {
+func startRPCServer(db *v1.DB, kubeConfig *v1.Config, sysConfig v1.SystemConfig, stopCh chan struct{}) *grpc.Server {
 	log.Printf("Starting RPC server on port %v", *rpcPort)
 	lis, err := net.Listen("tcp", *rpcPort)
 	if err != nil {
@@ -103,9 +124,27 @@ func startRPCServer(db *v1.DB, kubeConfig *v1.Config, sysConfig v1.SystemConfig)
 	api.RegisterWorkspaceTemplateServiceServer(s, server.NewWorkspaceTemplateServer())
 	api.RegisterWorkspaceServiceServer(s, server.NewWorkspaceServer())
 
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("Failed to serve RPC server: %v", err)
+	client, err := v1.NewClient(kubeConfig, db, sysConfig)
+	if err != nil {
+		log.Fatalf("Unable to create client: %v", err)
 	}
+
+	go Run(client, "onepanel", stopCh, func(configMap *corev1.ConfigMap) error {
+		log.Printf("Configmap changed")
+		stopCh <- struct{}{}
+
+		return nil
+	})
+
+	go func() {
+		if err := s.Serve(lis); err != nil {
+			log.Fatalf("Failed to serve RPC server: %v", err)
+		}
+
+		log.Infof("GRPC finished")
+	}()
+
+	return s
 }
 
 func startHTTPProxy() {
@@ -158,4 +197,49 @@ func registerHandler(register registerFunc, ctx context.Context, mux *runtime.Se
 	if err != nil {
 		log.Fatalf("Failed to register handler: %v", err)
 	}
+}
+
+func Run(client *v1.Client, namespace string, stopCh <-chan struct{}, onChange func(*corev1.ConfigMap) error) {
+	restClient := client.CoreV1().RESTClient()
+	resource := "configmaps"
+	fieldSelector := fields.ParseSelectorOrDie(fmt.Sprintf("metadata.name=%s", "onepanel"))
+	listFunc := func(options apiv1.ListOptions) (k8runtime.Object, error) {
+		options.FieldSelector = fieldSelector.String()
+		req := restClient.Get().
+			Namespace(namespace).
+			Resource(resource).
+			VersionedParams(&options, apiv1.ParameterCodec)
+		return req.Do().Get()
+	}
+	watchFunc := func(options apiv1.ListOptions) (watch.Interface, error) {
+		options.Watch = true
+		options.FieldSelector = fieldSelector.String()
+		req := restClient.Get().
+			Namespace(namespace).
+			Resource(resource).
+			VersionedParams(&options, apiv1.ParameterCodec)
+		return req.Watch()
+	}
+	source := &cache.ListWatch{ListFunc: listFunc, WatchFunc: watchFunc}
+	_, controller := cache.NewInformer(
+		source,
+		&corev1.ConfigMap{},
+		0,
+		cache.ResourceEventHandlerFuncs{
+			UpdateFunc: func(old, new interface{}) {
+				oldCM := old.(*corev1.ConfigMap)
+				newCM := new.(*corev1.ConfigMap)
+				if oldCM.ResourceVersion == newCM.ResourceVersion {
+					return
+				}
+				if newCm, ok := new.(*corev1.ConfigMap); ok {
+					log.Infof("Detected ConfigMap update.")
+					if err := onChange(newCm); err != nil {
+						log.Errorf("Error on calling onChange callback: %v", err)
+					}
+				}
+			},
+		})
+	controller.Run(stopCh)
+	log.Infof("Watching config map updates")
 }
