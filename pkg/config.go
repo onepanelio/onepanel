@@ -26,6 +26,12 @@ func (c *Client) getConfigMap(namespace, name string) (configMap *ConfigMap, err
 	return
 }
 
+// ClearSystemConfigCache wipes out the cached system configuration so that the next call to
+// GetSystemConfig will pull it from the resources
+func (c *Client) ClearSystemConfigCache() {
+	c.systemConfig = nil
+}
+
 // GetSystemConfig loads various system configurations and bundles them into a map.
 // The configuration is cached once it is loaded, and that cached value is used from here on out.
 func (c *Client) GetSystemConfig() (config map[string]string, err error) {
