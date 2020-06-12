@@ -80,11 +80,19 @@ func generateArguments(spec *WorkspaceSpec, config map[string]string) (err error
 		Required:    true,
 	})
 
+	// Map all the volumeClaimTemplates that have storage set
+	volumeStorageQuantityIsSet := make(map[string]bool)
+	for _, v := range spec.VolumeClaimTemplates {
+		if v.Spec.Resources.Requests != nil {
+			volumeStorageQuantityIsSet[v.ObjectMeta.Name] = true
+		}
+	}
 	// Volume size parameters
 	volumeClaimsMapped := make(map[string]bool)
 	for _, c := range spec.Containers {
 		for _, v := range c.VolumeMounts {
-			if volumeClaimsMapped[v.Name] {
+			// Skip if already mapped or storage size is set
+			if volumeClaimsMapped[v.Name] || volumeStorageQuantityIsSet[v.Name] {
 				continue
 			}
 
