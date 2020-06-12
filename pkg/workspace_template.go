@@ -163,11 +163,44 @@ func createVirtualServiceManifest(spec *WorkspaceSpec) (virtualServiceManifest s
 	return
 }
 
-func createStatefulSetManifest(workspaceSpec *WorkspaceSpec, config map[string]string) (statefulSetManifest string, err error) {
+func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string) (statefulSetManifest string, err error) {
 	var volumeClaims []map[string]interface{}
 	volumeClaimsMapped := make(map[string]bool)
-	for i, c := range workspaceSpec.Containers {
-		container := &workspaceSpec.Containers[i]
+	// Add volumeClaims that the user has added first
+	for _, v := range spec.VolumeClaims {
+		if volumeClaimsMapped[v.ObjectMeta.Name] {
+			continue
+		}
+
+		// Use the `onepanel` storage class instead of default
+		if v.Spec.StorageClassName == nil {
+			v.Spec.StorageClassName = ptr.String("onepanel")
+		}
+		// Check if storage is set or if it needs to be dynamic
+		var storage interface{} = fmt.Sprintf("{{workflow.parameters.sys-%v-volume-size}}Mi", v.Name)
+		if v.Spec.Resources.Requests != nil {
+			storage = v.Spec.Resources.Requests["storage"]
+		}
+		volumeClaims = append(volumeClaims, map[string]interface{}{
+			"metadata": metav1.ObjectMeta{
+				Name: v.ObjectMeta.Name,
+			},
+			"spec": map[string]interface{}{
+				"accessModes":      v.Spec.AccessModes,
+				"storageClassName": v.Spec.StorageClassName,
+				"resources": map[string]interface{}{
+					"requests": map[string]interface{}{
+						"storage": storage,
+					},
+				},
+			},
+		})
+
+		volumeClaimsMapped[v.ObjectMeta.Name] = true
+	}
+	// Automatically map the remaining ones
+	for i, c := range spec.Containers {
+		container := &spec.Containers[i]
 		env.AddDefaultEnvVarsToContainer(container)
 		env.PrependEnvVarToContainer(container, "ONEPANEL_API_URL", config["ONEPANEL_API_URL"])
 		env.PrependEnvVarToContainer(container, "ONEPANEL_FQDN", config["ONEPANEL_FQDN"])
@@ -226,7 +259,7 @@ func createStatefulSetManifest(workspaceSpec *WorkspaceSpec, config map[string]s
 					NodeSelector: map[string]string{
 						config["applicationNodePoolLabel"]: "{{workflow.parameters.sys-node-pool}}",
 					},
-					Containers: workspaceSpec.Containers,
+					Containers: spec.Containers,
 				},
 			},
 			"volumeClaimTemplates": volumeClaims,
