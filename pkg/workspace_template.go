@@ -167,7 +167,7 @@ func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string) (s
 	var volumeClaims []map[string]interface{}
 	volumeClaimsMapped := make(map[string]bool)
 	// Add volumeClaims that the user has added first
-	for _, v := range spec.VolumeClaims {
+	for _, v := range spec.VolumeClaimTemplates {
 		if volumeClaimsMapped[v.ObjectMeta.Name] {
 			continue
 		}

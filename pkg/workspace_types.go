@@ -51,7 +51,7 @@ type WorkspaceSpec struct {
 	Containers            []corev1.Container             `json:"containers" protobuf:"bytes,3,opt,name=containers"`
 	Ports                 []corev1.ServicePort           `json:"ports" protobuf:"bytes,4,opt,name=ports"`
 	Routes                []*networking.HTTPRoute        `json:"routes" protobuf:"bytes,5,opt,name=routes"`
-	VolumeClaims          []corev1.PersistentVolumeClaim `json:"volumeClaims" protobuf:"bytes,6,opt,name=volumeClaims"`
+	VolumeClaimTemplates  []corev1.PersistentVolumeClaim `json:"volumeClaimTemplates" protobuf:"bytes,6,opt,name=volumeClaimTemplates"`
 	PostExecutionWorkflow *wfv1.WorkflowTemplateSpec     `json:"postExecutionWorkflow" protobuf:"bytes,7,opt,name=postExecutionWorkflow"`
 }
 
