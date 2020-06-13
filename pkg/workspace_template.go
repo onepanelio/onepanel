@@ -241,6 +241,11 @@ func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string) (s
 
 			volumeClaimsMapped[v.Name] = true
 		}
+
+		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+			Name:      "sys-dshm",
+			MountPath: "/dev/shm",
+		})
 	}
 
 	statefulSet := map[string]interface{}{
@@ -268,6 +273,16 @@ func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string) (s
 						config["applicationNodePoolLabel"]: "{{workflow.parameters.sys-node-pool}}",
 					},
 					Containers: spec.Containers,
+					Volumes: []corev1.Volume{
+						{
+							Name: "sys-dshm",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									Medium: corev1.StorageMediumMemory,
+								},
+							},
+						},
+					},
 				},
 			},
 			"volumeClaimTemplates": volumeClaims,
