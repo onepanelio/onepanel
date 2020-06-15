@@ -18,6 +18,7 @@ type WorkspaceServer struct{}
 func apiWorkspace(wt *v1.Workspace, config map[string]string) *api.Workspace {
 	protocol := "http://"
 	onepanelApiUrl := config["ONEPANEL_API_URL"]
+	domain := config["ONEPANEL_DOMAIN"]
 	if strings.HasPrefix(onepanelApiUrl, "https://") {
 		protocol = "https://"
 	}
@@ -26,7 +27,7 @@ func apiWorkspace(wt *v1.Workspace, config map[string]string) *api.Workspace {
 		Uid:       wt.UID,
 		Name:      wt.Name,
 		CreatedAt: wt.CreatedAt.UTC().Format(time.RFC3339),
-		Url:       protocol + wt.URL,
+		Url:       wt.GetURL(protocol, domain),
 	}
 	res.Parameters = converter.ParametersToAPI(wt.Parameters)
 
