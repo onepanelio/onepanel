@@ -154,7 +154,6 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 	if sysHost == nil {
 		return nil, fmt.Errorf("sys-host parameter not found")
 	}
-	workspace.URL = *sysHost
 
 	existingWorkspace, err := c.GetWorkspace(namespace, workspace.UID)
 	if err != nil {
