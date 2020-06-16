@@ -22,7 +22,7 @@ func testCreateNamespace(c *Client) {
 	}
 }
 func TestListNamespace(t *testing.T) {
-	c := NewTestClient()
+	c := NewTestClient(nil)
 
 	testCreateNamespace(c)
 

@@ -7,7 +7,7 @@ import (
 )
 
 func TestCreateSecret(t *testing.T) {
-	c := NewTestClient()
+	c := NewTestClient(nil)
 
 	err := c.CreateSecret("namespace", &Secret{
 		Name: "name",
@@ -16,7 +16,7 @@ func TestCreateSecret(t *testing.T) {
 }
 
 func TestGetSecret(t *testing.T) {
-	c := NewTestClient()
+	c := NewTestClient(nil)
 
 	err := c.CreateSecret("namespace", &Secret{
 		Name: "name",
