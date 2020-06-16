@@ -25,67 +25,6 @@ type WorkspaceTemplate struct {
 	WorkflowTemplateID         uint64 `db:"workflow_template_id"`
 }
 
-// InjectRuntimeVariables will inject all runtime variables into the WorkflowTemplate's manifest.
-func (wt *WorkspaceTemplate) InjectRuntimeVariables(config map[string]string) error {
-	if wt.WorkflowTemplate == nil {
-		return fmt.Errorf("workflow Template is nil for workspace template")
-	}
-
-	runtimeVars, err := wt.RuntimeVars(config)
-	if err != nil {
-		return err
-	}
-
-	parsedManifest := make(map[string]interface{})
-	if err := yaml.Unmarshal([]byte(wt.WorkflowTemplate.Manifest), parsedManifest); err != nil {
-		return err
-	}
-
-	arguments, ok := parsedManifest["arguments"]
-	if !ok {
-		return fmt.Errorf("argumnets not found in workflow template manifest")
-	}
-
-	argumentsMap := arguments.(map[interface{}]interface{})
-	parameters := argumentsMap["parameters"]
-	parametersArray := parameters.([]interface{})
-
-	for _, param := range runtimeVars.AdditionalParameters {
-		parametersArray = append(parametersArray, param)
-	}
-
-	templates := parsedManifest["templates"].([]interface{})
-	finalTemplates := make([]interface{}, 0)
-	for _, t := range templates {
-		template := t.(map[interface{}]interface{})
-		name, ok := template["name"]
-		if !ok {
-			continue
-		}
-
-		if name == runtimeVars.VirtualService.Name {
-			continue
-		}
-
-		if name == "stateful-set-resource" {
-			resource := template["resource"]
-			resourceMap := resource.(map[interface{}]interface{})
-			resourceMap["manifest"] = runtimeVars.StatefulSetManifest
-		}
-	}
-	finalTemplates = append(finalTemplates, runtimeVars.VirtualService)
-	parsedManifest["templates"] = finalTemplates
-
-	resultManifest, err := yaml.Marshal(parsedManifest)
-	if err != nil {
-		return err
-	}
-
-	wt.WorkflowTemplate.Manifest = string(resultManifest)
-
-	return nil
-}
-
 // RuntimeVars contains data that is needed for workspaces to function at runtime.
 // This includes data that is configuration dependent, which may change.
 // For example, the sys-host might change because it depends on the ONEPANEL_DOMAIN config variable
@@ -96,7 +35,8 @@ type RuntimeVars struct {
 	StatefulSetManifest  string
 }
 
-// TODO document this and then maybe add separate functions to inject it
+// RuntimeVars returns a set of RuntimeVars associated with the WorkspaceTemplate.
+// These require a config loaded from the system
 func (wt *WorkspaceTemplate) RuntimeVars(config map[string]string) (runtimeVars *RuntimeVars, err error) {
 	if wt.WorkflowTemplate == nil {
 		err = fmt.Errorf("workflow Template is nil for workspace template")
@@ -169,6 +109,67 @@ func (wt *WorkspaceTemplate) RuntimeVars(config map[string]string) (runtimeVars 
 	runtimeVars.StatefulSetManifest = statefulSet
 
 	return
+}
+
+// InjectRuntimeVariables will inject all runtime variables into the WorkflowTemplate's manifest.
+func (wt *WorkspaceTemplate) InjectRuntimeVariables(config map[string]string) error {
+	if wt.WorkflowTemplate == nil {
+		return fmt.Errorf("workflow Template is nil for workspace template")
+	}
+
+	runtimeVars, err := wt.RuntimeVars(config)
+	if err != nil {
+		return err
+	}
+
+	parsedManifest := make(map[string]interface{})
+	if err := yaml.Unmarshal([]byte(wt.WorkflowTemplate.Manifest), parsedManifest); err != nil {
+		return err
+	}
+
+	arguments, ok := parsedManifest["arguments"]
+	if !ok {
+		return fmt.Errorf("argumnets not found in workflow template manifest")
+	}
+
+	argumentsMap := arguments.(map[interface{}]interface{})
+	parameters := argumentsMap["parameters"]
+	parametersArray := parameters.([]interface{})
+
+	for _, param := range runtimeVars.AdditionalParameters {
+		parametersArray = append(parametersArray, param)
+	}
+
+	templates := parsedManifest["templates"].([]interface{})
+	finalTemplates := make([]interface{}, 0)
+	for _, t := range templates {
+		template := t.(map[interface{}]interface{})
+		name, ok := template["name"]
+		if !ok {
+			continue
+		}
+
+		if name == runtimeVars.VirtualService.Name {
+			continue
+		}
+
+		if name == "stateful-set-resource" {
+			resource := template["resource"]
+			resourceMap := resource.(map[interface{}]interface{})
+			resourceMap["manifest"] = runtimeVars.StatefulSetManifest
+		}
+	}
+	finalTemplates = append(finalTemplates, runtimeVars.VirtualService)
+	parsedManifest["templates"] = finalTemplates
+
+	resultManifest, err := yaml.Marshal(parsedManifest)
+	if err != nil {
+		return err
+	}
+
+	wt.WorkflowTemplate.Manifest = string(resultManifest)
+
+	return nil
 }
 
 func WorkspaceTemplatesToVersionIds(resources []*WorkspaceTemplate) (ids []uint64) {

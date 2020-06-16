@@ -218,7 +218,6 @@ func createStatefulSetManifest(workspaceSpec *WorkspaceSpec, config map[string]s
 		},
 	}
 
-	// TODO I AM HERE
 	if withRuntimeVars {
 		template.Spec = corev1.PodSpec{
 			NodeSelector: map[string]string{
