@@ -179,7 +179,7 @@ func createVirtualServiceManifest(spec *WorkspaceSpec, withRuntimeVars bool) (vi
 	return
 }
 
-func createStatefulSetManifest(workspaceSpec *WorkspaceSpec, config map[string]string, withRuntimeVars bool) (statefulSetManifest string, err error) {
+func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string, withRuntimeVars bool) (statefulSetManifest string, err error) {
 	var volumeClaims []map[string]interface{}
 	volumeClaimsMapped := make(map[string]bool)
 	// Add volumeClaims that the user has added first
