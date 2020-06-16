@@ -129,7 +129,7 @@ func startRPCServer(db *v1.DB, kubeConfig *v1.Config, sysConfig v1.SystemConfig,
 		log.Fatalf("Unable to create client: %v", err)
 	}
 
-	go Run(client, "onepanel", stopCh, func(configMap *corev1.ConfigMap) error {
+	go watchConfigmapChanges(client, "onepanel", stopCh, func(configMap *corev1.ConfigMap) error {
 		log.Printf("Configmap changed")
 		stopCh <- struct{}{}
 
@@ -140,8 +140,6 @@ func startRPCServer(db *v1.DB, kubeConfig *v1.Config, sysConfig v1.SystemConfig,
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("Failed to serve RPC server: %v", err)
 		}
-
-		log.Infof("GRPC finished")
 	}()
 
 	return s
@@ -199,7 +197,8 @@ func registerHandler(register registerFunc, ctx context.Context, mux *runtime.Se
 	}
 }
 
-func Run(client *v1.Client, namespace string, stopCh <-chan struct{}, onChange func(*corev1.ConfigMap) error) {
+// watchConfigmapChanges sets up a listener for configmap changes and calls the onChange function when it happens
+func watchConfigmapChanges(client *v1.Client, namespace string, stopCh <-chan struct{}, onChange func(*corev1.ConfigMap) error) {
 	restClient := client.CoreV1().RESTClient()
 	resource := "configmaps"
 	fieldSelector := fields.ParseSelectorOrDie(fmt.Sprintf("metadata.name=%s", "onepanel"))

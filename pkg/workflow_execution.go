@@ -328,6 +328,8 @@ func (c *Client) ValidateWorkflowExecution(namespace string, manifest []byte) (e
 	return
 }
 
+// CreateWorkflowExecution creates an argo workflow execution and related resources.
+// Note that the workflow template is loaded from the database/k8s, so workflow.WorkflowTemplate.Manifest is not used.
 func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExecution, runtimeVars *RuntimeVars) (*WorkflowExecution, error) {
 	workflowTemplate, err := c.GetWorkflowTemplate(namespace, workflow.WorkflowTemplate.UID, workflow.WorkflowTemplate.Version)
 	if err != nil {
