@@ -2,6 +2,7 @@ package v1
 
 import (
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
@@ -24,7 +25,7 @@ func TestListLabels(t *testing.T) {
 		WithArgs("workflow_execution", "workflow-1").
 		WillReturnRows(mockWorkflowExecutionLabels)
 
-	_, err = c.ListLabels("workflow_execution", "workflow-1")
+	labels, err := c.ListLabels("workflow_execution", "workflow-1")
 	if err != nil {
 		t.Errorf("error was not expected while listing labels: %s", err)
 	}
@@ -32,4 +33,9 @@ func TestListLabels(t *testing.T) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
+
+	assert.NotEmpty(t, labels)
+	assert.NoError(t, err)
+	assert.Equal(t, labels[0].ID, uint64(1))
+	assert.Equal(t, labels[1].ID, uint64(2))
 }
