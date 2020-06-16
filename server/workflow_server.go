@@ -84,7 +84,7 @@ func (s *WorkflowServer) CreateWorkflowExecution(ctx context.Context, req *api.C
 		})
 	}
 
-	wf, err := client.CreateWorkflowExecution(req.Namespace, workflow)
+	wf, err := client.CreateWorkflowExecution(req.Namespace, workflow, nil)
 	if err != nil {
 		return nil, err
 	}
