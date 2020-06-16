@@ -98,10 +98,21 @@ func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, wor
 }
 
 func (c *Client) createWorkspace(namespace string, parameters []byte, workspace *Workspace) (*Workspace, error) {
-	_, err := c.CreateWorkflowExecution(namespace, &WorkflowExecution{
+	systemConfig, err := c.GetSystemConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	runtimeVars, err := workspace.WorkspaceTemplate.RuntimeVars(systemConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = c.CreateWorkflowExecution(namespace, &WorkflowExecution{
 		Parameters:       workspace.Parameters,
 		WorkflowTemplate: workspace.WorkspaceTemplate.WorkflowTemplate,
-	})
+	}, runtimeVars)
+
 	if err != nil {
 		return nil, err
 	}
@@ -392,7 +403,7 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 	_, err = c.CreateWorkflowExecution(namespace, &WorkflowExecution{
 		Parameters:       workspace.Parameters,
 		WorkflowTemplate: workspace.WorkspaceTemplate.WorkflowTemplate,
-	})
+	}, nil)
 	if err != nil {
 		return
 	}
