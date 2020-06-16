@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"database/sql"
 	"github.com/jmoiron/sqlx"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,6 +38,6 @@ var (
 	}
 )
 
-func NewTestClient(db *sqlx.DB, objects ...runtime.Object) (client *Client) {
-	return &Client{Interface: fake.NewSimpleClientset(objects...), DB: db}
+func NewTestClient(db *sql.DB, objects ...runtime.Object) (client *Client) {
+	return &Client{Interface: fake.NewSimpleClientset(objects...), DB: sqlx.NewDb(db, "sqlmock")}
 }

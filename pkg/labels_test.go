@@ -2,7 +2,6 @@ package v1
 
 import (
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/jmoiron/sqlx"
 	"testing"
 	"time"
 )
@@ -18,9 +17,8 @@ func TestListLabels(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer db.Close()
-	sqlxDB := sqlx.NewDb(db, "sqlmock")
 
-	c := NewTestClient(sqlxDB)
+	c := NewTestClient(db)
 
 	mock.ExpectQuery("SELECT l.id, l.created_at, l.key, l.value, l.resource, l.resource_id FROM labels l JOIN workflow_executions we ON we.id = l.resource_id WHERE resource = \\$1 AND we.uid = \\$2 ORDER BY l.created_at").
 		WithArgs("workflow_execution", "workflow-1").
