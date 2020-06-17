@@ -269,7 +269,7 @@ func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string, wi
 			NodeSelector: map[string]string{
 				config["applicationNodePoolLabel"]: "{{workflow.parameters.sys-node-pool}}",
 			},
-			Containers: workspaceSpec.Containers,
+			Containers: spec.Containers,
 		}
 	}
 
