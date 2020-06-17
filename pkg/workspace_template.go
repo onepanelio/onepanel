@@ -385,7 +385,7 @@ metadata:
 							Parameters: []wfv1.Parameter{
 								{
 									Name:  "update-revision",
-									Value: ptr.String("{{tasks.stateful-set.outputs.parameters.update-revision}}"),
+									Value: ptr.String("{{tasks.create-stateful-set.outputs.parameters.update-revision}}"),
 								},
 							},
 						},
