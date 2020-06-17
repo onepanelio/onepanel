@@ -19,6 +19,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"sigs.k8s.io/yaml"
+	"strings"
 )
 
 func parseWorkspaceSpec(template string) (spec *WorkspaceSpec, err error) {
@@ -269,7 +270,7 @@ func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string, wi
 			NodeSelector: map[string]string{
 				config["applicationNodePoolLabel"]: "{{workflow.parameters.sys-node-pool}}",
 			},
-			Containers: workspaceSpec.Containers,
+			Containers: spec.Containers,
 		}
 	}
 
@@ -697,6 +698,9 @@ func (c *Client) generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *Wo
 	if err != nil {
 		return nil, err
 	}
+
+	workflowTemplateManifest = strings.NewReplacer(
+		"{{workspace.parameters.", "{{workflow.parameters.").Replace(workflowTemplateManifest)
 
 	workflowTemplate = &WorkflowTemplate{
 		Name:     workspaceTemplate.Name,
