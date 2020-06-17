@@ -311,7 +311,26 @@ func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string, wi
 	return
 }
 
-func unmarshalWorkflowTemplate(spec *WorkspaceSpec, serviceManifest, virtualServiceManifest, containersManifest string) (workflowTemplateSpecManifest string, err error) {
+func createWorkspaceManifest(spec *WorkspaceSpec) (workspaceManifest string, err error) {
+	// TODO: This needs to be a Kubernetes Go struct
+	// TODO: labels should be persisted here as well
+	workspace := map[string]interface{}{
+		"apiVersion": "onepanel.io/v1alpha1",
+		"kind":       "Workspace",
+		"metadata": metav1.ObjectMeta{
+			Name: "{{workflow.parameters.sys-uid}}",
+		},
+	}
+	workspaceManifestBytes, err := yaml.Marshal(workspace)
+	if err != nil {
+		return
+	}
+	workspaceManifest = string(workspaceManifestBytes)
+
+	return
+}
+
+func unmarshalWorkflowTemplate(spec *WorkspaceSpec, serviceManifest, virtualServiceManifest, statefulSetManifest, workspaceManifest string) (workflowTemplateSpecManifest string, err error) {
 	var volumeClaimItems []wfv1.Item
 	volumeClaimsMapped := make(map[string]bool)
 	for _, c := range spec.Containers {
@@ -352,7 +371,7 @@ metadata:
 						Dependencies: []string{"service"},
 					},
 					{
-						Name:         "stateful-set",
+						Name:         "create-stateful-set",
 						Template:     "stateful-set-resource",
 						Dependencies: []string{"virtual-service"},
 						When:         "{{workflow.parameters.sys-workspace-action}} == create || {{workflow.parameters.sys-workspace-action}} == update",
@@ -360,7 +379,7 @@ metadata:
 					{
 						Name:         "get-stateful-set",
 						Template:     "get-stateful-set-resource",
-						Dependencies: []string{"stateful-set"},
+						Dependencies: []string{"create-stateful-set"},
 						When:         "{{workflow.parameters.sys-workspace-action}} == create || {{workflow.parameters.sys-workspace-action}} == update",
 						Arguments: wfv1.Arguments{
 							Parameters: []wfv1.Parameter{
@@ -372,15 +391,27 @@ metadata:
 						},
 					},
 					{
+						Name:         "create-workspace",
+						Template:     "workspace-resource",
+						Dependencies: []string{"get-stateful-set"},
+						When:         "{{workflow.parameters.sys-workspace-action}} == create || {{workflow.parameters.sys-workspace-action}} == update",
+					},
+					{
 						Name:         "delete-stateful-set",
 						Template:     "delete-stateful-set-resource",
 						Dependencies: []string{"virtual-service"},
 						When:         "{{workflow.parameters.sys-workspace-action}} == pause || {{workflow.parameters.sys-workspace-action}} == delete",
 					},
 					{
+						Name:         "delete-workspace",
+						Template:     "workspace-resource",
+						Dependencies: []string{"delete-stateful-set"},
+						When:         "{{workflow.parameters.sys-workspace-action}} == pause || {{workflow.parameters.sys-workspace-action}} == delete",
+					},
+					{
 						Name:         "delete-pvc",
 						Template:     "delete-pvc-resource",
-						Dependencies: []string{"delete-stateful-set"},
+						Dependencies: []string{"delete-workspace"},
 						Arguments: wfv1.Arguments{
 							Parameters: []wfv1.Parameter{
 								{
@@ -395,7 +426,7 @@ metadata:
 					{
 						Name:         "sys-set-phase-running",
 						Template:     "sys-update-status",
-						Dependencies: []string{"get-stateful-set"},
+						Dependencies: []string{"create-workspace"},
 						Arguments: wfv1.Arguments{
 							Parameters: []wfv1.Parameter{
 								{
@@ -409,7 +440,7 @@ metadata:
 					{
 						Name:         "sys-set-phase-paused",
 						Template:     "sys-update-status",
-						Dependencies: []string{"delete-stateful-set"},
+						Dependencies: []string{"delete-workspace"},
 						Arguments: wfv1.Arguments{
 							Parameters: []wfv1.Parameter{
 								{
@@ -455,7 +486,7 @@ metadata:
 			Name: "stateful-set-resource",
 			Resource: &wfv1.ResourceTemplate{
 				Action:           "{{workflow.parameters.sys-resource-action}}",
-				Manifest:         containersManifest,
+				Manifest:         statefulSetManifest,
 				SuccessCondition: "status.readyReplicas > 0",
 			},
 			Outputs: wfv1.Outputs{
@@ -484,7 +515,14 @@ metadata:
 			Name: "delete-stateful-set-resource",
 			Resource: &wfv1.ResourceTemplate{
 				Action:   "{{workflow.parameters.sys-resource-action}}",
-				Manifest: containersManifest,
+				Manifest: statefulSetManifest,
+			},
+		},
+		{
+			Name: "workspace-resource",
+			Resource: &wfv1.ResourceTemplate{
+				Action:   "{{workflow.parameters.sys-resource-action}}",
+				Manifest: workspaceManifest,
 			},
 		},
 		{
@@ -699,12 +737,17 @@ func (c *Client) generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *Wo
 		return nil, err
 	}
 
-	containersManifest, err := createStatefulSetManifest(workspaceSpec, config, withRuntimeVars)
+	statefulSetManifest, err := createStatefulSetManifest(workspaceSpec, config, withRuntimeVars)
 	if err != nil {
 		return nil, err
 	}
 
-	workflowTemplateManifest, err := unmarshalWorkflowTemplate(workspaceSpec, serviceManifest, virtualServiceManifest, containersManifest)
+	workspaceManifest, err := createWorkspaceManifest(workspaceSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	workflowTemplateManifest, err := unmarshalWorkflowTemplate(workspaceSpec, serviceManifest, virtualServiceManifest, statefulSetManifest, workspaceManifest)
 	if err != nil {
 		return nil, err
 	}

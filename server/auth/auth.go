@@ -138,8 +138,8 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfi
 					isAuthorizedRequest, ok := req.(*api.IsAuthorizedRequest)
 					if ok {
 						isAuthorizedRequest.IsAuthorized.Namespace = namespace
-						isAuthorizedRequest.IsAuthorized.Resource = "statefulsets"
-						isAuthorizedRequest.IsAuthorized.Group = "apps"
+						isAuthorizedRequest.IsAuthorized.Resource = "workspaces"
+						isAuthorizedRequest.IsAuthorized.Group = "onepanel.io"
 						isAuthorizedRequest.IsAuthorized.ResourceName = workspaceName
 						isAuthorizedRequest.IsAuthorized.Verb = "get"
 					}

@@ -78,7 +78,7 @@ func NewWorkspaceServer() *WorkspaceServer {
 
 func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWorkspaceRequest) (*api.Workspace, error) {
 	client := getClient(ctx)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "apps", "statefulsets", "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "onepanel.io", "workspaces", "")
 	if err != nil || !allowed {
 		return nil, err
 	}
@@ -123,7 +123,7 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 
 func (s *WorkspaceServer) GetWorkspace(ctx context.Context, req *api.GetWorkspaceRequest) (*api.Workspace, error) {
 	client := getClient(ctx)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "apps", "statefulsets", "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "onepanel.io", "workspaces", "")
 	if err != nil || !allowed {
 		return nil, err
 	}
@@ -154,7 +154,7 @@ func (s *WorkspaceServer) GetWorkspace(ctx context.Context, req *api.GetWorkspac
 
 func (s *WorkspaceServer) UpdateWorkspaceStatus(ctx context.Context, req *api.UpdateWorkspaceStatusRequest) (*empty.Empty, error) {
 	client := getClient(ctx)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "apps", "statefulsets", req.Uid)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "onepanel.io", "workspaces", req.Uid)
 	if err != nil || !allowed {
 		return &empty.Empty{}, err
 	}
@@ -169,7 +169,7 @@ func (s *WorkspaceServer) UpdateWorkspaceStatus(ctx context.Context, req *api.Up
 
 func (s *WorkspaceServer) UpdateWorkspace(ctx context.Context, req *api.UpdateWorkspaceRequest) (*empty.Empty, error) {
 	client := getClient(ctx)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "apps", "statefulsets", req.Uid)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "onepanel.io", "workspaces", req.Uid)
 	if err != nil || !allowed {
 		return &empty.Empty{}, err
 	}
@@ -192,7 +192,7 @@ func (s *WorkspaceServer) UpdateWorkspace(ctx context.Context, req *api.UpdateWo
 
 func (s *WorkspaceServer) ListWorkspaces(ctx context.Context, req *api.ListWorkspaceRequest) (*api.ListWorkspaceResponse, error) {
 	client := getClient(ctx)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "apps", "statefulsets", "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "onepanel.io", "workspaces", "")
 	if err != nil || !allowed {
 		return nil, err
 	}
@@ -228,7 +228,7 @@ func (s *WorkspaceServer) ListWorkspaces(ctx context.Context, req *api.ListWorks
 
 func (s *WorkspaceServer) PauseWorkspace(ctx context.Context, req *api.PauseWorkspaceRequest) (*empty.Empty, error) {
 	client := getClient(ctx)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "apps", "statefulsets", req.Uid)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "onepanel.io", "workspaces", req.Uid)
 	if err != nil || !allowed {
 		return &empty.Empty{}, err
 	}
@@ -240,7 +240,7 @@ func (s *WorkspaceServer) PauseWorkspace(ctx context.Context, req *api.PauseWork
 
 func (s *WorkspaceServer) ResumeWorkspace(ctx context.Context, req *api.ResumeWorkspaceRequest) (*empty.Empty, error) {
 	client := getClient(ctx)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "apps", "statefulsets", req.Uid)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "onepanel.io", "workspaces", req.Uid)
 	if err != nil || !allowed {
 		return &empty.Empty{}, err
 	}
@@ -252,7 +252,7 @@ func (s *WorkspaceServer) ResumeWorkspace(ctx context.Context, req *api.ResumeWo
 
 func (s *WorkspaceServer) DeleteWorkspace(ctx context.Context, req *api.DeleteWorkspaceRequest) (*empty.Empty, error) {
 	client := getClient(ctx)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "apps", "statefulsets", req.Uid)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "onepanel.io", "workspaces", req.Uid)
 	if err != nil || !allowed {
 		return &empty.Empty{}, err
 	}
