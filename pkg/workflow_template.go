@@ -374,7 +374,7 @@ func (c *Client) CreateWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
 	}
 
-	workflowTemplate, _, err := c.createWorkflowTemplate(namespace, workflowTemplate)
+	newWorkflowTemplate, _, err := c.createWorkflowTemplate(namespace, workflowTemplate)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace":        namespace,
@@ -384,7 +384,7 @@ func (c *Client) CreateWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, util.NewUserErrorWrap(err, "Workflow template")
 	}
 
-	return workflowTemplate, nil
+	return newWorkflowTemplate, nil
 }
 
 func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, error) {
