@@ -270,6 +270,16 @@ func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string, wi
 				config["applicationNodePoolLabel"]: "{{workflow.parameters.sys-node-pool}}",
 			},
 			Containers: spec.Containers,
+			Volumes: []corev1.Volume{
+				{
+					Name: "sys-dshm",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{
+							Medium: corev1.StorageMediumMemory,
+						},
+					},
+				},
+			},
 		}
 	}
 
