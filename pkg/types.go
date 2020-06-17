@@ -670,7 +670,7 @@ func getWorkflowTemplateColumns(alias string, destination string, extraColumns .
 // returns all of the columns for workflow template versions modified by alias, destination.
 // see formatColumnSelect
 func getWorkflowTemplateVersionColumns(alias string, destination string, extraColumns ...string) []string {
-	columns := []string{"id", "uid", "created_at", "version", "is_latest", "manifest"}
+	columns := []string{"id", "created_at", "version", "is_latest", "manifest"}
 	return formatColumnSelect(columns, alias, destination, extraColumns...)
 }
 

@@ -44,17 +44,15 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		}).
 		Suffix("RETURNING id").
 		RunWith(tx).
-		QueryRow().Scan(&workflowTemplate.ID)
+		QueryRow().
+		Scan(&workflowTemplate.ID)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	versionUID := strconv.FormatInt(versionUnix, 10)
-
 	workflowTemplateVersion := &WorkflowTemplateVersion{}
 	err = sb.Insert("workflow_template_versions").
 		SetMap(sq.Eq{
-			"uid":                  versionUID,
 			"workflow_template_id": workflowTemplate.ID,
 			"version":              versionUnix,
 			"is_latest":            true,
@@ -83,7 +81,7 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, nil, err
 	}
 
-	argoWft.Labels[label.WorkflowTemplateVersionUid] = versionUID
+	argoWft.Labels[label.WorkflowTemplateVersionUid] = strconv.FormatInt(versionUnix, 10)
 
 	if workflowTemplate.Resource != nil && workflowTemplate.ResourceUID != nil {
 		if *workflowTemplate.Resource == TypeWorkspaceTemplate {
@@ -119,7 +117,7 @@ func (c *Client) workflowTemplatesSelectBuilder(namespace string) sq.SelectBuild
 }
 
 func (c *Client) workflowTemplatesVersionSelectBuilder(namespace string) sq.SelectBuilder {
-	sb := sb.Select("wtv.id", "wtv.uid", "wtv.version", "wtv.is_latest", "wtv.manifest", "wtv.created_at").
+	sb := sb.Select("wtv.id", "wtv.version", "wtv.is_latest", "wtv.manifest", "wtv.created_at").
 		From("workflow_template_versions wtv").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{
@@ -430,12 +428,10 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 		return nil, err
 	}
 
-	uid := strconv.FormatInt(versionUnix, 10)
 	workflowTemplateVersionId := uint64(0)
 	err = sb.Insert("workflow_template_versions").
 		SetMap(sq.Eq{
 			"workflow_template_id": workflowTemplateDb.ID,
-			"uid":                  uid,
 			"version":              versionUnix,
 			"is_latest":            true,
 			"manifest":             workflowTemplate.Manifest,
@@ -480,7 +476,7 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 	updatedTemplate.TypeMeta = v1.TypeMeta{}
 	updatedTemplate.ObjectMeta.ResourceVersion = ""
 	updatedTemplate.ObjectMeta.SetSelfLink("")
-	updatedTemplate.Labels[label.WorkflowTemplateVersionUid] = uid
+	updatedTemplate.Labels[label.WorkflowTemplateVersionUid] = strconv.FormatInt(versionUnix, 10)
 
 	parametersMap, err := workflowTemplate.GetParametersKeyString()
 	if err != nil {

@@ -22,9 +22,6 @@ func (c *Client) ListLabels(resource string, uid string) (labels []*Label, err e
 	case TypeWorkflowTemplate:
 		sb = sb.Join("workflow_templates wt ON wt.id = l.resource_id").
 			Where(sq.Eq{"wt.uid": uid})
-	case TypeWorkflowTemplateVersion:
-		sb = sb.Join("workflow_template_versions wtv ON wtv.id = l.resource_id").
-			Where(sq.Eq{"wtv.uid": uid})
 	case TypeWorkflowExecution:
 		sb = sb.Join("workflow_executions we ON we.id = l.resource_id").
 			Where(sq.Eq{"we.uid": uid})
