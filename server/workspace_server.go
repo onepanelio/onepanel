@@ -123,7 +123,7 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 
 func (s *WorkspaceServer) GetWorkspace(ctx context.Context, req *api.GetWorkspaceRequest) (*api.Workspace, error) {
 	client := getClient(ctx)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "onepanel.io", "workspaces", "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "onepanel.io", "workspaces", req.Uid)
 	if err != nil || !allowed {
 		return nil, err
 	}
