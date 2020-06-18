@@ -48,13 +48,20 @@ func main() {
 	stopCh := make(chan struct{})
 
 	go func() {
-		for {
-			kubeConfig := v1.NewConfig()
-			client, err := v1.NewClient(kubeConfig, nil, nil)
-			if err != nil {
-				log.Fatalf("Failed to connect to Kubernetes cluster: %v", err)
-			}
+		kubeConfig := v1.NewConfig()
+		client, err := v1.NewClient(kubeConfig, nil, nil)
+		if err != nil {
+			log.Fatalf("Failed to connect to Kubernetes cluster: %v", err)
+		}
 
+		go watchConfigmapChanges(client, "onepanel", stopCh, func(configMap *corev1.ConfigMap) error {
+			log.Printf("Configmap changed")
+			stopCh <- struct{}{}
+
+			return nil
+		})
+
+		for {
 			client.ClearSystemConfigCache()
 			sysConfig, err := client.GetSystemConfig()
 			if err != nil {
@@ -124,22 +131,12 @@ func startRPCServer(db *v1.DB, kubeConfig *v1.Config, sysConfig v1.SystemConfig,
 	api.RegisterWorkspaceTemplateServiceServer(s, server.NewWorkspaceTemplateServer())
 	api.RegisterWorkspaceServiceServer(s, server.NewWorkspaceServer())
 
-	client, err := v1.NewClient(kubeConfig, db, sysConfig)
-	if err != nil {
-		log.Fatalf("Unable to create client: %v", err)
-	}
-
-	go watchConfigmapChanges(client, "onepanel", stopCh, func(configMap *corev1.ConfigMap) error {
-		log.Printf("Configmap changed")
-		stopCh <- struct{}{}
-
-		return nil
-	})
-
 	go func() {
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("Failed to serve RPC server: %v", err)
 		}
+
+		log.Printf("Server finished")
 	}()
 
 	return s
