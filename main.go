@@ -13,6 +13,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"net"
 	"net/http"
+	"sync"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -47,6 +48,8 @@ func main() {
 	// We do this when the configuration has been changed, so the server has the latest configuration
 	stopCh := make(chan struct{})
 
+	lock := sync.RWMutex{}
+
 	go func() {
 		kubeConfig := v1.NewConfig()
 		client, err := v1.NewClient(kubeConfig, nil, nil)
@@ -57,6 +60,7 @@ func main() {
 		go watchConfigmapChanges(client, "onepanel", stopCh, func(configMap *corev1.ConfigMap) error {
 			log.Printf("Configmap changed")
 			stopCh <- struct{}{}
+			lock.Unlock()
 
 			return nil
 		})
@@ -78,9 +82,19 @@ func main() {
 
 			s := startRPCServer(db, kubeConfig, sysConfig, stopCh)
 
-			<-stopCh
+			lock.Lock()
+
+			log.Printf("Past first lock")
+
+			lock.Lock()
+
+			//<-stopCh
+			log.Printf("Stop channel is done, stopping server")
 
 			s.Stop()
+
+			log.Printf("Stop channel is done, server stopped")
+			lock.Unlock()
 		}
 	}()
 
