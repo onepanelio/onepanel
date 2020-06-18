@@ -5,6 +5,8 @@ import (
 	"flag"
 	"fmt"
 	_ "github.com/onepanelio/core/db"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	corev1 "k8s.io/api/core/v1"
 	apiv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -13,10 +15,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"net"
 	"net/http"
-	"sync"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"github.com/gorilla/handlers"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -48,8 +46,6 @@ func main() {
 	// We do this when the configuration has been changed, so the server has the latest configuration
 	stopCh := make(chan struct{})
 
-	lock := sync.RWMutex{}
-
 	go func() {
 		kubeConfig := v1.NewConfig()
 		client, err := v1.NewClient(kubeConfig, nil, nil)
@@ -60,7 +56,6 @@ func main() {
 		go watchConfigmapChanges(client, "onepanel", stopCh, func(configMap *corev1.ConfigMap) error {
 			log.Printf("Configmap changed")
 			stopCh <- struct{}{}
-			lock.Unlock()
 
 			return nil
 		})
@@ -75,26 +70,20 @@ func main() {
 			databaseDataSourceName := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
 				sysConfig["databaseHost"], sysConfig["databaseUsername"], sysConfig["databasePassword"], sysConfig["databaseName"])
 
-			db := sqlx.MustConnect(sysConfig["databaseDriverName"], databaseDataSourceName)
+			// sqlx.MustConnect will panic when it can't connect to DB. In that case, this whole application will crash.
+			// This is okay, as the pod will restart and try connecting to DB again.
+			// dbDriverName may be nil, but sqlx will then panic.
+			dbDriverName := sysConfig.DatabaseDriverName()
+			db := sqlx.MustConnect(*dbDriverName, databaseDataSourceName)
 			if err := goose.Run("up", db.DB, "db"); err != nil {
 				log.Fatalf("Failed to run database migrations: %v", err)
 			}
 
 			s := startRPCServer(db, kubeConfig, sysConfig, stopCh)
 
-			lock.Lock()
-
-			log.Printf("Past first lock")
-
-			lock.Lock()
-
-			//<-stopCh
-			log.Printf("Stop channel is done, stopping server")
+			<-stopCh
 
 			s.Stop()
-
-			log.Printf("Stop channel is done, server stopped")
-			lock.Unlock()
 		}
 	}()
 
@@ -250,6 +239,8 @@ func watchConfigmapChanges(client *v1.Client, namespace string, stopCh <-chan st
 				}
 			},
 		})
-	controller.Run(stopCh)
-	log.Infof("Watching config map updates")
+
+	// We don't want the watcher to ever stop, so give it a channel that will never be hit.
+	neverStopCh := make(chan struct{})
+	controller.Run(neverStopCh)
 }
