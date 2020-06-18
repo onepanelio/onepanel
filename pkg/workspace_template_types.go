@@ -112,7 +112,7 @@ func (wt *WorkspaceTemplate) RuntimeVars(config map[string]string) (runtimeVars 
 }
 
 // InjectRuntimeVariables will inject all runtime variables into the WorkflowTemplate's manifest.
-func (wt *WorkspaceTemplate) InjectRuntimeVariables(config map[string]string) error {
+func (wt *WorkspaceTemplate) InjectRuntimeVariables(config SystemConfig) error {
 	if wt.WorkflowTemplate == nil {
 		return fmt.Errorf("workflow Template is nil for workspace template")
 	}
@@ -139,6 +139,7 @@ func (wt *WorkspaceTemplate) InjectRuntimeVariables(config map[string]string) er
 	for _, param := range runtimeVars.AdditionalParameters {
 		parametersArray = append(parametersArray, param)
 	}
+	argumentsMap["parameters"] = parametersArray
 
 	templates := parsedManifest["templates"].([]interface{})
 	finalTemplates := make([]interface{}, 0)
@@ -158,6 +159,8 @@ func (wt *WorkspaceTemplate) InjectRuntimeVariables(config map[string]string) er
 			resourceMap := resource.(map[interface{}]interface{})
 			resourceMap["manifest"] = runtimeVars.StatefulSetManifest
 		}
+
+		finalTemplates = append(finalTemplates, template)
 	}
 	finalTemplates = append(finalTemplates, runtimeVars.VirtualService)
 	parsedManifest["templates"] = finalTemplates
@@ -187,7 +190,7 @@ func WorkspaceTemplatesToVersionIds(resources []*WorkspaceTemplate) (ids []uint6
 	return
 }
 
-// returns all of the columns for workspace template modified by alias, destination.
+// getWorkspaceTemplateColumns returns all of the columns for workspace template modified by alias, destination.
 // see formatColumnSelect
 func getWorkspaceTemplateColumns(alias string, destination string, extraColumns ...string) []string {
 	columns := []string{"id", "uid", "created_at", "modified_at", "name", "namespace", "is_archived", "workflow_template_id"}

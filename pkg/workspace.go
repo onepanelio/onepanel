@@ -20,7 +20,7 @@ func (c *Client) workspacesSelectBuilder(namespace string) sq.SelectBuilder {
 		Columns(getWorkspaceStatusColumns("w", "status")...).
 		Columns(getWorkspaceTemplateColumns("wt", "workspace_template")...).
 		Columns(getWorkflowTemplateVersionColumns("wftv", "workflow_template_version")...).
-		Columns("wtv.version \"workspace_template.version\"").
+		Columns("wtv.version \"workspace_template.version\"", `wtv.manifest "workspace_template.manifest"`).
 		From("workspaces w").
 		Join("workspace_templates wt ON wt.id = w.workspace_template_id").
 		Join("workspace_template_versions wtv ON wtv.workspace_template_id = wt.id AND wtv.version = w.workspace_template_version").
@@ -217,6 +217,19 @@ func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err 
 	if err != nil {
 		return nil, err
 	}
+
+	workspace.WorkspaceTemplate.WorkflowTemplate = &WorkflowTemplate{
+		Manifest: workspace.WorkflowTemplateVersion.Manifest,
+	}
+
+	configMap, err := c.GetSystemConfig()
+	if err != nil {
+		return nil, err
+	}
+	if err := workspace.WorkspaceTemplate.InjectRuntimeVariables(configMap); err != nil {
+		return nil, err
+	}
+	workspace.WorkflowTemplateVersion.Manifest = workspace.WorkspaceTemplate.WorkflowTemplate.Manifest
 
 	if err = json.Unmarshal(workspace.ParametersBytes, &workspace.Parameters); err != nil {
 		return
