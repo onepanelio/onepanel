@@ -11,7 +11,39 @@ import (
 
 // SystemConfig is configuration loaded from kubernetes config and secrets that includes information about the
 // database, server, etc.
-type SystemConfig = map[string]string
+type SystemConfig map[string]string
+
+// GetValue returns the value in the underlying map if it exists, otherwise nil is returned
+// If the value does not exist, it is also logged.
+func (s SystemConfig) GetValue(name string) *string {
+	value, ok := s[name]
+	if !ok {
+		log.WithFields(log.Fields{
+			"Method": "SystemConfig.GetValue",
+			"Name":   name,
+			"Error":  "does not exist",
+		})
+
+		return nil
+	}
+
+	return &value
+}
+
+// OnepanelDomain gets the ONEPANEL_DOMAIN value, or nil.
+func (s SystemConfig) OnepanelDomain() *string {
+	return s.GetValue("ONEPANEL_DOMAIN")
+}
+
+// NodePoolOptions gets the applicationNodePoolOptions value, or nil.
+func (s SystemConfig) NodePoolOptions() *string {
+	return s.GetValue("applicationNodePoolOptions")
+}
+
+// DatabaseDriverName gets the databaseDriverName value, or nil.
+func (s SystemConfig) DatabaseDriverName() *string {
+	return s.GetValue("databaseDriverName")
+}
 
 func (c *Client) getConfigMap(namespace, name string) (configMap *ConfigMap, err error) {
 	cm, err := c.CoreV1().ConfigMaps(namespace).Get(name, metav1.GetOptions{})
@@ -34,7 +66,7 @@ func (c *Client) ClearSystemConfigCache() {
 
 // GetSystemConfig loads various system configurations and bundles them into a map.
 // The configuration is cached once it is loaded, and that cached value is used from here on out.
-func (c *Client) GetSystemConfig() (config map[string]string, err error) {
+func (c *Client) GetSystemConfig() (config SystemConfig, err error) {
 	if c.systemConfig != nil {
 		return c.systemConfig, nil
 	}
