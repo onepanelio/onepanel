@@ -101,8 +101,10 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 	return workflowTemplate, workflowTemplateVersion, nil
 }
 
-func (c *Client) workflowTemplatesSelectBuilder(namespace string) sq.SelectBuilder {
-	sb := sb.Select(getWorkflowTemplateColumns("wt", "")...).
+// baseWorkflowTemplatesSelectBuilder returns a SelectBuilder selecting a WorkflowTemplate from the database for a given namespace
+// no columns are selected.
+func (c *Client) baseWorkflowTemplatesSelectBuilder(namespace string) sq.SelectBuilder {
+	sb := sb.Select().
 		From("workflow_templates wt").
 		Where(sq.Eq{
 			"wt.namespace": namespace,
@@ -111,8 +113,26 @@ func (c *Client) workflowTemplatesSelectBuilder(namespace string) sq.SelectBuild
 	return sb
 }
 
+// workflowTemplatesSelectBuilder returns a SelectBuilder selecting a WorkflowTemplate from the database for a given namespace
+// with all of the columns of a WorkflowTemplate
+func (c *Client) workflowTemplatesSelectBuilder(namespace string) sq.SelectBuilder {
+	sb := c.baseWorkflowTemplatesSelectBuilder(namespace).
+		Columns(getWorkflowTemplateColumns("wt")...)
+
+	return sb
+}
+
+// countWorkflowTemplateSelectBuilder returns a select builder selecting the total count of WorkflowTemplates
+// given the namespace
+func (c *Client) countWorkflowTemplateSelectBuilder(namespace string) sq.SelectBuilder {
+	sb := c.baseWorkflowTemplatesSelectBuilder(namespace).
+		Columns("COUNT(*)")
+
+	return sb
+}
+
 func (c *Client) workflowTemplatesVersionSelectBuilder(namespace string) sq.SelectBuilder {
-	sb := sb.Select(getWorkflowTemplateVersionColumns("wtv", "")...).
+	sb := sb.Select(getWorkflowTemplateVersionColumns("wtv")...).
 		From("workflow_template_versions wtv").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{
@@ -122,26 +142,21 @@ func (c *Client) workflowTemplatesVersionSelectBuilder(namespace string) sq.Sele
 	return sb
 }
 
-func (c *Client) GetWorkflowTemplateDb(namespace, name string) (workflowTemplate *WorkflowTemplate, err error) {
-	query, args, err := c.workflowTemplatesSelectBuilder(namespace).
+// GetWorkflowTemplateDB returns a WorkflowTemplate from the database
+func (c *Client) GetWorkflowTemplateDB(namespace, name string) (workflowTemplate *WorkflowTemplate, err error) {
+	sb := c.workflowTemplatesSelectBuilder(namespace).
 		Where(sq.Eq{
 			"name": name,
-		}).
-		ToSql()
+		})
 
-	if err != nil {
-		return nil, err
-	}
-
-	if err := c.DB.Get(workflowTemplate, query, args...); err != nil {
-		return nil, err
-	}
+	err = c.DB.Getx(workflowTemplate, sb)
 
 	return
 }
 
-// "latest" will get you the latest version
-func (c *Client) GetWorkflowTemplateVersionDb(namespace, name, version string) (workflowTemplateVersion *WorkflowTemplateVersion, err error) {
+// GetWorkflowTemplateVersionDB will return a WorkflowTemplateVersion given the arguments.
+// version can be a number as a string, or the string "latest" to get the latest.
+func (c *Client) GetWorkflowTemplateVersionDB(namespace, name, version string) (workflowTemplateVersion *WorkflowTemplateVersion, err error) {
 	whereMap := sq.Eq{
 		"wt.name": name,
 	}
@@ -152,19 +167,17 @@ func (c *Client) GetWorkflowTemplateVersionDb(namespace, name, version string) (
 		whereMap["wtv.version"] = version
 	}
 
-	query, args, err := c.workflowTemplatesVersionSelectBuilder(namespace).
-		Where(whereMap).
-		ToSql()
+	sb := c.workflowTemplatesVersionSelectBuilder(namespace).
+		Where(whereMap)
 
-	if err != nil {
-		return nil, err
-	}
-
-	if err := c.DB.Get(workflowTemplateVersion, query, args...); err != nil {
-		return nil, err
-	}
+	err = c.DB.Getx(workflowTemplateVersion, sb)
 
 	return
+}
+
+// GetLatestWorkflowTemplateVersionDB returns the latest WorkflowTemplateVersion
+func (c *Client) GetLatestWorkflowTemplateVersionDB(namespace, name string) (workflowTemplateVersion *WorkflowTemplateVersion, err error) {
+	return c.GetWorkflowTemplateVersionDB(namespace, name, "latest")
 }
 
 func (c *Client) getWorkflowTemplateById(id uint64) (workflowTemplate *WorkflowTemplate, err error) {
@@ -184,7 +197,6 @@ func (c *Client) getWorkflowTemplateById(id uint64) (workflowTemplate *WorkflowT
 	return
 }
 
-// @todo remove argoworkflow template here
 // If version is 0, the latest workflow template is fetched.
 func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (workflowTemplate *WorkflowTemplate, err error) {
 	workflowTemplate = &WorkflowTemplate{
@@ -207,13 +219,12 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (work
 		sb = sb.Where(sq.Eq{"wtv.version": version})
 	}
 
-	query, args, err := sb.ToSql()
-	if err != nil {
-		return
-	}
-
-	if err = c.DB.Get(workflowTemplate, query, args...); err == sql.ErrNoRows {
-		return nil, nil
+	if err = c.Getx(workflowTemplate, sb); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		} else {
+			return nil, err
+		}
 	}
 
 	versionAsString := "latest"
@@ -242,30 +253,6 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (work
 	workflowTemplate.Labels = labelsMap[workflowTemplate.WorkflowTemplateVersionId]
 
 	return workflowTemplate, nil
-}
-
-// TODO version = is latest?
-func (c *Client) getWorkflowTemplateByName(namespace, name string, version int64) (workflowTemplate *WorkflowTemplate, err error) {
-	workflowTemplate = &WorkflowTemplate{}
-
-	sb := c.workflowTemplatesSelectBuilder(namespace).Where(sq.Eq{"wt.name": name}).
-		Columns("wtv.manifest").
-		OrderBy("wtv.version desc").
-		Limit(1)
-	if version != 0 {
-		sb = sb.Where(sq.Eq{"wtv.version": version})
-	}
-	query, args, err := sb.ToSql()
-	if err != nil {
-		return
-	}
-
-	if err = c.DB.Get(workflowTemplate, query, args...); err == sql.ErrNoRows {
-		err = nil
-		workflowTemplate = nil
-	}
-
-	return
 }
 
 func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTemplateVersions []*WorkflowTemplate, err error) {
@@ -499,7 +486,13 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 	return workflowTemplate, nil
 }
 
-// If version is 0, it returns the latest.
+// GetWorkflowTemplate returns a WorkflowTemplate with data loaded from various sources
+// If version is 0, it returns the latest version data.
+//
+// Data loaded includes
+// * Database Information
+// * ArgoWorkflowTemplate
+// * Labels
 func (c *Client) GetWorkflowTemplate(namespace, uid string, version int64) (workflowTemplate *WorkflowTemplate, err error) {
 	workflowTemplate, err = c.getWorkflowTemplate(namespace, uid, version)
 	if err != nil {
@@ -517,28 +510,30 @@ func (c *Client) GetWorkflowTemplate(namespace, uid string, version int64) (work
 	return
 }
 
-// TODO version 0 = latest?
-func (c *Client) GetWorkflowTemplateByName(namespace, name string, version int64) (workflowTemplate *WorkflowTemplate, err error) {
-	workflowTemplate, err = c.getWorkflowTemplateByName(namespace, name, version)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace":        namespace,
-			"WorkflowTemplate": workflowTemplate,
-			"Error":            err.Error(),
-		}).Error("Get Workflow Template failed.")
-		return nil, util.NewUserError(codes.Unknown, "Unknown error.")
+// GetLatestWorkflowTemplate returns a workflow template with the latest version data.
+func (c *Client) GetLatestWorkflowTemplate(namespace, uid string) (workflowTemplate *WorkflowTemplate, err error) {
+	return c.GetWorkflowTemplate(namespace, uid, 0)
+}
+
+// CountWorkflowTemplatesByName returns the number of WorkflowTemplates given the arguments.
+// If archived is nil, it is not considered.
+func (c *Client) CountWorkflowTemplatesByName(namespace, name string, archived *bool) (count uint64, err error) {
+	sb := c.countWorkflowTemplateSelectBuilder(namespace).
+		Where(sq.Eq{"wt.name": name})
+
+	if archived != nil {
+		sb = sb.Where(sq.Eq{"wt.is_archived": *archived})
 	}
-	if workflowTemplate == nil {
-		return nil, util.NewUserError(codes.NotFound, "Workflow template not found.")
-	}
+
+	err = sb.RunWith(c.DB).
+		QueryRow().
+		Scan(&count)
 
 	return
 }
 
 // CountWorkflowTemplateVersions returns the number of versions a non-archived WorkflowTemplate has.
 func (c *Client) CountWorkflowTemplateVersions(namespace, uid string) (count uint64, err error) {
-	count = 0
-
 	err = sb.Select("COUNT(*)").
 		From("workflow_templates wt").
 		Join("workflow_template_versions wtv ON wtv.workflow_template_id = wt.id").
