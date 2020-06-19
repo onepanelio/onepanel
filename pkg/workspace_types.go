@@ -3,6 +3,7 @@ package v1
 import (
 	"fmt"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/onepanelio/core/sqlutil"
 	networking "istio.io/api/networking/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
 	"time"
@@ -62,16 +63,32 @@ func (w *Workspace) GetURL(protocol, domain string) string {
 	return fmt.Sprintf("%v%v--%v.%v", protocol, w.UID, w.Namespace, domain)
 }
 
-// returns all of the columns for workspace modified by alias, destination.
+// getWorkspaceColumns returns all of the columns for workspace modified by alias, destination.
 // see formatColumnSelect
-func getWorkspaceColumns(alias string, destination string, extraColumns ...string) []string {
+func getWorkspaceColumns(aliasAndDestination ...string) []string {
 	columns := []string{"id", "created_at", "modified_at", "uid", "name", "namespace", "parameters", "workspace_template_id", "workspace_template_version"}
-	return formatColumnSelect(columns, alias, destination, extraColumns...)
+	return sqlutil.FormatColumnSelect(columns, aliasAndDestination...)
 }
 
-// returns all of the columns for WorkspaceStatus modified by alias, destination.
+// getWorkspaceStatusColumns returns all of the columns for WorkspaceStatus modified by alias, destination.
 // see formatColumnSelect
-func getWorkspaceStatusColumns(alias string, destination string, extraColumns ...string) []string {
+func getWorkspaceStatusColumns(aliasAndDestination ...string) []string {
 	columns := []string{"phase", "started_at", "paused_at", "terminated_at"}
-	return formatColumnSelect(columns, alias, destination, extraColumns...)
+	return sqlutil.FormatColumnSelect(columns, aliasAndDestination...)
+}
+
+// WorkspacesToIDs returns an array of ids from the input Workspaces with no duplicates.
+func WorkspacesToIDs(resources []*Workspace) (ids []uint64) {
+	mappedIds := make(map[uint64]bool)
+
+	// This is to make sure we don't have duplicates
+	for _, resource := range resources {
+		mappedIds[resource.ID] = true
+	}
+
+	for id := range mappedIds {
+		ids = append(ids, id)
+	}
+
+	return
 }

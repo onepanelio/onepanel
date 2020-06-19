@@ -159,7 +159,7 @@ func (s *WorkflowServer) GetWorkflowExecution(ctx context.Context, req *api.GetW
 		return nil, err
 	}
 
-	mappedLabels, err := client.GetDbLabelsMapped(v1.TypeWorkflowExecution, wf.ID)
+	mappedLabels, err := client.GetDBLabelsMapped(v1.TypeWorkflowExecution, wf.ID)
 	if err != nil {
 		return nil, err
 	}

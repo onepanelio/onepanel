@@ -16,7 +16,7 @@ import (
 )
 
 func (c *Client) workspacesSelectBuilder(namespace string) sq.SelectBuilder {
-	sb := sb.Select(getWorkspaceColumns("w", "")...).
+	sb := sb.Select(getWorkspaceColumns("w")...).
 		Columns(getWorkspaceStatusColumns("w", "status")...).
 		Columns(getWorkspaceTemplateColumns("wt", "workspace_template")...).
 		Columns(getWorkflowTemplateVersionColumns("wftv", "workflow_template_version")...).
@@ -235,7 +235,7 @@ func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err 
 		return
 	}
 
-	labelsMap, err := c.GetDbLabelsMapped(TypeWorkspace, workspace.ID)
+	labelsMap, err := c.GetDBLabelsMapped(TypeWorkspace, workspace.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -291,7 +291,7 @@ func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceS
 // ListWorkspacesByTemplateID will return all the workspaces for a given workspace template id.
 // Sourced from database.
 func (c *Client) ListWorkspacesByTemplateID(namespace string, templateID uint64) (workspaces []*Workspace, err error) {
-	sb := sb.Select(getWorkspaceColumns("w", "")...).
+	sb := sb.Select(getWorkspaceColumns("w")...).
 		From("workspaces w").
 		Where(sq.And{
 			sq.Eq{
@@ -311,7 +311,7 @@ func (c *Client) ListWorkspacesByTemplateID(namespace string, templateID uint64)
 		return nil, err
 	}
 
-	labelMap, err := c.GetDbLabelsMapped(TypeWorkspace, WorkspacesToIds(workspaces)...)
+	labelMap, err := c.GetDBLabelsMapped(TypeWorkspace, WorkspacesToIDs(workspaces)...)
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +323,7 @@ func (c *Client) ListWorkspacesByTemplateID(namespace string, templateID uint64)
 }
 
 func (c *Client) ListWorkspaces(namespace string, paginator *pagination.PaginationRequest) (workspaces []*Workspace, err error) {
-	sb := sb.Select(getWorkspaceColumns("w", "")...).
+	sb := sb.Select(getWorkspaceColumns("w")...).
 		Columns(getWorkspaceStatusColumns("w", "status")...).
 		Columns(getWorkspaceTemplateColumns("wt", "workspace_template")...).
 		From("workspaces w").
@@ -339,16 +339,11 @@ func (c *Client) ListWorkspaces(namespace string, paginator *pagination.Paginati
 		})
 	sb = *paginator.ApplyToSelect(&sb)
 
-	query, args, err := sb.ToSql()
-	if err != nil {
+	if err := c.DB.Selectx(&workspaces, sb); err != nil {
 		return nil, err
 	}
 
-	if err := c.DB.Select(&workspaces, query, args...); err != nil {
-		return nil, err
-	}
-
-	labelMap, err := c.GetDbLabelsMapped(TypeWorkspace, WorkspacesToIds(workspaces)...)
+	labelMap, err := c.GetDBLabelsMapped(TypeWorkspace, WorkspacesToIDs(workspaces)...)
 	if err != nil {
 		return nil, err
 	}

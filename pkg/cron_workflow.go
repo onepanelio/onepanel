@@ -373,7 +373,7 @@ func (c *Client) ListCronWorkflows(namespace, workflowTemplateUID string, pagina
 	if err := c.DB.Select(&cronWorkflows, query, args...); err != nil {
 		return nil, err
 	}
-	labelsMap, err := c.GetDbLabelsMapped(TypeCronWorkflow, CronWorkflowsToIds(cronWorkflows)...)
+	labelsMap, err := c.GetDBLabelsMapped(TypeCronWorkflow, CronWorkflowsToIDs(cronWorkflows)...)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -526,7 +526,7 @@ func (c *Client) TerminateCronWorkflow(namespace, uid string) (err error) {
 	//workflow executions
 	var workflows []*WorkflowExecution
 	query, args, err := sb.Select().
-		Columns(getWorkflowExecutionColumns("we", "")...).
+		Columns(getWorkflowExecutionColumns("we")...).
 		From("workflow_executions we").
 		Where(sq.Eq{
 			"cron_workflow_id": cronWorkflow.ID,
@@ -662,8 +662,8 @@ func (c *Client) GetCronWorkflowStatisticsForTemplates(workflowTemplates ...*Wor
 	return
 }
 
-func (c *Client) selectCronWorkflowWithWorkflowTemplateVersion(namespace, uid string, extraColumns ...string) (*CronWorkflow, error) {
-	query, args, err := sb.Select(getCronWorkflowColumns(extraColumns...)...).
+func (c *Client) selectCronWorkflowWithWorkflowTemplateVersion(namespace, uid string) (*CronWorkflow, error) {
+	query, args, err := sb.Select(getCronWorkflowColumns("cw")...).
 		From("cron_workflows cw").
 		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
