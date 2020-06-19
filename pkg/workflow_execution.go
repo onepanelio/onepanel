@@ -6,11 +6,11 @@ import (
 	"errors"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
-	"github.com/ghodss/yaml"
 	"github.com/onepanelio/core/pkg/util/label"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
+	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
 	"k8s.io/apimachinery/pkg/watch"
@@ -328,7 +328,9 @@ func (c *Client) ValidateWorkflowExecution(namespace string, manifest []byte) (e
 	return
 }
 
-func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExecution) (*WorkflowExecution, error) {
+// CreateWorkflowExecution creates an argo workflow execution and related resources.
+// Note that the workflow template is loaded from the database/k8s, so workflow.WorkflowTemplate.Manifest is not used.
+func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExecution, runtimeVars *RuntimeVars) (*WorkflowExecution, error) {
 	workflowTemplate, err := c.GetWorkflowTemplate(namespace, workflow.WorkflowTemplate.UID, workflow.WorkflowTemplate.Version)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -337,6 +339,31 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 			"Error":     err.Error(),
 		}).Error("Error with getting workflow template.")
 		return nil, util.NewUserError(codes.NotFound, "Error with getting workflow template.")
+	}
+
+	if runtimeVars != nil && workflowTemplate.ArgoWorkflowTemplate != nil {
+		argoTemplate := workflowTemplate.ArgoWorkflowTemplate
+		for _, param := range runtimeVars.AdditionalParameters {
+			argoTemplate.Spec.Arguments.Parameters = append(argoTemplate.Spec.Arguments.Parameters, wfv1.Parameter{
+				Name:  param.Name,
+				Value: param.Value,
+			})
+		}
+
+		finalTemplates := make([]wfv1.Template, 0)
+		for i := range argoTemplate.Spec.Templates {
+			template := &argoTemplate.Spec.Templates[i]
+
+			if template.Name == "stateful-set-resource" {
+				template.Resource.Manifest = runtimeVars.StatefulSetManifest
+			}
+
+			if template.Name != runtimeVars.VirtualService.Name {
+				finalTemplates = append(finalTemplates, *template)
+			}
+		}
+		finalTemplates = append(finalTemplates, *runtimeVars.VirtualService)
+		workflowTemplate.ArgoWorkflowTemplate.Spec.Templates = finalTemplates
 	}
 
 	// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
@@ -416,7 +443,7 @@ func (c *Client) CloneWorkflowExecution(namespace, uid string) (*WorkflowExecuti
 		return nil, err
 	}
 
-	return c.CreateWorkflowExecution(namespace, workflowExecution)
+	return c.CreateWorkflowExecution(namespace, workflowExecution, nil)
 }
 
 func (c *Client) insertPreWorkflowExecutionStatistic(namespace, name string, workflowTemplateVersionId uint64, createdAt time.Time, uid string, parameters []Parameter) (newId uint64, err error) {

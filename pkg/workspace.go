@@ -20,7 +20,7 @@ func (c *Client) workspacesSelectBuilder(namespace string) sq.SelectBuilder {
 		Columns(getWorkspaceStatusColumns("w", "status")...).
 		Columns(getWorkspaceTemplateColumns("wt", "workspace_template")...).
 		Columns(getWorkflowTemplateVersionColumns("wftv", "workflow_template_version")...).
-		Columns("wtv.version \"workspace_template.version\"").
+		Columns("wtv.version \"workspace_template.version\"", `wtv.manifest "workspace_template.manifest"`).
 		From("workspaces w").
 		Join("workspace_templates wt ON wt.id = w.workspace_template_id").
 		Join("workspace_template_versions wtv ON wtv.workspace_template_id = wt.id AND wtv.version = w.workspace_template_version").
@@ -98,10 +98,21 @@ func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, wor
 }
 
 func (c *Client) createWorkspace(namespace string, parameters []byte, workspace *Workspace) (*Workspace, error) {
-	_, err := c.CreateWorkflowExecution(namespace, &WorkflowExecution{
+	systemConfig, err := c.GetSystemConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	runtimeVars, err := workspace.WorkspaceTemplate.RuntimeVars(systemConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = c.CreateWorkflowExecution(namespace, &WorkflowExecution{
 		Parameters:       workspace.Parameters,
 		WorkflowTemplate: workspace.WorkspaceTemplate.WorkflowTemplate,
-	})
+	}, runtimeVars)
+
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +127,6 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 			"started_at":                 time.Now().UTC(),
 			"workspace_template_id":      workspace.WorkspaceTemplate.ID,
 			"workspace_template_version": workspace.WorkspaceTemplate.Version,
-			"url":                        workspace.URL,
 		}).
 		Suffix("RETURNING id, created_at").
 		RunWith(c.DB).
@@ -154,7 +164,6 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 	if sysHost == nil {
 		return nil, fmt.Errorf("sys-host parameter not found")
 	}
-	workspace.URL = *sysHost
 
 	existingWorkspace, err := c.GetWorkspace(namespace, workspace.UID)
 	if err != nil {
@@ -208,6 +217,19 @@ func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err 
 	if err != nil {
 		return nil, err
 	}
+
+	workspace.WorkspaceTemplate.WorkflowTemplate = &WorkflowTemplate{
+		Manifest: workspace.WorkflowTemplateVersion.Manifest,
+	}
+
+	configMap, err := c.GetSystemConfig()
+	if err != nil {
+		return nil, err
+	}
+	if err := workspace.WorkspaceTemplate.InjectRuntimeVariables(configMap); err != nil {
+		return nil, err
+	}
+	workspace.WorkflowTemplateVersion.Manifest = workspace.WorkspaceTemplate.WorkflowTemplate.Manifest
 
 	if err = json.Unmarshal(workspace.ParametersBytes, &workspace.Parameters); err != nil {
 		return
@@ -394,7 +416,7 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 	_, err = c.CreateWorkflowExecution(namespace, &WorkflowExecution{
 		Parameters:       workspace.Parameters,
 		WorkflowTemplate: workspace.WorkspaceTemplate.WorkflowTemplate,
-	})
+	}, nil)
 	if err != nil {
 		return
 	}

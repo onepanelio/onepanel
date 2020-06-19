@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"fmt"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	networking "istio.io/api/networking/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
@@ -42,7 +43,6 @@ type Workspace struct {
 	WorkspaceTemplate        *WorkspaceTemplate       `db:"workspace_template" valid:"-"`
 	WorkspaceTemplateID      uint64                   `db:"workspace_template_id"`
 	WorkspaceTemplateVersion uint64                   `db:"workspace_template_version"`
-	URL                      string                   `db:"url"`                       // the path to the workspace, a url that you can access via http
 	WorkflowTemplateVersion  *WorkflowTemplateVersion `db:"workflow_template_version"` // helper to store data from workflow template version
 }
 
@@ -55,10 +55,17 @@ type WorkspaceSpec struct {
 	PostExecutionWorkflow *wfv1.WorkflowTemplateSpec     `json:"postExecutionWorkflow" protobuf:"bytes,7,opt,name=postExecutionWorkflow"`
 }
 
+// GetURL returns a url that can be used to access the workspace in a browser.
+// protocol is either http:// or https://
+// domain is the domain, e.g. test.onepanel.io
+func (w *Workspace) GetURL(protocol, domain string) string {
+	return fmt.Sprintf("%v%v--%v.%v", protocol, w.UID, w.Namespace, domain)
+}
+
 // returns all of the columns for workspace modified by alias, destination.
 // see formatColumnSelect
 func getWorkspaceColumns(alias string, destination string, extraColumns ...string) []string {
-	columns := []string{"id", "created_at", "modified_at", "uid", "name", "namespace", "parameters", "workspace_template_id", "workspace_template_version", "url"}
+	columns := []string{"id", "created_at", "modified_at", "uid", "name", "namespace", "parameters", "workspace_template_id", "workspace_template_version"}
 	return formatColumnSelect(columns, alias, destination, extraColumns...)
 }
 

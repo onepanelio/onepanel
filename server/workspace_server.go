@@ -9,24 +9,39 @@ import (
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/onepanelio/core/server/converter"
-	"strings"
+	log "github.com/sirupsen/logrus"
 	"time"
 )
 
 type WorkspaceServer struct{}
 
-func apiWorkspace(wt *v1.Workspace, config map[string]string) *api.Workspace {
-	protocol := "http://"
-	onepanelApiUrl := config["ONEPANEL_API_URL"]
-	if strings.HasPrefix(onepanelApiUrl, "https://") {
-		protocol = "https://"
+func apiWorkspace(wt *v1.Workspace, config v1.SystemConfig) *api.Workspace {
+	protocol := config.APIProtocol()
+	domain := config.Domain()
+
+	if protocol == nil {
+		log.WithFields(log.Fields{
+			"Method": "apiWorkspace",
+			"Error":  "protocol is nil",
+		})
+
+		return nil
+	}
+
+	if domain == nil {
+		log.WithFields(log.Fields{
+			"Method": "apiWorkspace",
+			"Error":  "domain is nil",
+		})
+
+		return nil
 	}
 
 	res := &api.Workspace{
 		Uid:       wt.UID,
 		Name:      wt.Name,
 		CreatedAt: wt.CreatedAt.UTC().Format(time.RFC3339),
-		Url:       protocol + wt.URL,
+		Url:       wt.GetURL(*protocol, *domain),
 	}
 	res.Parameters = converter.ParametersToAPI(wt.Parameters)
 
