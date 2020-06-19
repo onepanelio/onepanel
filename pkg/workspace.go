@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
+	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/asaskevich/govalidator"
 	"github.com/lib/pq"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"time"
 )
@@ -103,16 +105,47 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 		return nil, err
 	}
 
+	workflowTemplate, err := c.GetWorkflowTemplate(namespace, workspace.WorkspaceTemplate.WorkflowTemplate.UID, workspace.WorkspaceTemplate.WorkflowTemplate.Version)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Workspace": workspace,
+			"Error":     err.Error(),
+		}).Error("Error with getting workflow template.")
+		return nil, util.NewUserError(codes.NotFound, "Error with getting workflow template.")
+	}
+
 	runtimeVars, err := workspace.WorkspaceTemplate.RuntimeVars(systemConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = c.CreateWorkflowExecution(namespace, &WorkflowExecution{
-		Parameters:       workspace.Parameters,
-		WorkflowTemplate: workspace.WorkspaceTemplate.WorkflowTemplate,
-	}, runtimeVars)
+	argoTemplate := workflowTemplate.ArgoWorkflowTemplate
+	for _, param := range runtimeVars.AdditionalParameters {
+		argoTemplate.Spec.Arguments.Parameters = append(argoTemplate.Spec.Arguments.Parameters, wfv1.Parameter{
+			Name:  param.Name,
+			Value: param.Value,
+		})
+	}
 
+	finalTemplates := make([]wfv1.Template, 0)
+	for i := range argoTemplate.Spec.Templates {
+		template := &argoTemplate.Spec.Templates[i]
+
+		if template.Name == "stateful-set-resource" {
+			template.Resource.Manifest = runtimeVars.StatefulSetManifest
+		}
+
+		if template.Name != runtimeVars.VirtualService.Name {
+			finalTemplates = append(finalTemplates, *template)
+		}
+	}
+	finalTemplates = append(finalTemplates, *runtimeVars.VirtualService)
+	workflowTemplate.ArgoWorkflowTemplate.Spec.Templates = finalTemplates
+
+	_, err = c.CreateWorkflowExecution(namespace, &WorkflowExecution{
+		Parameters: workspace.Parameters,
+	}, workflowTemplate)
 	if err != nil {
 		return nil, err
 	}
@@ -355,6 +388,7 @@ func (c *Client) ListWorkspaces(namespace string, paginator *pagination.Paginati
 	return
 }
 
+// CountWorkspaces returns the total number of workspaces in the given namespace that are not terminated
 func (c *Client) CountWorkspaces(namespace string) (count int, err error) {
 	err = sb.Select("COUNT( DISTINCT( w.id ))").
 		From("workspaces w").
@@ -367,7 +401,7 @@ func (c *Client) CountWorkspaces(namespace string) (count int, err error) {
 				"phase": WorkspaceTerminated,
 			},
 		}).
-		RunWith(c.DB.DB).
+		RunWith(c.DB).
 		QueryRow().
 		Scan(&count)
 
@@ -409,9 +443,8 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 	workspace.WorkspaceTemplate = workspaceTemplate
 
 	_, err = c.CreateWorkflowExecution(namespace, &WorkflowExecution{
-		Parameters:       workspace.Parameters,
-		WorkflowTemplate: workspace.WorkspaceTemplate.WorkflowTemplate,
-	}, nil)
+		Parameters: workspace.Parameters,
+	}, workspaceTemplate.WorkflowTemplate)
 	if err != nil {
 		return
 	}

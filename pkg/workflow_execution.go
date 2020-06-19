@@ -258,7 +258,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateId uint64, wor
 		wf.Spec.Arguments.Parameters = newParams
 	}
 	if opts.Labels != nil {
-		wf.ObjectMeta.Labels = *opts.Labels
+		wf.ObjectMeta.Labels = opts.Labels
 	}
 
 	err = injectWorkflowExecutionStatusCaller(wf, wfv1.NodeRunning)
@@ -330,56 +330,24 @@ func (c *Client) ValidateWorkflowExecution(namespace string, manifest []byte) (e
 
 // CreateWorkflowExecution creates an argo workflow execution and related resources.
 // Note that the workflow template is loaded from the database/k8s, so workflow.WorkflowTemplate.Manifest is not used.
-func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExecution, runtimeVars *RuntimeVars) (*WorkflowExecution, error) {
-	workflowTemplate, err := c.GetWorkflowTemplate(namespace, workflow.WorkflowTemplate.UID, workflow.WorkflowTemplate.Version)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"Workflow":  workflow,
-			"Error":     err.Error(),
-		}).Error("Error with getting workflow template.")
-		return nil, util.NewUserError(codes.NotFound, "Error with getting workflow template.")
-	}
-
-	if runtimeVars != nil && workflowTemplate.ArgoWorkflowTemplate != nil {
-		argoTemplate := workflowTemplate.ArgoWorkflowTemplate
-		for _, param := range runtimeVars.AdditionalParameters {
-			argoTemplate.Spec.Arguments.Parameters = append(argoTemplate.Spec.Arguments.Parameters, wfv1.Parameter{
-				Name:  param.Name,
-				Value: param.Value,
-			})
-		}
-
-		finalTemplates := make([]wfv1.Template, 0)
-		for i := range argoTemplate.Spec.Templates {
-			template := &argoTemplate.Spec.Templates[i]
-
-			if template.Name == "stateful-set-resource" {
-				template.Resource.Manifest = runtimeVars.StatefulSetManifest
-			}
-
-			if template.Name != runtimeVars.VirtualService.Name {
-				finalTemplates = append(finalTemplates, *template)
-			}
-		}
-		finalTemplates = append(finalTemplates, *runtimeVars.VirtualService)
-		workflowTemplate.ArgoWorkflowTemplate.Spec.Templates = finalTemplates
-	}
-
-	// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
+// Required:
+//  * workflow.Parameters
+//  * workflow.Labels (optional)
+func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExecution, workflowTemplate *WorkflowTemplate) (*WorkflowExecution, error) {
 	opts := &WorkflowExecutionOptions{
-		Labels:     &map[string]string{},
+		Labels:     make(map[string]string),
 		Parameters: workflow.Parameters,
 	}
-	opts.GenerateName, err = uid2.GenerateUID(workflowTemplate.Name, 63)
+
+	nameUID, err := uid2.GenerateUID(workflowTemplate.Name, 63)
 	if err != nil {
 		return nil, err
 	}
-	opts.GenerateName += "-"
+	opts.GenerateName = nameUID + "-"
 
-	(*opts.Labels)[workflowTemplateUIDLabelKey] = workflowTemplate.UID
-	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
-	label.MergeLabelsPrefix(*opts.Labels, workflow.Labels, label.TagPrefix)
+	opts.Labels[workflowTemplateUIDLabelKey] = workflowTemplate.UID
+	opts.Labels[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
+	label.MergeLabelsPrefix(opts.Labels, workflow.Labels, label.TagPrefix)
 
 	// @todo we need to enforce the below requirement in API.
 	//UX will prevent multiple workflows
@@ -438,12 +406,23 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 }
 
 func (c *Client) CloneWorkflowExecution(namespace, uid string) (*WorkflowExecution, error) {
+	// TODO do you need the and template here?
 	workflowExecution, err := c.getWorkflowExecutionAndTemplate(namespace, uid)
 	if err != nil {
 		return nil, err
 	}
 
-	return c.CreateWorkflowExecution(namespace, workflowExecution, nil)
+	workflowTemplate, err := c.GetWorkflowTemplate(namespace, workflowExecution.WorkflowTemplate.UID, workflowExecution.WorkflowTemplate.Version)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Workflow":  workflowExecution,
+			"Error":     err.Error(),
+		}).Error("Error with getting workflow template.")
+		return nil, util.NewUserError(codes.NotFound, "Error with getting workflow template.")
+	}
+
+	return c.CreateWorkflowExecution(namespace, workflowExecution, workflowTemplate)
 }
 
 func (c *Client) insertPreWorkflowExecutionStatistic(namespace, name string, workflowTemplateVersionId uint64, createdAt time.Time, uid string, parameters []Parameter) (newId uint64, err error) {
@@ -1575,6 +1554,8 @@ func (c *Client) getWorkflowExecutionAndTemplate(namespace string, uid string) (
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO DB call
 
 	workflow = &WorkflowExecution{}
 	if err = c.DB.Get(workflow, query, args...); err != nil {

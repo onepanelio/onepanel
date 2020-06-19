@@ -3,7 +3,6 @@ package v1
 import (
 	"fmt"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/sqlutil"
 	"gopkg.in/yaml.v2"
 	"time"
@@ -38,14 +37,13 @@ type RuntimeVars struct {
 
 // RuntimeVars returns a set of RuntimeVars associated with the WorkspaceTemplate.
 // These require a config loaded from the system
-func (wt *WorkspaceTemplate) RuntimeVars(config map[string]string) (runtimeVars *RuntimeVars, err error) {
+func (wt *WorkspaceTemplate) RuntimeVars(config SystemConfig) (runtimeVars *RuntimeVars, err error) {
 	if wt.WorkflowTemplate == nil {
 		err = fmt.Errorf("workflow Template is nil for workspace template")
 		return
 	}
 
 	runtimeVars = &RuntimeVars{}
-
 	workspaceSpec, err := parseWorkspaceSpec(wt.Manifest)
 	if err != nil {
 		return
@@ -57,38 +55,14 @@ func (wt *WorkspaceTemplate) RuntimeVars(config map[string]string) (runtimeVars 
 		return nil, err
 	}
 
-	arguments, ok := parsedManifest["arguments"]
-	if !ok {
-		err = fmt.Errorf("argumnets not found in workflow template manifest")
-		return
-	}
-
-	argumentsMap := arguments.(map[interface{}]interface{})
-	localParameters := argumentsMap["parameters"]
-	parametersArray := localParameters.([]interface{})
-
-	// sys-host
-	parametersArray = append(parametersArray, Parameter{
-		Name:  "sys-host",
-		Value: ptr.String(config["ONEPANEL_DOMAIN"]),
-		Type:  "input.hidden",
-	})
-
-	// Node pool parameter and options
-	var options []*ParameterOption
-	if err := yaml.Unmarshal([]byte(config["applicationNodePoolOptions"]), &options); err != nil {
+	runtimeParameters, err := generateRuntimeParamters(SystemConfig{})
+	if err != nil {
 		return nil, err
 	}
-
-	runtimeVars.AdditionalParameters = append(runtimeVars.AdditionalParameters, &Parameter{
-		Name:        "sys-node-pool",
-		Value:       ptr.String(options[0].Value),
-		Type:        "select.select",
-		Options:     options,
-		DisplayName: ptr.String("Node pool"),
-		Hint:        ptr.String("Name of node pool or group"),
-		Required:    true,
-	})
+	for i := range runtimeParameters {
+		parameter := &runtimeParameters[i]
+		runtimeVars.AdditionalParameters = append(runtimeVars.AdditionalParameters, parameter)
+	}
 
 	vs, err := createVirtualServiceManifest(workspaceSpec, true)
 	if err != nil {

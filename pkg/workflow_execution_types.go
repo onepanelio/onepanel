@@ -29,7 +29,7 @@ type WorkflowExecutionOptions struct {
 	Entrypoint     string
 	Parameters     []Parameter
 	ServiceAccount string
-	Labels         *map[string]string
+	Labels         map[string]string
 	ListOptions    *ListOptions
 	PodGCStrategy  *PodGCStrategy
 }
