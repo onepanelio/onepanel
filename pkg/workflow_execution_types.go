@@ -3,7 +3,7 @@ package v1
 import (
 	"encoding/json"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/onepanelio/core/sqlutil"
+	"github.com/onepanelio/core/util/sql"
 	"time"
 )
 
@@ -75,5 +75,5 @@ func (we *WorkflowExecution) LoadParametersFromBytes() ([]Parameter, error) {
 // see formatColumnSelect
 func getWorkflowExecutionColumns(aliasAndDestination ...string) []string {
 	columns := []string{"id", "created_at", "uid", "name", "parameters", "phase", "started_at", "finished_at"}
-	return sqlutil.FormatColumnSelect(columns, aliasAndDestination...)
+	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }

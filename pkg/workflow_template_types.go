@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/onepanelio/core/pkg/util/mapping"
-	"github.com/onepanelio/core/sqlutil"
+	"github.com/onepanelio/core/util/sql"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -246,5 +246,5 @@ func (wt *WorkflowTemplate) AddWorkflowTemplateParametersFromAnnotations(spec ma
 // see formatColumnSelect
 func getWorkflowTemplateColumns(aliasAndDestination ...string) []string {
 	columns := []string{"id", "created_at", "uid", "name", "namespace", "modified_at", "is_archived"}
-	return sqlutil.FormatColumnSelect(columns, aliasAndDestination...)
+	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }

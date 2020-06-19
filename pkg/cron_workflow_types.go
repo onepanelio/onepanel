@@ -3,7 +3,7 @@ package v1
 import (
 	"encoding/json"
 	"github.com/onepanelio/core/pkg/util/mapping"
-	"github.com/onepanelio/core/sqlutil"
+	"github.com/onepanelio/core/util/sql"
 	"gopkg.in/yaml.v2"
 	"time"
 )
@@ -105,7 +105,7 @@ func (cw *CronWorkflow) AddToManifestSpec(key, manifest string) error {
 // see formatColumnSelect
 func getCronWorkflowColumns(aliasAndDestination ...string) []string {
 	columns := []string{"cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.workflow_template_version_id", "cw.manifest", "cw.namespace"}
-	return sqlutil.FormatColumnSelect(columns, aliasAndDestination...)
+	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }
 
 // CronWorkflowsToIDs returns an array of ids from the input CronWorkflow with no duplicates.

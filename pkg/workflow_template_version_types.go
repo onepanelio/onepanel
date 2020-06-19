@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"github.com/onepanelio/core/sqlutil"
+	"github.com/onepanelio/core/util/sql"
 	"time"
 )
 
@@ -36,5 +36,5 @@ func WorkflowTemplateVersionsToIDs(resources []*WorkflowTemplateVersion) (ids []
 // see formatColumnSelect
 func getWorkflowTemplateVersionColumns(aliasAndDestination ...string) []string {
 	columns := []string{"id", "created_at", "version", "is_latest", "manifest"}
-	return sqlutil.FormatColumnSelect(columns, aliasAndDestination...)
+	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }

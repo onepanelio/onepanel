@@ -3,7 +3,7 @@ package v1
 import (
 	"fmt"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/onepanelio/core/sqlutil"
+	"github.com/onepanelio/core/util/sql"
 	networking "istio.io/api/networking/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
 	"time"
@@ -67,14 +67,14 @@ func (w *Workspace) GetURL(protocol, domain string) string {
 // see formatColumnSelect
 func getWorkspaceColumns(aliasAndDestination ...string) []string {
 	columns := []string{"id", "created_at", "modified_at", "uid", "name", "namespace", "parameters", "workspace_template_id", "workspace_template_version"}
-	return sqlutil.FormatColumnSelect(columns, aliasAndDestination...)
+	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }
 
 // getWorkspaceStatusColumns returns all of the columns for WorkspaceStatus modified by alias, destination.
 // see formatColumnSelect
 func getWorkspaceStatusColumns(aliasAndDestination ...string) []string {
 	columns := []string{"phase", "started_at", "paused_at", "terminated_at"}
-	return sqlutil.FormatColumnSelect(columns, aliasAndDestination...)
+	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }
 
 // WorkspacesToIDs returns an array of ids from the input Workspaces with no duplicates.
