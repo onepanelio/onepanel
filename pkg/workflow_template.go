@@ -66,14 +66,9 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, nil, err
 	}
 
-	if len(workflowTemplate.Labels) > 0 {
-		_, err = c.InsertLabelsBuilder(TypeWorkflowTemplateVersion, workflowTemplateVersion.ID, workflowTemplate.Labels).
-			RunWith(tx).
-			Exec()
-
-		if err != nil {
-			return nil, nil, err
-		}
+	_, err = c.InsertLabelsRunner(tx, TypeWorkflowTemplateVersion, workflowTemplateVersion.ID, workflowTemplate.Labels)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	argoWft, err := createArgoWorkflowTemplate(workflowTemplate, versionUnix)
@@ -95,8 +90,8 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 	}
 
 	if err = tx.Commit(); err != nil {
-		if err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Delete(argoWft.Name, &v1.DeleteOptions{}); err != nil {
-			log.Printf("Unable to delete argo workflow template")
+		if errDelete := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Delete(argoWft.Name, &v1.DeleteOptions{}); errDelete != nil {
+			err = fmt.Errorf("%w; %s", err, errDelete)
 		}
 		return nil, nil, err
 	}
@@ -107,7 +102,7 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 }
 
 func (c *Client) workflowTemplatesSelectBuilder(namespace string) sq.SelectBuilder {
-	sb := sb.Select("wt.id", "wt.created_at", "wt.uid", "wt.name", "wt.is_archived").
+	sb := sb.Select(getWorkflowTemplateColumns("wt", "")...).
 		From("workflow_templates wt").
 		Where(sq.Eq{
 			"wt.namespace": namespace,
@@ -117,7 +112,7 @@ func (c *Client) workflowTemplatesSelectBuilder(namespace string) sq.SelectBuild
 }
 
 func (c *Client) workflowTemplatesVersionSelectBuilder(namespace string) sq.SelectBuilder {
-	sb := sb.Select("wtv.id", "wtv.version", "wtv.is_latest", "wtv.manifest", "wtv.created_at").
+	sb := sb.Select(getWorkflowTemplateVersionColumns("wtv", "")...).
 		From("workflow_template_versions wtv").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{
@@ -239,7 +234,7 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (work
 
 	workflowTemplate.Version = templateVersion
 
-	labelsMap, err := c.GetDbLabelsMapped(TypeWorkflowTemplateVersion, workflowTemplate.WorkflowTemplateVersionId)
+	labelsMap, err := c.GetDBLabelsMapped(TypeWorkflowTemplateVersion, workflowTemplate.WorkflowTemplateVersionId)
 	if err != nil {
 		return workflowTemplate, err
 	}
@@ -249,6 +244,7 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (work
 	return workflowTemplate, nil
 }
 
+// TODO version = is latest?
 func (c *Client) getWorkflowTemplateByName(namespace, name string, version int64) (workflowTemplate *WorkflowTemplate, err error) {
 	workflowTemplate = &WorkflowTemplate{}
 
@@ -278,7 +274,7 @@ func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTe
 		return nil, err
 	}
 
-	labelsMap, err := c.GetDbLabelsMapped(TypeWorkflowTemplateVersion, WorkflowTemplateVersionsToIds(dbVersions)...)
+	labelsMap, err := c.GetDBLabelsMapped(TypeWorkflowTemplateVersion, WorkflowTemplateVersionsToIDs(dbVersions)...)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -521,6 +517,7 @@ func (c *Client) GetWorkflowTemplate(namespace, uid string, version int64) (work
 	return
 }
 
+// TODO version 0 = latest?
 func (c *Client) GetWorkflowTemplateByName(namespace, name string, version int64) (workflowTemplate *WorkflowTemplate, err error) {
 	workflowTemplate, err = c.getWorkflowTemplateByName(namespace, name, version)
 	if err != nil {
@@ -599,7 +596,7 @@ func (c *Client) ListWorkflowTemplates(namespace string, paginator *pagination.P
 		return nil, util.NewUserError(codes.NotFound, "Unable to get Cron Workflow Statistic for Templates.")
 	}
 
-	labelsMap, err := c.GetDbLabelsMapped(TypeWorkflowTemplateVersion, WorkflowTemplatesToVersionIds(workflowTemplateVersions)...)
+	labelsMap, err := c.GetDBLabelsMapped(TypeWorkflowTemplateVersion, WorkflowTemplatesToVersionIDs(workflowTemplateVersions)...)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
