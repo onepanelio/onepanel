@@ -3,7 +3,7 @@ package v1
 import (
 	"fmt"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/onepanelio/core/sqlutil"
+	"github.com/onepanelio/core/util/sql"
 	"gopkg.in/yaml.v2"
 	"time"
 )
@@ -169,5 +169,5 @@ func WorkspaceTemplatesToVersionIDs(resources []*WorkspaceTemplate) (ids []uint6
 // see formatColumnSelect
 func getWorkspaceTemplateColumns(aliasAndDestination ...string) []string {
 	columns := []string{"id", "uid", "created_at", "modified_at", "name", "namespace", "is_archived", "workflow_template_id"}
-	return sqlutil.FormatColumnSelect(columns, aliasAndDestination...)
+	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }

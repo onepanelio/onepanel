@@ -74,12 +74,12 @@ func mergeWorkspaceParameters(existingParameters, newParameters []Parameter) (pa
 // sys-workspace-action
 // sys-resource-action
 // sys-host
-func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, workspaceAction, resourceAction string, config map[string]string) (err error) {
+func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, workspaceAction, resourceAction string, config SystemConfig) (err error) {
 	workspace.UID, err = uid2.GenerateUID(workspace.Name, 30)
 	if err != nil {
 		return
 	}
-	host := fmt.Sprintf("%v--%v.%v", workspace.UID, namespace, config["ONEPANEL_DOMAIN"])
+	host := fmt.Sprintf("%v--%v.%v", workspace.UID, namespace, *config.Domain())
 	systemParameters := []Parameter{
 		{
 			Name:  "sys-workspace-action",
@@ -230,25 +230,24 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 	return workspace, nil
 }
 
+// TODO document
+// TODO unit test - what if there is no workspace in DB, what do we expect to be returned?
 func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err error) {
-	query, args, err := c.workspacesSelectBuilder(namespace).
+	sb := c.workspacesSelectBuilder(namespace).
 		Where(sq.And{
 			sq.Eq{"w.uid": uid},
 			sq.NotEq{"w.phase": WorkspaceTerminated},
-		}).ToSql()
-	if err != nil {
-		return
-	}
+		})
 
+	// TODO can we just use address of workspace here? Try it after setting up unit tests
 	workspace = &Workspace{}
-	if err = c.DB.Get(workspace, query, args...); err == sql.ErrNoRows {
-		err = nil
-		workspace = nil
+	if err = c.DB.Getx(workspace, sb); err != nil {
+		if err == sql.ErrNoRows {
+			err = nil
+			workspace = nil
+		}
 
 		return
-	}
-	if err != nil {
-		return nil, err
 	}
 
 	workspace.WorkspaceTemplate.WorkflowTemplate = &WorkflowTemplate{
@@ -411,11 +410,12 @@ func (c *Client) CountWorkspaces(namespace string) (count int, err error) {
 func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction string, status *WorkspaceStatus, parameters ...Parameter) (err error) {
 	workspace, err := c.GetWorkspace(namespace, uid)
 	if err != nil {
-		return util.NewUserError(codes.NotFound, "Workspace not found.")
+		return util.NewUserError(codes.Unknown, err.Error())
 	}
 	if workspace == nil {
-		return nil
+		return util.NewUserError(codes.NotFound, "Workspace not found.")
 	}
+
 	config, err := c.GetSystemConfig()
 	if err != nil {
 		return
@@ -470,7 +470,8 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 				"phase": WorkspaceTerminated,
 			},
 		}).
-		RunWith(c.DB).Exec()
+		RunWith(c.DB).
+		Exec()
 	if err != nil {
 		return util.NewUserError(codes.NotFound, "Workspace not found.")
 	}
