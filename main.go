@@ -79,7 +79,7 @@ func main() {
 				log.Fatalf("Failed to run database migrations: %v", err)
 			}
 
-			s := startRPCServer(db, kubeConfig, sysConfig, stopCh)
+			s := startRPCServer(v1.NewDB(db), kubeConfig, sysConfig, stopCh)
 
 			<-stopCh
 
