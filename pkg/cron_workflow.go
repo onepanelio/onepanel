@@ -62,10 +62,10 @@ func (c *Client) UpdateCronWorkflow(namespace string, uid string, cronWorkflow *
 	}
 
 	if opts.Labels == nil {
-		opts.Labels = &map[string]string{}
+		opts.Labels = map[string]string{}
 	}
-	(*opts.Labels)[workflowTemplateUIDLabelKey] = workflowTemplate.UID
-	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
+	opts.Labels[workflowTemplateUIDLabelKey] = workflowTemplate.UID
+	opts.Labels[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
 	var argoCronWorkflow wfv1.CronWorkflow
 	var argoCronWorkflowSpec wfv1.CronWorkflowSpec
 	if err := argojson.UnmarshalStrict([]byte(rawCronManifest), &argoCronWorkflowSpec); err != nil {
@@ -128,19 +128,16 @@ func (c *Client) UpdateCronWorkflow(namespace string, uid string, cronWorkflow *
 		Where(sq.Eq{
 			"resource":    TypeCronWorkflow,
 			"resource_id": cronWorkflow.ID,
-		}).RunWith(tx).
+		}).
+		RunWith(tx).
 		Exec()
 	if err != nil {
 		return nil, err
 	}
 
-	if len(cronWorkflow.Labels) > 0 {
-		_, err = c.InsertLabelsBuilder(TypeCronWorkflow, cronWorkflow.ID, cronWorkflow.Labels).
-			RunWith(tx).
-			Exec()
-		if err != nil {
-			return nil, err
-		}
+	_, err = c.InsertLabelsRunner(tx, TypeCronWorkflow, cronWorkflow.ID, cronWorkflow.Labels)
+	if err != nil {
+		return nil, err
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -163,7 +160,9 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 	}
 
 	//// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
-	opts := &WorkflowExecutionOptions{}
+	opts := &WorkflowExecutionOptions{
+		Labels: make(map[string]string),
+	}
 	opts.GenerateName, err = uid2.GenerateUID(workflowTemplate.Name, 63)
 	if err != nil {
 		return nil, err
@@ -187,12 +186,9 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 		return nil, err
 	}
 
-	if opts.Labels == nil {
-		opts.Labels = &map[string]string{}
-	}
-	(*opts.Labels)[workflowTemplateUIDLabelKey] = workflowTemplate.UID
-	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
-	label.MergeLabelsPrefix(*opts.Labels, workflow.Labels, label.TagPrefix)
+	opts.Labels[workflowTemplateUIDLabelKey] = workflowTemplate.UID
+	opts.Labels[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
+	label.MergeLabelsPrefix(opts.Labels, workflow.Labels, label.TagPrefix)
 
 	var argoCronWorkflow wfv1.CronWorkflow
 	var argoCronWorkflowSpec wfv1.CronWorkflowSpec
@@ -438,7 +434,7 @@ func (c *Client) buildCronWorkflowDefinition(namespace string, workflowTemplateI
 		wf.Spec.Arguments.Parameters = newParams
 	}
 	if opts.Labels != nil {
-		cwf.ObjectMeta.Labels = *opts.Labels
+		cwf.ObjectMeta.Labels = opts.Labels
 	}
 
 	err = injectExitHandlerWorkflowExecutionStatistic(wf, workflowTemplateId)
@@ -461,7 +457,7 @@ func (c *Client) buildCronWorkflowDefinition(namespace string, workflowTemplateI
 	if mergedLabels == nil {
 		mergedLabels = make(map[string]string)
 	}
-	for k, v := range *opts.Labels {
+	for k, v := range opts.Labels {
 		mergedLabels[k] = v
 	}
 	cwf.Spec.WorkflowMetadata.Labels = mergedLabels
