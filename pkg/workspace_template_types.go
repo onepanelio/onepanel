@@ -55,7 +55,7 @@ func (wt *WorkspaceTemplate) RuntimeVars(config SystemConfig) (runtimeVars *Runt
 		return nil, err
 	}
 
-	runtimeParameters, err := generateRuntimeParamters(SystemConfig{})
+	runtimeParameters, err := generateRuntimeParamters(config)
 	if err != nil {
 		return nil, err
 	}
