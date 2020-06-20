@@ -82,7 +82,7 @@ func generateRuntimeParamters(config SystemConfig) (parameters []Parameter, err 
 	})
 
 	// Node pool parameter and options
-	options, err := config.ParsedNodePoolOptions()
+	options, err := config.NodePoolOptions()
 	if err != nil {
 		return nil, err
 	}
