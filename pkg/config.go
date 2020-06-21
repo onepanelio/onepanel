@@ -63,6 +63,11 @@ func (s SystemConfig) FQDN() *string {
 	return s.GetValue("ONEPANEL_FQDN")
 }
 
+// NodePoolLabel gets the applicationNodePoolLabel from the config or returns nil.
+func (s SystemConfig) NodePoolLabel() (label *string) {
+	return s.GetValue("applicationNodePoolLabel")
+}
+
 // NodePoolOptions loads and parses the applicationNodePoolOptions from the config.
 // If there is no data, an error is returned.
 func (s SystemConfig) NodePoolOptions() (options []*ParameterOption, err error) {

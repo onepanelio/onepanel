@@ -115,33 +115,18 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 		return nil, util.NewUserError(codes.NotFound, "Error with getting workflow template.")
 	}
 
-	runtimeVars, err := workspace.WorkspaceTemplate.RuntimeVars(systemConfig)
+	runtimeParameters, err := generateRuntimeParameters(systemConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	argoTemplate := workflowTemplate.ArgoWorkflowTemplate
-	for _, param := range runtimeVars.AdditionalParameters {
+	for _, param := range runtimeParameters {
 		argoTemplate.Spec.Arguments.Parameters = append(argoTemplate.Spec.Arguments.Parameters, wfv1.Parameter{
 			Name:  param.Name,
 			Value: param.Value,
 		})
 	}
-
-	finalTemplates := make([]wfv1.Template, 0)
-	for i := range argoTemplate.Spec.Templates {
-		template := &argoTemplate.Spec.Templates[i]
-
-		if template.Name == "stateful-set-resource" {
-			template.Resource.Manifest = runtimeVars.StatefulSetManifest
-		}
-
-		if template.Name != runtimeVars.VirtualService.Name {
-			finalTemplates = append(finalTemplates, *template)
-		}
-	}
-	finalTemplates = append(finalTemplates, *runtimeVars.VirtualService)
-	workflowTemplate.ArgoWorkflowTemplate.Spec.Templates = finalTemplates
 
 	_, err = c.CreateWorkflowExecution(namespace, &WorkflowExecution{
 		Parameters: workspace.Parameters,

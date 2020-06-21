@@ -72,7 +72,7 @@ func parseWorkspaceSpec(template string) (spec *WorkspaceSpec, err error) {
 	return
 }
 
-func generateRuntimeParamters(config SystemConfig) (parameters []Parameter, err error) {
+func generateRuntimeParameters(config SystemConfig) (parameters []Parameter, err error) {
 	parameters = make([]Parameter, 0)
 
 	// Host
@@ -90,6 +90,12 @@ func generateRuntimeParamters(config SystemConfig) (parameters []Parameter, err 
 	if len(options) == 0 {
 		return nil, fmt.Errorf("no node pool options in config")
 	}
+
+	parameters = append(parameters, Parameter{
+		Name:  "sys-node-pool-label",
+		Value: config.NodePoolLabel(),
+		Type:  "input.hidden",
+	})
 
 	parameters = append(parameters, Parameter{
 		Name:        "sys-node-pool",
@@ -180,7 +186,7 @@ func generateVolumeParameters(spec *WorkspaceSpec) (parameters []Parameter, err 
 	return
 }
 
-func generateArguments(spec *WorkspaceSpec, config SystemConfig, withRuntimeVars bool) (err error) {
+func generateArguments(spec *WorkspaceSpec, config SystemConfig) (err error) {
 	systemParameters := make([]Parameter, 0)
 	// Resource action parameter
 	systemParameters = append(systemParameters, Parameter{
@@ -213,29 +219,11 @@ func generateArguments(spec *WorkspaceSpec, config SystemConfig, withRuntimeVars
 		Type:  "input.hidden",
 	})
 
-	if withRuntimeVars {
-		// Host
-		systemParameters = append(systemParameters, Parameter{
-			Name:  "sys-host",
-			Value: config.Domain(),
-			Type:  "input.hidden",
-		})
-
-		// Node pool parameter and options
-		var options []*ParameterOption
-		if err = yaml.Unmarshal([]byte(config["applicationNodePoolOptions"]), &options); err != nil {
-			return
-		}
-		systemParameters = append(systemParameters, Parameter{
-			Name:        "sys-node-pool",
-			Value:       ptr.String(options[0].Value),
-			Type:        "select.select",
-			Options:     options,
-			DisplayName: ptr.String("Node pool"),
-			Hint:        ptr.String("Name of node pool or group"),
-			Required:    true,
-		})
+	runtimeParameters, err := generateRuntimeParameters(config)
+	if err != nil {
+		return
 	}
+	systemParameters = append(systemParameters, runtimeParameters...)
 
 	// Map all the volumeClaimTemplates that have storage set
 	volumeStorageQuantityIsSet := make(map[string]bool)
@@ -301,7 +289,7 @@ func createServiceManifest(spec *WorkspaceSpec) (serviceManifest string, err err
 	return
 }
 
-func createVirtualServiceManifest(spec *WorkspaceSpec, withRuntimeVars bool) (virtualServiceManifest string, err error) {
+func createVirtualServiceManifest(spec *WorkspaceSpec) (virtualServiceManifest string, err error) {
 	for _, h := range spec.Routes {
 		for _, r := range h.Route {
 			r.Destination.Host = "{{workflow.parameters.sys-uid}}"
@@ -313,14 +301,11 @@ func createVirtualServiceManifest(spec *WorkspaceSpec, withRuntimeVars bool) (vi
 		"metadata": metav1.ObjectMeta{
 			Name: "{{workflow.parameters.sys-uid}}",
 		},
-	}
-
-	if withRuntimeVars {
-		virtualService["spec"] = networking.VirtualService{
+		"spec": networking.VirtualService{
 			Http:     spec.Routes,
 			Gateways: []string{"istio-system/ingressgateway"},
 			Hosts:    []string{"{{workflow.parameters.sys-host}}"},
-		}
+		},
 	}
 
 	virtualServiceManifestBytes, err := yaml.Marshal(virtualService)
@@ -332,7 +317,7 @@ func createVirtualServiceManifest(spec *WorkspaceSpec, withRuntimeVars bool) (vi
 	return
 }
 
-func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string, withRuntimeVars bool) (statefulSetManifest string, err error) {
+func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string) (statefulSetManifest string, err error) {
 	var volumeClaims []map[string]interface{}
 	volumeClaimsMapped := make(map[string]bool)
 	// Add volumeClaims that the user has added first
@@ -415,12 +400,9 @@ func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string, wi
 				"app": "{{workflow.parameters.sys-uid}}",
 			},
 		},
-	}
-
-	if withRuntimeVars {
-		template.Spec = corev1.PodSpec{
+		Spec: corev1.PodSpec{
 			NodeSelector: map[string]string{
-				config["applicationNodePoolLabel"]: "{{workflow.parameters.sys-node-pool}}",
+				"{{workflow.parameters.sys-node-pool-label}}": "{{workflow.parameters.sys-node-pool}}",
 			},
 			Containers: spec.Containers,
 			Volumes: []corev1.Volume{
@@ -433,7 +415,7 @@ func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string, wi
 					},
 				},
 			},
-		}
+		},
 	}
 
 	statefulSet := map[string]interface{}{
@@ -848,7 +830,7 @@ func (c *Client) getWorkspaceTemplateByName(namespace, name string) (workspaceTe
 	return
 }
 
-func (c *Client) generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *WorkspaceTemplate, withRuntimeVars bool) (workflowTemplate *WorkflowTemplate, err error) {
+func (c *Client) generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *WorkspaceTemplate) (workflowTemplate *WorkflowTemplate, err error) {
 	if workspaceTemplate == nil || workspaceTemplate.Manifest == "" {
 		return nil, util.NewUserError(codes.InvalidArgument, "Workspace template manifest is required")
 	}
@@ -863,7 +845,7 @@ func (c *Client) generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *Wo
 		return nil, err
 	}
 
-	if err = generateArguments(workspaceSpec, config, withRuntimeVars); err != nil {
+	if err = generateArguments(workspaceSpec, config); err != nil {
 		return nil, err
 	}
 
@@ -872,12 +854,12 @@ func (c *Client) generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *Wo
 		return nil, err
 	}
 
-	virtualServiceManifest, err := createVirtualServiceManifest(workspaceSpec, withRuntimeVars)
+	virtualServiceManifest, err := createVirtualServiceManifest(workspaceSpec)
 	if err != nil {
 		return nil, err
 	}
 
-	statefulSetManifest, err := createStatefulSetManifest(workspaceSpec, config, withRuntimeVars)
+	statefulSetManifest, err := createStatefulSetManifest(workspaceSpec, config)
 	if err != nil {
 		return nil, err
 	}
@@ -905,7 +887,7 @@ func (c *Client) generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *Wo
 
 // CreateWorkspaceTemplateWorkflowTemplate generates and returns a workflowTemplate for a given workspaceTemplate manifest
 func (c *Client) GenerateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *WorkspaceTemplate) (workflowTemplate *WorkflowTemplate, err error) {
-	workflowTemplate, err = c.generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate, true)
+	workflowTemplate, err = c.generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate)
 	if err != nil {
 		return nil, err
 	}
@@ -933,7 +915,7 @@ func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 		return nil, util.NewUserError(codes.AlreadyExists, message)
 	}
 
-	workspaceTemplate.WorkflowTemplate, err = c.generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate, false)
+	workspaceTemplate.WorkflowTemplate, err = c.generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate)
 	if err != nil {
 		return nil, err
 	}
@@ -998,7 +980,7 @@ func (c *Client) UpdateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	workspaceTemplate.ID = existingWorkspaceTemplate.ID
 	workspaceTemplate.Name = existingWorkspaceTemplate.UID
 
-	updatedWorkflowTemplate, err := c.generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate, false)
+	updatedWorkflowTemplate, err := c.generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate)
 	if err != nil {
 		return nil, err
 	}
