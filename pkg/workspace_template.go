@@ -961,7 +961,7 @@ func (c *Client) GetWorkspaceTemplate(namespace, uid string, version int64) (wor
 		return nil, err
 	}
 
-	if err := workspaceTemplate.InjectRuntimeVariables(sysConfig); err != nil {
+	if err := workspaceTemplate.InjectRuntimeParameters(sysConfig); err != nil {
 		return nil, err
 	}
 

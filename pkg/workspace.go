@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
-	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/asaskevich/govalidator"
 	"github.com/lib/pq"
 	"github.com/onepanelio/core/pkg/util"
@@ -120,12 +119,17 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 		return nil, err
 	}
 
+	runtimeParametersMap := make(map[string]*string)
+	for _, p := range runtimeParameters {
+		runtimeParametersMap[p.Name] = p.Value
+	}
+
 	argoTemplate := workflowTemplate.ArgoWorkflowTemplate
-	for _, param := range runtimeParameters {
-		argoTemplate.Spec.Arguments.Parameters = append(argoTemplate.Spec.Arguments.Parameters, wfv1.Parameter{
-			Name:  param.Name,
-			Value: param.Value,
-		})
+	for i, p := range argoTemplate.Spec.Arguments.Parameters {
+		value := runtimeParametersMap[p.Name]
+		if value != nil {
+			argoTemplate.Spec.Arguments.Parameters[i].Value = value
+		}
 	}
 
 	_, err = c.CreateWorkflowExecution(namespace, &WorkflowExecution{
@@ -243,7 +247,7 @@ func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err 
 	if err != nil {
 		return nil, err
 	}
-	if err := workspace.WorkspaceTemplate.InjectRuntimeVariables(configMap); err != nil {
+	if err := workspace.WorkspaceTemplate.InjectRuntimeParameters(configMap); err != nil {
 		return nil, err
 	}
 	workspace.WorkflowTemplateVersion.Manifest = workspace.WorkspaceTemplate.WorkflowTemplate.Manifest

@@ -25,8 +25,8 @@ type WorkspaceTemplate struct {
 	WorkflowTemplateID         uint64 `db:"workflow_template_id"`
 }
 
-// InjectRuntimeVariables will inject all runtime variables into the WorkflowTemplate's manifest.
-func (wt *WorkspaceTemplate) InjectRuntimeVariables(config SystemConfig) error {
+// InjectRuntimeParameters will inject all runtime variables into the WorkflowTemplate's manifest.
+func (wt *WorkspaceTemplate) InjectRuntimeParameters(config SystemConfig) error {
 	if wt.WorkflowTemplate == nil {
 		return fmt.Errorf("workflow Template is nil for workspace template")
 	}
