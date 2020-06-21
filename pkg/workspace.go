@@ -429,6 +429,17 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 	if err != nil {
 		return util.NewUserError(codes.NotFound, "Workspace template not found.")
 	}
+
+	workflowTemplate, err := c.GetWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID, workspaceTemplate.WorkflowTemplate.Version)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Workspace": workspace,
+			"Error":     err.Error(),
+		}).Error("Error with getting workflow template.")
+		return util.NewUserError(codes.NotFound, "Error with getting workflow template.")
+	}
+	workspaceTemplate.WorkflowTemplate = workflowTemplate
 	workspace.WorkspaceTemplate = workspaceTemplate
 
 	_, err = c.CreateWorkflowExecution(namespace, &WorkflowExecution{
