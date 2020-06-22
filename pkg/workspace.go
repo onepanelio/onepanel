@@ -11,12 +11,13 @@ import (
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"time"
 )
 
 func (c *Client) workspacesSelectBuilder(namespace string) sq.SelectBuilder {
-	sb := sb.Select(getWorkspaceColumns("w", "")...).
+	sb := sb.Select(getWorkspaceColumns("w")...).
 		Columns(getWorkspaceStatusColumns("w", "status")...).
 		Columns(getWorkspaceTemplateColumns("wt", "workspace_template")...).
 		Columns(getWorkflowTemplateVersionColumns("wftv", "workflow_template_version")...).
@@ -72,12 +73,12 @@ func mergeWorkspaceParameters(existingParameters, newParameters []Parameter) (pa
 // sys-workspace-action
 // sys-resource-action
 // sys-host
-func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, workspaceAction, resourceAction string, config map[string]string) (err error) {
+func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, workspaceAction, resourceAction string, config SystemConfig) (err error) {
 	workspace.UID, err = uid2.GenerateUID(workspace.Name, 30)
 	if err != nil {
 		return
 	}
-	host := fmt.Sprintf("%v--%v.%v", workspace.UID, namespace, config["ONEPANEL_DOMAIN"])
+	host := fmt.Sprintf("%v--%v.%v", workspace.UID, namespace, *config.Domain())
 	systemParameters := []Parameter{
 		{
 			Name:  "sys-workspace-action",
@@ -103,16 +104,37 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 		return nil, err
 	}
 
-	runtimeVars, err := workspace.WorkspaceTemplate.RuntimeVars(systemConfig)
+	workflowTemplate, err := c.GetWorkflowTemplate(namespace, workspace.WorkspaceTemplate.WorkflowTemplate.UID, workspace.WorkspaceTemplate.WorkflowTemplate.Version)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Workspace": workspace,
+			"Error":     err.Error(),
+		}).Error("Error with getting workflow template.")
+		return nil, util.NewUserError(codes.NotFound, "Error with getting workflow template.")
+	}
+
+	runtimeParameters, err := generateRuntimeParameters(systemConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = c.CreateWorkflowExecution(namespace, &WorkflowExecution{
-		Parameters:       workspace.Parameters,
-		WorkflowTemplate: workspace.WorkspaceTemplate.WorkflowTemplate,
-	}, runtimeVars)
+	runtimeParametersMap := make(map[string]*string)
+	for _, p := range runtimeParameters {
+		runtimeParametersMap[p.Name] = p.Value
+	}
 
+	argoTemplate := workflowTemplate.ArgoWorkflowTemplate
+	for i, p := range argoTemplate.Spec.Arguments.Parameters {
+		value := runtimeParametersMap[p.Name]
+		if value != nil {
+			argoTemplate.Spec.Arguments.Parameters[i].Value = value
+		}
+	}
+
+	_, err = c.CreateWorkflowExecution(namespace, &WorkflowExecution{
+		Parameters: workspace.Parameters,
+	}, workflowTemplate)
 	if err != nil {
 		return nil, err
 	}
@@ -197,25 +219,23 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 	return workspace, nil
 }
 
+// GetWorkspace loads a workspace for a given namespace, uid. This loads database data
+// injects any runtime data, and loads the labels
 func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err error) {
-	query, args, err := c.workspacesSelectBuilder(namespace).
+	sb := c.workspacesSelectBuilder(namespace).
 		Where(sq.And{
 			sq.Eq{"w.uid": uid},
 			sq.NotEq{"w.phase": WorkspaceTerminated},
-		}).ToSql()
-	if err != nil {
-		return
-	}
+		})
 
 	workspace = &Workspace{}
-	if err = c.DB.Get(workspace, query, args...); err == sql.ErrNoRows {
-		err = nil
-		workspace = nil
+	if err = c.DB.Getx(workspace, sb); err != nil {
+		if err == sql.ErrNoRows {
+			err = nil
+			workspace = nil
+		}
 
 		return
-	}
-	if err != nil {
-		return nil, err
 	}
 
 	workspace.WorkspaceTemplate.WorkflowTemplate = &WorkflowTemplate{
@@ -226,7 +246,7 @@ func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err 
 	if err != nil {
 		return nil, err
 	}
-	if err := workspace.WorkspaceTemplate.InjectRuntimeVariables(configMap); err != nil {
+	if err := workspace.WorkspaceTemplate.InjectRuntimeParameters(configMap); err != nil {
 		return nil, err
 	}
 	workspace.WorkflowTemplateVersion.Manifest = workspace.WorkspaceTemplate.WorkflowTemplate.Manifest
@@ -235,7 +255,7 @@ func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err 
 		return
 	}
 
-	labelsMap, err := c.GetDbLabelsMapped(TypeWorkspace, workspace.ID)
+	labelsMap, err := c.GetDBLabelsMapped(TypeWorkspace, workspace.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -291,7 +311,7 @@ func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceS
 // ListWorkspacesByTemplateID will return all the workspaces for a given workspace template id.
 // Sourced from database.
 func (c *Client) ListWorkspacesByTemplateID(namespace string, templateID uint64) (workspaces []*Workspace, err error) {
-	sb := sb.Select(getWorkspaceColumns("w", "")...).
+	sb := sb.Select(getWorkspaceColumns("w")...).
 		From("workspaces w").
 		Where(sq.And{
 			sq.Eq{
@@ -302,16 +322,12 @@ func (c *Client) ListWorkspacesByTemplateID(namespace string, templateID uint64)
 				"phase": WorkspaceTerminated,
 			},
 		})
-	query, args, err := sb.ToSql()
-	if err != nil {
+
+	if err := c.DB.Selectx(&workspaces, sb); err != nil {
 		return nil, err
 	}
 
-	if err := c.DB.Select(&workspaces, query, args...); err != nil {
-		return nil, err
-	}
-
-	labelMap, err := c.GetDbLabelsMapped(TypeWorkspace, WorkspacesToIds(workspaces)...)
+	labelMap, err := c.GetDBLabelsMapped(TypeWorkspace, WorkspacesToIDs(workspaces)...)
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +339,7 @@ func (c *Client) ListWorkspacesByTemplateID(namespace string, templateID uint64)
 }
 
 func (c *Client) ListWorkspaces(namespace string, paginator *pagination.PaginationRequest) (workspaces []*Workspace, err error) {
-	sb := sb.Select(getWorkspaceColumns("w", "")...).
+	sb := sb.Select(getWorkspaceColumns("w")...).
 		Columns(getWorkspaceStatusColumns("w", "status")...).
 		Columns(getWorkspaceTemplateColumns("wt", "workspace_template")...).
 		From("workspaces w").
@@ -339,16 +355,11 @@ func (c *Client) ListWorkspaces(namespace string, paginator *pagination.Paginati
 		})
 	sb = *paginator.ApplyToSelect(&sb)
 
-	query, args, err := sb.ToSql()
-	if err != nil {
+	if err := c.DB.Selectx(&workspaces, sb); err != nil {
 		return nil, err
 	}
 
-	if err := c.DB.Select(&workspaces, query, args...); err != nil {
-		return nil, err
-	}
-
-	labelMap, err := c.GetDbLabelsMapped(TypeWorkspace, WorkspacesToIds(workspaces)...)
+	labelMap, err := c.GetDBLabelsMapped(TypeWorkspace, WorkspacesToIDs(workspaces)...)
 	if err != nil {
 		return nil, err
 	}
@@ -360,6 +371,7 @@ func (c *Client) ListWorkspaces(namespace string, paginator *pagination.Paginati
 	return
 }
 
+// CountWorkspaces returns the total number of workspaces in the given namespace that are not terminated
 func (c *Client) CountWorkspaces(namespace string) (count int, err error) {
 	err = sb.Select("COUNT( DISTINCT( w.id ))").
 		From("workspaces w").
@@ -372,7 +384,7 @@ func (c *Client) CountWorkspaces(namespace string) (count int, err error) {
 				"phase": WorkspaceTerminated,
 			},
 		}).
-		RunWith(c.DB.DB).
+		RunWith(c.DB).
 		QueryRow().
 		Scan(&count)
 
@@ -382,11 +394,12 @@ func (c *Client) CountWorkspaces(namespace string) (count int, err error) {
 func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction string, status *WorkspaceStatus, parameters ...Parameter) (err error) {
 	workspace, err := c.GetWorkspace(namespace, uid)
 	if err != nil {
-		return util.NewUserError(codes.NotFound, "Workspace not found.")
+		return util.NewUserError(codes.Unknown, err.Error())
 	}
 	if workspace == nil {
-		return nil
+		return util.NewUserError(codes.NotFound, "Workspace not found.")
 	}
+
 	config, err := c.GetSystemConfig()
 	if err != nil {
 		return
@@ -411,12 +424,22 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 	if err != nil {
 		return util.NewUserError(codes.NotFound, "Workspace template not found.")
 	}
+
+	workflowTemplate, err := c.GetWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate.UID, workspaceTemplate.WorkflowTemplate.Version)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Workspace": workspace,
+			"Error":     err.Error(),
+		}).Error("Error with getting workflow template.")
+		return util.NewUserError(codes.NotFound, "Error with getting workflow template.")
+	}
+	workspaceTemplate.WorkflowTemplate = workflowTemplate
 	workspace.WorkspaceTemplate = workspaceTemplate
 
 	_, err = c.CreateWorkflowExecution(namespace, &WorkflowExecution{
-		Parameters:       workspace.Parameters,
-		WorkflowTemplate: workspace.WorkspaceTemplate.WorkflowTemplate,
-	}, nil)
+		Parameters: workspace.Parameters,
+	}, workspaceTemplate.WorkflowTemplate)
 	if err != nil {
 		return
 	}
@@ -442,7 +465,8 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 				"phase": WorkspaceTerminated,
 			},
 		}).
-		RunWith(c.DB).Exec()
+		RunWith(c.DB).
+		Exec()
 	if err != nil {
 		return util.NewUserError(codes.NotFound, "Workspace not found.")
 	}

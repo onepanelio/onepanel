@@ -84,7 +84,12 @@ func (s *WorkflowServer) CreateWorkflowExecution(ctx context.Context, req *api.C
 		})
 	}
 
-	wf, err := client.CreateWorkflowExecution(req.Namespace, workflow, nil)
+	workflowTemplate, err := client.GetWorkflowTemplate(req.Namespace, req.Body.WorkflowTemplateUid, req.Body.WorkflowTemplateVersion)
+	if err != nil {
+		return nil, err
+	}
+
+	wf, err := client.CreateWorkflowExecution(req.Namespace, workflow, workflowTemplate)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +164,7 @@ func (s *WorkflowServer) GetWorkflowExecution(ctx context.Context, req *api.GetW
 		return nil, err
 	}
 
-	mappedLabels, err := client.GetDbLabelsMapped(v1.TypeWorkflowExecution, wf.ID)
+	mappedLabels, err := client.GetDBLabelsMapped(v1.TypeWorkflowExecution, wf.ID)
 	if err != nil {
 		return nil, err
 	}

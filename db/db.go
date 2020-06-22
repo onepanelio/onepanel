@@ -19,7 +19,7 @@ func getClient() (*v1.Client, error) {
 
 	databaseDataSourceName := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
 		config["databaseHost"], config["databaseUsername"], config["databasePassword"], config["databaseName"])
-	client.DB = sqlx.MustConnect(config["databaseDriverName"], databaseDataSourceName)
+	client.DB = v1.NewDB(sqlx.MustConnect(config["databaseDriverName"], databaseDataSourceName))
 
 	return client, nil
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/onepanelio/core/server/converter"
-	"strings"
 	"time"
 )
 
@@ -95,7 +94,7 @@ func (s *WorkflowTemplateServer) CreateWorkflowTemplateVersion(ctx context.Conte
 		return nil, err
 	}
 
-	if _, err := client.InsertLabels(v1.TypeWorkflowTemplateVersion, workflowTemplate.WorkflowTemplateVersionId, workflowTemplate.Labels); err != nil {
+	if _, err := client.InsertLabels(v1.TypeWorkflowTemplateVersion, workflowTemplate.WorkflowTemplateVersionID, workflowTemplate.Labels); err != nil {
 		return nil, err
 	}
 
@@ -163,13 +162,13 @@ func (s *WorkflowTemplateServer) CloneWorkflowTemplate(ctx context.Context, req 
 	}
 
 	//Verify the cloned template name doesn't exist already
-	workflowTemplateByName, err := client.GetWorkflowTemplateByName(req.Namespace, req.Name, req.Version)
+
+	templatesCount, err := client.CountWorkflowTemplatesByName(req.Name, req.Name, nil)
 	if err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return nil, err
-		}
+		return nil, err
 	}
-	if workflowTemplateByName != nil {
+
+	if templatesCount != 0 {
 		return nil, errors.New("Cannot clone, WorkflowTemplate name already taken.")
 	}
 
