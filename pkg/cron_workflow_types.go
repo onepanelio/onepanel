@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// CronWorkflow represents a workflow that runs on a cron.
 type CronWorkflow struct {
 	ID                        uint64
 	CreatedAt                 time.Time  `db:"created_at"`
@@ -18,11 +19,12 @@ type CronWorkflow struct {
 	WorkflowExecution         *WorkflowExecution
 	Labels                    map[string]string
 	Version                   int64
-	WorkflowTemplateVersionId uint64 `db:"workflow_template_version_id"`
+	WorkflowTemplateVersionID uint64 `db:"workflow_template_version_id"`
 	Manifest                  string
 	Namespace                 string `db:"namespace"`
 }
 
+// GetParametersFromWorkflowSpec parses the parameters from the CronWorkflow's manifest
 func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]Parameter, error) {
 	var parameters []Parameter
 

@@ -535,7 +535,7 @@ func (c *Client) CronStartWorkflowExecutionStatisticInsert(namespace, uid string
 
 	insertMap := sq.Eq{
 		"uid":                          uid,
-		"workflow_template_version_id": cronWorkflow.WorkflowTemplateVersionId,
+		"workflow_template_version_id": cronWorkflow.WorkflowTemplateVersionID,
 		"name":                         uid,
 		"namespace":                    namespace,
 		"phase":                        wfv1.NodeRunning,
