@@ -634,22 +634,13 @@ func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, 
 		}).Error("Get Workflow Template Versions failed.")
 		return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
 	}
+
 	//cron workflows
 	cronWorkflows := []*CronWorkflow{}
 	cwfSB := c.cronWorkflowSelectBuilder(namespace, uid).
 		OrderBy("cw.created_at DESC")
 
-	query, args, err := cwfSB.ToSql()
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"UID":       uid,
-			"Error":     err.Error(),
-		}).Error("Get Cron Workflows SQL failed.")
-		return false, util.NewUserError(codes.Unknown, "Unable to archive workflow template.")
-	}
-
-	if err := c.DB.Select(&cronWorkflows, query, args...); err != nil {
+	if err := c.DB.Selectx(&cronWorkflows, cwfSB); err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"UID":       uid,
@@ -716,7 +707,8 @@ func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, 
 		Where(sq.Eq{
 			"uid":       uid,
 			"namespace": namespace,
-		}).RunWith(c.DB).Exec()
+		}).RunWith(c.DB).
+		Exec()
 
 	if err != nil {
 		log.WithFields(log.Fields{

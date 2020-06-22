@@ -648,14 +648,11 @@ func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflow
 	sb := workflowExecutionsSelectBuilder(namespace, workflowTemplateUID, workflowTemplateVersion).
 		OrderBy("we.created_at DESC")
 	sb = *paginator.ApplyToSelect(&sb)
-	query, args, err := sb.ToSql()
-	if err != nil {
+
+	if err := c.DB.Selectx(&workflows, sb); err != nil {
 		return nil, err
 	}
 
-	if err := c.DB.Select(&workflows, query, args...); err != nil {
-		return nil, err
-	}
 	return
 }
 

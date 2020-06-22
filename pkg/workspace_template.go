@@ -1144,10 +1144,7 @@ func (c *Client) WorkspaceTemplateHasRunningWorkspaces(namespace string, uid str
 //
 // In particular, this action
 //
-// * Code retrieves all un-archived workspace template versions.
-//
-// * Iterates through each version, grabbing all related workspaces.
-//		- Each workspace is archived (k8s cleaned-up, database entry marked archived)
+// * Archives each workspace (k8s cleaned-up, database entry marked archived)
 //
 // * Marks associated Workflow template as archived
 //
@@ -1155,57 +1152,57 @@ func (c *Client) WorkspaceTemplateHasRunningWorkspaces(namespace string, uid str
 //
 // * Deletes Workflow Executions in k8s
 func (c *Client) ArchiveWorkspaceTemplate(namespace string, uid string) (archived bool, err error) {
-	wsTemps, err := c.ListWorkspaceTemplateVersions(namespace, uid)
+	wsTemp, err := c.GetWorkspaceTemplate(namespace, uid, 0)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"UID":       uid,
 			"Error":     err.Error(),
-		}).Error("ListWorkspaceTemplateVersions failed.")
+		}).Error("Get Workspace Template failed.")
 		return false, util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
 	}
-	for _, wsTemp := range wsTemps {
-		wsList, err := c.ListWorkspacesByTemplateID(namespace, wsTemp.WorkspaceTemplateVersionID)
+
+	wsList, err := c.ListWorkspacesByTemplateID(namespace, wsTemp.WorkspaceTemplateVersionID)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"UID":       uid,
+			"Error":     err.Error(),
+		}).Error("ListWorkspacesByTemplateID failed.")
+		return false, util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
+	}
+
+	for _, ws := range wsList {
+		err = c.ArchiveWorkspace(namespace, ws.UID)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"Namespace": namespace,
 				"UID":       uid,
 				"Error":     err.Error(),
-			}).Error("ListWorkspacesByTemplateId failed.")
-			return false, util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
-		}
-
-		for _, ws := range wsList {
-			err = c.ArchiveWorkspace(namespace, ws.UID)
-			if err != nil {
-				log.WithFields(log.Fields{
-					"Namespace": namespace,
-					"UID":       uid,
-					"Error":     err.Error(),
-				}).Error("ArchiveWorkspace failed.")
-				return false, util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
-			}
-		}
-
-		_, err = c.archiveWorkspaceTemplateDB(namespace, wsTemp.UID)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"Namespace": namespace,
-				"UID":       uid,
-				"Error":     err.Error(),
-			}).Error("Archive Workspace Template DB Failed.")
-			return false, util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
-		}
-
-		_, err = c.ArchiveWorkflowTemplate(namespace, wsTemp.UID)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"Namespace": namespace,
-				"UID":       uid,
-				"Error":     err.Error(),
-			}).Error("Archive Workflow Template Failed.")
+			}).Error("ArchiveWorkspace failed.")
 			return false, util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
 		}
 	}
+
+	_, err = c.archiveWorkspaceTemplateDB(namespace, wsTemp.UID)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"UID":       uid,
+			"Error":     err.Error(),
+		}).Error("Archive Workspace Template DB Failed.")
+		return false, util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
+	}
+
+	_, err = c.ArchiveWorkflowTemplate(namespace, wsTemp.UID)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"UID":       uid,
+			"Error":     err.Error(),
+		}).Error("Archive Workflow Template Failed.")
+		return false, util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
+	}
+
 	return true, nil
 }

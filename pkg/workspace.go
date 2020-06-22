@@ -323,12 +323,8 @@ func (c *Client) ListWorkspacesByTemplateID(namespace string, templateID uint64)
 				"phase": WorkspaceTerminated,
 			},
 		})
-	query, args, err := sb.ToSql()
-	if err != nil {
-		return nil, err
-	}
 
-	if err := c.DB.Select(&workspaces, query, args...); err != nil {
+	if err := c.DB.Selectx(&workspaces, sb); err != nil {
 		return nil, err
 	}
 
