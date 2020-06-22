@@ -66,7 +66,7 @@ func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]Parameter, error) {
 	return parameters, nil
 }
 
-// GetParametersFromWorkflowSpecJson parses the parameters from the CronWorkflow's manifest and returns them as a JSON string
+// GetParametersFromWorkflowSpecJSON parses the parameters from the CronWorkflow's manifest and returns them as a JSON string
 func (cw *CronWorkflow) GetParametersFromWorkflowSpecJSON() ([]byte, error) {
 	parameters, err := cw.GetParametersFromWorkflowSpec()
 	if err != nil {

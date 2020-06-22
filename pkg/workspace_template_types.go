@@ -65,6 +65,8 @@ func (wt *WorkspaceTemplate) InjectRuntimeParameters(config SystemConfig) error 
 	return nil
 }
 
+// WorkspaceTemplatesToVersionIDs plucks the WorkspaceTemplateVersionID from each template and returns it in an array
+// No duplicates are included.
 func WorkspaceTemplatesToVersionIDs(resources []*WorkspaceTemplate) (ids []uint64) {
 	mappedIds := make(map[uint64]bool)
 
