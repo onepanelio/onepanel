@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// File represents a system file.
 type File struct {
 	Path         string
 	Name         string
@@ -40,6 +41,8 @@ func FilePathToParentPath(path string) string {
 	return path[0:lastIndexOfForwardSlash]
 }
 
+// FilePathToExtension returns the file's extension if it uses a dot "." to denote it.
+// otherwise it returns the text following the last dot in the path.
 func FilePathToExtension(path string) string {
 	dotIndex := strings.LastIndex(path, ".")
 
@@ -54,6 +57,8 @@ func FilePathToExtension(path string) string {
 	return path[dotIndex+1:]
 }
 
+// FilePathToName returns the name of the file, assuming that "/" denote directories and that the
+// file name is after the last "/"
 func FilePathToName(path string) string {
 	if strings.HasSuffix(path, "/") {
 		path = path[:len(path)-1]
