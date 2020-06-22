@@ -98,12 +98,14 @@ func WorkflowTemplatesToIds(workflowTemplates []*WorkflowTemplate) (ids []uint64
 	return
 }
 
+// WorkflowTemplatesToVersionIDs picks out the WorkflowTemplateVersionID from each template and returns
+// it as an array. Duplicates are removed.
 func WorkflowTemplatesToVersionIDs(workflowTemplates []*WorkflowTemplate) (ids []uint64) {
 	mappedIds := make(map[uint64]bool)
 
 	// This is to make sure we don't have duplicates
 	for _, workflowTemplate := range workflowTemplates {
-		mappedIds[workflowTemplate.WorkflowTemplateVersionId] = true
+		mappedIds[workflowTemplate.WorkflowTemplateVersionID] = true
 	}
 
 	for id := range mappedIds {

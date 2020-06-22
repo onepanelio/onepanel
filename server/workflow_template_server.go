@@ -94,7 +94,7 @@ func (s *WorkflowTemplateServer) CreateWorkflowTemplateVersion(ctx context.Conte
 		return nil, err
 	}
 
-	if _, err := client.InsertLabels(v1.TypeWorkflowTemplateVersion, workflowTemplate.WorkflowTemplateVersionId, workflowTemplate.Labels); err != nil {
+	if _, err := client.InsertLabels(v1.TypeWorkflowTemplateVersion, workflowTemplate.WorkflowTemplateVersionID, workflowTemplate.Labels); err != nil {
 		return nil, err
 	}
 

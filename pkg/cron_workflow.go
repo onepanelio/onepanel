@@ -249,7 +249,7 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 		SetMap(sq.Eq{
 			"uid":                          cronWorkflow.UID,
 			"name":                         cronWorkflow.Name,
-			"workflow_template_version_id": workflowTemplate.WorkflowTemplateVersionId,
+			"workflow_template_version_id": workflowTemplate.WorkflowTemplateVersionID,
 			"manifest":                     cronWorkflow.Manifest,
 			"namespace":                    namespace,
 			"is_archived":                  false,

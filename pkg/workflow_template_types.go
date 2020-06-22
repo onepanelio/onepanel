@@ -28,10 +28,9 @@ type WorkflowTemplate struct {
 	Labels                           map[string]string
 	WorkflowExecutionStatisticReport *WorkflowExecutionStatisticReport
 	CronWorkflowsStatisticsReport    *CronWorkflowStatisticReport
-	// todo rename to have ID suffix
-	WorkflowTemplateVersionId uint64  `db:"workflow_template_version_id"` // Reference to the associated workflow template version.
-	Resource                  *string // utility in case we are specifying a workflow template for a specific resource
-	ResourceUID               *string // see Resource field
+	WorkflowTemplateVersionID        uint64  `db:"workflow_template_version_id"` // Reference to the associated workflow template version.
+	Resource                         *string // utility in case we are specifying a workflow template for a specific resource
+	ResourceUID                      *string // see Resource field
 }
 
 func (wt *WorkflowTemplate) GetManifestBytes() []byte {

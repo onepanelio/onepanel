@@ -245,12 +245,12 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (work
 
 	workflowTemplate.Version = templateVersion
 
-	labelsMap, err := c.GetDBLabelsMapped(TypeWorkflowTemplateVersion, workflowTemplate.WorkflowTemplateVersionId)
+	labelsMap, err := c.GetDBLabelsMapped(TypeWorkflowTemplateVersion, workflowTemplate.WorkflowTemplateVersionID)
 	if err != nil {
 		return workflowTemplate, err
 	}
 
-	workflowTemplate.Labels = labelsMap[workflowTemplate.WorkflowTemplateVersionId]
+	workflowTemplate.Labels = labelsMap[workflowTemplate.WorkflowTemplateVersionID]
 
 	return workflowTemplate, nil
 }
@@ -411,7 +411,7 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 		return nil, err
 	}
 
-	workflowTemplateVersionId := uint64(0)
+	workflowTemplateVersionID := uint64(0)
 	err = sb.Insert("workflow_template_versions").
 		SetMap(sq.Eq{
 			"workflow_template_id": workflowTemplateDb.ID,
@@ -422,12 +422,12 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 		Suffix("RETURNING id").
 		RunWith(tx).
 		QueryRow().
-		Scan(&workflowTemplateVersionId)
+		Scan(&workflowTemplateVersionID)
 	if err != nil {
 		return nil, err
 	}
 
-	workflowTemplate.WorkflowTemplateVersionId = workflowTemplateVersionId
+	workflowTemplate.WorkflowTemplateVersionID = workflowTemplateVersionID
 	latest, err := c.getArgoWorkflowTemplate(namespace, workflowTemplate.UID, "latest")
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -601,7 +601,7 @@ func (c *Client) ListWorkflowTemplates(namespace string, paginator *pagination.P
 	}
 
 	for _, workflowTemplate := range workflowTemplateVersions {
-		workflowTemplate.Labels = labelsMap[workflowTemplate.WorkflowTemplateVersionId]
+		workflowTemplate.Labels = labelsMap[workflowTemplate.WorkflowTemplateVersionID]
 	}
 
 	return
