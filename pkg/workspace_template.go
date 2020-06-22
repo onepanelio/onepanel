@@ -56,12 +56,12 @@ func markWorkspaceTemplateVersionsOutdatedDB(tx *sql.Tx, workspaceTemplateID uin
 
 // createLatestWorkspaceTemplateVersionDB creates a new workspace template version and marks all previous versions as not latest.
 func createLatestWorkspaceTemplateVersionDB(tx *sql.Tx, workspaceTemplateID uint64, version int64, manifest string) (id uint64, err error) {
-	id, err = createWorkspaceTemplateVersionDB(tx, workspaceTemplateID, version, manifest, true)
+	err = markWorkspaceTemplateVersionsOutdatedDB(tx, workspaceTemplateID)
 	if err != nil {
 		return
 	}
 
-	err = markWorkspaceTemplateVersionsOutdatedDB(tx, workspaceTemplateID)
+	id, err = createWorkspaceTemplateVersionDB(tx, workspaceTemplateID, version, manifest, true)
 
 	return
 }
@@ -931,7 +931,6 @@ func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 // GetWorkspaceTemplate return a workspaceTemplate and its corresponding workflowTemplate
 // if version is 0, the latest version is returned.
 func (c *Client) GetWorkspaceTemplate(namespace, uid string, version int64) (workspaceTemplate *WorkspaceTemplate, err error) {
-	workspaceTemplate = &WorkspaceTemplate{}
 	sb := c.workspaceTemplateVersionsSelectBuilder(namespace, uid).
 		Limit(1)
 
@@ -948,11 +947,13 @@ func (c *Client) GetWorkspaceTemplate(namespace, uid string, version int64) (wor
 			"wftv.version": version,
 		})
 	}
-	query, args, err := sb.ToSql()
-	if err != nil {
-		return
-	}
-	if err = c.DB.Get(workspaceTemplate, query, args...); err == sql.ErrNoRows {
+
+	workspaceTemplate = &WorkspaceTemplate{}
+	if err = c.DB.Getx(workspaceTemplate, sb); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+
 		return
 	}
 
