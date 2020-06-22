@@ -104,7 +104,7 @@ func (cw *CronWorkflow) AddToManifestSpec(key, manifest string) error {
 // getCronWorkflowColumns returns all of the columns for cronWorkflow modified by alias, destination.
 // see formatColumnSelect
 func getCronWorkflowColumns(aliasAndDestination ...string) []string {
-	columns := []string{"cw.id", "cw.created_at", "cw.uid", "cw.name", "cw.workflow_template_version_id", "cw.manifest", "cw.namespace"}
+	columns := []string{"id", "created_at", "uid", "name", "workflow_template_version_id", "manifest", "namespace"}
 	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }
 

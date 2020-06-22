@@ -358,15 +358,9 @@ func (c *Client) DeleteCronWorkflowLabel(namespace, name string, keysToDelete ..
 func (c *Client) ListCronWorkflows(namespace, workflowTemplateUID string, pagination *pagination.PaginationRequest) (cronWorkflows []*CronWorkflow, err error) {
 	sb := c.cronWorkflowSelectBuilder(namespace, workflowTemplateUID).
 		OrderBy("cw.created_at DESC")
-
 	sb = *pagination.ApplyToSelect(&sb)
-	query, args, err := sb.ToSql()
 
-	if err != nil {
-		return nil, err
-	}
-
-	if err := c.DB.Select(&cronWorkflows, query, args...); err != nil {
+	if err := c.DB.Selectx(&cronWorkflows, sb); err != nil {
 		return nil, err
 	}
 	labelsMap, err := c.GetDBLabelsMapped(TypeCronWorkflow, CronWorkflowsToIDs(cronWorkflows)...)
@@ -374,7 +368,7 @@ func (c *Client) ListCronWorkflows(namespace, workflowTemplateUID string, pagina
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Error":     err.Error(),
-		}).Error("Unable to get Workflow Template Labels")
+		}).Error("Unable to get Cron Workflow Labels")
 		return nil, err
 	}
 
@@ -388,7 +382,7 @@ func (c *Client) ListCronWorkflows(namespace, workflowTemplateUID string, pagina
 func (c *Client) CountCronWorkflows(namespace, workflowTemplateUID string) (count int, err error) {
 	err = c.cronWorkflowSelectBuilderNoColumns(namespace, workflowTemplateUID).
 		Columns("COUNT(*)").
-		RunWith(c.DB.DB).
+		RunWith(c.DB).
 		QueryRow().
 		Scan(&count)
 
@@ -576,19 +570,20 @@ func (c *Client) ArchiveCronWorkflow(namespace, uid string) (err error) {
 
 func (c *Client) cronWorkflowSelectBuilder(namespace string, workflowTemplateUid string) sq.SelectBuilder {
 	sb := c.cronWorkflowSelectBuilderNoColumns(namespace, workflowTemplateUid).
-		Columns(getCronWorkflowColumns("wtv.version")...)
+		Columns(getCronWorkflowColumns("cw")...).
+		Columns("wtv.version")
 
 	return sb
 }
 
-func (c *Client) cronWorkflowSelectBuilderNoColumns(namespace string, workflowTemplateUid string) sq.SelectBuilder {
+func (c *Client) cronWorkflowSelectBuilderNoColumns(namespace string, workflowTemplateUID string) sq.SelectBuilder {
 	sb := sb.Select().
 		From("cron_workflows cw").
 		Join("workflow_template_versions wtv ON wtv.id = cw.workflow_template_version_id").
 		Join("workflow_templates wt ON wt.id = wtv.workflow_template_id").
 		Where(sq.Eq{
 			"wt.namespace":   namespace,
-			"wt.uid":         workflowTemplateUid,
+			"wt.uid":         workflowTemplateUID,
 			"cw.is_archived": false,
 		})
 
