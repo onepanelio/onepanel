@@ -50,7 +50,7 @@ func (c *Client) UpdateCronWorkflow(namespace string, uid string, cronWorkflow *
 		})
 	}
 
-	if err := workflowTemplate.UpdateManifestParameters(workflow.Parameters); err != nil {
+	if err := workflowTemplate.ReplaceManifestParameters(workflow.Parameters); err != nil {
 		return nil, err
 	}
 
@@ -175,7 +175,7 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 		})
 	}
 
-	if err := workflowTemplate.UpdateManifestParameters(workflow.Parameters); err != nil {
+	if err := workflowTemplate.ReplaceManifestParameters(workflow.Parameters); err != nil {
 		return nil, err
 	}
 

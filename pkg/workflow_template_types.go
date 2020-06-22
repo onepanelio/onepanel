@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+// WorkflowTemplate represents a Workflow Template backed by a database row
+// it stores information required to run an execution
 type WorkflowTemplate struct {
 	ID                               uint64
 	CreatedAt                        time.Time  `db:"created_at"`
@@ -33,10 +35,13 @@ type WorkflowTemplate struct {
 	ResourceUID                      *string // see Resource field
 }
 
+// GetManifestBytes returns the manifest as []byte
 func (wt *WorkflowTemplate) GetManifestBytes() []byte {
 	return []byte(wt.Manifest)
 }
 
+// GetParametersKeyString loads Parameters from the manifest and returns it as a map,
+// where the key is the name, and the value is the parameters as yaml.
 func (wt *WorkflowTemplate) GetParametersKeyString() (map[string]string, error) {
 	root := make(map[interface{}]interface{})
 
@@ -93,7 +98,8 @@ func (wt *WorkflowTemplate) GetParametersKeyString() (map[string]string, error) 
 	return result, nil
 }
 
-func (wt *WorkflowTemplate) UpdateManifestParameters(params []Parameter) error {
+// ReplaceManifestParameters updates the parameters in the manifest to the ones in the argument
+func (wt *WorkflowTemplate) ReplaceManifestParameters(params []Parameter) error {
 	manifestMap, err := mapping.NewFromYamlString(wt.Manifest)
 	if err != nil {
 		return err
@@ -116,6 +122,9 @@ func (wt *WorkflowTemplate) UpdateManifestParameters(params []Parameter) error {
 	return nil
 }
 
+// GetWorkflowManifestBytes returns the ArgoWorkflowTemplate but with
+// Kind set to workflow
+// ObjectMeta remove all fields but GenerateName and Labels
 func (wt *WorkflowTemplate) GetWorkflowManifestBytes() ([]byte, error) {
 	if wt.ArgoWorkflowTemplate == nil {
 		return []byte{}, nil
@@ -130,6 +139,8 @@ func (wt *WorkflowTemplate) GetWorkflowManifestBytes() ([]byte, error) {
 	return json.Marshal(wt.ArgoWorkflowTemplate)
 }
 
+// FormatManifest removes empty data from the "spec", adds workflow template parameters from annotations
+// and returns the resulting manifest.
 func (wt *WorkflowTemplate) FormatManifest() (string, error) {
 	manifestMap, err := mapping.NewFromYamlString(wt.Manifest)
 	if err != nil {

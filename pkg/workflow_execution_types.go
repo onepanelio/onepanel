@@ -52,6 +52,7 @@ type WorkflowExecutionStatus struct {
 	FinishedAt *time.Time     `db:"finished_at" json:"finishedAt"`
 }
 
+// LoadParametersFromBytes loads Parameters from the WorkflowExecution's ParameterBytes field.
 func (we *WorkflowExecution) LoadParametersFromBytes() ([]Parameter, error) {
 	loadedParameters := make([]Parameter, 0)
 
