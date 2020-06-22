@@ -5,10 +5,12 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+// DB represents a database connection. It wraps a sqlx.DB to provide convenience methods.
 type DB struct {
 	sqlx.DB
 }
 
+// NewDB creates a new DB using an existing sqlx.DB connection.
 func NewDB(db *sqlx.DB) *DB {
 	return &DB{
 		*db,

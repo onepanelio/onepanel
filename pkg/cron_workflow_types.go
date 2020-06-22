@@ -80,6 +80,7 @@ func (cw *CronWorkflow) GetParametersFromWorkflowSpecJson() ([]byte, error) {
 	return parametersJson, nil
 }
 
+// AddToManifestSpec updates the CronWorkflow's manifest by setting the input manifest under the specified key
 func (cw *CronWorkflow) AddToManifestSpec(key, manifest string) error {
 	currentManifestMapping, err := mapping.NewFromYamlString(cw.Manifest)
 	if err != nil {
