@@ -66,18 +66,19 @@ func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]Parameter, error) {
 	return parameters, nil
 }
 
-func (cw *CronWorkflow) GetParametersFromWorkflowSpecJson() ([]byte, error) {
+// GetParametersFromWorkflowSpecJson parses the parameters from the CronWorkflow's manifest and returns them as a JSON string
+func (cw *CronWorkflow) GetParametersFromWorkflowSpecJSON() ([]byte, error) {
 	parameters, err := cw.GetParametersFromWorkflowSpec()
 	if err != nil {
 		return nil, err
 	}
 
-	parametersJson, err := json.Marshal(parameters)
+	parametersJSON, err := json.Marshal(parameters)
 	if err != nil {
 		return nil, err
 	}
 
-	return parametersJson, nil
+	return parametersJSON, nil
 }
 
 // AddToManifestSpec updates the CronWorkflow's manifest by setting the input manifest under the specified key

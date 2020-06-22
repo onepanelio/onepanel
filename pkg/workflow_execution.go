@@ -432,7 +432,7 @@ func (c *Client) insertPreWorkflowExecutionStatistic(namespace, name string, wor
 	}
 	defer tx.Rollback()
 
-	parametersJson, err := json.Marshal(parameters)
+	parametersJSON, err := json.Marshal(parameters)
 	if err != nil {
 		return 0, err
 	}
@@ -444,7 +444,7 @@ func (c *Client) insertPreWorkflowExecutionStatistic(namespace, name string, wor
 		"namespace":                    namespace,
 		"created_at":                   createdAt.UTC(),
 		"phase":                        wfv1.NodePending,
-		"parameters":                   string(parametersJson),
+		"parameters":                   string(parametersJSON),
 		"is_archived":                  false,
 	}
 
@@ -528,7 +528,7 @@ func (c *Client) CronStartWorkflowExecutionStatisticInsert(namespace, uid string
 	}
 	defer tx.Rollback()
 
-	parametersJson, err := cronWorkflow.GetParametersFromWorkflowSpecJson()
+	parametersJson, err := cronWorkflow.GetParametersFromWorkflowSpecJSON()
 	if err != nil {
 		return err
 	}
@@ -1584,7 +1584,8 @@ func (c *Client) UpdateWorkflowExecutionStatus(namespace, uid string, status *Wo
 			"namespace": namespace,
 			"uid":       uid,
 		}).
-		RunWith(c.DB).Exec()
+		RunWith(c.DB).
+		Exec()
 	if err != nil {
 		return util.NewUserError(codes.NotFound, "Workflow execution not found.")
 	}

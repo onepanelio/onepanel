@@ -5,6 +5,9 @@ import (
 	"time"
 )
 
+// WorkflowTemplateVersion represents a different version of a WorkflowTemplate
+// each version can have a different manifest and labels.
+// This is used to version control the template
 type WorkflowTemplateVersion struct {
 	ID               uint64
 	UID              string

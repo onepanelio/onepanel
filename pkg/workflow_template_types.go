@@ -179,7 +179,7 @@ func (wt *WorkflowTemplate) FormatManifest() (string, error) {
 	return string(manifestBytes), nil
 }
 
-// Take the manifest from the workflow template, which is just the "spec" contents
+// WrapSpec takes the manifest from the workflow template, which is just the "spec" contents
 // and wrap it so we have
 // {
 //    metadata: {},
@@ -208,6 +208,8 @@ func (wt *WorkflowTemplate) WrapSpec() ([]byte, error) {
 	return finalBytes, nil
 }
 
+// AddWorkflowTemplateParametersFromAnnotations sets the parameters in the input spec
+// to the parameters from the WorkflowTemplate's ArgoWorkflowTemplate annotations
 func (wt *WorkflowTemplate) AddWorkflowTemplateParametersFromAnnotations(spec mapping.Mapping) {
 	if wt.ArgoWorkflowTemplate == nil {
 		return

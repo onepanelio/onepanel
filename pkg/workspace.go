@@ -219,8 +219,8 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 	return workspace, nil
 }
 
-// TODO document
-// TODO unit test - what if there is no workspace in DB, what do we expect to be returned?
+// GetWorkspace loads a workspace for a given namespace, uid. This loads database data
+// injects any runtime data, and loads the labels
 func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err error) {
 	sb := c.workspacesSelectBuilder(namespace).
 		Where(sq.And{
@@ -228,7 +228,6 @@ func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err 
 			sq.NotEq{"w.phase": WorkspaceTerminated},
 		})
 
-	// TODO can we just use address of workspace here? Try it after setting up unit tests
 	workspace = &Workspace{}
 	if err = c.DB.Getx(workspace, sb); err != nil {
 		if err == sql.ErrNoRows {

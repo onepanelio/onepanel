@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// WorkflowExecution represents a workflow that is either in execution, or finished/failed.
 type WorkflowExecution struct {
 	ID               uint64
 	CreatedAt        time.Time `db:"created_at"`
@@ -23,6 +24,7 @@ type WorkflowExecution struct {
 	Labels           map[string]string
 }
 
+// WorkflowExecutionOptions are options you have for an executing workflow
 type WorkflowExecutionOptions struct {
 	Name           string
 	GenerateName   string
@@ -34,9 +36,10 @@ type WorkflowExecutionOptions struct {
 	PodGCStrategy  *PodGCStrategy
 }
 
+// WorkflowExecutionStatistic is a record keeping track of what happened to a workflow execution
 type WorkflowExecutionStatistic struct {
 	ID                 uint64
-	WorkflowTemplateId uint64
+	WorkflowTemplateID uint64
 	Name               string
 	Namespace          string
 	//Interface to support null values for timestamps, when scanning from db into structs
@@ -45,7 +48,7 @@ type WorkflowExecutionStatistic struct {
 	FailedAt   *time.Time `db:"failed_at"`
 }
 
-// TODO: reference this in WorkflowExecution
+// WorkflowExecutionStatus represents the status of a workflow execution. It's a convenience struct.
 type WorkflowExecutionStatus struct {
 	Phase      wfv1.NodePhase `json:"phase"`
 	StartedAt  *time.Time     `db:"started_at" json:"startedAt"`

@@ -272,7 +272,7 @@ func (c *Client) InsertLabelsBuilder(resource string, resourceID uint64, keyValu
 	return sb
 }
 
-// InsertLabelsRunning inserts the labels for the resource into the db using the provided runner.
+// InsertLabelsRunner inserts the labels for the resource into the db using the provided runner.
 // If no labels are provided, does nothing and returns nil, nil.
 func (c *Client) InsertLabelsRunner(runner sq.BaseRunner, resource string, resourceID uint64, keyValues map[string]string) (sql.Result, error) {
 	if len(keyValues) == 0 {

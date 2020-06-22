@@ -222,9 +222,9 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (work
 	if err = c.Getx(workflowTemplate, sb); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
-		} else {
-			return nil, err
 		}
+
+		return nil, err
 	}
 
 	versionAsString := "latest"
