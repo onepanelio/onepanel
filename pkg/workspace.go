@@ -168,6 +168,12 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 		return nil, err
 	}
 
+	if err := config.IsSubdomainValid(namespace, workspace.Name); err != nil {
+		// We prefix error with "name" so error message indicates that it is the name
+		// that has an error.
+		return nil, util.NewUserError(codes.InvalidArgument, "name "+err.Error())
+	}
+
 	parameters, err := json.Marshal(workspace.Parameters)
 	if err != nil {
 		return nil, err
