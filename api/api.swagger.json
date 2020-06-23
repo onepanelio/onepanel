@@ -411,6 +411,36 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/nodepools": {
+      "get": {
+        "operationId": "ListNodePools",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListNodePoolResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/secrets": {
       "get": {
         "operationId": "ListSecrets",
@@ -2817,6 +2847,17 @@
         }
       }
     },
+    "ListNodePoolResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NodePool"
+          }
+        }
+      }
+    },
     "ListSecretsResponse": {
       "type": "object",
       "properties": {
@@ -3000,6 +3041,17 @@
       "type": "object",
       "properties": {
         "name": {
+          "type": "string"
+        }
+      }
+    },
+    "NodePool": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
           "type": "string"
         }
       }
