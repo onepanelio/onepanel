@@ -8,7 +8,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"regexp"
 	"sigs.k8s.io/yaml"
 	"strings"
 )
@@ -87,25 +86,6 @@ func (s SystemConfig) NodePoolOptions() (options []*ParameterOption, err error) 
 // DatabaseDriverName gets the databaseDriverName value, or nil.
 func (s SystemConfig) DatabaseDriverName() *string {
 	return s.GetValue("databaseDriverName")
-}
-
-// IsSubdomainValid checks if the subdomain is valid.
-// Nil is returned if it is, otherwise an error
-// message describing the violation is returned.
-func (s SystemConfig) IsSubdomainValid(namespace, subdomain string) error {
-	totalLength := len(subdomain) + len(namespace) + 2
-	maxSubdomainLength := 63 - 2 - len(namespace)
-
-	if totalLength > 63 {
-		return fmt.Errorf("must be less than %v characters", maxSubdomainLength)
-	}
-
-	re, _ := regexp.Compile(`^[A-Za-z][A-Za-z0-9_-]*$`)
-	if re.Match([]byte(subdomain)) {
-		return nil
-	}
-
-	return fmt.Errorf("must start with a letter")
 }
 
 func (c *Client) getConfigMap(namespace, name string) (configMap *ConfigMap, err error) {
