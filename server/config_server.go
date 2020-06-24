@@ -18,7 +18,7 @@ func NewConfigServer() *ConfigServer {
 // GetConfig returns the system configuration options
 func (c *ConfigServer) GetConfig(ctx context.Context, req *empty.Empty) (*api.GetConfigResponse, error) {
 	client := getClient(ctx)
-	allowed, err := auth.IsAuthorized(client, "onepanel", "get", "onepanel.io", "configmap", "")
+	allowed, err := auth.IsAuthorized(client, "", "list", "", "namespaces", "")
 	if err != nil || !allowed {
 		return nil, err
 	}
