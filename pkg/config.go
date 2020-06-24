@@ -33,22 +33,6 @@ func (s SystemConfig) GetValue(name string) *string {
 	return &value
 }
 
-// GetValueOrEmpty returns the value in the underlying map if it exists, otherwise empty string is returned
-func (s SystemConfig) GetValueOrEmpty(name string) string {
-	value, ok := s[name]
-	if !ok {
-		log.WithFields(log.Fields{
-			"Method": "SystemConfig.GetValue",
-			"Name":   name,
-			"Error":  "does not exist",
-		})
-
-		return ""
-	}
-
-	return value
-}
-
 // Domain gets the ONEPANEL_DOMAIN value, or nil.
 func (s SystemConfig) Domain() *string {
 	return s.GetValue("ONEPANEL_DOMAIN")

@@ -13,20 +13,11 @@ service ConfigService {
     }
 }
 
-message DatabaseConfig {
-    string driverName = 5;
-    string host = 6;
-    string name = 7;
-    string port = 8;
-}
-
 message GetConfigResponse {
     string apiUrl = 1;
     string domain = 2;
     string fqdn = 3;
-    string providerType = 4;
-    DatabaseConfig database = 5;
-    NodePool nodePool = 6;
+    NodePool nodePool = 4;
 }
 
 message NodePoolOption {

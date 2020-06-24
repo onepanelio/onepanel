@@ -2644,23 +2644,6 @@
         }
       }
     },
-    "DatabaseConfig": {
-      "type": "object",
-      "properties": {
-        "driverName": {
-          "type": "string"
-        },
-        "host": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "port": {
-          "type": "string"
-        }
-      }
-    },
     "DeleteSecretKeyResponse": {
       "type": "object",
       "properties": {
@@ -2718,12 +2701,6 @@
         },
         "fqdn": {
           "type": "string"
-        },
-        "providerType": {
-          "type": "string"
-        },
-        "database": {
-          "$ref": "#/definitions/DatabaseConfig"
         },
         "nodePool": {
           "$ref": "#/definitions/NodePool"

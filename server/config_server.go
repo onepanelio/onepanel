@@ -46,16 +46,9 @@ func (c *ConfigServer) GetConfig(ctx context.Context, req *empty.Empty) (*api.Ge
 	}
 
 	return &api.GetConfigResponse{
-		ApiUrl:       sysConfig.GetValueOrEmpty("ONEPANEL_API_URL"),
-		Domain:       sysConfig.GetValueOrEmpty("ONEPANEL_DOMAIN"),
-		Fqdn:         sysConfig.GetValueOrEmpty("ONEPANEL_FQDN"),
-		ProviderType: sysConfig.GetValueOrEmpty("PROVIDER_TYPE"),
-		Database: &api.DatabaseConfig{
-			DriverName: sysConfig.GetValueOrEmpty("databaseDriverName"),
-			Host:       sysConfig.GetValueOrEmpty("databaseHost"),
-			Name:       sysConfig.GetValueOrEmpty("databaseName"),
-			Port:       sysConfig.GetValueOrEmpty("databasePort"),
-		},
+		ApiUrl:   sysConfig["ONEPANEL_API_URL"],
+		Domain:   sysConfig["ONEPANEL_DOMAIN"],
+		Fqdn:     sysConfig["ONEPANEL_FQDN"],
 		NodePool: nodePool,
 	}, err
 }
