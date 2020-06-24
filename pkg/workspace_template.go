@@ -935,7 +935,7 @@ func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 
 	workspaceTemplate, err = c.createWorkspaceTemplate(namespace, workspaceTemplate)
 	if err != nil {
-		var statusError *util.StatusError
+		var statusError *util.UserError
 		if goerrors.As(err, &statusError) && statusError.Code == codes.InvalidArgument {
 			return nil, util.NewUserError(statusError.Code, strings.Replace(statusError.Message, "{{workflow.", "{{workspace.", -1))
 		}
@@ -1008,7 +1008,7 @@ func (c *Client) UpdateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	updatedWorkflowTemplate.Labels = workspaceTemplate.Labels
 	workflowTemplateVersion, err := c.CreateWorkflowTemplateVersion(namespace, updatedWorkflowTemplate)
 	if err != nil {
-		var statusError *util.StatusError
+		var statusError *util.UserError
 		if goerrors.As(err, &statusError) && statusError.Code == codes.InvalidArgument {
 			return nil, util.NewUserError(statusError.Code, strings.Replace(statusError.Message, "{{workflow.", "{{workspace.", -1))
 		}
