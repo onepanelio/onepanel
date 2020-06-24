@@ -7,8 +7,10 @@ import (
 	"github.com/onepanelio/core/server/auth"
 )
 
+// ConfigServer contains actions for system configuration related items
 type ConfigServer struct{}
 
+// NewConfigServer creates a new ConfigServer
 func NewConfigServer() *ConfigServer {
 	return &ConfigServer{}
 }
@@ -35,7 +37,7 @@ func (c *ConfigServer) GetConfig(ctx context.Context, req *empty.Empty) (*api.Ge
 	if err != nil {
 		return nil, err
 	}
-
+	type ConfigServer struct{}
 	for _, option := range nodePoolOptions {
 		nodePool.Options = append(nodePool.Options, &api.NodePoolOption{
 			Name:  option.Name,
