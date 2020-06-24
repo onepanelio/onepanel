@@ -6,11 +6,19 @@ import (
 
 	"github.com/lib/pq"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
+type StatusError struct {
+	Code    codes.Code
+	Message string
+}
+
+func (se *StatusError) Error() string {
+	return se.Message
+}
+
 func NewUserError(code codes.Code, message string) error {
-	return status.Errorf(code, message)
+	return &StatusError{Code: code, Message: message}
 }
 
 func pqError(err *pq.Error) (code codes.Code) {
