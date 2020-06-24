@@ -15,8 +15,8 @@ type UserError struct {
 }
 
 // Error returns error messages
-func (se *UserError) Error() string {
-	return se.Message
+func (e *UserError) Error() string {
+	return e.Message
 }
 
 // NewUserError returns an instance of UserError with the appropriate code and message
