@@ -34,7 +34,7 @@ type Workspace struct {
 	ID                       uint64
 	Namespace                string
 	UID                      string `valid:"stringlength(3|30)~UID should be between 3 to 30 characters,dns,required"`
-	Name                     string `valid:"stringlength(3|30)~Name should be between 3 to 30 characters,matches('[a-z]([-a-z0-9]*[a-z0-9])?')~Name must start with an alphabetic character and otherwise contain alphanumeric characters or -,required"`
+	Name                     string `valid:"stringlength(3|30)~Name should be between 3 to 30 characters,matches(^[a-z]([-a-z0-9]*[a-z0-9])?)~Name must start with an alphabetic character and otherwise contain alphanumeric characters or -,required"`
 	Labels                   map[string]string
 	Parameters               []Parameter
 	ParametersBytes          []byte                   `db:"parameters"` // to load from database
