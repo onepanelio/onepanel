@@ -85,6 +85,28 @@
         ]
       }
     },
+    "/apis/v1beta1/config": {
+      "get": {
+        "operationId": "GetConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "tags": [
+          "ConfigService"
+        ]
+      }
+    },
     "/apis/v1beta1/namespaces": {
       "get": {
         "operationId": "ListNamespaces",
@@ -2668,6 +2690,23 @@
         }
       }
     },
+    "GetConfigResponse": {
+      "type": "object",
+      "properties": {
+        "apiUrl": {
+          "type": "string"
+        },
+        "domain": {
+          "type": "string"
+        },
+        "fqdn": {
+          "type": "string"
+        },
+        "nodePool": {
+          "$ref": "#/definitions/NodePool"
+        }
+      }
+    },
     "GetLabelsResponse": {
       "type": "object",
       "properties": {
@@ -3000,6 +3039,31 @@
       "type": "object",
       "properties": {
         "name": {
+          "type": "string"
+        }
+      }
+    },
+    "NodePool": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NodePoolOption"
+          }
+        }
+      }
+    },
+    "NodePoolOption": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
           "type": "string"
         }
       }

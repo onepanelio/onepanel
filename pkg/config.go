@@ -135,6 +135,13 @@ func (c *Client) GetSystemConfig() (config SystemConfig, err error) {
 	return
 }
 
+// GetDefaultConfig returns the default configuration of the system
+func (c *Client) GetDefaultConfig() (config *ConfigMap, err error) {
+	config, err = c.getConfigMap("onepanel", "onepanel")
+
+	return
+}
+
 func (c *Client) GetNamespaceConfig(namespace string) (config *NamespaceConfig, err error) {
 	configMap, err := c.getConfigMap(namespace, "onepanel")
 	if err != nil {
