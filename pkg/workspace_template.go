@@ -3,6 +3,7 @@ package v1
 import (
 	"database/sql"
 	"encoding/json"
+	goerrors "errors"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
@@ -727,10 +728,22 @@ func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	workspaceTemplate.WorkflowTemplate.IsSystem = true
 	workspaceTemplate.WorkflowTemplate.Resource = ptr.String(TypeWorkspaceTemplate)
 	workspaceTemplate.WorkflowTemplate.ResourceUID = ptr.String(uid)
-	workspaceTemplate.WorkflowTemplate, err = c.CreateWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate)
-	if err != nil {
-		return nil, err
+
+	// validate workflow template
+	if err := c.validateWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate); err != nil {
+		message := strings.Replace(err.Error(), "{{workflow.", "{{workspace.", -1)
+		return nil, util.NewUserError(codes.InvalidArgument, message)
 	}
+	workspaceTemplate.WorkflowTemplate, _, err = c.createWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace":         namespace,
+			"WorkspaceTemplate": workspaceTemplate,
+			"Error":             err.Error(),
+		}).Error("Could not create workflow template for workspace.")
+		return nil, util.NewUserErrorWrap(err, "Workflow template")
+	}
+
 	workspaceTemplate.Version = workspaceTemplate.WorkflowTemplate.Version
 	workspaceTemplate.IsLatest = true
 
@@ -922,6 +935,10 @@ func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 
 	workspaceTemplate, err = c.createWorkspaceTemplate(namespace, workspaceTemplate)
 	if err != nil {
+		var statusError *util.UserError
+		if goerrors.As(err, &statusError) && statusError.Code == codes.InvalidArgument {
+			return nil, util.NewUserError(statusError.Code, strings.Replace(statusError.Message, "{{workflow.", "{{workspace.", -1))
+		}
 		return nil, err
 	}
 
@@ -991,6 +1008,10 @@ func (c *Client) UpdateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	updatedWorkflowTemplate.Labels = workspaceTemplate.Labels
 	workflowTemplateVersion, err := c.CreateWorkflowTemplateVersion(namespace, updatedWorkflowTemplate)
 	if err != nil {
+		var statusError *util.UserError
+		if goerrors.As(err, &statusError) && statusError.Code == codes.InvalidArgument {
+			return nil, util.NewUserError(statusError.Code, strings.Replace(statusError.Message, "{{workflow.", "{{workspace.", -1))
+		}
 		return nil, err
 	}
 

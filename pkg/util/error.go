@@ -6,11 +6,22 @@ import (
 
 	"github.com/lib/pq"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
+// UserError implements a new error type for user facing errors
+type UserError struct {
+	Code    codes.Code
+	Message string
+}
+
+// Error returns error messages
+func (e *UserError) Error() string {
+	return e.Message
+}
+
+// NewUserError returns an instance of UserError with the appropriate code and message
 func NewUserError(code codes.Code, message string) error {
-	return status.Errorf(code, message)
+	return &UserError{Code: code, Message: message}
 }
 
 func pqError(err *pq.Error) (code codes.Code) {
@@ -23,6 +34,7 @@ func pqError(err *pq.Error) (code codes.Code) {
 	return
 }
 
+// NewUserErrorWrap wraps pq errors and returns an instance of UserError
 func NewUserErrorWrap(err error, entity string) error {
 	var (
 		code    codes.Code
