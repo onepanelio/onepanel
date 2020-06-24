@@ -727,10 +727,22 @@ func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	workspaceTemplate.WorkflowTemplate.IsSystem = true
 	workspaceTemplate.WorkflowTemplate.Resource = ptr.String(TypeWorkspaceTemplate)
 	workspaceTemplate.WorkflowTemplate.ResourceUID = ptr.String(uid)
-	workspaceTemplate.WorkflowTemplate, err = c.CreateWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate)
-	if err != nil {
-		return nil, err
+
+	// validate workflow template
+	if err := c.validateWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate); err != nil {
+		message := strings.Replace(err.Error(), "{{workflow.", "{{workspace.", -1)
+		return nil, util.NewUserError(codes.InvalidArgument, message)
 	}
+	workspaceTemplate.WorkflowTemplate, _, err = c.createWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace":         namespace,
+			"WorkspaceTemplate": workspaceTemplate,
+			"Error":             err.Error(),
+		}).Error("Could not create workflow template for workspace.")
+		return nil, util.NewUserErrorWrap(err, "Workflow template")
+	}
+
 	workspaceTemplate.Version = workspaceTemplate.WorkflowTemplate.Version
 	workspaceTemplate.IsLatest = true
 
