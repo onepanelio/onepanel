@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package api;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+service ConfigService {
+    rpc GetConfig (google.protobuf.Empty) returns (GetConfigResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/config"
+        };
+    }
+}
+
+message DatabaseConfig {
+    string driverName = 5;
+    string host = 6;
+    string name = 7;
+    string port = 8;
+}
+
+message GetConfigResponse {
+    string apiUrl = 1;
+    string domain = 2;
+    string fqdn = 3;
+    string providerType = 4;
+    DatabaseConfig database = 5;
+    NodePool nodePool = 6;
+}
+
+message NodePoolOption {
+    string name = 1;
+    string value = 2;
+}
+
+message NodePool {
+    string label  = 1;
+    repeated NodePoolOption options = 2;
+}

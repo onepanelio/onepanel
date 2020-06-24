@@ -261,39 +261,3 @@ func (s *WorkspaceServer) DeleteWorkspace(ctx context.Context, req *api.DeleteWo
 
 	return &empty.Empty{}, err
 }
-
-// ListNodePools returns a list of the node pools as defined in the system config
-func (s *WorkspaceServer) ListNodePools(ctx context.Context, req *api.ListNodePoolRequest) (*api.ListNodePoolResponse, error) {
-	client := getClient(ctx)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "onepanel.io", "workspaces", "")
-
-	emptyResponse := &api.ListNodePoolResponse{
-		Items: nil,
-	}
-
-	if err != nil || !allowed {
-		return emptyResponse, err
-	}
-
-	sysConfig, err := client.GetSystemConfig()
-	if err != nil {
-		return emptyResponse, err
-	}
-
-	options, err := sysConfig.NodePoolOptions()
-	if err != nil {
-		return emptyResponse, err
-	}
-
-	nodePools := make([]*api.NodePool, 0)
-	for _, option := range options {
-		nodePools = append(nodePools, &api.NodePool{
-			Name:  option.Name,
-			Value: option.Value,
-		})
-	}
-
-	return &api.ListNodePoolResponse{
-		Items: nodePools,
-	}, err
-}

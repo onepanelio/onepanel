@@ -85,6 +85,28 @@
         ]
       }
     },
+    "/apis/v1beta1/config": {
+      "get": {
+        "operationId": "GetConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "tags": [
+          "ConfigService"
+        ]
+      }
+    },
     "/apis/v1beta1/namespaces": {
       "get": {
         "operationId": "ListNamespaces",
@@ -408,36 +430,6 @@
         ],
         "tags": [
           "CronWorkflowService"
-        ]
-      }
-    },
-    "/apis/v1beta1/{namespace}/nodepools": {
-      "get": {
-        "operationId": "ListNodePools",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/ListNodePoolResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "WorkspaceService"
         ]
       }
     },
@@ -2652,6 +2644,23 @@
         }
       }
     },
+    "DatabaseConfig": {
+      "type": "object",
+      "properties": {
+        "driverName": {
+          "type": "string"
+        },
+        "host": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "port": {
+          "type": "string"
+        }
+      }
+    },
     "DeleteSecretKeyResponse": {
       "type": "object",
       "properties": {
@@ -2695,6 +2704,29 @@
         "directory": {
           "type": "boolean",
           "format": "boolean"
+        }
+      }
+    },
+    "GetConfigResponse": {
+      "type": "object",
+      "properties": {
+        "apiUrl": {
+          "type": "string"
+        },
+        "domain": {
+          "type": "string"
+        },
+        "fqdn": {
+          "type": "string"
+        },
+        "providerType": {
+          "type": "string"
+        },
+        "database": {
+          "$ref": "#/definitions/DatabaseConfig"
+        },
+        "nodePool": {
+          "$ref": "#/definitions/NodePool"
         }
       }
     },
@@ -2844,17 +2876,6 @@
         "totalCount": {
           "type": "integer",
           "format": "int32"
-        }
-      }
-    },
-    "ListNodePoolResponse": {
-      "type": "object",
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/NodePool"
-          }
         }
       }
     },
@@ -3046,6 +3067,20 @@
       }
     },
     "NodePool": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NodePoolOption"
+          }
+        }
+      }
+    },
+    "NodePoolOption": {
       "type": "object",
       "properties": {
         "name": {
