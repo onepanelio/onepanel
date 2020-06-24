@@ -3,6 +3,7 @@ package util
 import (
 	"errors"
 	"fmt"
+	"google.golang.org/grpc/status"
 
 	"github.com/lib/pq"
 	"google.golang.org/grpc/codes"
@@ -17,6 +18,10 @@ type UserError struct {
 // Error returns error messages
 func (e *UserError) Error() string {
 	return e.Message
+}
+
+func (e *UserError) GRPCStatus() *status.Status {
+	return status.New(e.Code, e.Message)
 }
 
 // NewUserError returns an instance of UserError with the appropriate code and message
