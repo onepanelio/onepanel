@@ -307,7 +307,9 @@ func (c *Client) ValidateWorkflowExecution(namespace string, manifest []byte) (e
 
 	wftmplGetter := templateresolution.WrapWorkflowTemplateInterface(c.ArgoprojV1alpha1().WorkflowTemplates(namespace))
 	for _, wf := range workflows {
-		c.injectAutomatedFields(namespace, &wf, &WorkflowExecutionOptions{})
+		if err = c.injectAutomatedFields(namespace, &wf, &WorkflowExecutionOptions{}); err != nil {
+			return err
+		}
 		_, err = validate.ValidateWorkflow(wftmplGetter, &wf, validate.ValidateOpts{})
 		if err != nil {
 			return

@@ -21,8 +21,9 @@ func testCreateNamespace(c *Client) {
 		})
 	}
 }
+
 func TestListNamespace(t *testing.T) {
-	c := NewTestClient()
+	c := DefaultTestClient()
 
 	testCreateNamespace(c)
 

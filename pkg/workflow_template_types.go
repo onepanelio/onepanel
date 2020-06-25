@@ -13,6 +13,9 @@ import (
 
 // WorkflowTemplate represents a Workflow Template backed by a database row
 // it stores information required to run an execution
+// A Workflow template is uniquely identified by
+// (namespace, uid, is_archived)
+// (namespace, name, is_archived) -- because we create a uid from the name.
 type WorkflowTemplate struct {
 	ID                               uint64
 	CreatedAt                        time.Time  `db:"created_at"`
