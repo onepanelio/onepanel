@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"flag"
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/onepanelio/core/pkg/util/mocks"
@@ -60,8 +61,11 @@ s3:
 	database *sqlx.DB
 )
 
+var flagDatabaseService = flag.String("db", "localhost", "Name to connect to db, defaults to localhost")
+
 func TestMain(m *testing.M) {
 	// call flag.Parse() here if TestMain uses flags
+	flag.Parse()
 
 	databaseDataSourceName := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
 		"localhost", "admin", "tester", "onepanel")
