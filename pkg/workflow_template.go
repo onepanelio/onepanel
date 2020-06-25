@@ -142,11 +142,14 @@ func (c *Client) workflowTemplatesVersionSelectBuilder(namespace string) sq.Sele
 	return sb
 }
 
-// GetWorkflowTemplateDB returns a WorkflowTemplate from the database
+// GetWorkflowTemplateDB returns a WorkflowTemplate from the database that is not archived, should one exist.
 func (c *Client) GetWorkflowTemplateDB(namespace, name string) (workflowTemplate *WorkflowTemplate, err error) {
+	workflowTemplate = &WorkflowTemplate{}
+
 	sb := c.workflowTemplatesSelectBuilder(namespace).
 		Where(sq.Eq{
-			"name": name,
+			"wt.name":        name,
+			"wt.is_archived": false,
 		})
 
 	err = c.DB.Getx(workflowTemplate, sb)
