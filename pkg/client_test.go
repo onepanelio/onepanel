@@ -78,28 +78,12 @@ func TestMain(m *testing.M) {
 }
 
 func NewTestClient(db *sqlx.DB, objects ...runtime.Object) (client *Client) {
-	configMap := &ConfigMap{
-		Name: mockSystemConfigMap.Name,
-		Data: mockSystemConfigMap.Data,
-	}
-
-	systemSecret := &Secret{
-		Name: mockSystemSecret.Name,
-		Data: encodeSecretData(mockSystemSecret.Data),
-	}
-
-	sysConfig, err := NewSystemConfig(configMap, systemSecret)
-	if err != nil {
-		log.Fatal("Unable to create system config")
-	}
-
 	k8sFake := fake.NewSimpleClientset(objects...)
 
 	return &Client{
 		Interface:        k8sFake,
 		DB:               NewDB(db),
 		argoprojV1alpha1: mocks.NewArgo(&k8sFake.Fake),
-		systemConfig:     sysConfig,
 	}
 }
 
