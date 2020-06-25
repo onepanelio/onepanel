@@ -68,7 +68,7 @@ func TestMain(m *testing.M) {
 	flag.Parse()
 
 	databaseDataSourceName := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
-		"localhost", "admin", "tester", "onepanel")
+		*flagDatabaseService, "admin", "tester", "onepanel")
 
 	dbDriverName := "postgres"
 	database = sqlx.MustConnect(dbDriverName, databaseDataSourceName)
