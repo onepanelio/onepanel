@@ -6,38 +6,35 @@ import (
 	"testing"
 )
 
-func TestWorkspaceNameValidation_Regex_Invalid(t *testing.T) {
-	bad := Workspace{
+func assertWorkspaceNameInvalid(t *testing.T, name string) {
+	ws := Workspace{
 		UID:  "test",
-		Name: "600s",
+		Name: name,
 	}
 
-	valid, _ := govalidator.ValidateStruct(bad)
+	valid, _ := govalidator.ValidateStruct(ws)
+
 	assert.False(t, valid)
 }
 
+func assertWorkspaceNameValid(t *testing.T, name string) {
+	ws := Workspace{
+		UID:  "test",
+		Name: name,
+	}
+
+	valid, _ := govalidator.ValidateStruct(ws)
+
+	assert.True(t, valid)
+}
+
 func TestWorkspaceNameValidation_RegexValid(t *testing.T) {
-	good := Workspace{
-		UID:  "test",
-		Name: "test-5",
-	}
+	assertWorkspaceNameInvalid(t, "600s")
 
-	valid, _ := govalidator.ValidateStruct(good)
-	assert.True(t, valid)
-
-	goodSpaces := Workspace{
-		UID:  "test",
-		Name: "test 5",
-	}
-
-	valid, _ = govalidator.ValidateStruct(goodSpaces)
-	assert.True(t, valid)
-
-	goodUppercase := Workspace{
-		UID:  "test",
-		Name: "TEst 5",
-	}
-
-	valid, _ = govalidator.ValidateStruct(goodUppercase)
-	assert.True(t, valid)
+	assertWorkspaceNameValid(t, "test-5")
+	assertWorkspaceNameValid(t, "test 5")
+	assertWorkspaceNameValid(t, "TEst 5")
+	assertWorkspaceNameValid(t, "CVAT")
+	assertWorkspaceNameValid(t, "My CVAT Workspace")
+	assertWorkspaceNameValid(t, "CVAT Workspace 1")
 }
