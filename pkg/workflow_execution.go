@@ -196,11 +196,19 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 	return
 }
 
+// ArchiveWorkflowExecution marks a WorkflowExecution as archived in database
+// and deletes the argo workflow.
+//
+// If the database record does not exist, we still try to delete the argo workflow record.
+// No errors are returned if the records do not exist.
 func (c *Client) ArchiveWorkflowExecution(namespace, uid string) error {
-	_, err := sb.Update("workflow_executions").Set("is_archived", true).Where(sq.Eq{
-		"uid":       uid,
-		"namespace": namespace,
-	}).RunWith(c.DB).Exec()
+	_, err := sb.Update("workflow_executions").
+		Set("is_archived", true).
+		Where(sq.Eq{
+			"uid":       uid,
+			"namespace": namespace,
+		}).RunWith(c.DB).
+		Exec()
 	if err != nil {
 		return err
 	}
@@ -331,14 +339,15 @@ func (c *Client) ValidateWorkflowExecution(namespace string, manifest []byte) (e
 }
 
 // CreateWorkflowExecution creates an argo workflow execution and related resources.
-// Note that the workflow template is loaded from the database/k8s, so workflow.WorkflowTemplate.Manifest is not used.
-// Required:
-//  * workflow.Parameters
-//  * workflow.Labels (optional)
+// If workflow.Name is set, it is used instead of a generated name.
 func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExecution, workflowTemplate *WorkflowTemplate) (*WorkflowExecution, error) {
 	opts := &WorkflowExecutionOptions{
 		Labels:     make(map[string]string),
 		Parameters: workflow.Parameters,
+	}
+
+	if workflow.Name != "" {
+		opts.Name = workflow.Name
 	}
 
 	nameUID, err := uid2.GenerateUID(workflowTemplate.Name, 63)

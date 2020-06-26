@@ -133,3 +133,18 @@ func Test_GetWorkflowTemplateDB_InsertSameName(t *testing.T) {
 
 	assert.Equal(t, userErr.Code, codes.AlreadyExists)
 }
+
+// TestClient_CreateWorkflowTemplate_Success makes sure a correct workflow template is created correctly
+func TestClient_CreateWorkflowTemplate_Success(t *testing.T) {
+	c := DefaultTestClient()
+	clearDatabase(t)
+
+	workflowTemplate := &WorkflowTemplate{
+		Name:     "test",
+		Manifest: defaultWorkflowTemplate,
+	}
+
+	wft, err := c.CreateWorkflowTemplate("onepanel", workflowTemplate)
+	assert.Nil(t, err)
+	assert.NotNil(t, wft.ArgoWorkflowTemplate)
+}

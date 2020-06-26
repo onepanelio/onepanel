@@ -21,6 +21,8 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// createWorkflowTemplate creates a WorkflowTemplate and all of the DB/Argo/K8s related resources
+// The returned WorkflowTemplate has the ArgoWorkflowTemplate set to the newly created one.
 func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, *WorkflowTemplateVersion, error) {
 	uid, err := uid2.GenerateUID(workflowTemplate.Name, 30)
 	if err != nil {
@@ -65,6 +67,7 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 	if err != nil {
 		return nil, nil, err
 	}
+	workflowTemplate.WorkflowTemplateVersionID = workflowTemplateVersion.ID
 
 	_, err = c.InsertLabelsRunner(tx, TypeWorkflowTemplateVersion, workflowTemplateVersion.ID, workflowTemplate.Labels)
 	if err != nil {
@@ -75,7 +78,6 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 	if err != nil {
 		return nil, nil, err
 	}
-
 	argoWft.Labels[label.WorkflowTemplateVersionUid] = strconv.FormatInt(versionUnix, 10)
 
 	if workflowTemplate.Resource != nil && workflowTemplate.ResourceUID != nil {
@@ -96,6 +98,7 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, nil, err
 	}
 
+	workflowTemplate.ArgoWorkflowTemplate = argoWft
 	workflowTemplate.Version = versionUnix
 
 	return workflowTemplate, workflowTemplateVersion, nil
