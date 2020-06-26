@@ -122,6 +122,7 @@ func init() {
 	goose.AddMigration(Up20200626113635, Down20200626113635)
 }
 
+// Up20200626113635 updates the CVAT template to a new version.
 func Up20200626113635(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 
@@ -154,6 +155,7 @@ func Up20200626113635(tx *sql.Tx) error {
 	return nil
 }
 
+// Down20200626113635 removes the CVAT template update
 func Down20200626113635(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return nil
