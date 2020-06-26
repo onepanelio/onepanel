@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/onepanelio/core/pkg/util/pagination"
-	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"strconv"
 	"strings"
 	"time"
@@ -24,11 +23,10 @@ import (
 // createWorkflowTemplate creates a WorkflowTemplate and all of the DB/Argo/K8s related resources
 // The returned WorkflowTemplate has the ArgoWorkflowTemplate set to the newly created one.
 func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, *WorkflowTemplateVersion, error) {
-	uid, err := uid2.GenerateUID(workflowTemplate.Name, 30)
-	if err != nil {
+	if err := workflowTemplate.GenerateUID(workflowTemplate.Name); err != nil {
 		return nil, nil, err
 	}
-	workflowTemplate.UID = uid
+
 	tx, err := c.DB.Begin()
 	if err != nil {
 		return nil, nil, err
@@ -39,7 +37,7 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 
 	err = sb.Insert("workflow_templates").
 		SetMap(sq.Eq{
-			"uid":       uid,
+			"uid":       workflowTemplate.UID,
 			"name":      workflowTemplate.Name,
 			"namespace": namespace,
 			"is_system": workflowTemplate.IsSystem,
@@ -743,15 +741,14 @@ func createArgoWorkflowTemplate(workflowTemplate *WorkflowTemplate, version int6
 		return nil, err
 	}
 
-	worfklowTemplateName, err := uid2.GenerateUID(workflowTemplate.Name, 30)
-	if err != nil {
+	if err := workflowTemplate.GenerateUID(workflowTemplate.Name); err != nil {
 		return nil, err
 	}
 
-	argoWft.Name = fmt.Sprintf("%v-v%v", worfklowTemplateName, version)
+	argoWft.Name = fmt.Sprintf("%v-v%v", workflowTemplate.UID, version)
 
 	labels := map[string]string{
-		label.WorkflowTemplate:    worfklowTemplateName,
+		label.WorkflowTemplate:    workflowTemplate.UID,
 		label.WorkflowTemplateUid: workflowTemplate.UID,
 		label.Version:             fmt.Sprintf("%v", version),
 		label.VersionLatest:       "true",

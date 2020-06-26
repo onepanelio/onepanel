@@ -224,11 +224,10 @@ func (c *Client) ArchiveWorkflowExecution(namespace, uid string) error {
 	return nil
 }
 
-/*
-	Name is == to UID, no user friendly name.
-	Workflow execution name == uid, example: name = my-friendly-wf-name-8skjz, uid = my-friendly-wf-name-8skjz
-*/
-func (c *Client) createWorkflow(namespace string, workflowTemplateId uint64, workflowTemplateVersionId uint64, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (newDbId uint64, createdWorkflow *wfv1.Workflow, err error) {
+// createWorkflow creates the workflow in the database and argo.
+// Name is == to UID, no user friendly name.
+// Workflow execution name == uid, example: name = my-friendly-wf-name-8skjz, uid = my-friendly-wf-name-8skjz
+func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, workflowTemplateVersionID uint64, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (newDBID uint64, createdWorkflow *wfv1.Workflow, err error) {
 	if opts == nil {
 		opts = &WorkflowExecutionOptions{}
 	}
@@ -274,7 +273,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateId uint64, wor
 		return 0, nil, err
 	}
 
-	err = injectExitHandlerWorkflowExecutionStatistic(wf, &workflowTemplateId)
+	err = injectExitHandlerWorkflowExecutionStatistic(wf, &workflowTemplateID)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -294,7 +293,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateId uint64, wor
 	}
 	//Create an entry for workflow_executions statistic
 	//CURL code will hit the API endpoint that will update the db row
-	newDbId, err = c.insertPreWorkflowExecutionStatistic(namespace, createdWorkflow.Name, workflowTemplateVersionId, createdWorkflow.CreationTimestamp.UTC(), uid, opts.Parameters)
+	newDBID, err = c.insertPreWorkflowExecutionStatistic(namespace, createdWorkflow.Name, workflowTemplateVersionID, createdWorkflow.CreationTimestamp.UTC(), uid, opts.Parameters)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -372,6 +371,7 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 		return nil, err
 	}
 
+	// TODO make a method to UnmarshalWorkflows from a workflow template - seems silly we do it in two steps?
 	workflows, err := UnmarshalWorkflows(manifest, true)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -436,7 +436,7 @@ func (c *Client) CloneWorkflowExecution(namespace, uid string) (*WorkflowExecuti
 	return c.CreateWorkflowExecution(namespace, workflowExecution, workflowTemplate)
 }
 
-func (c *Client) insertPreWorkflowExecutionStatistic(namespace, name string, workflowTemplateVersionId uint64, createdAt time.Time, uid string, parameters []Parameter) (newId uint64, err error) {
+func (c *Client) insertPreWorkflowExecutionStatistic(namespace, name string, workflowTemplateVersionID uint64, createdAt time.Time, UID string, parameters []Parameter) (newID uint64, err error) {
 	tx, err := c.DB.Begin()
 	if err != nil {
 		return 0, err
@@ -448,24 +448,21 @@ func (c *Client) insertPreWorkflowExecutionStatistic(namespace, name string, wor
 		return 0, err
 	}
 
-	insertMap := sq.Eq{
-		"uid":                          uid,
-		"workflow_template_version_id": workflowTemplateVersionId,
-		"name":                         name,
-		"namespace":                    namespace,
-		"created_at":                   createdAt.UTC(),
-		"phase":                        wfv1.NodePending,
-		"parameters":                   string(parametersJSON),
-		"is_archived":                  false,
-	}
-
 	err = sb.Insert("workflow_executions").
-		SetMap(insertMap).
+		SetMap(sq.Eq{
+			"UID":                          UID,
+			"workflow_template_version_id": workflowTemplateVersionID,
+			"name":                         name,
+			"namespace":                    namespace,
+			"created_at":                   createdAt.UTC(),
+			"phase":                        wfv1.NodePending,
+			"parameters":                   string(parametersJSON),
+			"is_archived":                  false,
+		}).
 		Suffix("RETURNING id").
 		RunWith(tx).
 		QueryRow().
-		Scan(&newId)
-
+		Scan(&newID)
 	if err != nil {
 		return 0, err
 	}
@@ -473,7 +470,7 @@ func (c *Client) insertPreWorkflowExecutionStatistic(namespace, name string, wor
 	if err != nil {
 		return 0, err
 	}
-	return newId, err
+	return newID, err
 }
 
 func (c *Client) FinishWorkflowExecutionStatisticViaExitHandler(namespace, name string, workflowTemplateID int64, phase wfv1.NodePhase, startedAt time.Time) (err error) {
@@ -1547,7 +1544,7 @@ func workflowExecutionsSelectBuilder(namespace, workflowTemplateUID, workflowTem
 }
 
 func (c *Client) getWorkflowExecutionAndTemplate(namespace string, uid string) (workflow *WorkflowExecution, err error) {
-	query, args, err := sb.Select(getWorkflowExecutionColumns("we", "")...).
+	sb := sb.Select(getWorkflowExecutionColumns("we", "")...).
 		Columns(getWorkflowTemplateColumns("wt", "workflow_template")...).
 		Columns(`wtv.manifest "workflow_template.manifest"`, `wtv.version "workflow_template.version"`).
 		From("workflow_executions we").
@@ -1557,16 +1554,10 @@ func (c *Client) getWorkflowExecutionAndTemplate(namespace string, uid string) (
 			"wt.namespace":   namespace,
 			"we.name":        uid,
 			"we.is_archived": false,
-		}).
-		ToSql()
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO DB call
+		})
 
 	workflow = &WorkflowExecution{}
-	if err = c.DB.Get(workflow, query, args...); err != nil {
+	if err = c.DB.Getx(workflow, sb); err != nil {
 		return nil, err
 	}
 
