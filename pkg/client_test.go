@@ -3,8 +3,8 @@ package v1
 import (
 	"flag"
 	"fmt"
+	argoFake "github.com/argoproj/argo/pkg/client/clientset/versioned/fake"
 	"github.com/jmoiron/sqlx"
-	"github.com/onepanelio/core/pkg/util/mocks"
 	"github.com/pressly/goose"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -83,11 +83,12 @@ func TestMain(m *testing.M) {
 
 func NewTestClient(db *sqlx.DB, objects ...runtime.Object) (client *Client) {
 	k8sFake := fake.NewSimpleClientset(objects...)
+	argoFakeClient := argoFake.NewSimpleClientset()
 
 	return &Client{
 		Interface:        k8sFake,
 		DB:               NewDB(db),
-		argoprojV1alpha1: mocks.NewArgo(&k8sFake.Fake),
+		argoprojV1alpha1: argoFakeClient.ArgoprojV1alpha1(),
 	}
 }
 
