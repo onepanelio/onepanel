@@ -5,6 +5,7 @@ import (
 	"testing"
 )
 
+// TestClient_CreateWorkflowExecution tests creating a workflow execution
 func TestClient_CreateWorkflowExecution(t *testing.T) {
 	c := DefaultTestClient()
 	clearDatabase(t)
@@ -22,6 +23,44 @@ func TestClient_CreateWorkflowExecution(t *testing.T) {
 	}
 
 	we, err := c.CreateWorkflowExecution(namespace, we, wt)
+	assert.Nil(t, err)
+}
+
+// TestClient_GetWorkflowExecution tests getting a workflow execution that exists
+func TestClient_GetWorkflowExecution(t *testing.T) {
+	c := DefaultTestClient()
+	clearDatabase(t)
+
+	namespace := "onepanel"
+
+	wt := &WorkflowTemplate{
+		Name:     "test",
+		Manifest: defaultWorkflowTemplate,
+	}
+	wt, _ = c.CreateWorkflowTemplate(namespace, wt)
+
+	we := &WorkflowExecution{
+		Name: "test",
+	}
+
+	we, _ = c.CreateWorkflowExecution(namespace, we, wt)
+
+	getWe, err := c.GetWorkflowExecution(namespace, we.UID)
+	assert.Nil(t, err)
+
+	assert.Equal(t, we.Name, getWe.Name)
+	assert.Equal(t, we.UID, getWe.UID)
+}
+
+// TestClient_GetWorkflowExecution tests getting a workflow execution that doesn't exist
+func TestClient_GetWorkflowExecution_NotExists(t *testing.T) {
+	c := DefaultTestClient()
+	clearDatabase(t)
+
+	namespace := "onepanel"
+
+	getWe, err := c.GetWorkflowExecution(namespace, "not-exist")
+	assert.Nil(t, getWe)
 	assert.Nil(t, err)
 }
 
