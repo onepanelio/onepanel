@@ -68,7 +68,7 @@ func main() {
 			}
 
 			databaseDataSourceName := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
-				"localhost", "admin", "tester", "onepanel-core")
+				sysConfig["databaseHost"], sysConfig["databaseUsername"], sysConfig["databasePassword"], sysConfig["databaseName"])
 
 			// sqlx.MustConnect will panic when it can't connect to DB. In that case, this whole application will crash.
 			// This is okay, as the pod will restart and try connecting to DB again.
