@@ -2,6 +2,7 @@ package v1
 
 import (
 	"bufio"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -501,32 +502,20 @@ func (c *Client) FinishWorkflowExecutionStatisticViaExitHandler(namespace, name 
 }
 
 func (c *Client) CronStartWorkflowExecutionStatisticInsert(namespace, uid string, workflowTemplateID int64) (err error) {
-	query, args, err := c.workflowTemplatesSelectBuilder(namespace).
+	queryWt := c.workflowTemplatesSelectBuilder(namespace).
 		Where(sq.Eq{
 			"wt.id": workflowTemplateID,
-		}).
-		ToSql()
-	if err != nil {
-		return err
-	}
+		})
 
 	workflowTemplate := &WorkflowTemplate{}
-	if err := c.DB.Get(workflowTemplate, query, args...); err != nil {
+	if err := c.DB.Getx(workflowTemplate, queryWt); err != nil {
 		return err
 	}
 
-	query, args, err = c.cronWorkflowSelectBuilder(namespace, workflowTemplate.UID).ToSql()
-	if err != nil {
-		return err
-	}
+	queryCw := c.cronWorkflowSelectBuilder(namespace, workflowTemplate.UID)
 
 	cronWorkflow := &CronWorkflow{}
-	if err := c.DB.Get(cronWorkflow, query, args...); err != nil {
-		return err
-	}
-
-	cronLabels, err := c.GetDbLabels(TypeCronWorkflow, cronWorkflow.ID)
-	if err != nil {
+	if err := c.DB.Getx(cronWorkflow, queryCw); err != nil {
 		return err
 	}
 
@@ -541,49 +530,43 @@ func (c *Client) CronStartWorkflowExecutionStatisticInsert(namespace, uid string
 		return err
 	}
 
-	insertMap := sq.Eq{
-		"uid":                          uid,
-		"workflow_template_version_id": cronWorkflow.WorkflowTemplateVersionID,
-		"name":                         uid,
-		"namespace":                    namespace,
-		"phase":                        wfv1.NodeRunning,
-		"started_at":                   time.Now().UTC(),
-		"cron_workflow_id":             cronWorkflow.ID,
-		"parameters":                   string(parametersJSON),
-	}
-
-	workflowExecutionId := uint64(0)
+	workflowExecutionID := uint64(0)
 	err = sb.Insert("workflow_executions").
-		SetMap(insertMap).
+		SetMap(sq.Eq{
+			"uid":                          uid,
+			"workflow_template_version_id": cronWorkflow.WorkflowTemplateVersionID,
+			"name":                         uid,
+			"namespace":                    namespace,
+			"phase":                        wfv1.NodeRunning,
+			"started_at":                   time.Now().UTC(),
+			"cron_workflow_id":             cronWorkflow.ID,
+			"parameters":                   string(parametersJSON),
+		}).
 		Suffix("RETURNING id").
 		RunWith(tx).
 		QueryRow().
-		Scan(&workflowExecutionId)
+		Scan(&workflowExecutionID)
 	if err != nil {
 		return err
 	}
 
-	if len(cronLabels) > 0 {
-		labelsMapped := LabelsToMapping(cronLabels...)
-		_, err = c.InsertLabelsBuilder(TypeWorkflowExecution, workflowExecutionId, labelsMapped).
-			RunWith(tx).
-			Exec()
-		if err != nil {
-			return err
-		}
+	cronLabels, err := c.GetDBLabelsMapped(TypeCronWorkflow, cronWorkflow.ID)
+	if err != nil {
+		return err
+	}
+	labelsMapped := cronLabels[cronWorkflow.ID]
+	if _, err := c.InsertLabelsRunner(tx, TypeWorkflowExecution, workflowExecutionID, labelsMapped); err != nil {
+		return err
 	}
 
 	err = tx.Commit()
-	if err != nil {
-		return err
-	}
+
 	return err
 }
 
 func (c *Client) GetWorkflowExecution(namespace, uid string) (workflow *WorkflowExecution, err error) {
 	workflow = &WorkflowExecution{}
-
-	query, args, err := sb.Select(getWorkflowExecutionColumns("we", "")...).
+	query := sb.Select(getWorkflowExecutionColumns("we")...).
 		Columns(getWorkflowTemplateColumns("wt", "workflow_template")...).
 		Columns(`wtv.manifest "workflow_template.manifest"`).
 		From("workflow_executions we").
@@ -593,12 +576,13 @@ func (c *Client) GetWorkflowExecution(namespace, uid string) (workflow *Workflow
 			"wt.namespace":   namespace,
 			"we.name":        uid,
 			"we.is_archived": false,
-		}).
-		ToSql()
-	if err != nil {
-		return nil, err
-	}
-	if err := c.DB.Get(workflow, query, args...); err != nil {
+		})
+
+	if err := c.DB.Getx(workflow, query); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+
 		return nil, err
 	}
 
@@ -1008,8 +992,9 @@ func (c *Client) SuspendWorkflowExecution(namespace, uid string) (err error) {
 	return
 }
 
+// TerminateWorkflowExecution marks a workflows execution as terminated in DB and terminates the argo resource.
 func (c *Client) TerminateWorkflowExecution(namespace, uid string) (err error) {
-	query, args, err := sb.Update("workflow_executions").
+	_, err = sb.Update("workflow_executions").
 		Set("phase", "Terminated").
 		Set("started_at", time.Time.UTC(time.Now())).
 		Set("finished_at", time.Time.UTC(time.Now())).
@@ -1017,13 +1002,9 @@ func (c *Client) TerminateWorkflowExecution(namespace, uid string) (err error) {
 			"uid":       uid,
 			"namespace": namespace,
 		}).
-		ToSql()
-
+		RunWith(c.DB).
+		Exec()
 	if err != nil {
-		return err
-	}
-
-	if _, err := c.DB.Exec(query, args...); err != nil {
 		return err
 	}
 
