@@ -636,6 +636,7 @@ func (c *Client) GetWorkflowExecution(namespace, uid string) (workflow *Workflow
 	return
 }
 
+// ListWorkflowExecutions gets a list of WorkflowExecutions ordered by most recently created first.
 func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflowTemplateVersion string, paginator *pagination.PaginationRequest) (workflows []*WorkflowExecution, err error) {
 	sb := workflowExecutionsSelectBuilder(namespace, workflowTemplateUID, workflowTemplateVersion).
 		OrderBy("we.created_at DESC")
@@ -648,10 +649,11 @@ func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflow
 	return
 }
 
+// CountWorkflowExecutions returns the number of workflow executions
 func (c *Client) CountWorkflowExecutions(namespace, workflowTemplateUID, workflowTemplateVersion string) (count int, err error) {
 	err = workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, workflowTemplateVersion).
 		Columns("COUNT(*)").
-		RunWith(c.DB.DB).
+		RunWith(c.DB).
 		QueryRow().
 		Scan(&count)
 
