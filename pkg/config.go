@@ -107,6 +107,16 @@ func (s SystemConfig) DatabaseDriverName() *string {
 	return s.GetValue("databaseDriverName")
 }
 
+// DatabaseConnection returns system config information to connect to a database
+func (s SystemConfig) DatabaseConnection() (driverName, dataSourceName string) {
+	dataSourceName = fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
+		s["databaseHost"], s["databaseUsername"], s["databasePassword"], s["databaseName"])
+
+	driverName = *s.DatabaseDriverName()
+
+	return
+}
+
 func (c *Client) getConfigMap(namespace, name string) (configMap *ConfigMap, err error) {
 	cm, err := c.CoreV1().ConfigMaps(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {

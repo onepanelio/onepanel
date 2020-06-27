@@ -67,14 +67,11 @@ func main() {
 				log.Fatalf("Failed to get system config: %v", err)
 			}
 
-			databaseDataSourceName := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
-				sysConfig["databaseHost"], sysConfig["databaseUsername"], sysConfig["databasePassword"], sysConfig["databaseName"])
-
+			dbDriverName, databaseDataSourceName := sysConfig.DatabaseConnection()
 			// sqlx.MustConnect will panic when it can't connect to DB. In that case, this whole application will crash.
 			// This is okay, as the pod will restart and try connecting to DB again.
 			// dbDriverName may be nil, but sqlx will then panic.
-			dbDriverName := sysConfig.DatabaseDriverName()
-			db := sqlx.MustConnect(*dbDriverName, databaseDataSourceName)
+			db := sqlx.MustConnect(dbDriverName, databaseDataSourceName)
 			goose.SetTableName("goose_db_version")
 			if err := goose.Run("up", db.DB, "db/sql"); err != nil {
 				log.Fatalf("Failed to run database sql migrations: %v", err)

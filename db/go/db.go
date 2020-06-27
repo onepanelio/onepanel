@@ -1,7 +1,6 @@
 package migration
 
 import (
-	"fmt"
 	"github.com/jmoiron/sqlx"
 	v1 "github.com/onepanelio/core/pkg"
 )
@@ -17,9 +16,8 @@ func getClient() (*v1.Client, error) {
 		return nil, err
 	}
 
-	databaseDataSourceName := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
-		config["databaseHost"], config["databaseUsername"], config["databasePassword"], config["databaseName"])
-	client.DB = v1.NewDB(sqlx.MustConnect(config["databaseDriverName"], databaseDataSourceName))
+	dbDriverName, dbDataSourceName := config.DatabaseConnection()
+	client.DB = v1.NewDB(sqlx.MustConnect(dbDriverName, dbDataSourceName))
 
 	return client, nil
 }
