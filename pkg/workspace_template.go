@@ -855,7 +855,7 @@ func (c *Client) generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *Wo
 
 	workspaceSpec, err := parseWorkspaceSpec(workspaceTemplate.Manifest)
 	if err != nil {
-		return nil, err
+		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
 	}
 
 	if err = generateArguments(workspaceSpec, config); err != nil {

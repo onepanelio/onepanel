@@ -57,7 +57,7 @@ func (s WorkspaceTemplateServer) GenerateWorkspaceTemplateWorkflowTemplate(ctx c
 	if workflowTemplate == nil {
 		return &api.WorkflowTemplate{
 			Manifest: "",
-		}, nil
+		}, err
 	}
 
 	return apiWorkflowTemplate(workflowTemplate), nil
