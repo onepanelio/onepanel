@@ -1,7 +1,9 @@
 package v1
 
 import (
+	"fmt"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/onepanelio/core/util/sql"
 	networking "istio.io/api/networking/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
 	"time"
@@ -32,7 +34,7 @@ type Workspace struct {
 	ID                       uint64
 	Namespace                string
 	UID                      string `valid:"stringlength(3|30)~UID should be between 3 to 30 characters,dns,required"`
-	Name                     string `valid:"stringlength(3|30)~Name should be between 3 to 30 characters,required"`
+	Name                     string `valid:"stringlength(3|30)~Name should be between 3 to 30 characters,matches(^[a-zA-Z]([-a-z0-9 ]*[a-z0-9])?)~Name must start with an alphabetic character and otherwise contain alphanumeric characters or -,required"`
 	Labels                   map[string]string
 	Parameters               []Parameter
 	ParametersBytes          []byte                   `db:"parameters"` // to load from database
@@ -42,28 +44,51 @@ type Workspace struct {
 	WorkspaceTemplate        *WorkspaceTemplate       `db:"workspace_template" valid:"-"`
 	WorkspaceTemplateID      uint64                   `db:"workspace_template_id"`
 	WorkspaceTemplateVersion uint64                   `db:"workspace_template_version"`
-	URL                      string                   `db:"url"`                       // the path to the workspace, a url that you can access via http
 	WorkflowTemplateVersion  *WorkflowTemplateVersion `db:"workflow_template_version"` // helper to store data from workflow template version
 }
 
 type WorkspaceSpec struct {
-	Arguments             *Arguments                 `json:"arguments" protobuf:"bytes,1,opt,name=arguments"`
-	Containers            []corev1.Container         `json:"containers" protobuf:"bytes,3,opt,name=containers"`
-	Ports                 []corev1.ServicePort       `json:"ports" protobuf:"bytes,4,opt,name=ports"`
-	Routes                []*networking.HTTPRoute    `json:"routes" protobuf:"bytes,5,opt,name=routes"`
-	PostExecutionWorkflow *wfv1.WorkflowTemplateSpec `json:"postExecutionWorkflow" protobuf:"bytes,6,opt,name=postExecutionWorkflow"`
+	Arguments             *Arguments                     `json:"arguments" protobuf:"bytes,1,opt,name=arguments"`
+	Containers            []corev1.Container             `json:"containers" protobuf:"bytes,3,opt,name=containers"`
+	Ports                 []corev1.ServicePort           `json:"ports" protobuf:"bytes,4,opt,name=ports"`
+	Routes                []*networking.HTTPRoute        `json:"routes" protobuf:"bytes,5,opt,name=routes"`
+	VolumeClaimTemplates  []corev1.PersistentVolumeClaim `json:"volumeClaimTemplates" protobuf:"bytes,6,opt,name=volumeClaimTemplates"`
+	PostExecutionWorkflow *wfv1.WorkflowTemplateSpec     `json:"postExecutionWorkflow" protobuf:"bytes,7,opt,name=postExecutionWorkflow"`
 }
 
-// returns all of the columns for workspace modified by alias, destination.
-// see formatColumnSelect
-func getWorkspaceColumns(alias string, destination string, extraColumns ...string) []string {
-	columns := []string{"id", "created_at", "modified_at", "uid", "name", "namespace", "parameters", "workspace_template_id", "workspace_template_version", "url"}
-	return formatColumnSelect(columns, alias, destination, extraColumns...)
+// GetURL returns a url that can be used to access the workspace in a browser.
+// protocol is either http:// or https://
+// domain is the domain, e.g. test.onepanel.io
+func (w *Workspace) GetURL(protocol, domain string) string {
+	return fmt.Sprintf("%v%v--%v.%v", protocol, w.UID, w.Namespace, domain)
 }
 
-// returns all of the columns for WorkspaceStatus modified by alias, destination.
+// getWorkspaceColumns returns all of the columns for workspace modified by alias, destination.
 // see formatColumnSelect
-func getWorkspaceStatusColumns(alias string, destination string, extraColumns ...string) []string {
+func getWorkspaceColumns(aliasAndDestination ...string) []string {
+	columns := []string{"id", "created_at", "modified_at", "uid", "name", "namespace", "parameters", "workspace_template_id", "workspace_template_version"}
+	return sql.FormatColumnSelect(columns, aliasAndDestination...)
+}
+
+// getWorkspaceStatusColumns returns all of the columns for WorkspaceStatus modified by alias, destination.
+// see formatColumnSelect
+func getWorkspaceStatusColumns(aliasAndDestination ...string) []string {
 	columns := []string{"phase", "started_at", "paused_at", "terminated_at"}
-	return formatColumnSelect(columns, alias, destination, extraColumns...)
+	return sql.FormatColumnSelect(columns, aliasAndDestination...)
+}
+
+// WorkspacesToIDs returns an array of ids from the input Workspaces with no duplicates.
+func WorkspacesToIDs(resources []*Workspace) (ids []uint64) {
+	mappedIds := make(map[uint64]bool)
+
+	// This is to make sure we don't have duplicates
+	for _, resource := range resources {
+		mappedIds[resource.ID] = true
+	}
+
+	for id := range mappedIds {
+		ids = append(ids, id)
+	}
+
+	return
 }

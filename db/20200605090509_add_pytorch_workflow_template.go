@@ -113,7 +113,7 @@ func Up20200605090509(tx *sql.Tx) error {
 
 	for _, namespace := range namespaces {
 		if _, err := client.CreateWorkflowTemplate(namespace.Name, workflowTemplate); err != nil {
-			log.Fatalf("error %v", err.Error())
+			return err
 		}
 	}
 

@@ -8,7 +8,6 @@ import (
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/onepanelio/core/server/converter"
-	"strings"
 	"time"
 )
 
@@ -56,7 +55,7 @@ func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 }
 
 func (s *WorkflowTemplateServer) CreateWorkflowTemplate(ctx context.Context, req *api.CreateWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflowtemplates", "")
 	if err != nil || !allowed {
 		return nil, err
@@ -77,7 +76,7 @@ func (s *WorkflowTemplateServer) CreateWorkflowTemplate(ctx context.Context, req
 }
 
 func (s *WorkflowTemplateServer) CreateWorkflowTemplateVersion(ctx context.Context, req *api.CreateWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflowtemplates", req.WorkflowTemplate.Name)
 	if err != nil || !allowed {
 		return nil, err
@@ -95,7 +94,7 @@ func (s *WorkflowTemplateServer) CreateWorkflowTemplateVersion(ctx context.Conte
 		return nil, err
 	}
 
-	if _, err := client.InsertLabels(v1.TypeWorkflowTemplateVersion, workflowTemplate.WorkflowTemplateVersionId, workflowTemplate.Labels); err != nil {
+	if _, err := client.InsertLabels(v1.TypeWorkflowTemplateVersion, workflowTemplate.WorkflowTemplateVersionID, workflowTemplate.Labels); err != nil {
 		return nil, err
 	}
 
@@ -107,7 +106,7 @@ func (s *WorkflowTemplateServer) CreateWorkflowTemplateVersion(ctx context.Conte
 }
 
 func (s *WorkflowTemplateServer) UpdateWorkflowTemplateVersion(ctx context.Context, req *api.UpdateWorkflowTemplateVersionRequest) (*api.WorkflowTemplate, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "workflowtemplates", req.WorkflowTemplate.Name)
 	if err != nil || !allowed {
 		return nil, err
@@ -128,7 +127,7 @@ func (s *WorkflowTemplateServer) UpdateWorkflowTemplateVersion(ctx context.Conte
 }
 
 func (s *WorkflowTemplateServer) GetWorkflowTemplate(ctx context.Context, req *api.GetWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflowtemplates", "")
 	if err != nil || !allowed {
 		return nil, err
@@ -149,7 +148,7 @@ func (s *WorkflowTemplateServer) GetWorkflowTemplate(ctx context.Context, req *a
 }
 
 func (s *WorkflowTemplateServer) CloneWorkflowTemplate(ctx context.Context, req *api.CloneWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflowtemplates", "")
 	if err != nil || !allowed {
@@ -163,13 +162,13 @@ func (s *WorkflowTemplateServer) CloneWorkflowTemplate(ctx context.Context, req 
 	}
 
 	//Verify the cloned template name doesn't exist already
-	workflowTemplateByName, err := client.GetWorkflowTemplateByName(req.Namespace, req.Name, req.Version)
+
+	templatesCount, err := client.CountWorkflowTemplatesByName(req.Name, req.Name, nil)
 	if err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return nil, err
-		}
+		return nil, err
 	}
-	if workflowTemplateByName != nil {
+
+	if templatesCount != 0 {
 		return nil, errors.New("Cannot clone, WorkflowTemplate name already taken.")
 	}
 
@@ -187,7 +186,7 @@ func (s *WorkflowTemplateServer) CloneWorkflowTemplate(ctx context.Context, req 
 }
 
 func (s *WorkflowTemplateServer) ListWorkflowTemplateVersions(ctx context.Context, req *api.ListWorkflowTemplateVersionsRequest) (*api.ListWorkflowTemplateVersionsResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "workflowtemplates", "")
 	if err != nil || !allowed {
 		return nil, err
@@ -210,7 +209,7 @@ func (s *WorkflowTemplateServer) ListWorkflowTemplateVersions(ctx context.Contex
 }
 
 func (s *WorkflowTemplateServer) ListWorkflowTemplates(ctx context.Context, req *api.ListWorkflowTemplatesRequest) (*api.ListWorkflowTemplatesResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "workflowtemplates", "")
 	if err != nil || !allowed {
 		return nil, err
@@ -242,7 +241,7 @@ func (s *WorkflowTemplateServer) ListWorkflowTemplates(ctx context.Context, req 
 }
 
 func (s *WorkflowTemplateServer) ArchiveWorkflowTemplate(ctx context.Context, req *api.ArchiveWorkflowTemplateRequest) (*api.ArchiveWorkflowTemplateResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
+	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "argoproj.io", "workflowtemplates", "")
 	if err != nil || !allowed {
 		return nil, err

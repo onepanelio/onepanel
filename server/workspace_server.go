@@ -9,24 +9,39 @@ import (
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/onepanelio/core/server/converter"
-	"strings"
+	log "github.com/sirupsen/logrus"
 	"time"
 )
 
 type WorkspaceServer struct{}
 
-func apiWorkspace(wt *v1.Workspace, config map[string]string) *api.Workspace {
-	protocol := "http://"
-	onepanelApiUrl := config["ONEPANEL_API_URL"]
-	if strings.HasPrefix(onepanelApiUrl, "https://") {
-		protocol = "https://"
+func apiWorkspace(wt *v1.Workspace, config v1.SystemConfig) *api.Workspace {
+	protocol := config.APIProtocol()
+	domain := config.Domain()
+
+	if protocol == nil {
+		log.WithFields(log.Fields{
+			"Method": "apiWorkspace",
+			"Error":  "protocol is nil",
+		})
+
+		return nil
+	}
+
+	if domain == nil {
+		log.WithFields(log.Fields{
+			"Method": "apiWorkspace",
+			"Error":  "domain is nil",
+		})
+
+		return nil
 	}
 
 	res := &api.Workspace{
 		Uid:       wt.UID,
 		Name:      wt.Name,
 		CreatedAt: wt.CreatedAt.UTC().Format(time.RFC3339),
-		Url:       protocol + wt.URL,
+		Url:       wt.GetURL(*protocol, *domain),
 	}
 	res.Parameters = converter.ParametersToAPI(wt.Parameters)
 
@@ -62,8 +77,8 @@ func NewWorkspaceServer() *WorkspaceServer {
 }
 
 func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWorkspaceRequest) (*api.Workspace, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "apps", "statefulsets", "")
+	client := getClient(ctx)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "onepanel.io", "workspaces", "")
 	if err != nil || !allowed {
 		return nil, err
 	}
@@ -107,8 +122,8 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 }
 
 func (s *WorkspaceServer) GetWorkspace(ctx context.Context, req *api.GetWorkspaceRequest) (*api.Workspace, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "apps", "statefulsets", "")
+	client := getClient(ctx)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "onepanel.io", "workspaces", req.Uid)
 	if err != nil || !allowed {
 		return nil, err
 	}
@@ -138,8 +153,8 @@ func (s *WorkspaceServer) GetWorkspace(ctx context.Context, req *api.GetWorkspac
 }
 
 func (s *WorkspaceServer) UpdateWorkspaceStatus(ctx context.Context, req *api.UpdateWorkspaceStatusRequest) (*empty.Empty, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "apps", "statefulsets", req.Uid)
+	client := getClient(ctx)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "onepanel.io", "workspaces", req.Uid)
 	if err != nil || !allowed {
 		return &empty.Empty{}, err
 	}
@@ -153,8 +168,8 @@ func (s *WorkspaceServer) UpdateWorkspaceStatus(ctx context.Context, req *api.Up
 }
 
 func (s *WorkspaceServer) UpdateWorkspace(ctx context.Context, req *api.UpdateWorkspaceRequest) (*empty.Empty, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "apps", "statefulsets", req.Uid)
+	client := getClient(ctx)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "onepanel.io", "workspaces", req.Uid)
 	if err != nil || !allowed {
 		return &empty.Empty{}, err
 	}
@@ -176,8 +191,8 @@ func (s *WorkspaceServer) UpdateWorkspace(ctx context.Context, req *api.UpdateWo
 }
 
 func (s *WorkspaceServer) ListWorkspaces(ctx context.Context, req *api.ListWorkspaceRequest) (*api.ListWorkspaceResponse, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "statefulsets", "")
+	client := getClient(ctx)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "onepanel.io", "workspaces", "")
 	if err != nil || !allowed {
 		return nil, err
 	}
@@ -212,8 +227,8 @@ func (s *WorkspaceServer) ListWorkspaces(ctx context.Context, req *api.ListWorks
 }
 
 func (s *WorkspaceServer) PauseWorkspace(ctx context.Context, req *api.PauseWorkspaceRequest) (*empty.Empty, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "apps", "statefulsets", req.Uid)
+	client := getClient(ctx)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "onepanel.io", "workspaces", req.Uid)
 	if err != nil || !allowed {
 		return &empty.Empty{}, err
 	}
@@ -224,8 +239,8 @@ func (s *WorkspaceServer) PauseWorkspace(ctx context.Context, req *api.PauseWork
 }
 
 func (s *WorkspaceServer) ResumeWorkspace(ctx context.Context, req *api.ResumeWorkspaceRequest) (*empty.Empty, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "apps", "statefulsets", req.Uid)
+	client := getClient(ctx)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "onepanel.io", "workspaces", req.Uid)
 	if err != nil || !allowed {
 		return &empty.Empty{}, err
 	}
@@ -236,8 +251,8 @@ func (s *WorkspaceServer) ResumeWorkspace(ctx context.Context, req *api.ResumeWo
 }
 
 func (s *WorkspaceServer) DeleteWorkspace(ctx context.Context, req *api.DeleteWorkspaceRequest) (*empty.Empty, error) {
-	client := ctx.Value("kubeClient").(*v1.Client)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "apps", "statefulsets", req.Uid)
+	client := getClient(ctx)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "onepanel.io", "workspaces", req.Uid)
 	if err != nil || !allowed {
 		return &empty.Empty{}, err
 	}

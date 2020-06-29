@@ -22,9 +22,6 @@ func (c *Client) ListLabels(resource string, uid string) (labels []*Label, err e
 	case TypeWorkflowTemplate:
 		sb = sb.Join("workflow_templates wt ON wt.id = l.resource_id").
 			Where(sq.Eq{"wt.uid": uid})
-	case TypeWorkflowTemplateVersion:
-		sb = sb.Join("workflow_template_versions wtv ON wtv.id = l.resource_id").
-			Where(sq.Eq{"wtv.uid": uid})
 	case TypeWorkflowExecution:
 		sb = sb.Join("workflow_executions we ON we.id = l.resource_id").
 			Where(sq.Eq{"we.uid": uid})
@@ -275,15 +272,22 @@ func (c *Client) InsertLabelsBuilder(resource string, resourceID uint64, keyValu
 	return sb
 }
 
-// Inserts the labels for the resource. If no labels are provided, does nothing and returns nil, nil.
-func (c *Client) InsertLabels(resource string, resourceID uint64, keyValues map[string]string) (sql.Result, error) {
+// InsertLabelsRunner inserts the labels for the resource into the db using the provided runner.
+// If no labels are provided, does nothing and returns nil, nil.
+func (c *Client) InsertLabelsRunner(runner sq.BaseRunner, resource string, resourceID uint64, keyValues map[string]string) (sql.Result, error) {
 	if len(keyValues) == 0 {
 		return nil, nil
 	}
 
 	return c.InsertLabelsBuilder(resource, resourceID, keyValues).
-		RunWith(c.DB).
+		RunWith(runner).
 		Exec()
+}
+
+// InsertLabels inserts the labels for the resource into the db using the client's DB.
+// If no labels are provided, does nothing and returns nil, nil.
+func (c *Client) InsertLabels(resource string, resourceID uint64, keyValues map[string]string) (sql.Result, error) {
+	return c.InsertLabelsRunner(c.DB, resource, resourceID, keyValues)
 }
 
 func (c *Client) GetDbLabels(resource string, ids ...uint64) (labels []*Label, err error) {
@@ -319,10 +323,9 @@ func (c *Client) GetDbLabels(resource string, ids ...uint64) (labels []*Label, e
 	return
 }
 
-// TODO rename Db to be DB per go conventions
-// Returns a map where the key is the id of the resource
+// GetDBLabelsMapped returns a map where the key is the id of the resource
 // and the value is the labels as a map[string]string
-func (c *Client) GetDbLabelsMapped(resource string, ids ...uint64) (result map[uint64]map[string]string, err error) {
+func (c *Client) GetDBLabelsMapped(resource string, ids ...uint64) (result map[uint64]map[string]string, err error) {
 	dbLabels, err := c.GetDbLabels(resource, ids...)
 	if err != nil {
 		return
@@ -330,11 +333,11 @@ func (c *Client) GetDbLabelsMapped(resource string, ids ...uint64) (result map[u
 
 	result = make(map[uint64]map[string]string)
 	for _, dbLabel := range dbLabels {
-		_, ok := result[dbLabel.ResourceId]
+		_, ok := result[dbLabel.ResourceID]
 		if !ok {
-			result[dbLabel.ResourceId] = make(map[string]string)
+			result[dbLabel.ResourceID] = make(map[string]string)
 		}
-		result[dbLabel.ResourceId][dbLabel.Key] = dbLabel.Value
+		result[dbLabel.ResourceID][dbLabel.Key] = dbLabel.Value
 	}
 
 	return

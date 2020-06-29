@@ -3,7 +3,7 @@
   "info": {
     "title": "Onepanel",
     "description": "Onepanel API",
-    "version": "0.10.0",
+    "version": "0.11.0",
     "contact": {
       "name": "Onepanel project",
       "url": "https://github.com/onepanelio/core"
@@ -38,6 +38,16 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IsAuthorized"
+            }
+          }
+        ],
         "tags": [
           "AuthService"
         ]
@@ -72,6 +82,28 @@
         ],
         "tags": [
           "AuthService"
+        ]
+      }
+    },
+    "/apis/v1beta1/config": {
+      "get": {
+        "operationId": "GetConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "tags": [
+          "ConfigService"
         ]
       }
     },
@@ -2658,6 +2690,23 @@
         }
       }
     },
+    "GetConfigResponse": {
+      "type": "object",
+      "properties": {
+        "apiUrl": {
+          "type": "string"
+        },
+        "domain": {
+          "type": "string"
+        },
+        "fqdn": {
+          "type": "string"
+        },
+        "nodePool": {
+          "$ref": "#/definitions/NodePool"
+        }
+      }
+    },
     "GetLabelsResponse": {
       "type": "object",
       "properties": {
@@ -2677,6 +2726,26 @@
           "items": {
             "$ref": "#/definitions/Metric"
           }
+        }
+      }
+    },
+    "IsAuthorized": {
+      "type": "object",
+      "properties": {
+        "namespace": {
+          "type": "string"
+        },
+        "verb": {
+          "type": "string"
+        },
+        "group": {
+          "type": "string"
+        },
+        "resource": {
+          "type": "string"
+        },
+        "resourceName": {
+          "type": "string"
         }
       }
     },
@@ -2970,6 +3039,31 @@
       "type": "object",
       "properties": {
         "name": {
+          "type": "string"
+        }
+      }
+    },
+    "NodePool": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NodePoolOption"
+          }
+        }
+      }
+    },
+    "NodePoolOption": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
           "type": "string"
         }
       }

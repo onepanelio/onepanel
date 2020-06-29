@@ -8,7 +8,7 @@ import (
 
 func getClient() (*v1.Client, error) {
 	kubeConfig := v1.NewConfig()
-	client, err := v1.NewClient(kubeConfig, nil)
+	client, err := v1.NewClient(kubeConfig, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -19,7 +19,7 @@ func getClient() (*v1.Client, error) {
 
 	databaseDataSourceName := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
 		config["databaseHost"], config["databaseUsername"], config["databasePassword"], config["databaseName"])
-	client.DB = sqlx.MustConnect(config["databaseDriverName"], databaseDataSourceName)
+	client.DB = v1.NewDB(sqlx.MustConnect(config["databaseDriverName"], databaseDataSourceName))
 
 	return client, nil
 }

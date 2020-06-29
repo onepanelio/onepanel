@@ -6,11 +6,11 @@ import (
 	"errors"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
-	"github.com/ghodss/yaml"
 	"github.com/onepanelio/core/pkg/util/label"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
+	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
 	"k8s.io/apimachinery/pkg/watch"
@@ -258,7 +258,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateId uint64, wor
 		wf.Spec.Arguments.Parameters = newParams
 	}
 	if opts.Labels != nil {
-		wf.ObjectMeta.Labels = *opts.Labels
+		wf.ObjectMeta.Labels = opts.Labels
 	}
 
 	err = injectWorkflowExecutionStatusCaller(wf, wfv1.NodeRunning)
@@ -328,31 +328,26 @@ func (c *Client) ValidateWorkflowExecution(namespace string, manifest []byte) (e
 	return
 }
 
-func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExecution) (*WorkflowExecution, error) {
-	workflowTemplate, err := c.GetWorkflowTemplate(namespace, workflow.WorkflowTemplate.UID, workflow.WorkflowTemplate.Version)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"Workflow":  workflow,
-			"Error":     err.Error(),
-		}).Error("Error with getting workflow template.")
-		return nil, util.NewUserError(codes.NotFound, "Error with getting workflow template.")
-	}
-
-	// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
+// CreateWorkflowExecution creates an argo workflow execution and related resources.
+// Note that the workflow template is loaded from the database/k8s, so workflow.WorkflowTemplate.Manifest is not used.
+// Required:
+//  * workflow.Parameters
+//  * workflow.Labels (optional)
+func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExecution, workflowTemplate *WorkflowTemplate) (*WorkflowExecution, error) {
 	opts := &WorkflowExecutionOptions{
-		Labels:     &map[string]string{},
+		Labels:     make(map[string]string),
 		Parameters: workflow.Parameters,
 	}
-	opts.GenerateName, err = uid2.GenerateUID(workflowTemplate.Name, 63)
+
+	nameUID, err := uid2.GenerateUID(workflowTemplate.Name, 63)
 	if err != nil {
 		return nil, err
 	}
-	opts.GenerateName += "-"
+	opts.GenerateName = nameUID + "-"
 
-	(*opts.Labels)[workflowTemplateUIDLabelKey] = workflowTemplate.UID
-	(*opts.Labels)[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
-	label.MergeLabelsPrefix(*opts.Labels, workflow.Labels, label.TagPrefix)
+	opts.Labels[workflowTemplateUIDLabelKey] = workflowTemplate.UID
+	opts.Labels[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
+	label.MergeLabelsPrefix(opts.Labels, workflow.Labels, label.TagPrefix)
 
 	// @todo we need to enforce the below requirement in API.
 	//UX will prevent multiple workflows
@@ -376,7 +371,7 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 		return nil, err
 	}
 
-	id, createdWorkflow, err := c.createWorkflow(namespace, workflowTemplate.ID, workflowTemplate.WorkflowTemplateVersionId, &workflows[0], opts)
+	id, createdWorkflow, err := c.createWorkflow(namespace, workflowTemplate.ID, workflowTemplate.WorkflowTemplateVersionID, &workflows[0], opts)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -411,12 +406,23 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 }
 
 func (c *Client) CloneWorkflowExecution(namespace, uid string) (*WorkflowExecution, error) {
+	// TODO do you need the and template here?
 	workflowExecution, err := c.getWorkflowExecutionAndTemplate(namespace, uid)
 	if err != nil {
 		return nil, err
 	}
 
-	return c.CreateWorkflowExecution(namespace, workflowExecution)
+	workflowTemplate, err := c.GetWorkflowTemplate(namespace, workflowExecution.WorkflowTemplate.UID, workflowExecution.WorkflowTemplate.Version)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Workflow":  workflowExecution,
+			"Error":     err.Error(),
+		}).Error("Error with getting workflow template.")
+		return nil, util.NewUserError(codes.NotFound, "Error with getting workflow template.")
+	}
+
+	return c.CreateWorkflowExecution(namespace, workflowExecution, workflowTemplate)
 }
 
 func (c *Client) insertPreWorkflowExecutionStatistic(namespace, name string, workflowTemplateVersionId uint64, createdAt time.Time, uid string, parameters []Parameter) (newId uint64, err error) {
@@ -426,7 +432,7 @@ func (c *Client) insertPreWorkflowExecutionStatistic(namespace, name string, wor
 	}
 	defer tx.Rollback()
 
-	parametersJson, err := json.Marshal(parameters)
+	parametersJSON, err := json.Marshal(parameters)
 	if err != nil {
 		return 0, err
 	}
@@ -438,7 +444,7 @@ func (c *Client) insertPreWorkflowExecutionStatistic(namespace, name string, wor
 		"namespace":                    namespace,
 		"created_at":                   createdAt.UTC(),
 		"phase":                        wfv1.NodePending,
-		"parameters":                   string(parametersJson),
+		"parameters":                   string(parametersJSON),
 		"is_archived":                  false,
 	}
 
@@ -522,20 +528,20 @@ func (c *Client) CronStartWorkflowExecutionStatisticInsert(namespace, uid string
 	}
 	defer tx.Rollback()
 
-	parametersJson, err := cronWorkflow.GetParametersFromWorkflowSpecJson()
+	parametersJSON, err := cronWorkflow.GetParametersFromWorkflowSpecJSON()
 	if err != nil {
 		return err
 	}
 
 	insertMap := sq.Eq{
 		"uid":                          uid,
-		"workflow_template_version_id": cronWorkflow.WorkflowTemplateVersionId,
+		"workflow_template_version_id": cronWorkflow.WorkflowTemplateVersionID,
 		"name":                         uid,
 		"namespace":                    namespace,
 		"phase":                        wfv1.NodeRunning,
 		"started_at":                   time.Now().UTC(),
 		"cron_workflow_id":             cronWorkflow.ID,
-		"parameters":                   string(parametersJson),
+		"parameters":                   string(parametersJSON),
 	}
 
 	workflowExecutionId := uint64(0)
@@ -642,14 +648,11 @@ func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflow
 	sb := workflowExecutionsSelectBuilder(namespace, workflowTemplateUID, workflowTemplateVersion).
 		OrderBy("we.created_at DESC")
 	sb = *paginator.ApplyToSelect(&sb)
-	query, args, err := sb.ToSql()
-	if err != nil {
+
+	if err := c.DB.Selectx(&workflows, sb); err != nil {
 		return nil, err
 	}
 
-	if err := c.DB.Select(&workflows, query, args...); err != nil {
-		return nil, err
-	}
 	return
 }
 
@@ -1549,6 +1552,8 @@ func (c *Client) getWorkflowExecutionAndTemplate(namespace string, uid string) (
 		return nil, err
 	}
 
+	// TODO DB call
+
 	workflow = &WorkflowExecution{}
 	if err = c.DB.Get(workflow, query, args...); err != nil {
 		return nil, err
@@ -1579,7 +1584,8 @@ func (c *Client) UpdateWorkflowExecutionStatus(namespace, uid string, status *Wo
 			"namespace": namespace,
 			"uid":       uid,
 		}).
-		RunWith(c.DB).Exec()
+		RunWith(c.DB).
+		Exec()
 	if err != nil {
 		return util.NewUserError(codes.NotFound, "Workflow execution not found.")
 	}

@@ -1,6 +1,10 @@
 package v1
 
 import (
+	"fmt"
+	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/onepanelio/core/util/sql"
+	"sigs.k8s.io/yaml"
 	"time"
 )
 
@@ -21,7 +25,49 @@ type WorkspaceTemplate struct {
 	WorkflowTemplateID         uint64 `db:"workflow_template_id"`
 }
 
-func WorkspaceTemplatesToVersionIds(resources []*WorkspaceTemplate) (ids []uint64) {
+// InjectRuntimeParameters will inject all runtime variables into the WorkflowTemplate's manifest.
+func (wt *WorkspaceTemplate) InjectRuntimeParameters(config SystemConfig) error {
+	if wt.WorkflowTemplate == nil {
+		return fmt.Errorf("workflow Template is nil for workspace template")
+	}
+
+	manifest := struct {
+		Arguments Arguments `json:"arguments"`
+		wfv1.WorkflowSpec
+	}{}
+	if err := yaml.Unmarshal([]byte(wt.WorkflowTemplate.Manifest), &manifest); err != nil {
+		return err
+	}
+
+	runtimeParameters, err := generateRuntimeParameters(config)
+	if err != nil {
+		return err
+	}
+
+	runtimeParametersMap := make(map[string]*string)
+	for _, p := range runtimeParameters {
+		runtimeParametersMap[p.Name] = p.Value
+	}
+
+	for i, p := range manifest.Arguments.Parameters {
+		value := runtimeParametersMap[p.Name]
+		if value != nil {
+			manifest.Arguments.Parameters[i].Value = value
+		}
+	}
+
+	resultManifest, err := yaml.Marshal(manifest)
+	if err != nil {
+		return err
+	}
+	wt.WorkflowTemplate.Manifest = string(resultManifest)
+
+	return nil
+}
+
+// WorkspaceTemplatesToVersionIDs plucks the WorkspaceTemplateVersionID from each template and returns it in an array
+// No duplicates are included.
+func WorkspaceTemplatesToVersionIDs(resources []*WorkspaceTemplate) (ids []uint64) {
 	mappedIds := make(map[uint64]bool)
 
 	// This is to make sure we don't have duplicates
@@ -36,9 +82,9 @@ func WorkspaceTemplatesToVersionIds(resources []*WorkspaceTemplate) (ids []uint6
 	return
 }
 
-// returns all of the columns for workspace template modified by alias, destination.
+// getWorkspaceTemplateColumns returns all of the columns for workspace template modified by alias, destination.
 // see formatColumnSelect
-func getWorkspaceTemplateColumns(alias string, destination string, extraColumns ...string) []string {
+func getWorkspaceTemplateColumns(aliasAndDestination ...string) []string {
 	columns := []string{"id", "uid", "created_at", "modified_at", "name", "namespace", "is_archived", "workflow_template_id"}
-	return formatColumnSelect(columns, alias, destination, extraColumns...)
+	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }

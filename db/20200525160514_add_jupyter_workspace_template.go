@@ -93,7 +93,7 @@ func Up20200525160514(tx *sql.Tx) error {
 
 	for _, namespace := range namespaces {
 		if _, err := client.CreateWorkspaceTemplate(namespace.Name, workspaceTemplate); err != nil {
-			log.Fatalf("error %v", err.Error())
+			return err
 		}
 	}
 

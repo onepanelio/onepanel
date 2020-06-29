@@ -3,7 +3,6 @@ package v1
 import (
 	sq "github.com/Masterminds/squirrel"
 	argoprojv1alpha1 "github.com/argoproj/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
-	"github.com/jmoiron/sqlx"
 	"github.com/onepanelio/core/pkg/util/s3"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
@@ -13,14 +12,13 @@ import (
 
 type Config = rest.Config
 
-type DB = sqlx.DB
-
 var sb = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
 type Client struct {
 	kubernetes.Interface
 	argoprojV1alpha1 argoprojv1alpha1.ArgoprojV1alpha1Interface
 	*DB
+	systemConfig SystemConfig
 }
 
 func (c *Client) ArgoprojV1alpha1() argoprojv1alpha1.ArgoprojV1alpha1Interface {
@@ -37,7 +35,9 @@ func NewConfig() (config *Config) {
 	return
 }
 
-func NewClient(config *Config, db *sqlx.DB) (client *Client, err error) {
+// NewClient creates a client to interact with the Onepanel system.
+// It includes access to the database, kubernetes, argo, and configuration.
+func NewClient(config *Config, db *DB, systemConfig SystemConfig) (client *Client, err error) {
 	if config.BearerToken != "" {
 		config.BearerTokenFile = ""
 		config.Username = ""
@@ -56,7 +56,12 @@ func NewClient(config *Config, db *sqlx.DB) (client *Client, err error) {
 		return
 	}
 
-	return &Client{Interface: kubeClient, argoprojV1alpha1: argoClient, DB: db}, nil
+	return &Client{
+		Interface:        kubeClient,
+		argoprojV1alpha1: argoClient,
+		DB:               db,
+		systemConfig:     systemConfig,
+	}, nil
 }
 
 func (c *Client) GetS3Client(namespace string, config *ArtifactRepositoryS3Config) (s3Client *s3.Client, err error) {
