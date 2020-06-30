@@ -5,6 +5,7 @@ import (
 	v1 "github.com/onepanelio/core/pkg"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"github.com/pressly/goose"
+	"time"
 )
 
 const cvatWorkspaceTemplate2 = `# Docker containers that are part of the Workspace
@@ -125,6 +126,8 @@ func init() {
 // Up20200626113635 updates the CVAT template to a new version.
 func Up20200626113635(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
+
+	time.Sleep(2 * time.Second)
 
 	client, err := getClient()
 	if err != nil {
