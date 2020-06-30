@@ -148,3 +148,29 @@ func TestClient_CreateWorkflowTemplate_Success(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, wft.ArgoWorkflowTemplate)
 }
+
+// TestClient_CreateWorkflowTemplate_Timestamp makes sure we can create mulitple
+// workflow templtate versions one after another with practically no time delay.
+// This handles an edge case where versions were set using second time precision and could fail in migrations
+// as they were created one after another.
+func TestClient_CreateWorkflowTemplate_Timestamp(t *testing.T) {
+	c := DefaultTestClient()
+	clearDatabase(t)
+
+	namespace := "onepanel"
+
+	workflowTemplate := &WorkflowTemplate{
+		Name:     "test",
+		Manifest: defaultWorkflowTemplate,
+	}
+
+	// This method creates a workflow template version underneath
+	wft, err := c.CreateWorkflowTemplate("onepanel", workflowTemplate)
+	assert.Nil(t, err)
+	assert.NotNil(t, wft.ArgoWorkflowTemplate)
+
+	// This method creates a brand new version
+	wft, err = c.CreateWorkflowTemplateVersion(namespace, workflowTemplate)
+	assert.Nil(t, err)
+	assert.NotNil(t, wft.ArgoWorkflowTemplate)
+}
