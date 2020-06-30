@@ -600,7 +600,7 @@ func (c *Client) GetWorkflowExecution(namespace, uid string) (workflow *Workflow
 	version, err := strconv.ParseInt(
 		wf.ObjectMeta.Labels[workflowTemplateVersionLabelKey],
 		10,
-		32,
+		64,
 	)
 	if err != nil {
 		log.WithFields(log.Fields{

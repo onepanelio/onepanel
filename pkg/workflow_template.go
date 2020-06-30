@@ -20,6 +20,35 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// createWorkflowTemplateVersionDB inserts a record into workflow_template_versions using the current time accurate to nanoseconds
+// the data is returned in the resulting WorkflowTemplateVersion struct.
+func (c *Client) createWorkflowTemplateVersionDB(runner sq.BaseRunner, workflowTemplateID uint64, manifest string, latest bool) (workflowTemplateVersion *WorkflowTemplateVersion, err error) {
+	ts := time.Now().UnixNano()
+
+	workflowTemplateVersion = &WorkflowTemplateVersion{
+		WorkflowTemplate: &WorkflowTemplate{
+			ID: workflowTemplateID,
+		},
+		Manifest: manifest,
+		IsLatest: latest,
+		Version:  ts,
+	}
+
+	err = sb.Insert("workflow_template_versions").
+		SetMap(sq.Eq{
+			"workflow_template_id": workflowTemplateID,
+			"version":              ts,
+			"is_latest":            true,
+			"manifest":             manifest,
+		}).
+		Suffix("RETURNING id").
+		RunWith(runner).
+		QueryRow().
+		Scan(&workflowTemplateVersion.ID)
+
+	return
+}
+
 // createWorkflowTemplate creates a WorkflowTemplate and all of the DB/Argo/K8s related resources
 // The returned WorkflowTemplate has the ArgoWorkflowTemplate set to the newly created one.
 func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, *WorkflowTemplateVersion, error) {
@@ -32,8 +61,6 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, nil, err
 	}
 	defer tx.Rollback()
-
-	versionUnix := time.Now().Unix()
 
 	err = sb.Insert("workflow_templates").
 		SetMap(sq.Eq{
@@ -50,18 +77,7 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, nil, err
 	}
 
-	workflowTemplateVersion := &WorkflowTemplateVersion{}
-	err = sb.Insert("workflow_template_versions").
-		SetMap(sq.Eq{
-			"workflow_template_id": workflowTemplate.ID,
-			"version":              versionUnix,
-			"is_latest":            true,
-			"manifest":             workflowTemplate.Manifest,
-		}).
-		Suffix("RETURNING id").
-		RunWith(tx).
-		QueryRow().
-		Scan(&workflowTemplateVersion.ID)
+	workflowTemplateVersion, err := c.createWorkflowTemplateVersionDB(tx, workflowTemplate.ID, workflowTemplate.Manifest, true)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -72,11 +88,11 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, nil, err
 	}
 
-	argoWft, err := createArgoWorkflowTemplate(workflowTemplate, versionUnix)
+	argoWft, err := createArgoWorkflowTemplate(workflowTemplate, workflowTemplateVersion.Version)
 	if err != nil {
 		return nil, nil, err
 	}
-	argoWft.Labels[label.WorkflowTemplateVersionUid] = strconv.FormatInt(versionUnix, 10)
+	argoWft.Labels[label.WorkflowTemplateVersionUid] = strconv.FormatInt(workflowTemplateVersion.Version, 10)
 
 	if workflowTemplate.Resource != nil && workflowTemplate.ResourceUID != nil {
 		if *workflowTemplate.Resource == TypeWorkspaceTemplate {
@@ -97,7 +113,7 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 	}
 
 	workflowTemplate.ArgoWorkflowTemplate = argoWft
-	workflowTemplate.Version = versionUnix
+	workflowTemplate.Version = workflowTemplateVersion.Version
 
 	return workflowTemplate, workflowTemplateVersion, nil
 }
@@ -382,8 +398,6 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
 	}
 
-	versionUnix := time.Now().Unix()
-
 	tx, err := c.DB.Begin()
 	if err != nil {
 		return nil, err
@@ -395,19 +409,16 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 			"wt.uid":         workflowTemplate.UID,
 			"wt.is_archived": false,
 		})
-	query, args, err := wftSb.ToSql()
-	if err != nil {
-		return nil, err
-	}
-	workflowTemplateDb := &WorkflowTemplate{}
-	if err = c.DB.Get(workflowTemplateDb, query, args...); err != nil {
+	workflowTemplateDB := &WorkflowTemplate{}
+	if err = c.DB.Getx(workflowTemplateDB, wftSb); err != nil {
 		return nil, err
 	}
 
+	// TODO make removing is_latest and creating a new one a single method
 	_, err = sb.Update("workflow_template_versions").
 		Set("is_latest", false).
 		Where(sq.Eq{
-			"workflow_template_id": workflowTemplateDb.ID,
+			"workflow_template_id": workflowTemplateDB.ID,
 		}).
 		RunWith(tx).
 		Exec()
@@ -415,23 +426,12 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 		return nil, err
 	}
 
-	workflowTemplateVersionID := uint64(0)
-	err = sb.Insert("workflow_template_versions").
-		SetMap(sq.Eq{
-			"workflow_template_id": workflowTemplateDb.ID,
-			"version":              versionUnix,
-			"is_latest":            true,
-			"manifest":             workflowTemplate.Manifest,
-		}).
-		Suffix("RETURNING id").
-		RunWith(tx).
-		QueryRow().
-		Scan(&workflowTemplateVersionID)
+	workflowTemplateVersion, err := c.createWorkflowTemplateVersionDB(tx, workflowTemplateDB.ID, workflowTemplate.Manifest, true)
 	if err != nil {
 		return nil, err
 	}
 
-	workflowTemplate.WorkflowTemplateVersionID = workflowTemplateVersionID
+	workflowTemplate.WorkflowTemplateVersionID = workflowTemplateVersion.ID
 	latest, err := c.getArgoWorkflowTemplate(namespace, workflowTemplate.UID, "latest")
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -450,7 +450,7 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 		return nil, err
 	}
 
-	updatedTemplate, err := createArgoWorkflowTemplate(workflowTemplate, versionUnix)
+	updatedTemplate, err := createArgoWorkflowTemplate(workflowTemplate, workflowTemplateVersion.Version)
 	if err != nil {
 		latest.Labels[label.VersionLatest] = "true"
 		if _, err := c.ArgoprojV1alpha1().WorkflowTemplates(namespace).Update(latest); err != nil {
@@ -463,7 +463,7 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 	updatedTemplate.TypeMeta = v1.TypeMeta{}
 	updatedTemplate.ObjectMeta.ResourceVersion = ""
 	updatedTemplate.ObjectMeta.SetSelfLink("")
-	updatedTemplate.Labels[label.WorkflowTemplateVersionUid] = strconv.FormatInt(versionUnix, 10)
+	updatedTemplate.Labels[label.WorkflowTemplateVersionUid] = strconv.FormatInt(workflowTemplateVersion.Version, 10)
 
 	parametersMap, err := workflowTemplate.GetParametersKeyString()
 	if err != nil {
@@ -485,7 +485,7 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 		return nil, err
 	}
 
-	workflowTemplate.Version = versionUnix
+	workflowTemplate.Version = workflowTemplateVersion.Version
 
 	return workflowTemplate, nil
 }
