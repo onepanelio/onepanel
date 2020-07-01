@@ -3,6 +3,7 @@ package v1
 import (
 	"fmt"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"github.com/onepanelio/core/util/sql"
 	networking "istio.io/api/networking/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
@@ -61,6 +62,29 @@ type WorkspaceSpec struct {
 // domain is the domain, e.g. test.onepanel.io
 func (w *Workspace) GetURL(protocol, domain string) string {
 	return fmt.Sprintf("%v%v--%v.%v", protocol, w.UID, w.Namespace, domain)
+}
+
+// GetParameterValue returns the value of the parameter with the given name, or nil if there is no such parameter
+func (w *Workspace) GetParameterValue(name string) *string {
+	for _, p := range w.Parameters {
+		if p.Name == name {
+			return p.Value
+		}
+	}
+
+	return nil
+}
+
+// GenerateUID generates a uid from the input name and sets it on the workspace
+func (w *Workspace) GenerateUID(name string) error {
+	result, err := uid2.GenerateUID(name, 30)
+	if err != nil {
+		return err
+	}
+
+	w.UID = result
+
+	return nil
 }
 
 // getWorkspaceColumns returns all of the columns for workspace modified by alias, destination.

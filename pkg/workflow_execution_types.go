@@ -75,6 +75,17 @@ func (we *WorkflowExecution) LoadParametersFromBytes() ([]Parameter, error) {
 	return we.Parameters, err
 }
 
+// GetParameterValue returns the value of the parameter with the given name, or nil if there is no such parameter
+func (we *WorkflowExecution) GetParameterValue(name string) *string {
+	for _, p := range we.Parameters {
+		if p.Name == name {
+			return p.Value
+		}
+	}
+
+	return nil
+}
+
 // getWorkflowExecutionColumns returns all of the columns for workflowExecution modified by alias, destination.
 // see formatColumnSelect
 func getWorkflowExecutionColumns(aliasAndDestination ...string) []string {

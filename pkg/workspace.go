@@ -10,9 +10,9 @@ import (
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
-	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
+	"strings"
 	"time"
 )
 
@@ -33,16 +33,8 @@ func (c *Client) workspacesSelectBuilder(namespace string) sq.SelectBuilder {
 	return sb
 }
 
-func getWorkspaceParameterValue(parameters []Parameter, name string) *string {
-	for _, p := range parameters {
-		if p.Name == name {
-			return p.Value
-		}
-	}
-
-	return nil
-}
-
+// mergeWorkspaceParameters combines two parameter arrays. If a parameter in newParameters is not in
+// the existing ones, it is added. If it is, it is ignored.
 func mergeWorkspaceParameters(existingParameters, newParameters []Parameter) (parameters []Parameter) {
 	parameterMap := make(map[string]*string, 0)
 	for _, p := range newParameters {
@@ -73,10 +65,10 @@ func mergeWorkspaceParameters(existingParameters, newParameters []Parameter) (pa
 // sys-workspace-action
 // sys-resource-action
 // sys-host
+// TODO why does this generate the UID?
 func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, workspaceAction, resourceAction string, config SystemConfig) (err error) {
-	workspace.UID, err = uid2.GenerateUID(workspace.Name, 30)
-	if err != nil {
-		return
+	if err := workspace.GenerateUID(workspace.Name); err != nil {
+		return err
 	}
 	host := fmt.Sprintf("%v--%v.%v", workspace.UID, namespace, *config.Domain())
 	systemParameters := []Parameter{
@@ -98,6 +90,10 @@ func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, wor
 	return
 }
 
+// createWorkspace creates a workspace and related resources.
+// The following are required on the workspace:
+//   WorkspaceTemplate.WorkflowTemplate.UID
+//   WorkspaceTemplate.WorkflowTemplate.Version
 func (c *Client) createWorkspace(namespace string, parameters []byte, workspace *Workspace) (*Workspace, error) {
 	systemConfig, err := c.GetSystemConfig()
 	if err != nil {
@@ -155,7 +151,11 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 		QueryRow().
 		Scan(&workspace.ID, &workspace.CreatedAt)
 	if err != nil {
-		return nil, util.NewUserErrorWrap(err, "Workspace")
+		if strings.Contains(err.Error(), "invalid input syntax for type json") {
+			return nil, util.NewUserError(codes.InvalidArgument, err.Error())
+		}
+
+		return nil, util.NewUserError(codes.Unknown, err.Error())
 	}
 
 	return workspace, nil
@@ -182,7 +182,7 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 		Value: ptr.String(workspace.UID),
 	})
 
-	sysHost := getWorkspaceParameterValue(workspace.Parameters, "sys-host")
+	sysHost := workspace.GetParameterValue("sys-host")
 	if sysHost == nil {
 		return nil, fmt.Errorf("sys-host parameter not found")
 	}

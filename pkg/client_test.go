@@ -44,6 +44,7 @@ s3:
 		},
 		Data: map[string]string{
 			"ONEPANEL_HOST":            "demo.onepanel.site",
+			"ONEPANEL_DOMAIN":          "demo.onepanel.site",
 			"artifactRepository":       configArtifactRepository,
 			"applicationNodePoolLabel": "beta.kubernetes.io/instance-type",
 			"applicationNodePoolOptions": `

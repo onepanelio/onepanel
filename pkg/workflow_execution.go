@@ -340,6 +340,7 @@ func (c *Client) ValidateWorkflowExecution(namespace string, manifest []byte) (e
 
 // CreateWorkflowExecution creates an argo workflow execution and related resources.
 // If workflow.Name is set, it is used instead of a generated name.
+// If there is a parameter named "workflow-execution-name" in workflow.Parameters, it is set as the name.
 func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExecution, workflowTemplate *WorkflowTemplate) (*WorkflowExecution, error) {
 	opts := &WorkflowExecutionOptions{
 		Labels:     make(map[string]string),
@@ -348,6 +349,10 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 
 	if workflow.Name != "" {
 		opts.Name = workflow.Name
+	}
+
+	if workflowExecutionName := workflow.GetParameterValue("workflow-execution-name"); workflowExecutionName != nil {
+		opts.Name = *workflowExecutionName
 	}
 
 	nameUID, err := uid2.GenerateUID(workflowTemplate.Name, 63)

@@ -719,15 +719,14 @@ metadata:
 }
 
 func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *WorkspaceTemplate) (*WorkspaceTemplate, error) {
-	uid, err := uid2.GenerateUID(workspaceTemplate.Name, 30)
+	err := workspaceTemplate.GenerateUID(workspaceTemplate.Name)
 	if err != nil {
 		return nil, err
 	}
-	workspaceTemplate.UID = uid
 
 	workspaceTemplate.WorkflowTemplate.IsSystem = true
 	workspaceTemplate.WorkflowTemplate.Resource = ptr.String(TypeWorkspaceTemplate)
-	workspaceTemplate.WorkflowTemplate.ResourceUID = ptr.String(uid)
+	workspaceTemplate.WorkflowTemplate.ResourceUID = &workspaceTemplate.UID
 
 	// validate workflow template
 	if err := c.validateWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate); err != nil {
@@ -754,7 +753,7 @@ func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	defer tx.Rollback()
 	err = sb.Insert("workspace_templates").
 		SetMap(sq.Eq{
-			"uid":                  uid,
+			"uid":                  workspaceTemplate.UID,
 			"name":                 workspaceTemplate.Name,
 			"namespace":            namespace,
 			"workflow_template_id": workspaceTemplate.WorkflowTemplate.ID,

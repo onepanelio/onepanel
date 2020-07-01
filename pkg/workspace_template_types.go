@@ -3,6 +3,7 @@ package v1
 import (
 	"fmt"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"github.com/onepanelio/core/util/sql"
 	"sigs.k8s.io/yaml"
 	"time"
@@ -23,6 +24,18 @@ type WorkspaceTemplate struct {
 	WorkflowTemplate           *WorkflowTemplate `db:"workflow_template"`
 	Labels                     map[string]string
 	WorkflowTemplateID         uint64 `db:"workflow_template_id"`
+}
+
+// GenerateUID generates a uid from the input name and sets it on the workflow template
+func (wt *WorkspaceTemplate) GenerateUID(name string) error {
+	result, err := uid2.GenerateUID(name, 30)
+	if err != nil {
+		return err
+	}
+
+	wt.UID = result
+
+	return nil
 }
 
 // InjectRuntimeParameters will inject all runtime variables into the WorkflowTemplate's manifest.
