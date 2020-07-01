@@ -88,7 +88,7 @@ templates:
 
 const pytorchMnistWorkflowTemplateName = "PyTorch Training"
 
-func init() {
+func initialize20200605090509() {
 	goose.AddMigration(Up20200605090509, Down20200605090509)
 }
 

@@ -119,7 +119,7 @@ routes:
 #       - -c
 `
 
-func init() {
+func initialize20200626113635() {
 	goose.AddMigration(Up20200626113635, Down20200626113635)
 }
 

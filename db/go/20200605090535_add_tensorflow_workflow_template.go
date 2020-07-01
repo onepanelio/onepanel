@@ -88,7 +88,7 @@ templates:
 
 const tensorflowWorkflowTemplateName = "TensorFlow Training"
 
-func init() {
+func initialize20200605090535() {
 	goose.AddMigration(Up20200605090535, Down20200605090535)
 }
 

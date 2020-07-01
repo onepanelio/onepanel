@@ -5,6 +5,14 @@ import (
 	v1 "github.com/onepanelio/core/pkg"
 )
 
+func Initialize() {
+	initialize20200525160514()
+	initialize20200528140124()
+	initialize20200605090509()
+	initialize20200605090535()
+	initialize20200626113635()
+}
+
 func getClient() (*v1.Client, error) {
 	kubeConfig := v1.NewConfig()
 	client, err := v1.NewClient(kubeConfig, nil, nil)

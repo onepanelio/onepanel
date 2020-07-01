@@ -71,7 +71,7 @@ routes:
 
 const jupyterLabTemplateName = "JupyterLab"
 
-func init() {
+func initialize20200525160514() {
 	goose.AddMigration(Up20200525160514, Down20200525160514)
 }
 

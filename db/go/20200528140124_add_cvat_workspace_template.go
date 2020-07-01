@@ -110,7 +110,7 @@ routes:
 
 const cvatTemplateName = "CVAT"
 
-func init() {
+func initialize20200528140124() {
 	goose.AddMigration(Up20200528140124, Down20200528140124)
 }
 

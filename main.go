@@ -22,7 +22,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/jmoiron/sqlx"
 	"github.com/onepanelio/core/api"
-	_ "github.com/onepanelio/core/db/go"
+	migrations "github.com/onepanelio/core/db/go"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util/env"
 	"github.com/onepanelio/core/server"
@@ -78,6 +78,7 @@ func main() {
 			}
 
 			goose.SetTableName("goose_db_go_version")
+			migrations.Initialize()
 			if err := goose.Run("up", db.DB, "db/go"); err != nil {
 				log.Fatalf("Failed to run database go migrations: %v", err)
 			}
