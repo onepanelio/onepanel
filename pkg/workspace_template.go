@@ -979,6 +979,8 @@ func (c *Client) ListWorkspaceTemplates(namespace string, paginator *pagination.
 	return
 }
 
+// ListWorkspaceTemplateVersions returns an array of WorkspaceTemplates with the version information loaded. Latest id is first.
+// Labels are also loaded.
 func (c *Client) ListWorkspaceTemplateVersions(namespace, uid string) (workspaceTemplates []*WorkspaceTemplate, err error) {
 	sb := c.workspaceTemplateVersionsSelectBuilder(namespace, uid).
 		Options("DISTINCT ON (wtv.version) wtv.version,").
@@ -987,11 +989,8 @@ func (c *Client) ListWorkspaceTemplateVersions(namespace, uid string) (workspace
 			"wft.is_archived": false,
 		}).
 		OrderBy("wtv.version DESC")
-	query, args, err := sb.ToSql()
-	if err != nil {
-		return
-	}
-	if err = c.DB.Select(&workspaceTemplates, query, args...); err != nil {
+
+	if err = c.DB.Selectx(&workspaceTemplates, sb); err != nil {
 		return
 	}
 
@@ -1009,6 +1008,7 @@ func (c *Client) ListWorkspaceTemplateVersions(namespace, uid string) (workspace
 	return
 }
 
+// CountWorkspaceTemplates returns the total number of non-archived workspace templates for the input namespace
 func (c *Client) CountWorkspaceTemplates(namespace string) (count int, err error) {
 	err = sb.Select("count(*)").
 		From("workspace_templates wt").

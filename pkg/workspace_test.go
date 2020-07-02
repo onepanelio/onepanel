@@ -1,12 +1,70 @@
 package v1
 
 import (
+	"github.com/lib/pq"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"testing"
+	"time"
 )
+
+func testWorkspaceStatusToFieldMapLaunching(t *testing.T) {
+	start := time.Now().UTC()
+	fm := workspaceStatusToFieldMap(&WorkspaceStatus{Phase: WorkspaceLaunching})
+
+	assert.Equal(t, fm["phase"], WorkspaceLaunching)
+	assert.Equal(t, fm["paused_at"], pq.NullTime{})
+
+	started := fm["started_at"].(time.Time)
+
+	assert.True(t, started.Nanosecond() > start.Nanosecond())
+}
+
+func testWorkspaceStatusToFieldMapPausing(t *testing.T) {
+	start := time.Now().UTC()
+	fm := workspaceStatusToFieldMap(&WorkspaceStatus{Phase: WorkspacePausing})
+
+	assert.Equal(t, fm["phase"], WorkspacePausing)
+	assert.Equal(t, fm["started_at"], pq.NullTime{})
+
+	paused := fm["paused_at"].(time.Time)
+
+	assert.True(t, paused.Nanosecond() > start.Nanosecond())
+}
+
+func testWorkspaceStatusToFieldMapUpdating(t *testing.T) {
+	start := time.Now().UTC()
+	fm := workspaceStatusToFieldMap(&WorkspaceStatus{Phase: WorkspaceUpdating})
+
+	assert.Equal(t, fm["phase"], WorkspaceUpdating)
+	assert.Equal(t, fm["paused_at"], pq.NullTime{})
+
+	updated := fm["updated_at"].(time.Time)
+
+	assert.True(t, updated.Nanosecond() > start.Nanosecond())
+}
+
+func testWorkspaceStatusToFieldMapTerminating(t *testing.T) {
+	start := time.Now().UTC()
+	fm := workspaceStatusToFieldMap(&WorkspaceStatus{Phase: WorkspaceTerminating})
+
+	assert.Equal(t, fm["phase"], WorkspaceTerminating)
+	assert.Equal(t, fm["paused_at"], pq.NullTime{})
+	assert.Equal(t, fm["started_at"], pq.NullTime{})
+
+	terminated := fm["terminated_at"].(time.Time)
+
+	assert.True(t, terminated.Nanosecond() > start.Nanosecond())
+}
+
+func Test_WorkspaceStatusToFieldMap(t *testing.T) {
+	testWorkspaceStatusToFieldMapLaunching(t)
+	testWorkspaceStatusToFieldMapPausing(t)
+	testWorkspaceStatusToFieldMapUpdating(t)
+	testWorkspaceStatusToFieldMapTerminating(t)
+}
 
 // testClientPrivateCreateWorkspaceNoWorkflowTemplate makes sure we get an error when there is no workflow template for the workspace
 func testClientPrivateCreateWorkspaceNoWorkflowTemplate(t *testing.T) {
@@ -71,6 +129,44 @@ func TestClient_createWorkspace(t *testing.T) {
 
 func TestClient_CreateWorkspace(t *testing.T) {
 
+}
+
+func TestClient_ArchiveWorkspace(t *testing.T) {
+	c := DefaultTestClient()
+	clearDatabase(t)
+
+	namespace := "onepanel"
+
+	workspaceTemplate := &WorkspaceTemplate{
+		Name:     "test",
+		Manifest: jupyterLabWorkspaceManifest,
+	}
+
+	workspaceTemplate, _ = c.CreateWorkspaceTemplate(namespace, workspaceTemplate)
+
+	workspace := &Workspace{
+		Name:              "test2",
+		WorkspaceTemplate: workspaceTemplate,
+		Parameters: []Parameter{
+			{
+				Name:  "workflow-execution-name",
+				Value: ptr.String("test2"),
+			},
+		},
+	}
+	workspace.GenerateUID("test")
+
+	createdWorkspace, _ := c.createWorkspace(namespace, []byte("[]"), workspace)
+
+	params := []Parameter{
+		{
+			Name:  "workflow-execution-name",
+			Value: ptr.String("test3"),
+		},
+	}
+	err := c.ArchiveWorkspace(namespace, createdWorkspace.UID, params...)
+
+	assert.Nil(t, err)
 }
 
 // TestClient_ListWorkspacesByTemplateID tests listing workspaces by the template id

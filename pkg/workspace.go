@@ -33,6 +33,53 @@ func (c *Client) workspacesSelectBuilder(namespace string) sq.SelectBuilder {
 	return sb
 }
 
+// workspaceStatusToFieldMap takes a status and creates a map of the fields that should be updated
+func workspaceStatusToFieldMap(status *WorkspaceStatus) sq.Eq {
+	fieldMap := sq.Eq{
+		"phase":       status.Phase,
+		"modified_at": time.Now().UTC(),
+	}
+	switch status.Phase {
+	case WorkspaceLaunching:
+		fieldMap["paused_at"] = pq.NullTime{}
+		fieldMap["started_at"] = time.Now().UTC()
+		break
+	case WorkspacePausing:
+		fieldMap["started_at"] = pq.NullTime{}
+		fieldMap["paused_at"] = time.Now().UTC()
+		break
+	case WorkspaceUpdating:
+		fieldMap["paused_at"] = pq.NullTime{}
+		fieldMap["updated_at"] = time.Now().UTC()
+		break
+	case WorkspaceTerminating:
+		fieldMap["started_at"] = pq.NullTime{}
+		fieldMap["paused_at"] = pq.NullTime{}
+		fieldMap["terminated_at"] = time.Now().UTC()
+		break
+	}
+
+	return fieldMap
+}
+
+// updateWorkspaceStatusBuilder creates an update builder that updates a workspace's status and related fields to match that status.
+func updateWorkspaceStatusBuilder(namespace, uid string, status *WorkspaceStatus) sq.UpdateBuilder {
+	fieldMap := workspaceStatusToFieldMap(status)
+
+	ub := sb.Update("workspaces").
+		SetMap(fieldMap).
+		Where(sq.And{
+			sq.Eq{
+				"namespace": namespace,
+				"uid":       uid,
+			}, sq.NotEq{
+				"phase": WorkspaceTerminated,
+			},
+		})
+
+	return ub
+}
+
 // mergeWorkspaceParameters combines two parameter arrays. If a parameter in newParameters is not in
 // the existing ones, it is added. If it is, it is ignored.
 func mergeWorkspaceParameters(existingParameters, newParameters []Parameter) (parameters []Parameter) {
@@ -267,41 +314,11 @@ func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err 
 
 // UpdateWorkspaceStatus updates workspace status and times based on phase
 func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceStatus) (err error) {
-	fieldMap := sq.Eq{
-		"phase":       status.Phase,
-		"modified_at": time.Now().UTC(),
-	}
-	switch status.Phase {
-	case WorkspaceLaunching:
-		fieldMap["paused_at"] = pq.NullTime{}
-		fieldMap["started_at"] = time.Now().UTC()
-		break
-	case WorkspacePausing:
-		fieldMap["started_at"] = pq.NullTime{}
-		fieldMap["paused_at"] = time.Now().UTC()
-		break
-	case WorkspaceUpdating:
-		fieldMap["paused_at"] = pq.NullTime{}
-		fieldMap["updated_at"] = time.Now().UTC()
-		break
-	case WorkspaceTerminating:
-		fieldMap["started_at"] = pq.NullTime{}
-		fieldMap["paused_at"] = pq.NullTime{}
-		fieldMap["terminated_at"] = time.Now().UTC()
-		break
-	}
-	_, err = sb.Update("workspaces").
-		SetMap(fieldMap).
-		Where(sq.And{
-			sq.Eq{
-				"namespace": namespace,
-				"uid":       uid,
-			}, sq.NotEq{
-				"phase": WorkspaceTerminated,
-			},
-		}).
-		RunWith(c.DB).Exec()
+	_, err = updateWorkspaceStatusBuilder(namespace, uid, status).
+		RunWith(c.DB).
+		Exec()
 	if err != nil {
+		// TODO test this error.
 		return util.NewUserError(codes.NotFound, "Workspace not found.")
 	}
 
@@ -393,6 +410,7 @@ func (c *Client) CountWorkspaces(namespace string) (count int, err error) {
 	return
 }
 
+// updateWorkspace updates the workspace to the indicated status
 func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction string, status *WorkspaceStatus, parameters ...Parameter) (err error) {
 	workspace, err := c.GetWorkspace(namespace, uid)
 	if err != nil {
@@ -446,32 +464,15 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 		return
 	}
 
-	if err = c.UpdateWorkspaceStatus(namespace, uid, status); err != nil {
-		return
+	sb := updateWorkspaceStatusBuilder(namespace, uid, status)
+
+	// Update parameters if they are passed in
+	if len(parameters) != 0 {
+		sb.Set("parameters", parametersJSON)
 	}
 
-	// Update parameters if they are passed
-	if len(parameters) == 0 {
-		return
-	}
-
-	_, err = sb.Update("workspaces").
-		SetMap(sq.Eq{
-			"parameters": parametersJSON,
-		}).
-		Where(sq.And{
-			sq.Eq{
-				"namespace": namespace,
-				"uid":       uid,
-			}, sq.NotEq{
-				"phase": WorkspaceTerminated,
-			},
-		}).
-		RunWith(c.DB).
+	_, err = sb.RunWith(c.DB).
 		Exec()
-	if err != nil {
-		return util.NewUserError(codes.NotFound, "Workspace not found.")
-	}
 
 	return
 }
