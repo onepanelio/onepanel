@@ -313,6 +313,7 @@ func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceS
 // Includes labels.
 func (c *Client) ListWorkspacesByTemplateID(namespace string, templateID uint64) (workspaces []*Workspace, err error) {
 	sb := sb.Select(getWorkspaceColumns("w")...).
+		Columns(getWorkspaceStatusColumns("w", "status")...).
 		From("workspaces w").
 		Where(sq.And{
 			sq.Eq{
@@ -493,6 +494,6 @@ func (c *Client) DeleteWorkspace(namespace, uid string) (err error) {
 
 // ArchiveWorkspace archives by setting the workspace to delete or terminate.
 // Kicks off DB archiving and k8s cleaning.
-func (c *Client) ArchiveWorkspace(namespace, uid string) (err error) {
-	return c.updateWorkspace(namespace, uid, "delete", "delete", &WorkspaceStatus{Phase: WorkspaceTerminating})
+func (c *Client) ArchiveWorkspace(namespace, uid string, parameters ...Parameter) (err error) {
+	return c.updateWorkspace(namespace, uid, "delete", "delete", &WorkspaceStatus{Phase: WorkspaceTerminating}, parameters...)
 }

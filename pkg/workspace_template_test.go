@@ -171,12 +171,31 @@ func testClientCreateWorkspaceTemplateDuplicateName(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+// testClientCreateWorkspaceTemplateArchivedName attempts to create a workspace template for a name that has been archived
+// this should work
+func testClientCreateWorkspaceTemplateArchivedName(t *testing.T) {
+	c := DefaultTestClient()
+	clearDatabase(t)
+
+	namespace := "onepanel"
+
+	wt := &WorkspaceTemplate{
+		Name:     "test",
+		Manifest: jupyterLabWorkspaceManifest,
+	}
+
+	wtCreated, err := c.CreateWorkspaceTemplate(namespace, wt)
+	_, err = c.ArchiveWorkspaceTemplate(namespace, wtCreated.UID)
+	_, err = c.CreateWorkspaceTemplate(namespace, wt)
+
+	assert.Nil(t, err)
+}
+
 // TestClient_CreateWorkspaceTemplate tests creating a workspace template
 func TestClient_CreateWorkspaceTemplate(t *testing.T) {
 	testClientCreateWorkspaceTemplateNew(t)
 	testClientCreateWorkspaceTemplateDuplicateName(t)
-
-	// TODO test creating one, archiving it, creating a new one with same name
+	testClientCreateWorkspaceTemplateArchivedName(t)
 }
 
 func testClientArchiveWorkspaceTemplateSuccess(t *testing.T) {
