@@ -171,7 +171,95 @@ func testClientCreateWorkspaceTemplateDuplicateName(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+// TestClient_CreateWorkspaceTemplate tests creating a workspace template
 func TestClient_CreateWorkspaceTemplate(t *testing.T) {
 	testClientCreateWorkspaceTemplateNew(t)
 	testClientCreateWorkspaceTemplateDuplicateName(t)
+
+	// TODO test creating one, archiving it, creating a new one with same name
+}
+
+func testClientArchiveWorkspaceTemplateSuccess(t *testing.T) {
+	c := DefaultTestClient()
+	clearDatabase(t)
+
+	namespace := "onepanel"
+
+	wt := &WorkspaceTemplate{
+		Name:     "test",
+		Manifest: jupyterLabWorkspaceManifest,
+	}
+
+	testTemplate, _ := c.CreateWorkspaceTemplate(namespace, wt)
+	archived, err := c.ArchiveWorkspaceTemplate(namespace, testTemplate.UID)
+
+	assert.Nil(t, err)
+	assert.True(t, archived)
+}
+
+// testClientArchiveWorkspaceTemplateNotFound tests the case where you try to archive a non-existing workspace template
+func testClientArchiveWorkspaceTemplateNotFound(t *testing.T) {
+	c := DefaultTestClient()
+	clearDatabase(t)
+
+	namespace := "onepanel"
+
+	archived, err := c.ArchiveWorkspaceTemplate(namespace, "not-found")
+
+	assert.NotNil(t, err)
+	assert.False(t, archived)
+}
+
+// TestClient_ArchiveWorkspaceTemplate tests archiving a workspace template
+func TestClient_ArchiveWorkspaceTemplate(t *testing.T) {
+	testClientArchiveWorkspaceTemplateSuccess(t)
+	testClientArchiveWorkspaceTemplateNotFound(t)
+
+	// TODO we need more tests here to make sure the related resources are cleaned up, including workspaces and workflow templates
+}
+
+// testClientListWorkspaceTemplatesEmpty tests listing workspace templates when there are none
+func testClientListWorkspaceTemplatesEmpty(t *testing.T) {
+	c := DefaultTestClient()
+	clearDatabase(t)
+
+	templates, err := c.ListWorkspaceTemplates("onepanel", nil)
+
+	assert.Nil(t, err)
+	assert.Empty(t, templates)
+}
+
+// testClientListWorkspaceTemplatesNotEmpty tests listing workspaces when there are records that are
+// archived and not. It should only list the non-archived ones
+func testClientListWorkspaceTemplatesNotEmpty(t *testing.T) {
+	c := DefaultTestClient()
+	clearDatabase(t)
+
+	namespace := "onepanel"
+
+	wt := &WorkspaceTemplate{
+		Name:     "test",
+		Manifest: jupyterLabWorkspaceManifest,
+	}
+
+	testTemplate, _ := c.CreateWorkspaceTemplate(namespace, wt)
+	c.ArchiveWorkspaceTemplate(namespace, testTemplate.UID)
+
+	wt2 := &WorkspaceTemplate{
+		Name:     "test2",
+		Manifest: jupyterLabWorkspaceManifest,
+	}
+
+	wt2, _ = c.CreateWorkspaceTemplate(namespace, wt2)
+
+	templates, err := c.ListWorkspaceTemplates(namespace, nil)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(templates))
+	assert.Equal(t, wt2.UID, templates[0].UID)
+}
+
+// TestClient_ListWorkspaceTemplates tests listing workspace templates
+func TestClient_ListWorkspaceTemplates(t *testing.T) {
+	testClientListWorkspaceTemplatesEmpty(t)
+	testClientListWorkspaceTemplatesNotEmpty(t)
 }
