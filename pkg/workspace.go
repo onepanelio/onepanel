@@ -112,11 +112,7 @@ func mergeWorkspaceParameters(existingParameters, newParameters []Parameter) (pa
 // sys-workspace-action
 // sys-resource-action
 // sys-host
-// TODO why does this generate the UID?
 func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, workspaceAction, resourceAction string, config SystemConfig) (err error) {
-	if err := workspace.GenerateUID(workspace.Name); err != nil {
-		return err
-	}
 	host := fmt.Sprintf("%v--%v.%v", workspace.UID, namespace, *config.Domain())
 	systemParameters := []Parameter{
 		{
@@ -212,6 +208,10 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Workspace, error) {
 	config, err := c.GetSystemConfig()
 	if err != nil {
+		return nil, err
+	}
+
+	if err := workspace.GenerateUID(workspace.Name); err != nil {
 		return nil, err
 	}
 

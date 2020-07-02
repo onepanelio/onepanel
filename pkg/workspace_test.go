@@ -11,7 +11,6 @@ import (
 )
 
 func testWorkspaceStatusToFieldMapLaunching(t *testing.T) {
-	start := time.Now().UTC()
 	fm := workspaceStatusToFieldMap(&WorkspaceStatus{Phase: WorkspaceLaunching})
 
 	assert.Equal(t, fm["phase"], WorkspaceLaunching)
@@ -19,11 +18,10 @@ func testWorkspaceStatusToFieldMapLaunching(t *testing.T) {
 
 	started := fm["started_at"].(time.Time)
 
-	assert.True(t, started.Nanosecond() > start.Nanosecond())
+	assert.True(t, started.After(time.Time{}))
 }
 
 func testWorkspaceStatusToFieldMapPausing(t *testing.T) {
-	start := time.Now().UTC()
 	fm := workspaceStatusToFieldMap(&WorkspaceStatus{Phase: WorkspacePausing})
 
 	assert.Equal(t, fm["phase"], WorkspacePausing)
@@ -31,11 +29,10 @@ func testWorkspaceStatusToFieldMapPausing(t *testing.T) {
 
 	paused := fm["paused_at"].(time.Time)
 
-	assert.True(t, paused.Nanosecond() > start.Nanosecond())
+	assert.True(t, paused.After(time.Time{}))
 }
 
 func testWorkspaceStatusToFieldMapUpdating(t *testing.T) {
-	start := time.Now().UTC()
 	fm := workspaceStatusToFieldMap(&WorkspaceStatus{Phase: WorkspaceUpdating})
 
 	assert.Equal(t, fm["phase"], WorkspaceUpdating)
@@ -43,11 +40,10 @@ func testWorkspaceStatusToFieldMapUpdating(t *testing.T) {
 
 	updated := fm["updated_at"].(time.Time)
 
-	assert.True(t, updated.Nanosecond() > start.Nanosecond())
+	assert.True(t, updated.After(time.Time{}))
 }
 
 func testWorkspaceStatusToFieldMapTerminating(t *testing.T) {
-	start := time.Now().UTC()
 	fm := workspaceStatusToFieldMap(&WorkspaceStatus{Phase: WorkspaceTerminating})
 
 	assert.Equal(t, fm["phase"], WorkspaceTerminating)
@@ -56,7 +52,7 @@ func testWorkspaceStatusToFieldMapTerminating(t *testing.T) {
 
 	terminated := fm["terminated_at"].(time.Time)
 
-	assert.True(t, terminated.Nanosecond() > start.Nanosecond())
+	assert.True(t, terminated.After(time.Time{}))
 }
 
 func Test_WorkspaceStatusToFieldMap(t *testing.T) {
