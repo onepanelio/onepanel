@@ -5,6 +5,7 @@ import (
 	v1 "github.com/onepanelio/core/pkg"
 )
 
+// Initialize sets up the go migrations.
 func Initialize() {
 	initialize20200525160514()
 	initialize20200528140124()

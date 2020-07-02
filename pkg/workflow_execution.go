@@ -390,7 +390,7 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	}
 
 	if len(workflows) != 1 {
-		return nil, fmt.Errorf("Workflow Template contained more than 1 workflow execution. This is not supported.")
+		return nil, fmt.Errorf("workflow Template contained more than 1 workflow execution")
 	}
 
 	createdWorkflow, err := c.createWorkflow(namespace, workflowTemplate.ID, workflowTemplate.WorkflowTemplateVersionID, &workflows[0], opts)
