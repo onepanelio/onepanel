@@ -314,11 +314,19 @@ func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err 
 
 // UpdateWorkspaceStatus updates workspace status and times based on phase
 func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceStatus) (err error) {
-	_, err = updateWorkspaceStatusBuilder(namespace, uid, status).
+	result, err := updateWorkspaceStatusBuilder(namespace, uid, status).
 		RunWith(c.DB).
 		Exec()
 	if err != nil {
-		// TODO test this error.
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
 		return util.NewUserError(codes.NotFound, "Workspace not found.")
 	}
 

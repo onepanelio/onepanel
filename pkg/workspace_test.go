@@ -228,3 +228,54 @@ func TestClient_ListWorkspacesByTemplateID(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, workspaces[0].Status.Phase == WorkspaceTerminating)
 }
+
+func testUpdateWorkspaceStatusSuccess(t *testing.T) {
+	c := DefaultTestClient()
+	clearDatabase(t)
+
+	namespace := "onepanel"
+
+	workspace := &Workspace{
+		Name: "test",
+		Parameters: []Parameter{
+			{
+				Name:  "workflow-execution-name",
+				Value: ptr.String("test"),
+			},
+		},
+		WorkspaceTemplate: &WorkspaceTemplate{
+			Name:     "test",
+			Manifest: jupyterLabWorkspaceManifest,
+			WorkflowTemplate: &WorkflowTemplate{
+				UID:     "test",
+				Version: 1,
+			},
+		},
+	}
+	workspace.GenerateUID("test")
+
+	c.CreateWorkspaceTemplate(namespace, workspace.WorkspaceTemplate)
+	ws, _ := c.createWorkspace(namespace, []byte("[]"), workspace)
+
+	err := c.UpdateWorkspaceStatus(namespace, ws.UID, &WorkspaceStatus{Phase: WorkspacePausing})
+
+	assert.Nil(t, err)
+}
+
+func testUpdateWorkspaceStatusNotFound(t *testing.T) {
+	c := DefaultTestClient()
+	clearDatabase(t)
+
+	err := c.UpdateWorkspaceStatus("not-found", "random", &WorkspaceStatus{Phase: WorkspacePausing})
+	assert.NotNil(t, err)
+
+	userErr, ok := err.(*util.UserError)
+	assert.True(t, ok)
+
+	assert.Equal(t, userErr.Code, codes.NotFound)
+}
+
+func Test_UpdateWorkspaceStatus(t *testing.T) {
+	testUpdateWorkspaceStatusSuccess(t)
+	testUpdateWorkspaceStatusNotFound(t)
+}
