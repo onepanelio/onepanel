@@ -12,7 +12,6 @@ import (
 	"github.com/onepanelio/core/pkg/util/env"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
-	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	networking "istio.io/api/networking/v1alpha3"

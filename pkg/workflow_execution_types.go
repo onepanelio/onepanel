@@ -3,6 +3,7 @@ package v1
 import (
 	"encoding/json"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"github.com/onepanelio/core/util/sql"
 	"time"
 )
@@ -22,6 +23,7 @@ type WorkflowExecution struct {
 	FinishedAt       *time.Time        `db:"finished_at"`
 	WorkflowTemplate *WorkflowTemplate `db:"workflow_template"`
 	Labels           map[string]string
+	ArgoWorkflow     *wfv1.Workflow
 }
 
 // WorkflowExecutionOptions are options you have for an executing workflow
@@ -53,6 +55,18 @@ type WorkflowExecutionStatus struct {
 	Phase      wfv1.NodePhase `json:"phase"`
 	StartedAt  *time.Time     `db:"started_at" json:"startedAt"`
 	FinishedAt *time.Time     `db:"finished_at" json:"finishedAt"`
+}
+
+// GenerateUID generates a uid from the input name and sets it on the workflow execution
+func (we *WorkflowExecution) GenerateUID(name string) error {
+	result, err := uid2.GenerateUID(name, 63)
+	if err != nil {
+		return err
+	}
+
+	we.UID = result
+
+	return nil
 }
 
 // LoadParametersFromBytes loads Parameters from the WorkflowExecution's ParameterBytes field.
