@@ -110,82 +110,6 @@ func generateRuntimeParameters(config SystemConfig) (parameters []Parameter, err
 	return
 }
 
-func generateStaticParameters() (parameters []Parameter, err error) {
-	parameters = make([]Parameter, 0)
-
-	// Resource action parameter
-	parameters = append(parameters, Parameter{
-		Name:        "sys-name",
-		Type:        "input.text",
-		Value:       ptr.String("name"),
-		DisplayName: ptr.String("Workspace name"),
-		Hint:        ptr.String("Must be between 3-30 characters, contain only alphanumeric or `-` characters"),
-		Required:    true,
-	})
-
-	// TODO: These can be removed when lint validation of workflows work
-	// Resource action parameter
-	parameters = append(parameters, Parameter{
-		Name:  "sys-resource-action",
-		Value: ptr.String("apply"),
-		Type:  "input.hidden",
-	})
-	// Workspace action
-	parameters = append(parameters, Parameter{
-		Name:  "sys-workspace-action",
-		Value: ptr.String("create"),
-		Type:  "input.hidden",
-	})
-
-	// UID placeholder
-	parameters = append(parameters, Parameter{
-		Name:  "sys-uid",
-		Value: ptr.String("uid"),
-		Type:  "input.hidden",
-	})
-
-	return
-}
-
-func generateVolumeParameters(spec *WorkspaceSpec) (parameters []Parameter, err error) {
-	if spec == nil {
-		return nil, fmt.Errorf("workspaceSpec is nil")
-	}
-
-	parameters = make([]Parameter, 0)
-
-	// Map all the volumeClaimTemplates that have storage set
-	volumeStorageQuantityIsSet := make(map[string]bool)
-	for _, v := range spec.VolumeClaimTemplates {
-		if v.Spec.Resources.Requests != nil {
-			volumeStorageQuantityIsSet[v.ObjectMeta.Name] = true
-		}
-	}
-	// Volume size parameters
-	volumeClaimsMapped := make(map[string]bool)
-	for _, c := range spec.Containers {
-		for _, v := range c.VolumeMounts {
-			// Skip if already mapped or storage size is set
-			if volumeClaimsMapped[v.Name] || volumeStorageQuantityIsSet[v.Name] {
-				continue
-			}
-
-			parameters = append(parameters, Parameter{
-				Name:        fmt.Sprintf("sys-%v-volume-size", v.Name),
-				Type:        "input.number",
-				Value:       ptr.String("20480"),
-				DisplayName: ptr.String(fmt.Sprintf("Disk size for \"%v\"", v.Name)),
-				Hint:        ptr.String(fmt.Sprintf("Disk size in MB for volume mounted at `%v`", v.MountPath)),
-				Required:    true,
-			})
-
-			volumeClaimsMapped[v.Name] = true
-		}
-	}
-
-	return
-}
-
 func generateArguments(spec *WorkspaceSpec, config SystemConfig) (err error) {
 	systemParameters := make([]Parameter, 0)
 	// Resource action parameter
@@ -1040,22 +964,17 @@ func (c *Client) UpdateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	return workspaceTemplate, nil
 }
 
+// ListWorkspaceTemplates returns a list of workspace templates that are not archived, sorted by most recent created first
 func (c *Client) ListWorkspaceTemplates(namespace string, paginator *pagination.PaginationRequest) (workspaceTemplates []*WorkspaceTemplate, err error) {
 	sb := c.workspaceTemplatesSelectBuilder(namespace).
 		Where(sq.Eq{
 			"wt.is_archived": false,
 		}).
 		OrderBy("wt.created_at DESC")
+
 	sb = *paginator.ApplyToSelect(&sb)
 
-	query, args, err := sb.ToSql()
-	if err != nil {
-		return nil, err
-	}
-
-	if err := c.DB.Select(&workspaceTemplates, query, args...); err != nil {
-		return nil, err
-	}
+	err = c.DB.Selectx(&workspaceTemplates, sb)
 
 	return
 }
@@ -1179,6 +1098,9 @@ func (c *Client) ArchiveWorkspaceTemplate(namespace string, uid string) (archive
 			"Error":     err.Error(),
 		}).Error("Get Workspace Template failed.")
 		return false, util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
+	}
+	if wsTemp == nil {
+		return false, fmt.Errorf("not found")
 	}
 
 	wsList, err := c.ListWorkspacesByTemplateID(namespace, wsTemp.WorkspaceTemplateVersionID)

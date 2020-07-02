@@ -308,8 +308,9 @@ func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceS
 	return
 }
 
-// ListWorkspacesByTemplateID will return all the workspaces for a given workspace template id.
+// ListWorkspacesByTemplateID will return all the workspaces for a given workspace template id that are not terminated.
 // Sourced from database.
+// Includes labels.
 func (c *Client) ListWorkspacesByTemplateID(namespace string, templateID uint64) (workspaces []*Workspace, err error) {
 	sb := sb.Select(getWorkspaceColumns("w")...).
 		From("workspaces w").
