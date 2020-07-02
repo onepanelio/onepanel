@@ -123,8 +123,41 @@ func TestClient_createWorkspace(t *testing.T) {
 	testClientPrivateCreateWorkspaceSuccess(t)
 }
 
-func TestClient_CreateWorkspace(t *testing.T) {
+func testClientCreateWorkspaceSuccess(t *testing.T) {
+	c := DefaultTestClient()
+	clearDatabase(t)
 
+	namespace := "onepanel"
+
+	wt := &WorkspaceTemplate{
+		Name:     "test",
+		Manifest: jupyterLabWorkspaceManifest,
+	}
+
+	testTemplate, _ := c.CreateWorkspaceTemplate(namespace, wt)
+
+	workspace := &Workspace{
+		Name: "test",
+		WorkspaceTemplate: &WorkspaceTemplate{
+			UID:     testTemplate.UID,
+			Version: testTemplate.Version,
+		},
+		Parameters: []Parameter{
+			{
+				Name:  "workflow-execution-name",
+				Value: ptr.String("test2"),
+			},
+		},
+	}
+
+	createdWorkspace, err := c.CreateWorkspace(namespace, workspace)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, createdWorkspace)
+}
+
+func TestClient_CreateWorkspace(t *testing.T) {
+	testClientCreateWorkspaceSuccess(t)
 }
 
 func TestClient_ArchiveWorkspace(t *testing.T) {
