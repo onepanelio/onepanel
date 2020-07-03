@@ -84,12 +84,19 @@ func generateRuntimeParameters(config SystemConfig) (parameters []Parameter, err
 	})
 
 	// Node pool parameter and options
-	options, err := config.NodePoolOptions()
+	nodePoolOptions, err := config.NodePoolOptions()
 	if err != nil {
 		return nil, err
 	}
-	if len(options) == 0 {
+	if len(nodePoolOptions) == 0 {
 		return nil, fmt.Errorf("no node pool options in config")
+	}
+	var options []*ParameterOption
+	for _, option := range nodePoolOptions {
+		options = append(options, &ParameterOption{
+			Name:  option.Name,
+			Value: option.Value,
+		})
 	}
 
 	parameters = append(parameters, Parameter{

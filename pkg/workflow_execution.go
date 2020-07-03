@@ -104,6 +104,7 @@ func injectArtifactRepositoryConfig(artifact *wfv1.Artifact, namespaceConfig *Na
 	}
 }
 
+// injectNvidiaGPUFields adds GPU specific fields if there is a GPU request
 func injectNvidiaGPUFields(template *wfv1.Template, systemConfig SystemConfig) {
 	limitsGPUCount := template.Container.Resources.Limits["nvidia.com/gpu"]
 	requestsGPUCount := template.Container.Resources.Requests["nvidia.com/gpu"]
@@ -126,6 +127,29 @@ func injectNvidiaGPUFields(template *wfv1.Template, systemConfig SystemConfig) {
 			MountPath: "/usr/bin/nvidia-smi",
 			SubPath:   "nvidia-smi",
 		})
+	}
+}
+
+// injectNodeSelectorResources adds resource requests and limits if they exist
+func injectNodeSelectorResources(template *wfv1.Template, systemConfig SystemConfig) {
+	if template.NodeSelector == nil {
+		return
+	}
+
+	var (
+		option *NodePoolOption
+		err    error
+	)
+	for k, v := range template.NodeSelector {
+		if k == *systemConfig.NodePoolLabel() {
+			option, err = systemConfig.NodePoolOptionByValue(v)
+			if err != nil {
+				return
+			}
+		}
+	}
+	if option != nil && (option.Resources.Requests != nil || option.Resources.Limits != nil) {
+		template.Container.Resources = option.Resources
 	}
 }
 
@@ -209,6 +233,7 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 			template.Inputs.Artifacts[j] = artifact
 		}
 
+		injectNodeSelectorResources(template, systemConfig)
 		injectNvidiaGPUFields(template, systemConfig)
 
 		//Generate ENV vars from secret, if there is a container present in the workflow
