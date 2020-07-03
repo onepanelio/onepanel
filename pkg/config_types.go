@@ -13,6 +13,7 @@ import (
 // database, server, etc.
 type SystemConfig map[string]string
 
+// NodePoolOption extends ParameterOption to support resourceRequirements
 type NodePoolOption struct {
 	ParameterOption
 	Resources corev1.ResourceRequirements
@@ -85,6 +86,7 @@ func (s SystemConfig) NodePoolOptions() (options []*NodePoolOption, err error) {
 	return
 }
 
+// NodePoolOptionByValue returns the nodePoolOption based on a given value
 func (s SystemConfig) NodePoolOptionByValue(value string) (option *NodePoolOption, err error) {
 	options, err := s.NodePoolOptions()
 	if err != nil {
