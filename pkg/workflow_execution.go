@@ -131,24 +131,39 @@ func injectNvidiaGPUFields(template *wfv1.Template, systemConfig SystemConfig) {
 }
 
 // injectNodeSelectorResources adds resource requests and limits if they exist
-func injectNodeSelectorResources(template *wfv1.Template, systemConfig SystemConfig) {
+func injectNodeSelectorResources(wf *wfv1.Workflow, template *wfv1.Template, systemConfig SystemConfig) {
 	if template.NodeSelector == nil {
 		return
 	}
 
-	var (
-		option *NodePoolOption
-		err    error
-	)
+	var value string
 	for k, v := range template.NodeSelector {
 		if k == *systemConfig.NodePoolLabel() {
-			option, err = systemConfig.NodePoolOptionByValue(v)
-			if err != nil {
-				return
+			value = v
+			break
+		}
+	}
+	if value == "" {
+		return
+	}
+	if strings.Contains(value, "{{workflow.") {
+		parts := strings.Split(strings.Replace(value, "}}", "", -1), ".")
+		paramName := parts[len(parts)-1]
+		for _, param := range wf.Spec.Arguments.Parameters {
+			if param.Name == paramName {
+				value = *param.Value
+				break
 			}
 		}
 	}
-	if option != nil && (option.Resources.Requests != nil || option.Resources.Limits != nil) {
+
+	option, err := systemConfig.NodePoolOptionByValue(value)
+	if err != nil {
+		return
+	}
+	if option != nil && option.Resources.Limits != nil {
+		// If a node is selected specifically, match the resources request to limits
+		option.Resources.Requests = option.Resources.Limits
 		template.Container.Resources = option.Resources
 	}
 }
@@ -233,7 +248,7 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 			template.Inputs.Artifacts[j] = artifact
 		}
 
-		injectNodeSelectorResources(template, systemConfig)
+		injectNodeSelectorResources(wf, template, systemConfig)
 		injectNvidiaGPUFields(template, systemConfig)
 
 		//Generate ENV vars from secret, if there is a container present in the workflow
