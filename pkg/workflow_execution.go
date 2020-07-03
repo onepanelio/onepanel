@@ -104,6 +104,31 @@ func injectArtifactRepositoryConfig(artifact *wfv1.Artifact, namespaceConfig *Na
 	}
 }
 
+func injectNvidiaGPUFields(template *wfv1.Template, systemConfig SystemConfig) {
+	limitsGPUCount := template.Container.Resources.Limits["nvidia.com/gpu"]
+	requestsGPUCount := template.Container.Resources.Requests["nvidia.com/gpu"]
+	if limitsGPUCount.IsZero() && requestsGPUCount.IsZero() {
+		return
+	}
+
+	// TODO: Remove once https://github.com/Azure/AKS/issues/1271 is addressed
+	if systemConfig["ONEPANEL_PROVIDER"] == "aks" {
+		template.Volumes = append(template.Volumes, corev1.Volume{
+			Name: "nvidia",
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/usr/local/nvidia",
+				},
+			},
+		})
+		template.Container.VolumeMounts = append(template.Container.VolumeMounts, corev1.VolumeMount{
+			Name:      "nvidia",
+			MountPath: "/usr/bin/nvidia-smi",
+			SubPath:   "nvidia-smi",
+		})
+	}
+}
+
 func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (err error) {
 	if opts.PodGCStrategy == nil {
 		if wf.Spec.PodGC == nil {
@@ -144,25 +169,27 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 	if err != nil {
 		return err
 	}
-	for i, template := range wf.Spec.Templates {
+	for i := range wf.Spec.Templates {
+		template := &wf.Spec.Templates[i]
+
 		// Do not inject Istio sidecars in workflows
 		if template.Metadata.Annotations == nil {
-			wf.Spec.Templates[i].Metadata.Annotations = make(map[string]string)
+			template.Metadata.Annotations = make(map[string]string)
 		}
-		wf.Spec.Templates[i].Metadata.Annotations["sidecar.istio.io/inject"] = "false"
+		template.Metadata.Annotations["sidecar.istio.io/inject"] = "false"
 
 		if template.Container == nil {
 			continue
 		}
 
 		// Mount dev/shm
-		wf.Spec.Templates[i].Container.VolumeMounts = append(template.Container.VolumeMounts, corev1.VolumeMount{
+		template.Container.VolumeMounts = append(template.Container.VolumeMounts, corev1.VolumeMount{
 			Name:      "sys-dshm",
 			MountPath: "/dev/shm",
 		})
 
 		// Always add output artifacts for metrics but make them optional
-		wf.Spec.Templates[i].Outputs.Artifacts = append(template.Outputs.Artifacts, wfv1.Artifact{
+		template.Outputs.Artifacts = append(template.Outputs.Artifacts, wfv1.Artifact{
 			Name:     "sys-metrics",
 			Path:     "/tmp/sys-metrics.json",
 			Optional: true,
@@ -174,13 +201,15 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		// Extend artifact credentials if only key is provided
 		for j, artifact := range template.Outputs.Artifacts {
 			injectArtifactRepositoryConfig(&artifact, namespaceConfig)
-			wf.Spec.Templates[i].Outputs.Artifacts[j] = artifact
+			template.Outputs.Artifacts[j] = artifact
 		}
 
 		for j, artifact := range template.Inputs.Artifacts {
 			injectArtifactRepositoryConfig(&artifact, namespaceConfig)
-			wf.Spec.Templates[i].Inputs.Artifacts[j] = artifact
+			template.Inputs.Artifacts[j] = artifact
 		}
+
+		injectNvidiaGPUFields(template, systemConfig)
 
 		//Generate ENV vars from secret, if there is a container present in the workflow
 		//Get template ENV vars, avoid over-writing them with secret values
