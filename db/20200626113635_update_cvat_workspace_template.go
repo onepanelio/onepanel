@@ -33,7 +33,7 @@ containers:
   - containerPort: 6379
     name: tcp
 - name: cvat
-  image: onepanel/cvat:v0.7.6
+  image: onepanel/cvat:v0.7.10-stable
   env:
   - name: DJANGO_MODWSGI_EXTRA_ARGS
     value: ""
@@ -60,16 +60,18 @@ containers:
   - name: share
     mountPath: /home/django/share
 - name: cvat-ui
-  image: onepanel/cvat-ui:v0.7.5
+  image: onepanel/cvat-ui:v0.7.10-stable
   ports:
   - containerPort: 80
     name: http
-- name: filesyncer
-  image: onepanel/filesyncer:v0.0.4
-  command: ['python3', 'main.py']
-  volumeMounts:
-  - name: share
-    mountPath: /mnt/share
+# Uncomment following lines to enable S3 FileSyncer
+# Refer to https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_quick_guide#setting-up-environment-variables
+#- name: filesyncer
+#  image: onepanel/filesyncer:v0.0.4
+#  command: ['python3', 'main.py']
+#  volumeMounts:
+#  - name: share
+#    mountPath: /mnt/share
 ports:
 - name: cvat-ui
   port: 80
