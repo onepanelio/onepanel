@@ -34,6 +34,7 @@ require (
 	google.golang.org/grpc v1.28.0
 	google.golang.org/protobuf v1.22.0
 	gopkg.in/yaml.v2 v2.2.8
+	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 	istio.io/api v0.0.0-20200107183329-ed4b507c54e1
 	k8s.io/api v0.16.4
 	k8s.io/apimachinery v0.16.7-beta.0
