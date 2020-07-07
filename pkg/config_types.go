@@ -18,6 +18,14 @@ type ArtifactRepositoryS3Config struct {
 	Secretkey       string `yaml:"secretKey"`
 }
 
+type ArtifactRepositoryGCSConfig struct {
+	KeyFormat         string `yaml:"keyFormat"`
+	Bucket            string
+	Endpoint          string
+	Insecure          bool
+	ServiceAccountKey string `yaml:"serviceAccountKey"`
+}
+
 // ArtifactRepositoryS3Provider is meant to be used
 // by the CLI. CLI will marshal this struct into the correct
 // YAML structure for k8s configmap / secret.
@@ -31,8 +39,20 @@ type ArtifactRepositoryS3Provider struct {
 	SecretKeySecret ArtifactRepositorySecret `yaml:"secretKeySecret"`
 }
 
+// ArtifactRepositoryGCSProvider is meant to be used
+// by the CLI. CLI will marshal this struct into the correct
+// YAML structure for k8s configmap / secret.
+type ArtifactRepositoryGCSProvider struct {
+	KeyFormat         string `yaml:"keyFormat"`
+	Bucket            string
+	Endpoint          string
+	Insecure          bool
+	ServiceAccountKey string `yaml:"serviceAccountKey"`
+}
+
 type ArtifactRepositoryProviderConfig struct {
-	S3 ArtifactRepositoryS3Provider `yaml:"s3"`
+	S3  ArtifactRepositoryS3Provider  `yaml:"s3,omitempty"`
+	GCS ArtifactRepositoryGCSProvider `yaml:"gcs,omitempty"`
 }
 
 type ArtifactRepositorySecret struct {
@@ -70,6 +90,28 @@ func (a *ArtifactRepositoryS3Config) MarshalToYaml() (error, string) {
 	return nil, builder.String()
 }
 
+func (g *ArtifactRepositoryGCSConfig) MarshalToYaml() (error, string) {
+	builder := &strings.Builder{}
+	encoder := yaml.NewEncoder(builder)
+	encoder.SetIndent(6)
+	defer encoder.Close()
+	err := encoder.Encode(&ArtifactRepositoryProviderConfig{
+		GCS: ArtifactRepositoryGCSProvider{
+			KeyFormat:         g.KeyFormat,
+			Bucket:            g.Bucket,
+			Endpoint:          g.Endpoint,
+			Insecure:          g.Insecure,
+			ServiceAccountKey: g.ServiceAccountKey,
+		},
+	})
+
+	if err != nil {
+		return err, ""
+	}
+
+	return nil, builder.String()
+}
+
 // FormatKey replaces placeholder values with their actual values and returns this string.
 // {{workflow.namespace}} -> namespace
 // {{workflow.name}} -> workflowName
@@ -85,7 +127,8 @@ func (a *ArtifactRepositoryS3Config) FormatKey(namespace, workflowName, podName 
 }
 
 type ArtifactRepositoryConfig struct {
-	S3 *ArtifactRepositoryS3Config
+	S3  *ArtifactRepositoryS3Config
+	GCS *ArtifactRepositoryGCSConfig
 }
 
 type NamespaceConfig struct {
