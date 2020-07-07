@@ -6,15 +6,16 @@ import (
 )
 
 type ArtifactRepositoryS3Config struct {
-	KeyFormat       string
+	KeyFormat       string `yaml:"keyFormat"`
 	Bucket          string
 	Endpoint        string
 	Insecure        bool
 	Region          string
 	AccessKeySecret corev1.SecretKeySelector
 	SecretKeySecret corev1.SecretKeySelector
-	AccessKey       string
-	Secretkey       string
+	AccessKey       string `yaml:"accessKey"`
+	Secretkey       string `yaml:"secretKey"`
+}
 }
 
 // FormatKey replaces placeholder values with their actual values and returns this string.
