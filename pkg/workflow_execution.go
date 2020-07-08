@@ -915,9 +915,10 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, uid, podName string) (me
 	}
 
 	var (
-		stream   io.ReadCloser
-		s3Client *s3.Client
-		config   *NamespaceConfig
+		stream    io.ReadCloser
+		s3Client  *s3.Client
+		gcsClient *storage.Client
+		config    *NamespaceConfig
 	)
 
 	config, err = c.GetNamespaceConfig(namespace)
@@ -931,30 +932,52 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, uid, podName string) (me
 		return nil, util.NewUserError(codes.NotFound, "Can't get configuration.")
 	}
 
-	s3Client, err = c.GetS3Client(namespace, config.ArtifactRepository.S3)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"UID":       uid,
-			"PodName":   podName,
-			"Error":     err.Error(),
-		}).Error("Can't connect to S3 storage.")
-		return nil, util.NewUserError(codes.NotFound, "Can't connect to S3 storage.")
+	switch {
+	case config.ArtifactRepository.S3 != nil:
+		{
+			s3Client, err = c.GetS3Client(namespace, config.ArtifactRepository.S3)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"PodName":   podName,
+					"Error":     err.Error(),
+				}).Error("Can't connect to S3 storage.")
+				return nil, util.NewUserError(codes.NotFound, "Can't connect to S3 storage.")
+			}
+
+			opts := s3.GetObjectOptions{}
+
+			key := config.ArtifactRepository.S3.FormatKey(namespace, uid, podName) + "/sys-metrics.json"
+			stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, key, opts)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"PodName":   podName,
+					"Error":     err.Error(),
+				}).Error("Metrics do not exist.")
+				return nil, util.NewUserError(codes.NotFound, "Metrics do not exist.")
+			}
+		}
+	case config.ArtifactRepository.GCS != nil:
+		{
+			ctx := context.Background()
+			gcsClient, err = c.GetGCSClient(namespace, config.ArtifactRepository.GCS)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"PodName":   podName,
+					"Error":     err.Error(),
+				}).Error("Can't connect to GCS storage.")
+				return nil, util.NewUserError(codes.NotFound, "Can't connect to GCS storage.")
+			}
+			key := config.ArtifactRepository.GCS.FormatKey(namespace, uid, podName) + "/sys-metrics.json"
+			stream, err = gcsClient.Bucket(config.ArtifactRepository.GCS.Bucket).Object(key).NewReader(ctx)
+		}
 	}
 
-	opts := s3.GetObjectOptions{}
-
-	key := config.ArtifactRepository.S3.FormatKey(namespace, uid, podName) + "/sys-metrics.json"
-	stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, key, opts)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"UID":       uid,
-			"PodName":   podName,
-			"Error":     err.Error(),
-		}).Error("Metrics do not exist.")
-		return nil, util.NewUserError(codes.NotFound, "Metrics do not exist.")
-	}
 	content, err := ioutil.ReadAll(stream)
 	if err != nil {
 		log.WithFields(log.Fields{
