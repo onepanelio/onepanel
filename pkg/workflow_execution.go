@@ -1096,22 +1096,51 @@ func (c *Client) GetArtifact(namespace, uid, key string) (data []byte, err error
 	if err != nil {
 		return
 	}
+	var (
+		stream io.ReadCloser
+	)
+	switch {
+	case config.ArtifactRepository.S3 != nil:
+		{
+			s3Client, err := c.GetS3Client(namespace, config.ArtifactRepository.S3)
+			if err != nil {
+				return
+			}
 
-	s3Client, err := c.GetS3Client(namespace, config.ArtifactRepository.S3)
-	if err != nil {
-		return
-	}
-
-	opts := s3.GetObjectOptions{}
-	stream, err := s3Client.GetObject(config.ArtifactRepository.S3.Bucket, key, opts)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"UID":       uid,
-			"Key":       key,
-			"Error":     err.Error(),
-		}).Error("Metrics do not exist.")
-		return
+			opts := s3.GetObjectOptions{}
+			stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, key, opts)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"Key":       key,
+					"Error":     err.Error(),
+				}).Error("Artifact does not exist.")
+				return
+			}
+		}
+	case config.ArtifactRepository.GCS != nil:
+		{
+			ctx := context.Background()
+			gcsClient, err := c.GetGCSClient(namespace, config.ArtifactRepository.GCS)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"Error":     err.Error(),
+				}).Error("Artifact does not exist.")
+				return nil, util.NewUserError(codes.NotFound, "Artifact does not exist.")
+			}
+			stream, err = gcsClient.Bucket(config.ArtifactRepository.GCS.Bucket).Object(key).NewReader(ctx)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"Error":     err.Error(),
+				}).Error("Artifact does not exist.")
+				return nil, util.NewUserError(codes.NotFound, "Artifact does not exist.")
+			}
+		}
 	}
 
 	data, err = ioutil.ReadAll(stream)
