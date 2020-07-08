@@ -156,7 +156,7 @@ func (c *Client) GetNamespaceConfig(namespace string) (config *NamespaceConfig, 
 	}
 
 	err = yaml.Unmarshal([]byte(configMap.Data["artifactRepository"]), &config.ArtifactRepository)
-	if err != nil || config.ArtifactRepository.S3 == nil {
+	if err != nil || (config.ArtifactRepository.S3 == nil && config.ArtifactRepository.GCS == nil) {
 		return nil, util.NewUserError(codes.NotFound, "Artifact repository config not found.")
 	}
 
