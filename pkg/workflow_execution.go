@@ -975,6 +975,15 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, uid, podName string) (me
 			}
 			key := config.ArtifactRepository.GCS.FormatKey(namespace, uid, podName) + "/sys-metrics.json"
 			stream, err = gcsClient.Bucket(config.ArtifactRepository.GCS.Bucket).Object(key).NewReader(ctx)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"PodName":   podName,
+					"Error":     err.Error(),
+				}).Error("Metrics do not exist.")
+				return nil, util.NewUserError(codes.NotFound, "Metrics do not exist.")
+			}
 		}
 	}
 
