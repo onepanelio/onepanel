@@ -126,6 +126,20 @@ func (a *ArtifactRepositoryS3Config) FormatKey(namespace, workflowName, podName 
 	return keyFormat
 }
 
+// FormatKey replaces placeholder values with their actual values and returns this string.
+// {{workflow.namespace}} -> namespace
+// {{workflow.name}} -> workflowName
+// {{pod.name}} -> podName
+func (g *ArtifactRepositoryGCSConfig) FormatKey(namespace, workflowName, podName string) string {
+	keyFormat := g.KeyFormat
+
+	keyFormat = strings.Replace(keyFormat, "{{workflow.namespace}}", namespace, -1)
+	keyFormat = strings.Replace(keyFormat, "{{workflow.name}}", workflowName, -1)
+	keyFormat = strings.Replace(keyFormat, "{{pod.name}}", podName, -1)
+
+	return keyFormat
+}
+
 type ArtifactRepositoryConfig struct {
 	S3  *ArtifactRepositoryS3Config
 	GCS *ArtifactRepositoryGCSConfig
