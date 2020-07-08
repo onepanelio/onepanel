@@ -1,10 +1,14 @@
 package v1
 
 import (
+	"cloud.google.com/go/storage"
 	sq "github.com/Masterminds/squirrel"
 	argoprojv1alpha1 "github.com/argoproj/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
 	"github.com/onepanelio/core/pkg/util/s3"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/net/context"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/option"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -80,6 +84,28 @@ func (c *Client) GetS3Client(namespace string, config *ArtifactRepositoryS3Confi
 		}).Error("getS3Client failed when initializing a new S3 client.")
 		return
 	}
-
 	return
+}
+
+func (c *Client) GetGCSClient(namespace string, config *ArtifactRepositoryGCSConfig) (gcsClient *storage.Client, err error) {
+	ctx := context.Background()
+	creds, err := google.CredentialsFromJSON(ctx, []byte(config.ServiceAccountKey), storage.ScopeReadWrite)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"ConfigMap": config,
+			"Error":     err.Error(),
+		}).Error("GetGCSClient failed when initializing a new GCS client.")
+		return
+	}
+	client, err := storage.NewClient(ctx, option.WithCredentials(creds))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"ConfigMap": config,
+			"Error":     err.Error(),
+		}).Error("GetGCSClient failed when initializing a new GCS client.")
+		return
+	}
+	return client, nil
 }
