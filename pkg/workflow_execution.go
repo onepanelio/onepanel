@@ -824,9 +824,19 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName
 		opts := s3.GetObjectOptions{}
 		endOffset, err = strconv.Atoi(readEndOffset)
 		if err != nil {
-			return nil, util.NewUserError(codes.InvalidArgument, "Invaild range.")
+			return nil, util.NewUserError(codes.InvalidArgument, "Invalid range.")
 		}
-		opts.SetRange(0, int64(endOffset))
+		err = opts.SetRange(0, int64(endOffset))
+		if err != nil {
+			log.WithFields(log.Fields{
+				"Namespace":     namespace,
+				"UID":           uid,
+				"PodName":       podName,
+				"ContainerName": containerName,
+				"Error":         err.Error(),
+			}).Error("Can't set range.")
+			return nil, util.NewUserError(codes.NotFound, "Can't connect to S3 storage.")
+		}
 
 		key := config.ArtifactRepository.S3.FormatKey(namespace, uid, podName) + "/" + containerName + ".log"
 		stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, key, opts)
