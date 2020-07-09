@@ -1104,7 +1104,7 @@ func (c *Client) GetArtifact(namespace, uid, key string) (data []byte, err error
 		{
 			s3Client, err := c.GetS3Client(namespace, config.ArtifactRepository.S3)
 			if err != nil {
-				return
+				return nil, err
 			}
 
 			opts := s3.GetObjectOptions{}
@@ -1116,7 +1116,7 @@ func (c *Client) GetArtifact(namespace, uid, key string) (data []byte, err error
 					"Key":       key,
 					"Error":     err.Error(),
 				}).Error("Artifact does not exist.")
-				return
+				return nil, err
 			}
 		}
 	case config.ArtifactRepository.GCS != nil:
@@ -1169,7 +1169,7 @@ func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
 		{
 			s3Client, err := c.GetS3Client(namespace, config.ArtifactRepository.S3)
 			if err != nil {
-				return
+				return nil, err
 			}
 
 			doneCh := make(chan struct{})
@@ -1198,7 +1198,7 @@ func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
 			ctx := context.Background()
 			gcsClient, err := c.GetGCSClient(namespace, config.ArtifactRepository.GCS)
 			if err != nil {
-				return
+				return nil, err
 			}
 			q := &storage.Query{
 				Delimiter: "",
@@ -1212,7 +1212,7 @@ func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
 			for true { //todo exit condition
 				file, err := bucketFiles.Next()
 				if err != nil {
-					return
+					return nil, err
 				}
 				//todo check if Name or Prefix should be used
 				if file.Name == key {
