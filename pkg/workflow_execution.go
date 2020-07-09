@@ -130,8 +130,8 @@ func injectNvidiaGPUFields(template *wfv1.Template, systemConfig SystemConfig) {
 	}
 }
 
-// injectNodeSelectorResources adds resource requests and limits if they exist
-func injectNodeSelectorResources(wf *wfv1.Workflow, template *wfv1.Template, systemConfig SystemConfig) {
+// injectContainerResourceQuotas adds resource requests and limits if they exist
+func injectContainerResourceQuotas(wf *wfv1.Workflow, template *wfv1.Template, systemConfig SystemConfig) {
 	if template.NodeSelector == nil {
 		return
 	}
@@ -248,7 +248,7 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 			template.Inputs.Artifacts[j] = artifact
 		}
 
-		injectNodeSelectorResources(wf, template, systemConfig)
+		injectContainerResourceQuotas(wf, template, systemConfig)
 		injectNvidiaGPUFields(template, systemConfig)
 
 		//Generate ENV vars from secret, if there is a container present in the workflow
