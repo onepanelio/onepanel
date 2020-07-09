@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"encoding/base64"
 	"fmt"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	log "github.com/sirupsen/logrus"
@@ -17,6 +18,25 @@ type SystemConfig map[string]string
 type NodePoolOption struct {
 	ParameterOption
 	Resources corev1.ResourceRequirements
+}
+
+// NewSystemConfig creates a System config by getting the required data from a ConfigMap and Secret
+func NewSystemConfig(configMap *ConfigMap, secret *Secret) (config SystemConfig, err error) {
+	config = configMap.Data
+
+	databaseUsername, err := base64.StdEncoding.DecodeString(secret.Data["databaseUsername"])
+	if err != nil {
+		return
+	}
+	config["databaseUsername"] = string(databaseUsername)
+
+	databasePassword, err := base64.StdEncoding.DecodeString(secret.Data["databasePassword"])
+	if err != nil {
+		return
+	}
+	config["databasePassword"] = string(databasePassword)
+
+	return
 }
 
 // GetValue returns the value in the underlying map if it exists, otherwise nil is returned
@@ -104,6 +124,16 @@ func (s SystemConfig) NodePoolOptionByValue(value string) (option *NodePoolOptio
 // DatabaseDriverName gets the databaseDriverName value, or nil.
 func (s SystemConfig) DatabaseDriverName() *string {
 	return s.GetValue("databaseDriverName")
+}
+
+// DatabaseConnection returns system config information to connect to a database
+func (s SystemConfig) DatabaseConnection() (driverName, dataSourceName string) {
+	dataSourceName = fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
+		s["databaseHost"], s["databaseUsername"], s["databasePassword"], s["databaseName"])
+
+	driverName = *s.DatabaseDriverName()
+
+	return
 }
 
 type ArtifactRepositoryS3Config struct {
