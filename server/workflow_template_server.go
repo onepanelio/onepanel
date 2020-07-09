@@ -105,27 +105,6 @@ func (s *WorkflowTemplateServer) CreateWorkflowTemplateVersion(ctx context.Conte
 	return req.WorkflowTemplate, nil
 }
 
-func (s *WorkflowTemplateServer) UpdateWorkflowTemplateVersion(ctx context.Context, req *api.UpdateWorkflowTemplateVersionRequest) (*api.WorkflowTemplate, error) {
-	client := getClient(ctx)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "workflowtemplates", req.WorkflowTemplate.Name)
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	workflowTemplate := &v1.WorkflowTemplate{
-		UID:      req.WorkflowTemplate.Uid,
-		Name:     req.WorkflowTemplate.Name,
-		Manifest: req.WorkflowTemplate.Manifest,
-		Version:  req.WorkflowTemplate.Version,
-	}
-
-	req.WorkflowTemplate.Uid = workflowTemplate.UID
-	req.WorkflowTemplate.Name = workflowTemplate.Name
-	req.WorkflowTemplate.Version = workflowTemplate.Version
-
-	return req.WorkflowTemplate, nil
-}
-
 func (s *WorkflowTemplateServer) GetWorkflowTemplate(ctx context.Context, req *api.GetWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
 	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflowtemplates", "")

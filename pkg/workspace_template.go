@@ -12,7 +12,6 @@ import (
 	"github.com/onepanelio/core/pkg/util/env"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
-	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	networking "istio.io/api/networking/v1alpha3"
@@ -114,82 +113,6 @@ func generateRuntimeParameters(config SystemConfig) (parameters []Parameter, err
 		Hint:        ptr.String("Name of node pool or group"),
 		Required:    true,
 	})
-
-	return
-}
-
-func generateStaticParameters() (parameters []Parameter, err error) {
-	parameters = make([]Parameter, 0)
-
-	// Resource action parameter
-	parameters = append(parameters, Parameter{
-		Name:        "sys-name",
-		Type:        "input.text",
-		Value:       ptr.String("name"),
-		DisplayName: ptr.String("Workspace name"),
-		Hint:        ptr.String("Must be between 3-30 characters, contain only alphanumeric or `-` characters"),
-		Required:    true,
-	})
-
-	// TODO: These can be removed when lint validation of workflows work
-	// Resource action parameter
-	parameters = append(parameters, Parameter{
-		Name:  "sys-resource-action",
-		Value: ptr.String("apply"),
-		Type:  "input.hidden",
-	})
-	// Workspace action
-	parameters = append(parameters, Parameter{
-		Name:  "sys-workspace-action",
-		Value: ptr.String("create"),
-		Type:  "input.hidden",
-	})
-
-	// UID placeholder
-	parameters = append(parameters, Parameter{
-		Name:  "sys-uid",
-		Value: ptr.String("uid"),
-		Type:  "input.hidden",
-	})
-
-	return
-}
-
-func generateVolumeParameters(spec *WorkspaceSpec) (parameters []Parameter, err error) {
-	if spec == nil {
-		return nil, fmt.Errorf("workspaceSpec is nil")
-	}
-
-	parameters = make([]Parameter, 0)
-
-	// Map all the volumeClaimTemplates that have storage set
-	volumeStorageQuantityIsSet := make(map[string]bool)
-	for _, v := range spec.VolumeClaimTemplates {
-		if v.Spec.Resources.Requests != nil {
-			volumeStorageQuantityIsSet[v.ObjectMeta.Name] = true
-		}
-	}
-	// Volume size parameters
-	volumeClaimsMapped := make(map[string]bool)
-	for _, c := range spec.Containers {
-		for _, v := range c.VolumeMounts {
-			// Skip if already mapped or storage size is set
-			if volumeClaimsMapped[v.Name] || volumeStorageQuantityIsSet[v.Name] {
-				continue
-			}
-
-			parameters = append(parameters, Parameter{
-				Name:        fmt.Sprintf("sys-%v-volume-size", v.Name),
-				Type:        "input.number",
-				Value:       ptr.String("20480"),
-				DisplayName: ptr.String(fmt.Sprintf("Disk size for \"%v\"", v.Name)),
-				Hint:        ptr.String(fmt.Sprintf("Disk size in MB for volume mounted at `%v`", v.MountPath)),
-				Required:    true,
-			})
-
-			volumeClaimsMapped[v.Name] = true
-		}
-	}
 
 	return
 }
@@ -726,15 +649,14 @@ metadata:
 }
 
 func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *WorkspaceTemplate) (*WorkspaceTemplate, error) {
-	uid, err := uid2.GenerateUID(workspaceTemplate.Name, 30)
+	err := workspaceTemplate.GenerateUID(workspaceTemplate.Name)
 	if err != nil {
 		return nil, err
 	}
-	workspaceTemplate.UID = uid
 
 	workspaceTemplate.WorkflowTemplate.IsSystem = true
 	workspaceTemplate.WorkflowTemplate.Resource = ptr.String(TypeWorkspaceTemplate)
-	workspaceTemplate.WorkflowTemplate.ResourceUID = ptr.String(uid)
+	workspaceTemplate.WorkflowTemplate.ResourceUID = &workspaceTemplate.UID
 
 	// validate workflow template
 	if err := c.validateWorkflowTemplate(namespace, workspaceTemplate.WorkflowTemplate); err != nil {
@@ -761,7 +683,7 @@ func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	defer tx.Rollback()
 	err = sb.Insert("workspace_templates").
 		SetMap(sq.Eq{
-			"uid":                  uid,
+			"uid":                  workspaceTemplate.UID,
 			"name":                 workspaceTemplate.Name,
 			"namespace":            namespace,
 			"workflow_template_id": workspaceTemplate.WorkflowTemplate.ID,
@@ -1049,26 +971,23 @@ func (c *Client) UpdateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	return workspaceTemplate, nil
 }
 
+// ListWorkspaceTemplates returns a list of workspace templates that are not archived, sorted by most recent created first
 func (c *Client) ListWorkspaceTemplates(namespace string, paginator *pagination.PaginationRequest) (workspaceTemplates []*WorkspaceTemplate, err error) {
 	sb := c.workspaceTemplatesSelectBuilder(namespace).
 		Where(sq.Eq{
 			"wt.is_archived": false,
 		}).
 		OrderBy("wt.created_at DESC")
+
 	sb = *paginator.ApplyToSelect(&sb)
 
-	query, args, err := sb.ToSql()
-	if err != nil {
-		return nil, err
-	}
-
-	if err := c.DB.Select(&workspaceTemplates, query, args...); err != nil {
-		return nil, err
-	}
+	err = c.DB.Selectx(&workspaceTemplates, sb)
 
 	return
 }
 
+// ListWorkspaceTemplateVersions returns an array of WorkspaceTemplates with the version information loaded. Latest id is first.
+// Labels are also loaded.
 func (c *Client) ListWorkspaceTemplateVersions(namespace, uid string) (workspaceTemplates []*WorkspaceTemplate, err error) {
 	sb := c.workspaceTemplateVersionsSelectBuilder(namespace, uid).
 		Options("DISTINCT ON (wtv.version) wtv.version,").
@@ -1077,11 +996,8 @@ func (c *Client) ListWorkspaceTemplateVersions(namespace, uid string) (workspace
 			"wft.is_archived": false,
 		}).
 		OrderBy("wtv.version DESC")
-	query, args, err := sb.ToSql()
-	if err != nil {
-		return
-	}
-	if err = c.DB.Select(&workspaceTemplates, query, args...); err != nil {
+
+	if err = c.DB.Selectx(&workspaceTemplates, sb); err != nil {
 		return
 	}
 
@@ -1099,6 +1015,7 @@ func (c *Client) ListWorkspaceTemplateVersions(namespace, uid string) (workspace
 	return
 }
 
+// CountWorkspaceTemplates returns the total number of non-archived workspace templates for the input namespace
 func (c *Client) CountWorkspaceTemplates(namespace string) (count int, err error) {
 	err = sb.Select("count(*)").
 		From("workspace_templates wt").
@@ -1188,6 +1105,9 @@ func (c *Client) ArchiveWorkspaceTemplate(namespace string, uid string) (archive
 			"Error":     err.Error(),
 		}).Error("Get Workspace Template failed.")
 		return false, util.NewUserError(codes.Unknown, "Unable to archive workspace template.")
+	}
+	if wsTemp == nil {
+		return false, fmt.Errorf("not found")
 	}
 
 	wsList, err := c.ListWorkspacesByTemplateID(namespace, wsTemp.WorkspaceTemplateVersionID)

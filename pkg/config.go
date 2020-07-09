@@ -36,20 +36,19 @@ func (c *Client) GetSystemConfig() (config SystemConfig, err error) {
 	}
 
 	namespace := "onepanel"
-	configMap, err := c.getConfigMap(namespace, "onepanel")
-	if err != nil {
-		return
-	}
-	config = configMap.Data
+	name := "onepanel"
 
-	secret, err := c.GetSecret(namespace, "onepanel")
+	configMap, err := c.getConfigMap(namespace, name)
 	if err != nil {
 		return
 	}
-	databaseUsername, _ := base64.StdEncoding.DecodeString(secret.Data["databaseUsername"])
-	config["databaseUsername"] = string(databaseUsername)
-	databasePassword, _ := base64.StdEncoding.DecodeString(secret.Data["databasePassword"])
-	config["databasePassword"] = string(databasePassword)
+
+	secret, err := c.GetSecret(namespace, name)
+	if err != nil {
+		return
+	}
+
+	config, err = NewSystemConfig(configMap, secret)
 
 	c.systemConfig = config
 

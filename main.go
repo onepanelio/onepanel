@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	_ "github.com/onepanelio/core/db"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	corev1 "k8s.io/api/core/v1"
@@ -23,6 +22,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/jmoiron/sqlx"
 	"github.com/onepanelio/core/api"
+	migrations "github.com/onepanelio/core/db/go"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util/env"
 	"github.com/onepanelio/core/server"
@@ -67,16 +67,20 @@ func main() {
 				log.Fatalf("Failed to get system config: %v", err)
 			}
 
-			databaseDataSourceName := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
-				sysConfig["databaseHost"], sysConfig["databaseUsername"], sysConfig["databasePassword"], sysConfig["databaseName"])
-
+			dbDriverName, databaseDataSourceName := sysConfig.DatabaseConnection()
 			// sqlx.MustConnect will panic when it can't connect to DB. In that case, this whole application will crash.
 			// This is okay, as the pod will restart and try connecting to DB again.
 			// dbDriverName may be nil, but sqlx will then panic.
-			dbDriverName := sysConfig.DatabaseDriverName()
-			db := sqlx.MustConnect(*dbDriverName, databaseDataSourceName)
-			if err := goose.Run("up", db.DB, "db"); err != nil {
-				log.Fatalf("Failed to run database migrations: %v", err)
+			db := sqlx.MustConnect(dbDriverName, databaseDataSourceName)
+			goose.SetTableName("goose_db_version")
+			if err := goose.Run("up", db.DB, "db/sql"); err != nil {
+				log.Fatalf("Failed to run database sql migrations: %v", err)
+			}
+
+			goose.SetTableName("goose_db_go_version")
+			migrations.Initialize()
+			if err := goose.Run("up", db.DB, "db/go"); err != nil {
+				log.Fatalf("Failed to run database go migrations: %v", err)
 			}
 
 			s := startRPCServer(v1.NewDB(db), kubeConfig, sysConfig, stopCh)
