@@ -101,6 +101,16 @@ func Up20200605090535(tx *sql.Tx) error {
 		return err
 	}
 
+	migrationsRan, err := getRanSQLMigrations(client)
+	if err != nil {
+		return err
+	}
+
+	if _, ok := migrationsRan[20200605090535]; ok {
+		log.Printf("Skipping go migration 20200605090535 as it has already been ran in a previous version")
+		return nil
+	}
+
 	namespaces, err := client.ListOnepanelEnabledNamespaces()
 	if err != nil {
 		return err
