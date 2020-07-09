@@ -3,6 +3,7 @@ module github.com/onepanelio/core
 go 1.14
 
 require (
+	github.com/Azure/go-autorest v14.0.0+incompatible // indirect
 	cloud.google.com/go/storage v1.6.0
 	github.com/Azure/go-autorest/autorest/adal v0.8.2 // indirect
 	github.com/Masterminds/squirrel v1.1.0
@@ -29,6 +30,9 @@ require (
 	github.com/spf13/cobra v0.0.5 // indirect
 	github.com/stretchr/testify v1.4.0
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20200122045848-3419fae592fc
+	golang.org/x/net v0.0.0-20200301022130-244492dfa37a
+	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+	google.golang.org/api v0.20.0
 	google.golang.org/genproto v0.0.0-20200430143042-b979b6f78d84
 	google.golang.org/grpc v1.28.0
 	google.golang.org/protobuf v1.22.0
