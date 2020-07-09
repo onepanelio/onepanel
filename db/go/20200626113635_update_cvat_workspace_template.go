@@ -5,7 +5,6 @@ import (
 	v1 "github.com/onepanelio/core/pkg"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"github.com/pressly/goose"
-	"log"
 )
 
 const cvatWorkspaceTemplate2 = `# Docker containers that are part of the Workspace
@@ -137,7 +136,6 @@ func Up20200626113635(tx *sql.Tx) error {
 	}
 
 	if _, ok := migrationsRan[20200626113635]; ok {
-		log.Printf("Skipping go migration 20200626113635 as it has already been ran in a previous version")
 		return nil
 	}
 

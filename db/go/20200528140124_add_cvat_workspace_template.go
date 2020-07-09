@@ -131,7 +131,6 @@ func Up20200528140124(tx *sql.Tx) error {
 	}
 
 	if _, ok := migrationsRan[20200528140124]; ok {
-		log.Printf("Skipping go migration 20200528140124 as it has already been ran in a previous version")
 		return nil
 	}
 
