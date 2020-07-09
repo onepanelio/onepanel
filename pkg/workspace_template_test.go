@@ -123,7 +123,7 @@ routes:
 `
 )
 
-func TestParseWorkspaceSpec(t *testing.T) {
+func Test_ParseWorkspaceSpec(t *testing.T) {
 	workspaceSpec, err := parseWorkspaceSpec(workspaceSpecManifest)
 	assert.Nil(t, err)
 	assert.NotEmpty(t, workspaceSpec)
