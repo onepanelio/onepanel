@@ -3,6 +3,7 @@ package v1
 import (
 	"encoding/json"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"github.com/onepanelio/core/util/sql"
 	"time"
 )
@@ -22,6 +23,7 @@ type WorkflowExecution struct {
 	FinishedAt       *time.Time        `db:"finished_at"`
 	WorkflowTemplate *WorkflowTemplate `db:"workflow_template"`
 	Labels           map[string]string
+	ArgoWorkflow     *wfv1.Workflow
 }
 
 // WorkflowExecutionOptions are options you have for an executing workflow
@@ -55,6 +57,18 @@ type WorkflowExecutionStatus struct {
 	FinishedAt *time.Time     `db:"finished_at" json:"finishedAt"`
 }
 
+// GenerateUID generates a uid from the input name and sets it on the workflow execution
+func (we *WorkflowExecution) GenerateUID(name string) error {
+	result, err := uid2.GenerateUID(name, 63)
+	if err != nil {
+		return err
+	}
+
+	we.UID = result
+
+	return nil
+}
+
 // LoadParametersFromBytes loads Parameters from the WorkflowExecution's ParameterBytes field.
 func (we *WorkflowExecution) LoadParametersFromBytes() ([]Parameter, error) {
 	loadedParameters := make([]Parameter, 0)
@@ -73,6 +87,17 @@ func (we *WorkflowExecution) LoadParametersFromBytes() ([]Parameter, error) {
 	we.Parameters = loadedParameters
 
 	return we.Parameters, err
+}
+
+// GetParameterValue returns the value of the parameter with the given name, or nil if there is no such parameter
+func (we *WorkflowExecution) GetParameterValue(name string) *string {
+	for _, p := range we.Parameters {
+		if p.Name == name {
+			return p.Value
+		}
+	}
+
+	return nil
 }
 
 // getWorkflowExecutionColumns returns all of the columns for workflowExecution modified by alias, destination.

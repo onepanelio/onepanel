@@ -4,7 +4,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/onepanelio/core/db"
 	v1 "github.com/onepanelio/core/pkg"
@@ -38,10 +37,8 @@ func main() {
 		log.Fatalf("Failed to get system config: %v", err)
 	}
 
-	databaseDataSourceName := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
-		config["databaseHost"], config["databaseUsername"], config["databasePassword"], config["databaseName"])
-
-	db := sqlx.MustConnect(config["databaseDriverName"], databaseDataSourceName)
+	dbDriverName, dbDataSourceName := config.DatabaseConnection()
+	db := sqlx.MustConnect(dbDriverName, dbDataSourceName)
 
 	command := args[0]
 

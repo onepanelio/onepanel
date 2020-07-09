@@ -10,9 +10,9 @@ import (
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
-	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
+	"strings"
 	"time"
 )
 
@@ -33,16 +33,55 @@ func (c *Client) workspacesSelectBuilder(namespace string) sq.SelectBuilder {
 	return sb
 }
 
-func getWorkspaceParameterValue(parameters []Parameter, name string) *string {
-	for _, p := range parameters {
-		if p.Name == name {
-			return p.Value
-		}
+// workspaceStatusToFieldMap takes a status and creates a map of the fields that should be updated
+func workspaceStatusToFieldMap(status *WorkspaceStatus) sq.Eq {
+	fieldMap := sq.Eq{
+		"phase":       status.Phase,
+		"modified_at": time.Now().UTC(),
+	}
+	switch status.Phase {
+	case WorkspaceLaunching:
+		fieldMap["paused_at"] = pq.NullTime{}
+		fieldMap["started_at"] = time.Now().UTC()
+		break
+	case WorkspacePausing:
+		fieldMap["started_at"] = pq.NullTime{}
+		fieldMap["paused_at"] = time.Now().UTC()
+		break
+	case WorkspaceUpdating:
+		fieldMap["paused_at"] = pq.NullTime{}
+		fieldMap["updated_at"] = time.Now().UTC()
+		break
+	case WorkspaceTerminating:
+		fieldMap["started_at"] = pq.NullTime{}
+		fieldMap["paused_at"] = pq.NullTime{}
+		fieldMap["terminated_at"] = time.Now().UTC()
+		break
 	}
 
-	return nil
+	return fieldMap
 }
 
+// updateWorkspaceStatusBuilder creates an update builder that updates a workspace's status and related fields to match that status.
+func updateWorkspaceStatusBuilder(namespace, uid string, status *WorkspaceStatus) sq.UpdateBuilder {
+	fieldMap := workspaceStatusToFieldMap(status)
+
+	ub := sb.Update("workspaces").
+		SetMap(fieldMap).
+		Where(sq.And{
+			sq.Eq{
+				"namespace": namespace,
+				"uid":       uid,
+			}, sq.NotEq{
+				"phase": WorkspaceTerminated,
+			},
+		})
+
+	return ub
+}
+
+// mergeWorkspaceParameters combines two parameter arrays. If a parameter in newParameters is not in
+// the existing ones, it is added. If it is, it is ignored.
 func mergeWorkspaceParameters(existingParameters, newParameters []Parameter) (parameters []Parameter) {
 	parameterMap := make(map[string]*string, 0)
 	for _, p := range newParameters {
@@ -74,10 +113,6 @@ func mergeWorkspaceParameters(existingParameters, newParameters []Parameter) (pa
 // sys-resource-action
 // sys-host
 func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, workspaceAction, resourceAction string, config SystemConfig) (err error) {
-	workspace.UID, err = uid2.GenerateUID(workspace.Name, 30)
-	if err != nil {
-		return
-	}
 	host := fmt.Sprintf("%v--%v.%v", workspace.UID, namespace, *config.Domain())
 	systemParameters := []Parameter{
 		{
@@ -98,6 +133,10 @@ func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, wor
 	return
 }
 
+// createWorkspace creates a workspace and related resources.
+// The following are required on the workspace:
+//   WorkspaceTemplate.WorkflowTemplate.UID
+//   WorkspaceTemplate.WorkflowTemplate.Version
 func (c *Client) createWorkspace(namespace string, parameters []byte, workspace *Workspace) (*Workspace, error) {
 	systemConfig, err := c.GetSystemConfig()
 	if err != nil {
@@ -155,7 +194,11 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 		QueryRow().
 		Scan(&workspace.ID, &workspace.CreatedAt)
 	if err != nil {
-		return nil, util.NewUserErrorWrap(err, "Workspace")
+		if strings.Contains(err.Error(), "invalid input syntax for type json") {
+			return nil, util.NewUserError(codes.InvalidArgument, err.Error())
+		}
+
+		return nil, util.NewUserError(codes.Unknown, err.Error())
 	}
 
 	return workspace, nil
@@ -165,6 +208,10 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Workspace, error) {
 	config, err := c.GetSystemConfig()
 	if err != nil {
+		return nil, err
+	}
+
+	if err := workspace.GenerateUID(workspace.Name); err != nil {
 		return nil, err
 	}
 
@@ -182,7 +229,7 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 		Value: ptr.String(workspace.UID),
 	})
 
-	sysHost := getWorkspaceParameterValue(workspace.Parameters, "sys-host")
+	sysHost := workspace.GetParameterValue("sys-host")
 	if sysHost == nil {
 		return nil, fmt.Errorf("sys-host parameter not found")
 	}
@@ -267,51 +314,31 @@ func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err 
 
 // UpdateWorkspaceStatus updates workspace status and times based on phase
 func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceStatus) (err error) {
-	fieldMap := sq.Eq{
-		"phase":       status.Phase,
-		"modified_at": time.Now().UTC(),
-	}
-	switch status.Phase {
-	case WorkspaceLaunching:
-		fieldMap["paused_at"] = pq.NullTime{}
-		fieldMap["started_at"] = time.Now().UTC()
-		break
-	case WorkspacePausing:
-		fieldMap["started_at"] = pq.NullTime{}
-		fieldMap["paused_at"] = time.Now().UTC()
-		break
-	case WorkspaceUpdating:
-		fieldMap["paused_at"] = pq.NullTime{}
-		fieldMap["updated_at"] = time.Now().UTC()
-		break
-	case WorkspaceTerminating:
-		fieldMap["started_at"] = pq.NullTime{}
-		fieldMap["paused_at"] = pq.NullTime{}
-		fieldMap["terminated_at"] = time.Now().UTC()
-		break
-	}
-	_, err = sb.Update("workspaces").
-		SetMap(fieldMap).
-		Where(sq.And{
-			sq.Eq{
-				"namespace": namespace,
-				"uid":       uid,
-			}, sq.NotEq{
-				"phase": WorkspaceTerminated,
-			},
-		}).
-		RunWith(c.DB).Exec()
+	result, err := updateWorkspaceStatusBuilder(namespace, uid, status).
+		RunWith(c.DB).
+		Exec()
 	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
 		return util.NewUserError(codes.NotFound, "Workspace not found.")
 	}
 
 	return
 }
 
-// ListWorkspacesByTemplateID will return all the workspaces for a given workspace template id.
+// ListWorkspacesByTemplateID will return all the workspaces for a given workspace template id that are not terminated.
 // Sourced from database.
+// Includes labels.
 func (c *Client) ListWorkspacesByTemplateID(namespace string, templateID uint64) (workspaces []*Workspace, err error) {
 	sb := sb.Select(getWorkspaceColumns("w")...).
+		Columns(getWorkspaceStatusColumns("w", "status")...).
 		From("workspaces w").
 		Where(sq.And{
 			sq.Eq{
@@ -391,6 +418,7 @@ func (c *Client) CountWorkspaces(namespace string) (count int, err error) {
 	return
 }
 
+// updateWorkspace updates the workspace to the indicated status
 func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction string, status *WorkspaceStatus, parameters ...Parameter) (err error) {
 	workspace, err := c.GetWorkspace(namespace, uid)
 	if err != nil {
@@ -444,32 +472,15 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 		return
 	}
 
-	if err = c.UpdateWorkspaceStatus(namespace, uid, status); err != nil {
-		return
+	sb := updateWorkspaceStatusBuilder(namespace, uid, status)
+
+	// Update parameters if they are passed in
+	if len(parameters) != 0 {
+		sb.Set("parameters", parametersJSON)
 	}
 
-	// Update parameters if they are passed
-	if len(parameters) == 0 {
-		return
-	}
-
-	_, err = sb.Update("workspaces").
-		SetMap(sq.Eq{
-			"parameters": parametersJSON,
-		}).
-		Where(sq.And{
-			sq.Eq{
-				"namespace": namespace,
-				"uid":       uid,
-			}, sq.NotEq{
-				"phase": WorkspaceTerminated,
-			},
-		}).
-		RunWith(c.DB).
+	_, err = sb.RunWith(c.DB).
 		Exec()
-	if err != nil {
-		return util.NewUserError(codes.NotFound, "Workspace not found.")
-	}
 
 	return
 }
@@ -492,6 +503,6 @@ func (c *Client) DeleteWorkspace(namespace, uid string) (err error) {
 
 // ArchiveWorkspace archives by setting the workspace to delete or terminate.
 // Kicks off DB archiving and k8s cleaning.
-func (c *Client) ArchiveWorkspace(namespace, uid string) (err error) {
-	return c.updateWorkspace(namespace, uid, "delete", "delete", &WorkspaceStatus{Phase: WorkspaceTerminating})
+func (c *Client) ArchiveWorkspace(namespace, uid string, parameters ...Parameter) (err error) {
+	return c.updateWorkspace(namespace, uid, "delete", "delete", &WorkspaceStatus{Phase: WorkspaceTerminating}, parameters...)
 }

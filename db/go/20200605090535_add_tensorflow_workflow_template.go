@@ -9,13 +9,13 @@ import (
 	"github.com/pressly/goose"
 )
 
-const pytorchMnistWorkflowTemplate = `entrypoint: main
+const tensorflowWorkflowTemplate = `entrypoint: main
 arguments:
     parameters:
     - name: source
-      value: https://github.com/onepanelio/pytorch-examples.git
+      value: https://github.com/onepanelio/tensorflow-examples.git
     - name: command
-      value: "python mnist/main.py --epochs=1"
+      value: "python mnist/main.py --epochs=5"
 volumeClaimTemplates:
   - metadata:
       name: data
@@ -63,7 +63,7 @@ templates:
         archive:
           none: {}
     container:
-      image: pytorch/pytorch:latest
+      image: tensorflow/tensorflow:latest
       command: [sh,-c]
       args: ["{{workflow.parameters.command}}"]
       workingDir: /mnt/src
@@ -86,19 +86,28 @@ templates:
         optional: true
 `
 
-const pytorchMnistWorkflowTemplateName = "PyTorch Training"
+const tensorflowWorkflowTemplateName = "TensorFlow Training"
 
-func init() {
-	goose.AddMigration(Up20200605090509, Down20200605090509)
+func initialize20200605090535() {
+	goose.AddMigration(Up20200605090535, Down20200605090535)
 }
 
-// Up20200605090509 will insert a Pytorch workflow template to each user.
+// Up20200605090535 will insert a tensorflow workflow template to each user.
 // Each user is determined by onepanel enabled namespaces.
 // Any errors reported are logged as fatal.
-func Up20200605090509(tx *sql.Tx) error {
+func Up20200605090535(tx *sql.Tx) error {
 	client, err := getClient()
 	if err != nil {
 		return err
+	}
+
+	migrationsRan, err := getRanSQLMigrations(client)
+	if err != nil {
+		return err
+	}
+
+	if _, ok := migrationsRan[20200605090535]; ok {
+		return nil
 	}
 
 	namespaces, err := client.ListOnepanelEnabledNamespaces()
@@ -107,8 +116,8 @@ func Up20200605090509(tx *sql.Tx) error {
 	}
 
 	workflowTemplate := &v1.WorkflowTemplate{
-		Name:     pytorchMnistWorkflowTemplateName,
-		Manifest: pytorchMnistWorkflowTemplate,
+		Name:     tensorflowWorkflowTemplateName,
+		Manifest: tensorflowWorkflowTemplate,
 	}
 
 	for _, namespace := range namespaces {
@@ -116,16 +125,15 @@ func Up20200605090509(tx *sql.Tx) error {
 			return err
 		}
 	}
-
 	return nil
 }
 
-// Down20200605090509 will attempt to remove Pytorch workflow from each user.
+// Down20200605090535 will attempt to remove tensorflow workflow from each user.
 // Each user is determined by onepanel enabled namespaces.
 // DB entries are archived, K8S components are deleted.
 // Active workflows with that template are terminated.
 // Any errors reported are logged as fatal.
-func Down20200605090509(tx *sql.Tx) error {
+func Down20200605090535(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	client, err := getClient()
 	if err != nil {
@@ -137,7 +145,7 @@ func Down20200605090509(tx *sql.Tx) error {
 		return err
 	}
 
-	uid, err := uid2.GenerateUID(pytorchMnistWorkflowTemplateName, 30)
+	uid, err := uid2.GenerateUID(tensorflowWorkflowTemplateName, 30)
 	if err != nil {
 		return err
 	}
