@@ -1157,11 +1157,6 @@ func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
 		return
 	}
 
-	s3Client, err := c.GetS3Client(namespace, config.ArtifactRepository.S3)
-	if err != nil {
-		return
-	}
-
 	files = make([]*File, 0)
 
 	if len(key) > 0 {
@@ -1169,28 +1164,75 @@ func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
 			key += "/"
 		}
 	}
+	switch {
+	case config.ArtifactRepository.S3 != nil:
+		{
+			s3Client, err := c.GetS3Client(namespace, config.ArtifactRepository.S3)
+			if err != nil {
+				return
+			}
 
-	doneCh := make(chan struct{})
-	defer close(doneCh)
-	for objInfo := range s3Client.ListObjectsV2(config.ArtifactRepository.S3.Bucket, key, false, doneCh) {
-		if objInfo.Key == key {
-			continue
+			doneCh := make(chan struct{})
+			defer close(doneCh)
+			for objInfo := range s3Client.ListObjectsV2(config.ArtifactRepository.S3.Bucket, key, false, doneCh) {
+				if objInfo.Key == key {
+					continue
+				}
+
+				isDirectory := (objInfo.ETag == "" || strings.HasSuffix(objInfo.Key, "/")) && objInfo.Size == 0
+
+				newFile := &File{
+					Path:         objInfo.Key,
+					Name:         FilePathToName(objInfo.Key),
+					Extension:    FilePathToExtension(objInfo.Key),
+					Size:         objInfo.Size,
+					LastModified: objInfo.LastModified,
+					ContentType:  objInfo.ContentType,
+					Directory:    isDirectory,
+				}
+				files = append(files, newFile)
+			}
 		}
+	case config.ArtifactRepository.GCS != nil:
+		{
+			ctx := context.Background()
+			gcsClient, err := c.GetGCSClient(namespace, config.ArtifactRepository.GCS)
+			if err != nil {
+				return
+			}
+			q := &storage.Query{
+				Delimiter: "",
+				Prefix:    key,
+				Versions:  false,
+			}
+			bucketFiles := gcsClient.Bucket(config.ArtifactRepository.GCS.Bucket).Objects(ctx, q)
 
-		isDirectory := (objInfo.ETag == "" || strings.HasSuffix(objInfo.Key, "/")) && objInfo.Size == 0
+			//iterate and get files?
+			//Check for files are done. todo
+			for true { //todo exit condition
+				file, err := bucketFiles.Next()
+				if err != nil {
+					return
+				}
+				//todo check if Name or Prefix should be used
+				if file.Name == key {
+					continue
+				}
+				isDirectory := (file.Etag == "" || strings.HasSuffix(file.Name, "/")) && file.Size == 0
 
-		newFile := &File{
-			Path:         objInfo.Key,
-			Name:         FilePathToName(objInfo.Key),
-			Extension:    FilePathToExtension(objInfo.Key),
-			Size:         objInfo.Size,
-			LastModified: objInfo.LastModified,
-			ContentType:  objInfo.ContentType,
-			Directory:    isDirectory,
+				newFile := &File{
+					Path:         file.Name,
+					Name:         FilePathToName(file.Name),
+					Extension:    FilePathToExtension(file.Name),
+					Size:         file.Size,
+					LastModified: file.Updated,
+					ContentType:  file.ContentType,
+					Directory:    isDirectory,
+				}
+				files = append(files, newFile)
+			}
 		}
-		files = append(files, newFile)
 	}
-
 	return
 }
 
