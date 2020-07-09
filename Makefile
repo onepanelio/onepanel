@@ -35,16 +35,7 @@ docker-push:
 
 docker: docker-build docker-push
 
-test-start:
-	docker run --rm --name test-onepanel-postgres -p 5432:5432 -e POSTGRES_USER=admin -e POSTGRES_PASSWORD=tester -e POSTGRES_DB=onepanel -d  postgres:12.3
-
-test-finish:
-	docker stop test-onepanel-postgres
-
 run-tests:
-	go test github.com/onepanelio/core/pkg -count=1
-
-test-run:
-	make test-start
-	make run-tests
-	make test-finish
+	docker run --rm --name test-onepanel-postgres -p 5432:5432 -e POSTGRES_USER=admin -e POSTGRES_PASSWORD=tester -e POSTGRES_DB=onepanel -d  postgres:12.3
+	go test github.com/onepanelio/core/pkg -count=1 ||:
+	docker stop test-onepanel-postgres
