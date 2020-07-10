@@ -100,6 +100,14 @@ func injectArtifactRepositoryConfig(artifact *wfv1.Artifact, namespaceConfig *Na
 		artifact.S3.AccessKeySecret = s3Config.AccessKeySecret
 	}
 
+	if artifact.GCS != nil && namespaceConfig.ArtifactRepository.GCS != nil {
+		gcsConfig := namespaceConfig.ArtifactRepository.GCS
+		artifact.GCS.Bucket = gcsConfig.Bucket
+		artifact.GCS.Key = gcsConfig.KeyFormat
+		artifact.GCS.ServiceAccountKeySecret.Name = "onepanel"
+		artifact.GCS.ServiceAccountKeySecret.Key = "serviceAccountKeySecret"
+	}
+
 	// Default to no compression for artifacts
 	artifact.Archive = &wfv1.ArchiveStrategy{
 		None: &wfv1.NoneStrategy{},
