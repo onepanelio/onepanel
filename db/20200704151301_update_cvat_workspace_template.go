@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const cvatWorkspaceTemplate2 = `# Docker containers that are part of the Workspace
+const cvatWorkspaceTemplate3 = `# Docker containers that are part of the Workspace
 containers:
 - name: cvat-db
   image: postgres:10-alpine
@@ -33,7 +33,7 @@ containers:
   - containerPort: 6379
     name: tcp
 - name: cvat
-  image: onepanel/cvat:v0.7.6
+  image: onepanel/cvat:v0.7.10-stable
   env:
   - name: DJANGO_MODWSGI_EXTRA_ARGS
     value: ""
@@ -60,16 +60,18 @@ containers:
   - name: share
     mountPath: /home/django/share
 - name: cvat-ui
-  image: onepanel/cvat-ui:v0.7.5
+  image: onepanel/cvat-ui:v0.7.10-stable
   ports:
   - containerPort: 80
     name: http
-- name: filesyncer
-  image: onepanel/filesyncer:v0.0.4
-  command: ['python3', 'main.py']
-  volumeMounts:
-  - name: share
-    mountPath: /mnt/share
+# Uncomment following lines to enable S3 FileSyncer
+# Refer to https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_quick_guide#setting-up-environment-variables
+#- name: filesyncer
+#  image: onepanel/filesyncer:v0.0.4
+#  command: ['python3', 'main.py']
+#  volumeMounts:
+#  - name: share
+#    mountPath: /mnt/share
 ports:
 - name: cvat-ui
   port: 80
@@ -120,11 +122,11 @@ routes:
 `
 
 func init() {
-	goose.AddMigration(Up20200626113635, Down20200626113635)
+	goose.AddMigration(Up20200704151301, Down20200704151301)
 }
 
-// Up20200626113635 updates the CVAT template to a new version.
-func Up20200626113635(tx *sql.Tx) error {
+// Up20200704151301 updates the CVAT template to a new version.
+func Up20200704151301(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 
 	time.Sleep(2 * time.Second)
@@ -146,7 +148,7 @@ func Up20200626113635(tx *sql.Tx) error {
 	workspaceTemplate := &v1.WorkspaceTemplate{
 		UID:      uid,
 		Name:     cvatTemplateName,
-		Manifest: cvatWorkspaceTemplate2,
+		Manifest: cvatWorkspaceTemplate3,
 	}
 
 	for _, namespace := range namespaces {
@@ -158,8 +160,8 @@ func Up20200626113635(tx *sql.Tx) error {
 	return nil
 }
 
-// Down20200626113635 removes the CVAT template update
-func Down20200626113635(tx *sql.Tx) error {
+// Down20200704151301 removes the CVAT template update
+func Down20200704151301(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return nil
 }

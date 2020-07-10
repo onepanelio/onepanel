@@ -16,6 +16,25 @@ import (
 // database, server, etc.
 type SystemConfig map[string]string
 
+// NewSystemConfig creates a System config by getting the required data from a ConfigMap and Secret
+func NewSystemConfig(configMap *ConfigMap, secret *Secret) (config SystemConfig, err error) {
+	config = configMap.Data
+
+	databaseUsername, err := base64.StdEncoding.DecodeString(secret.Data["databaseUsername"])
+	if err != nil {
+		return
+	}
+	config["databaseUsername"] = string(databaseUsername)
+
+	databasePassword, err := base64.StdEncoding.DecodeString(secret.Data["databasePassword"])
+	if err != nil {
+		return
+	}
+	config["databasePassword"] = string(databasePassword)
+
+	return
+}
+
 // GetValue returns the value in the underlying map if it exists, otherwise nil is returned
 // If the value does not exist, it is also logged.
 func (s SystemConfig) GetValue(name string) *string {
@@ -88,6 +107,16 @@ func (s SystemConfig) DatabaseDriverName() *string {
 	return s.GetValue("databaseDriverName")
 }
 
+// DatabaseConnection returns system config information to connect to a database
+func (s SystemConfig) DatabaseConnection() (driverName, dataSourceName string) {
+	dataSourceName = fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
+		s["databaseHost"], s["databaseUsername"], s["databasePassword"], s["databaseName"])
+
+	driverName = *s.DatabaseDriverName()
+
+	return
+}
+
 func (c *Client) getConfigMap(namespace, name string) (configMap *ConfigMap, err error) {
 	cm, err := c.CoreV1().ConfigMaps(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
@@ -115,20 +144,19 @@ func (c *Client) GetSystemConfig() (config SystemConfig, err error) {
 	}
 
 	namespace := "onepanel"
-	configMap, err := c.getConfigMap(namespace, "onepanel")
-	if err != nil {
-		return
-	}
-	config = configMap.Data
+	name := "onepanel"
 
-	secret, err := c.GetSecret(namespace, "onepanel")
+	configMap, err := c.getConfigMap(namespace, name)
 	if err != nil {
 		return
 	}
-	databaseUsername, _ := base64.StdEncoding.DecodeString(secret.Data["databaseUsername"])
-	config["databaseUsername"] = string(databaseUsername)
-	databasePassword, _ := base64.StdEncoding.DecodeString(secret.Data["databasePassword"])
-	config["databasePassword"] = string(databasePassword)
+
+	secret, err := c.GetSecret(namespace, name)
+	if err != nil {
+		return
+	}
+
+	config, err = NewSystemConfig(configMap, secret)
 
 	c.systemConfig = config
 

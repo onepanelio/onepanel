@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/onepanelio/core/pkg/util/mapping"
+	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"github.com/onepanelio/core/util/sql"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -13,6 +14,9 @@ import (
 
 // WorkflowTemplate represents a Workflow Template backed by a database row
 // it stores information required to run an execution
+// A Workflow template is uniquely identified by
+// (namespace, uid, is_archived)
+// (namespace, name, is_archived) -- because we create a uid from the name.
 type WorkflowTemplate struct {
 	ID                               uint64
 	CreatedAt                        time.Time  `db:"created_at"`
@@ -33,6 +37,18 @@ type WorkflowTemplate struct {
 	WorkflowTemplateVersionID        uint64  `db:"workflow_template_version_id"` // Reference to the associated workflow template version.
 	Resource                         *string // utility in case we are specifying a workflow template for a specific resource
 	ResourceUID                      *string // see Resource field
+}
+
+// GenerateUID generates a uid from the input name and sets it on the workflow template
+func (wt *WorkflowTemplate) GenerateUID(name string) error {
+	result, err := uid2.GenerateUID(name, 30)
+	if err != nil {
+		return err
+	}
+
+	wt.UID = result
+
+	return nil
 }
 
 // GetManifestBytes returns the manifest as []byte
