@@ -89,7 +89,7 @@ func (c *Client) GetS3Client(namespace string, config *ArtifactRepositoryS3Confi
 
 func (c *Client) GetGCSClient(namespace string, config *ArtifactRepositoryGCSConfig) (gcsClient *storage.Client, err error) {
 	ctx := context.Background()
-	creds, err := google.CredentialsFromJSON(ctx, []byte(config.ServiceAccountKey), storage.ScopeReadWrite)
+	creds, err := google.CredentialsFromJSON(ctx, []byte(config.ServiceAccountJSON), storage.ScopeReadWrite)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,

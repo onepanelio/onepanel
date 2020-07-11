@@ -19,11 +19,13 @@ type ArtifactRepositoryS3Config struct {
 }
 
 type ArtifactRepositoryGCSConfig struct {
-	KeyFormat         string `yaml:"keyFormat"`
-	Bucket            string
-	Endpoint          string
-	Insecure          bool
-	ServiceAccountKey string `yaml:"serviceAccountKey"`
+	KeyFormat               string `yaml:"keyFormat"`
+	Bucket                  string
+	Endpoint                string
+	Insecure                bool
+	ServiceAccountKey       string                   `yaml:"serviceAccountKey"`
+	ServiceAccountKeySecret ArtifactRepositorySecret `yaml:"serviceAccountKeySecret"`
+	ServiceAccountJSON      string                   `yaml:"omitempty"`
 }
 
 // ArtifactRepositoryS3Provider is meant to be used

@@ -207,7 +207,8 @@ func (c *Client) GetNamespaceConfig(namespace string) (config *NamespaceConfig, 
 		}
 	case config.ArtifactRepository.GCS != nil:
 		{
-			break
+			serviceJson, _ := base64.StdEncoding.DecodeString(secret.Data[config.ArtifactRepository.GCS.ServiceAccountKeySecret.Key])
+			config.ArtifactRepository.GCS.ServiceAccountJSON = string(serviceJson)
 		}
 	default:
 		return nil, util.NewUserError(codes.NotFound, "Artifact repository config not found.")
