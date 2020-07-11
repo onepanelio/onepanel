@@ -43,11 +43,12 @@ type ArtifactRepositoryS3Provider struct {
 // by the CLI. CLI will marshal this struct into the correct
 // YAML structure for k8s configmap / secret.
 type ArtifactRepositoryGCSProvider struct {
-	KeyFormat         string `yaml:"keyFormat"`
-	Bucket            string
-	Endpoint          string
-	Insecure          bool
-	ServiceAccountKey string `yaml:"serviceAccountKey"`
+	KeyFormat               string `yaml:"keyFormat"`
+	Bucket                  string
+	Endpoint                string
+	Insecure                bool
+	ServiceAccountKey       string                   `yaml:"serviceAccountKey,omitempty"`
+	ServiceAccountKeySecret ArtifactRepositorySecret `yaml:"serviceAccountKeySecret"`
 }
 
 type ArtifactRepositoryProviderConfig struct {
@@ -97,11 +98,14 @@ func (g *ArtifactRepositoryGCSConfig) MarshalToYaml() (error, string) {
 	defer encoder.Close()
 	err := encoder.Encode(&ArtifactRepositoryProviderConfig{
 		GCS: ArtifactRepositoryGCSProvider{
-			KeyFormat:         g.KeyFormat,
-			Bucket:            g.Bucket,
-			Endpoint:          g.Endpoint,
-			Insecure:          g.Insecure,
-			ServiceAccountKey: g.ServiceAccountKey,
+			KeyFormat: g.KeyFormat,
+			Bucket:    g.Bucket,
+			Endpoint:  g.Endpoint,
+			Insecure:  g.Insecure,
+			ServiceAccountKeySecret: ArtifactRepositorySecret{
+				Key:  "serviceAccountKey",
+				Name: "onepanel",
+			},
 		},
 	})
 
