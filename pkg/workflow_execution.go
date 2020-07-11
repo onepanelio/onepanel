@@ -1210,6 +1210,9 @@ func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
 			for true { //todo exit condition
 				file, err := bucketFiles.Next()
 				if err != nil {
+					if err.Error() == "no more items in iterator" {
+						break
+					}
 					return nil, err
 				}
 				//todo check if Name or Prefix should be used
