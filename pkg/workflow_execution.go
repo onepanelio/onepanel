@@ -1205,9 +1205,7 @@ func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
 			}
 			bucketFiles := gcsClient.Bucket(config.ArtifactRepository.GCS.Bucket).Objects(ctx, q)
 
-			//iterate and get files?
-			//Check for files are done. todo
-			for true { //todo exit condition
+			for true {
 				file, err := bucketFiles.Next()
 				if err != nil {
 					if err.Error() == "no more items in iterator" {
