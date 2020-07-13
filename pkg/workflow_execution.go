@@ -1213,7 +1213,6 @@ func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
 					}
 					return nil, err
 				}
-				//todo check if Name or Prefix should be used
 				if file.Name == key {
 					continue
 				}
