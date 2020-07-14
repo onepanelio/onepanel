@@ -142,7 +142,7 @@ func (s SystemConfig) DatabaseConnection() (driverName, dataSourceName string) {
 func (s SystemConfig) UpdateNodePoolOptions(parameters []Parameter) ([]Parameter, error) {
 	result := make([]Parameter, 0)
 
-	var nodePoolParameter *Parameter = nil
+	var nodePoolParameter *Parameter
 
 	// Copy the original parameters, skipping sys-node-pool
 	for i := range parameters {
