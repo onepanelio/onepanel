@@ -118,7 +118,7 @@ func injectArtifactRepositoryConfig(artifact *wfv1.Artifact, namespaceConfig *Na
 		artifact.GCS.Bucket = gcsConfig.Bucket
 		artifact.GCS.Key = gcsConfig.KeyFormat
 		artifact.GCS.ServiceAccountKeySecret.Name = "onepanel"
-		artifact.GCS.ServiceAccountKeySecret.Key = "serviceAccountKeySecret"
+		artifact.GCS.ServiceAccountKeySecret.Key = "serviceAccountKey"
 	}
 
 	// Default to no compression for artifacts
