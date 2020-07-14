@@ -77,11 +77,11 @@ func (a *ArtifactRepositoryS3Config) MarshalToYaml() (error, string) {
 			Region:    a.Region,
 			AccessKeySecret: ArtifactRepositorySecret{
 				Name: a.AccessKeySecret.Name,
-				Key:  a.AccessKey,
+				Key:  a.AccessKeySecret.Key,
 			},
 			SecretKeySecret: ArtifactRepositorySecret{
 				Name: a.SecretKeySecret.Name,
-				Key:  a.Secretkey,
+				Key:  a.SecretKeySecret.Key,
 			},
 		},
 	})
