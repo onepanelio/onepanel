@@ -128,6 +128,70 @@ func injectArtifactRepositoryConfig(artifact *wfv1.Artifact, namespaceConfig *Na
 	}
 }
 
+// injectNvidiaGPUFields adds GPU specific fields if there is a GPU request
+func injectNvidiaGPUFields(template *wfv1.Template, systemConfig SystemConfig) {
+	limitsGPUCount := template.Container.Resources.Limits["nvidia.com/gpu"]
+	requestsGPUCount := template.Container.Resources.Requests["nvidia.com/gpu"]
+	if limitsGPUCount.IsZero() && requestsGPUCount.IsZero() {
+		return
+	}
+
+	// TODO: Remove once https://github.com/Azure/AKS/issues/1271 is addressed
+	if systemConfig["ONEPANEL_PROVIDER"] == "aks" {
+		template.Volumes = append(template.Volumes, corev1.Volume{
+			Name: "nvidia",
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/usr/local/nvidia",
+				},
+			},
+		})
+		template.Container.VolumeMounts = append(template.Container.VolumeMounts, corev1.VolumeMount{
+			Name:      "nvidia",
+			MountPath: "/usr/bin/nvidia-smi",
+			SubPath:   "nvidia-smi",
+		})
+	}
+}
+
+// injectContainerResourceQuotas adds resource requests and limits if they exist
+func injectContainerResourceQuotas(wf *wfv1.Workflow, template *wfv1.Template, systemConfig SystemConfig) {
+	if template.NodeSelector == nil {
+		return
+	}
+
+	var value string
+	for k, v := range template.NodeSelector {
+		if k == *systemConfig.NodePoolLabel() {
+			value = v
+			break
+		}
+	}
+	if value == "" {
+		return
+	}
+	if strings.Contains(value, "{{workflow.") {
+		parts := strings.Split(strings.Replace(value, "}}", "", -1), ".")
+		paramName := parts[len(parts)-1]
+		for _, param := range wf.Spec.Arguments.Parameters {
+			if param.Name == paramName {
+				value = *param.Value
+				break
+			}
+		}
+	}
+
+	option, err := systemConfig.NodePoolOptionByValue(value)
+	if err != nil {
+		return
+	}
+	if option != nil && option.Resources.Limits != nil {
+		// If a node is selected specifically, match the resources request to limits
+		option.Resources.Requests = option.Resources.Limits
+		template.Container.Resources = option.Resources
+	}
+}
+
 func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (err error) {
 	if opts.PodGCStrategy == nil {
 		if wf.Spec.PodGC == nil {
@@ -168,25 +232,27 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 	if err != nil {
 		return err
 	}
-	for i, template := range wf.Spec.Templates {
+	for i := range wf.Spec.Templates {
+		template := &wf.Spec.Templates[i]
+
 		// Do not inject Istio sidecars in workflows
 		if template.Metadata.Annotations == nil {
-			wf.Spec.Templates[i].Metadata.Annotations = make(map[string]string)
+			template.Metadata.Annotations = make(map[string]string)
 		}
-		wf.Spec.Templates[i].Metadata.Annotations["sidecar.istio.io/inject"] = "false"
+		template.Metadata.Annotations["sidecar.istio.io/inject"] = "false"
 
 		if template.Container == nil {
 			continue
 		}
 
 		// Mount dev/shm
-		wf.Spec.Templates[i].Container.VolumeMounts = append(template.Container.VolumeMounts, corev1.VolumeMount{
+		template.Container.VolumeMounts = append(template.Container.VolumeMounts, corev1.VolumeMount{
 			Name:      "sys-dshm",
 			MountPath: "/dev/shm",
 		})
 
 		// Always add output artifacts for metrics but make them optional
-		wf.Spec.Templates[i].Outputs.Artifacts = append(template.Outputs.Artifacts, wfv1.Artifact{
+		template.Outputs.Artifacts = append(template.Outputs.Artifacts, wfv1.Artifact{
 			Name:     "sys-metrics",
 			Path:     "/tmp/sys-metrics.json",
 			Optional: true,
@@ -198,13 +264,16 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		// Extend artifact credentials if only key is provided
 		for j, artifact := range template.Outputs.Artifacts {
 			injectArtifactRepositoryConfig(&artifact, namespaceConfig)
-			wf.Spec.Templates[i].Outputs.Artifacts[j] = artifact
+			template.Outputs.Artifacts[j] = artifact
 		}
 
 		for j, artifact := range template.Inputs.Artifacts {
 			injectArtifactRepositoryConfig(&artifact, namespaceConfig)
-			wf.Spec.Templates[i].Inputs.Artifacts[j] = artifact
+			template.Inputs.Artifacts[j] = artifact
 		}
+
+		injectContainerResourceQuotas(wf, template, systemConfig)
+		injectNvidiaGPUFields(template, systemConfig)
 
 		//Generate ENV vars from secret, if there is a container present in the workflow
 		//Get template ENV vars, avoid over-writing them with secret values
@@ -212,7 +281,7 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_API_URL", systemConfig["ONEPANEL_API_URL"])
 		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_FQDN", systemConfig["ONEPANEL_FQDN"])
 		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_DOMAIN", systemConfig["ONEPANEL_DOMAIN"])
-		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_PROVIDER_TYPE", systemConfig["PROVIDER_TYPE"])
+		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_PROVIDER", systemConfig["ONEPANEL_PROVIDER"])
 		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_RESOURCE_NAMESPACE", "{{workflow.namespace}}")
 		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_RESOURCE_UID", "{{workflow.name}}")
 	}
