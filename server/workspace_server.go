@@ -147,6 +147,11 @@ func (s *WorkspaceServer) GetWorkspace(ctx context.Context, req *api.GetWorkspac
 		return nil, err
 	}
 
+	templateParameters, err = sysConfig.UpdateNodePoolOptions(templateParameters)
+	if err != nil {
+		return nil, err
+	}
+
 	apiWorkspace.TemplateParameters = converter.ParametersToAPI(templateParameters)
 
 	return apiWorkspace, nil
