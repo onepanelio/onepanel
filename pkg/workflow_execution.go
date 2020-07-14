@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
+	"github.com/onepanelio/core/pkg/util/gcs"
 	"github.com/onepanelio/core/pkg/util/label"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
@@ -795,7 +796,7 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName
 	var (
 		stream    io.ReadCloser
 		s3Client  *s3.Client
-		gcsClient *storage.Client
+		gcsClient *gcs.Client
 		config    *NamespaceConfig
 		endOffset int
 	)
@@ -850,7 +851,6 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName
 			}
 		case config.ArtifactRepository.GCS != nil:
 			{
-				ctx := context.Background()
 				gcsClient, err = c.GetGCSClient(namespace, config.ArtifactRepository.GCS)
 				if err != nil {
 					log.WithFields(log.Fields{
@@ -863,7 +863,7 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName
 					return nil, util.NewUserError(codes.NotFound, "Can't connect to GCS storage.")
 				}
 				key := config.ArtifactRepository.GCS.FormatKey(namespace, uid, podName) + "/" + containerName + ".log"
-				stream, err = gcsClient.Bucket(config.ArtifactRepository.GCS.Bucket).Object(key).NewReader(ctx)
+				stream, err = gcsClient.GetObject(config.ArtifactRepository.GCS.Bucket, key)
 			}
 		}
 	} else {
@@ -918,7 +918,7 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, uid, podName string) (me
 	var (
 		stream    io.ReadCloser
 		s3Client  *s3.Client
-		gcsClient *storage.Client
+		gcsClient *gcs.Client
 		config    *NamespaceConfig
 	)
 
@@ -963,7 +963,6 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, uid, podName string) (me
 		}
 	case config.ArtifactRepository.GCS != nil:
 		{
-			ctx := context.Background()
 			gcsClient, err = c.GetGCSClient(namespace, config.ArtifactRepository.GCS)
 			if err != nil {
 				log.WithFields(log.Fields{
@@ -975,7 +974,7 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, uid, podName string) (me
 				return nil, util.NewUserError(codes.NotFound, "Can't connect to GCS storage.")
 			}
 			key := config.ArtifactRepository.GCS.FormatKey(namespace, uid, podName) + "/sys-metrics.json"
-			stream, err = gcsClient.Bucket(config.ArtifactRepository.GCS.Bucket).Object(key).NewReader(ctx)
+			stream, err = gcsClient.GetObject(config.ArtifactRepository.GCS.Bucket, key)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"Namespace": namespace,
@@ -1119,7 +1118,6 @@ func (c *Client) GetArtifact(namespace, uid, key string) (data []byte, err error
 		}
 	case config.ArtifactRepository.GCS != nil:
 		{
-			ctx := context.Background()
 			gcsClient, err := c.GetGCSClient(namespace, config.ArtifactRepository.GCS)
 			if err != nil {
 				log.WithFields(log.Fields{
@@ -1129,7 +1127,7 @@ func (c *Client) GetArtifact(namespace, uid, key string) (data []byte, err error
 				}).Error("Artifact does not exist.")
 				return nil, util.NewUserError(codes.NotFound, "Artifact does not exist.")
 			}
-			stream, err = gcsClient.Bucket(config.ArtifactRepository.GCS.Bucket).Object(key).NewReader(ctx)
+			stream, err = gcsClient.GetObject(config.ArtifactRepository.GCS.Bucket, key)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"Namespace": namespace,
