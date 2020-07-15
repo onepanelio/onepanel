@@ -48,10 +48,6 @@ func main() {
 		arguments = append(arguments, args[2:]...)
 	}
 
-	if err := goose.Run(command, db.DB, *dir, arguments...); err != nil {
-		log.Fatalf("goose %v: %v", command, err)
-	}
-
 	goose.SetTableName("goose_db_version")
 	if err := goose.Run(command, db.DB, filepath.Join(*dir, "sql"), arguments...); err != nil {
 		log.Fatalf("Failed to run database sql migrations: %v %v", command, err)
