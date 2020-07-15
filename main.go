@@ -14,6 +14,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"net"
 	"net/http"
+	"path/filepath"
 
 	"github.com/gorilla/handlers"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -73,13 +74,13 @@ func main() {
 			// dbDriverName may be nil, but sqlx will then panic.
 			db := sqlx.MustConnect(dbDriverName, databaseDataSourceName)
 			goose.SetTableName("goose_db_version")
-			if err := goose.Run("up", db.DB, "db/sql"); err != nil {
+			if err := goose.Run("up", db.DB, filepath.Join("db", "sql")); err != nil {
 				log.Fatalf("Failed to run database sql migrations: %v", err)
 			}
 
 			goose.SetTableName("goose_db_go_version")
 			migrations.Initialize()
-			if err := goose.Run("up", db.DB, "db/go"); err != nil {
+			if err := goose.Run("up", db.DB, filepath.Join("db", "go")); err != nil {
 				log.Fatalf("Failed to run database go migrations: %v", err)
 			}
 
