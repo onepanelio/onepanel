@@ -72,7 +72,10 @@ routes:
 const jupyterLabTemplateName = "JupyterLab"
 
 func initialize20200525160514() {
-	goose.AddMigration(Up20200525160514, Down20200525160514)
+	if _, ok := initializedMigrations[20200525160514]; !ok {
+		goose.AddMigration(Up20200525160514, Down20200525160514)
+		initializedMigrations[20200525160514] = true
+	}
 }
 
 func Up20200525160514(tx *sql.Tx) error {

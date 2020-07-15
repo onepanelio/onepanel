@@ -89,7 +89,10 @@ templates:
 const tensorflowWorkflowTemplateName = "TensorFlow Training"
 
 func initialize20200605090535() {
-	goose.AddMigration(Up20200605090535, Down20200605090535)
+	if _, ok := initializedMigrations[20200605090535]; !ok {
+		goose.AddMigration(Up20200605090535, Down20200605090535)
+		initializedMigrations[20200605090535] = true
+	}
 }
 
 // Up20200605090535 will insert a tensorflow workflow template to each user.

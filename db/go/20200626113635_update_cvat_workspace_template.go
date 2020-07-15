@@ -119,7 +119,10 @@ routes:
 `
 
 func initialize20200626113635() {
-	goose.AddMigration(Up20200626113635, Down20200626113635)
+	if _, ok := initializedMigrations[20200626113635]; !ok {
+		goose.AddMigration(Up20200626113635, Down20200626113635)
+		initializedMigrations[20200626113635] = true
+	}
 }
 
 // Up20200626113635 updates the CVAT template to a new version.
