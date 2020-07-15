@@ -6,6 +6,10 @@ import (
 	v1 "github.com/onepanelio/core/pkg"
 )
 
+// initializedMigrations is used to keep track of which migrations have been initialized.
+// if they are initialzed more than once, goose panics.
+var initializedMigrations = make(map[int]bool)
+
 // Initialize sets up the go migrations.
 func Initialize() {
 	initialize20200525160514()
@@ -13,6 +17,7 @@ func Initialize() {
 	initialize20200605090509()
 	initialize20200605090535()
 	initialize20200626113635()
+	initialize20200704151301()
 }
 
 func getClient() (*v1.Client, error) {
