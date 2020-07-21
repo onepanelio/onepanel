@@ -37,6 +37,7 @@ type WorkflowTemplate struct {
 	WorkflowTemplateVersionID        uint64  `db:"workflow_template_version_id"` // Reference to the associated workflow template version.
 	Resource                         *string // utility in case we are specifying a workflow template for a specific resource
 	ResourceUID                      *string // see Resource field
+	Parameters                       []Parameter
 }
 
 // GenerateUID generates a uid from the input name and sets it on the workflow template
