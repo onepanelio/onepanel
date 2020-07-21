@@ -50,6 +50,10 @@ func getBearerToken(ctx context.Context) (*string, bool) {
 		}
 	}
 
+	for _, t := range md.Get("onepanel-auth-token") {
+		return &t, true
+	}
+
 	return nil, false
 }
 
@@ -98,6 +102,7 @@ func IsAuthorized(c *v1.Client, namespace, verb, group, resource, name string) (
 //   2. Is there a token? There should be a token for everything except logging in.
 func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfig) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		// Check if the provided token is valid. This does not require a token in the header.
 		if info.FullMethod == "/api.AuthService/IsValidToken" {
 			md, ok := metadata.FromIncomingContext(ctx)
 			if !ok {
