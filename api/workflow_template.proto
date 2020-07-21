@@ -4,6 +4,7 @@ package api;
 
 import "google/api/annotations.proto";
 import "label.proto";
+import "common.proto";
 
 service WorkflowTemplateService {
     rpc CreateWorkflowTemplate (CreateWorkflowTemplateRequest) returns (WorkflowTemplate) {
@@ -140,6 +141,7 @@ message WorkflowTemplate {
 
     WorkflowExecutionStatisticReport stats = 11;
     CronWorkflowStatisticsReport cronStats = 12;
+    repeated Parameter parameters = 13;
 }
 
 message GetWorkflowTemplateLabelsRequest {

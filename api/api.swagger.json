@@ -3,7 +3,7 @@
   "info": {
     "title": "Onepanel",
     "description": "Onepanel API",
-    "version": "0.11.0",
+    "version": "0.12.0",
     "contact": {
       "name": "Onepanel project",
       "url": "https://github.com/onepanelio/core"
@@ -3249,6 +3249,12 @@
         },
         "cronStats": {
           "$ref": "#/definitions/CronWorkflowStatisticsReport"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Parameter"
+          }
         }
       }
     },
