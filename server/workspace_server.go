@@ -5,13 +5,19 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
+	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/onepanelio/core/server/converter"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc/codes"
 	"time"
 )
+
+var reservedWorkspaceNames = map[string]bool{
+	"modeldb": true,
+}
 
 type WorkspaceServer struct{}
 
@@ -104,6 +110,10 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 			Name:  param.Name,
 			Value: ptr.String(param.Value),
 		})
+	}
+
+	if _, isReserved := reservedWorkspaceNames[workspace.Name]; isReserved {
+		return nil, util.NewUserError(codes.AlreadyExists, "That name is reserved, choose a different name for the workspace.")
 	}
 
 	workspace, err = client.CreateWorkspace(req.Namespace, workspace)
