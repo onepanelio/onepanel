@@ -65,7 +65,7 @@ func NewClient(config *Config, db *DB, systemConfig SystemConfig) (client *Clien
 	}, nil
 }
 
-func (c *Client) GetS3Client(namespace string, config *ArtifactRepositoryS3Config) (s3Client *s3.Client, err error) {
+func (c *Client) GetS3Client(namespace string, config *ArtifactRepositoryS3Provider) (s3Client *s3.Client, err error) {
 	s3Client, err = s3.NewClient(s3.Config{
 		Endpoint:  config.Endpoint,
 		Region:    config.Region,

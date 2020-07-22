@@ -110,8 +110,18 @@ func injectArtifactRepositoryConfig(artifact *wfv1.Artifact, namespaceConfig *Na
 		artifact.S3.Bucket = s3Config.Bucket
 		artifact.S3.Region = s3Config.Region
 		artifact.S3.Insecure = ptr.Bool(s3Config.Insecure)
-		artifact.S3.SecretKeySecret = s3Config.SecretKeySecret
-		artifact.S3.AccessKeySecret = s3Config.AccessKeySecret
+		artifact.S3.SecretKeySecret = corev1.SecretKeySelector{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: s3Config.SecretKeySecret.Name,
+			},
+			Key: s3Config.SecretKeySecret.Key,
+		}
+		artifact.S3.AccessKeySecret = corev1.SecretKeySelector{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: s3Config.AccessKeySecret.Name,
+			},
+			Key: s3Config.AccessKeySecret.Key,
+		}
 	}
 
 	if artifact.GCS != nil && namespaceConfig.ArtifactRepository.GCS != nil {

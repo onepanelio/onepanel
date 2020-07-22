@@ -189,8 +189,6 @@ type ArtifactRepositoryS3Config struct {
 	Region          string
 	AccessKeySecret corev1.SecretKeySelector
 	SecretKeySecret corev1.SecretKeySelector
-	AccessKey       string `yaml:"accessKey"`
-	Secretkey       string `yaml:"secretKey"`
 }
 
 type ArtifactRepositoryGCSConfig struct {
@@ -214,6 +212,8 @@ type ArtifactRepositoryS3Provider struct {
 	Region          string
 	AccessKeySecret ArtifactRepositorySecret `yaml:"accessKeySecret"`
 	SecretKeySecret ArtifactRepositorySecret `yaml:"secretKeySecret"`
+	AccessKey       string                   `yaml:"accessKey"`
+	Secretkey       string                   `yaml:"secretKey"`
 }
 
 // ArtifactRepositoryGCSProvider is meant to be used
@@ -238,7 +238,7 @@ type ArtifactRepositorySecret struct {
 	Name string `yaml:"name"`
 }
 
-func (a *ArtifactRepositoryS3Config) MarshalToYaml() (error, string) {
+func (a *ArtifactRepositoryS3Provider) MarshalToYaml() (error, string) {
 	builder := &strings.Builder{}
 	encoder := yaml.NewEncoder(builder)
 	encoder.SetIndent(6)
@@ -297,7 +297,7 @@ func (g *ArtifactRepositoryGCSConfig) MarshalToYaml() (error, string) {
 // {{workflow.namespace}} -> namespace
 // {{workflow.name}} -> workflowName
 // {{pod.name}} -> podName
-func (a *ArtifactRepositoryS3Config) FormatKey(namespace, workflowName, podName string) string {
+func (a *ArtifactRepositoryS3Provider) FormatKey(namespace, workflowName, podName string) string {
 	keyFormat := a.KeyFormat
 
 	keyFormat = strings.Replace(keyFormat, "{{workflow.namespace}}", namespace, -1)
@@ -322,7 +322,7 @@ func (g *ArtifactRepositoryGCSConfig) FormatKey(namespace, workflowName, podName
 }
 
 type ArtifactRepositoryConfig struct {
-	S3  *ArtifactRepositoryS3Config
+	S3  *ArtifactRepositoryS3Provider
 	GCS *ArtifactRepositoryGCSConfig
 }
 
