@@ -209,23 +209,20 @@ type ArtifactRepositoryGCSProvider struct {
 	ServiceAccountJSON      string                   `yaml:"omitempty"`
 }
 
-/*	ArtifactRepositoryProvider is used to setup access into AWS Cloud Storage
-	or Google Cloud storage.
-	- The relevant sub-struct (S3, GCS) is unmarshalled into from the cluster configmap.
-	Right now, either the S3 or GCS struct will be filled in. Multiple cloud
-	providers are not supported at the same time in params.yaml (manifests deployment).
-*/
+//	ArtifactRepositoryProvider is used to setup access into AWS Cloud Storage
+//	or Google Cloud storage.
+//	- The relevant sub-struct (S3, GCS) is unmarshalled into from the cluster configmap.
+//	Right now, either the S3 or GCS struct will be filled in. Multiple cloud
+//	providers are not supported at the same time in params.yaml (manifests deployment).
 type ArtifactRepositoryProvider struct {
 	S3  *ArtifactRepositoryS3Provider  `yaml:"s3,omitempty"`
 	GCS *ArtifactRepositoryGCSProvider `yaml:"gcs,omitempty"`
 }
 
-/*
-	ArtifactRepositorySecret holds information about a kubernetes Secret.
-	- The "key" is the specific key inside the Secret.
-	- The "name" is the name of the Secret.
-	Usually, this is used to figure out what secret to look into for a specific value.
-*/
+//	ArtifactRepositorySecret holds information about a kubernetes Secret.
+//	- The "key" is the specific key inside the Secret.
+//	- The "name" is the name of the Secret.
+//	Usually, this is used to figure out what secret to look into for a specific value.
 type ArtifactRepositorySecret struct {
 	Key  string `yaml:"key"`
 	Name string `yaml:"name"`
