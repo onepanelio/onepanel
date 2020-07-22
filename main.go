@@ -14,6 +14,8 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"net"
 	"net/http"
+	"path/filepath"
+	"strings"
 
 	"github.com/gorilla/handlers"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -73,13 +75,13 @@ func main() {
 			// dbDriverName may be nil, but sqlx will then panic.
 			db := sqlx.MustConnect(dbDriverName, databaseDataSourceName)
 			goose.SetTableName("goose_db_version")
-			if err := goose.Run("up", db.DB, "db/sql"); err != nil {
+			if err := goose.Run("up", db.DB, filepath.Join("db", "sql")); err != nil {
 				log.Fatalf("Failed to run database sql migrations: %v", err)
 			}
 
 			goose.SetTableName("goose_db_go_version")
 			migrations.Initialize()
-			if err := goose.Run("up", db.DB, "db/go"); err != nil {
+			if err := goose.Run("up", db.DB, filepath.Join("db", "go")); err != nil {
 				log.Fatalf("Failed to run database go migrations: %v", err)
 			}
 
@@ -158,7 +160,7 @@ func startHTTPProxy() {
 
 	// Register gRPC server endpoint
 	// Note: Make sure the gRPC server is running properly and accessible
-	mux := runtime.NewServeMux()
+	mux := runtime.NewServeMux(runtime.WithIncomingHeaderMatcher(customHeaderMatcher))
 	opts := []grpc.DialOption{grpc.WithInsecure()}
 
 	registerHandler(api.RegisterWorkflowTemplateServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
@@ -249,4 +251,17 @@ func watchConfigmapChanges(client *v1.Client, namespace string, stopCh <-chan st
 	// We don't want the watcher to ever stop, so give it a channel that will never be hit.
 	neverStopCh := make(chan struct{})
 	controller.Run(neverStopCh)
+}
+
+// customHeaderMatcher is used to allow certain headers so we don't require a grpc-gateway prefix
+func customHeaderMatcher(key string) (string, bool) {
+	lowerCaseKey := strings.ToLower(key)
+	switch lowerCaseKey {
+	case "onepanel-auth-token":
+		return lowerCaseKey, true
+	case "cookie":
+		return lowerCaseKey, true
+	default:
+		return runtime.DefaultHeaderMatcher(key)
+	}
 }

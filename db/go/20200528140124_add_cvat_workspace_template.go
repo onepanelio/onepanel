@@ -111,7 +111,10 @@ routes:
 const cvatTemplateName = "CVAT"
 
 func initialize20200528140124() {
-	goose.AddMigration(Up20200528140124, Down20200528140124)
+	if _, ok := initializedMigrations[20200528140124]; !ok {
+		goose.AddMigration(Up20200528140124, Down20200528140124)
+		initializedMigrations[20200528140124] = true
+	}
 }
 
 // Up20200528140124 will insert the cvatTemplate to each user.

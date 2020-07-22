@@ -137,6 +137,51 @@ func (s SystemConfig) DatabaseConnection() (driverName, dataSourceName string) {
 	return
 }
 
+// UpdateNodePoolOptions will update the sys-node-pool parameter's options with runtime values
+// The original slice is unmodified, the returned slice has the updated values
+// If sys-node-pool is not present, nothing happens.
+func (s SystemConfig) UpdateNodePoolOptions(parameters []Parameter) ([]Parameter, error) {
+	result := make([]Parameter, 0)
+
+	var nodePoolParameter *Parameter
+
+	// Copy the original parameters, skipping sys-node-pool
+	for i := range parameters {
+		parameter := parameters[i]
+		if parameter.Name == "sys-node-pool" {
+			nodePoolParameter = &parameter
+			continue
+		}
+
+		result = append(result, parameter)
+	}
+
+	if nodePoolParameter == nil {
+		return result, nil
+	}
+
+	nodePoolOptions, err := s.NodePoolOptions()
+	if err != nil {
+		return result, err
+	}
+
+	options := make([]*ParameterOption, 0)
+	for _, option := range nodePoolOptions {
+		newOption := &ParameterOption{
+			Name:  option.Name,
+			Value: option.Value,
+		}
+
+		options = append(options, newOption)
+	}
+
+	nodePoolParameter.Options = options
+
+	result = append(result, *nodePoolParameter)
+
+	return result, nil
+}
+
 type ArtifactRepositoryS3Config struct {
 	KeyFormat       string `yaml:"keyFormat"`
 	Bucket          string

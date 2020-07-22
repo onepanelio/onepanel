@@ -89,7 +89,10 @@ templates:
 const pytorchMnistWorkflowTemplateName = "PyTorch Training"
 
 func initialize20200605090509() {
-	goose.AddMigration(Up20200605090509, Down20200605090509)
+	if _, ok := initializedMigrations[20200605090509]; !ok {
+		goose.AddMigration(Up20200605090509, Down20200605090509)
+		initializedMigrations[20200605090509] = true
+	}
 }
 
 // Up20200605090509 will insert a Pytorch workflow template to each user.
