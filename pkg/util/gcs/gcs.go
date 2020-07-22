@@ -44,9 +44,8 @@ func NewClient(namespace string, serviceAccountJSON string) (gcsClient *Client, 
 	return &Client{Client: client}, nil
 }
 
-/*
-	GetObject retrieves a specific object from Google Cloud Storage.
-	- Function Name is meant to be consistent with S3's.
+/* GetObject retrieves a specific object from Google Cloud Storage.
+- Function Name is meant to be consistent with S3's.
 */
 func (c *Client) GetObject(bucket, key string) (stream io.ReadCloser, err error) {
 	ctx := context.Background()
