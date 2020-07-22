@@ -84,6 +84,6 @@ func (c *Client) GetS3Client(namespace string, config *ArtifactRepositoryS3Provi
 	return
 }
 
-func (c *Client) GetGCSClient(namespace string, config *ArtifactRepositoryGCSConfig) (gcsClient *gcs.Client, err error) {
+func (c *Client) GetGCSClient(namespace string, config *ArtifactRepositoryGCSProvider) (gcsClient *gcs.Client, err error) {
 	return gcs.NewClient(namespace, config.ServiceAccountJSON)
 }

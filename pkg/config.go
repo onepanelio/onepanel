@@ -72,7 +72,7 @@ func (c *Client) GetNamespaceConfig(namespace string) (config *NamespaceConfig, 
 		return
 	}
 	config = &NamespaceConfig{
-		ArtifactRepository: ArtifactRepositoryConfig{},
+		ArtifactRepository: ArtifactRepositoryProvider{},
 	}
 
 	err = yaml.Unmarshal([]byte(configMap.Data["artifactRepository"]), &config.ArtifactRepository)

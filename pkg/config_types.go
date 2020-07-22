@@ -181,26 +181,6 @@ func (s SystemConfig) UpdateNodePoolOptions(parameters []Parameter) ([]Parameter
 	return result, nil
 }
 
-type ArtifactRepositoryS3Config struct {
-	KeyFormat       string `yaml:"keyFormat"`
-	Bucket          string
-	Endpoint        string
-	Insecure        bool
-	Region          string
-	AccessKeySecret corev1.SecretKeySelector
-	SecretKeySecret corev1.SecretKeySelector
-}
-
-type ArtifactRepositoryGCSConfig struct {
-	KeyFormat               string `yaml:"keyFormat"`
-	Bucket                  string
-	Endpoint                string
-	Insecure                bool
-	ServiceAccountKey       string                   `yaml:"serviceAccountKey"`
-	ServiceAccountKeySecret ArtifactRepositorySecret `yaml:"serviceAccountKeySecret"`
-	ServiceAccountJSON      string                   `yaml:"omitempty"`
-}
-
 // ArtifactRepositoryS3Provider is meant to be used
 // by the CLI. CLI will marshal this struct into the correct
 // YAML structure for k8s configmap / secret.
@@ -226,11 +206,12 @@ type ArtifactRepositoryGCSProvider struct {
 	Insecure                bool
 	ServiceAccountKey       string                   `yaml:"serviceAccountKey,omitempty"`
 	ServiceAccountKeySecret ArtifactRepositorySecret `yaml:"serviceAccountKeySecret"`
+	ServiceAccountJSON      string                   `yaml:"omitempty"`
 }
 
-type ArtifactRepositoryProviderConfig struct {
-	S3  ArtifactRepositoryS3Provider  `yaml:"s3,omitempty"`
-	GCS ArtifactRepositoryGCSProvider `yaml:"gcs,omitempty"`
+type ArtifactRepositoryProvider struct {
+	S3  *ArtifactRepositoryS3Provider  `yaml:"s3,omitempty"`
+	GCS *ArtifactRepositoryGCSProvider `yaml:"gcs,omitempty"`
 }
 
 type ArtifactRepositorySecret struct {
@@ -243,8 +224,8 @@ func (a *ArtifactRepositoryS3Provider) MarshalToYaml() (error, string) {
 	encoder := yaml.NewEncoder(builder)
 	encoder.SetIndent(6)
 	defer encoder.Close()
-	err := encoder.Encode(&ArtifactRepositoryProviderConfig{
-		S3: ArtifactRepositoryS3Provider{
+	err := encoder.Encode(&ArtifactRepositoryProvider{
+		S3: &ArtifactRepositoryS3Provider{
 			KeyFormat: a.KeyFormat,
 			Bucket:    a.Bucket,
 			Endpoint:  a.Endpoint,
@@ -268,13 +249,13 @@ func (a *ArtifactRepositoryS3Provider) MarshalToYaml() (error, string) {
 	return nil, builder.String()
 }
 
-func (g *ArtifactRepositoryGCSConfig) MarshalToYaml() (error, string) {
+func (g *ArtifactRepositoryGCSProvider) MarshalToYaml() (error, string) {
 	builder := &strings.Builder{}
 	encoder := yaml.NewEncoder(builder)
 	encoder.SetIndent(6)
 	defer encoder.Close()
-	err := encoder.Encode(&ArtifactRepositoryProviderConfig{
-		GCS: ArtifactRepositoryGCSProvider{
+	err := encoder.Encode(&ArtifactRepositoryProvider{
+		GCS: &ArtifactRepositoryGCSProvider{
 			KeyFormat: g.KeyFormat,
 			Bucket:    g.Bucket,
 			Endpoint:  g.Endpoint,
@@ -311,7 +292,7 @@ func (a *ArtifactRepositoryS3Provider) FormatKey(namespace, workflowName, podNam
 // {{workflow.namespace}} -> namespace
 // {{workflow.name}} -> workflowName
 // {{pod.name}} -> podName
-func (g *ArtifactRepositoryGCSConfig) FormatKey(namespace, workflowName, podName string) string {
+func (g *ArtifactRepositoryGCSProvider) FormatKey(namespace, workflowName, podName string) string {
 	keyFormat := g.KeyFormat
 
 	keyFormat = strings.Replace(keyFormat, "{{workflow.namespace}}", namespace, -1)
@@ -321,11 +302,6 @@ func (g *ArtifactRepositoryGCSConfig) FormatKey(namespace, workflowName, podName
 	return keyFormat
 }
 
-type ArtifactRepositoryConfig struct {
-	S3  *ArtifactRepositoryS3Provider
-	GCS *ArtifactRepositoryGCSConfig
-}
-
 type NamespaceConfig struct {
-	ArtifactRepository ArtifactRepositoryConfig
+	ArtifactRepository ArtifactRepositoryProvider
 }
