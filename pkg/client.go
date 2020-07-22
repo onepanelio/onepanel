@@ -85,9 +85,7 @@ func (c *Client) GetS3Client(namespace string, config *ArtifactRepositoryS3Provi
 	return
 }
 
-/*
-	GetGCSClient initializes a client to Google Cloud Storage.
-*/
+// GetGCSClient initializes a client to Google Cloud Storage.
 func (c *Client) GetGCSClient(namespace string, config *ArtifactRepositoryGCSProvider) (gcsClient *gcs.Client, err error) {
 	return gcs.NewClient(namespace, config.ServiceAccountJSON)
 }

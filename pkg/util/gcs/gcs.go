@@ -14,10 +14,8 @@ type Client struct {
 	*storage.Client
 }
 
-/*
-	NewClient handles the details of initializing the connection to Google Cloud Storage.
-	- Note that the permissions are set to ReadWrite.
-*/
+// NewClient handles the details of initializing the connection to Google Cloud Storage.
+// - Note that the permissions are set to ReadWrite.
 func NewClient(namespace string, serviceAccountJSON string) (gcsClient *Client, err error) {
 	ctx := context.Background()
 	creds, err := google.CredentialsFromJSON(ctx, []byte(serviceAccountJSON), storage.ScopeReadWrite)
