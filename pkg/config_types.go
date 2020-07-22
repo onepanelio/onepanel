@@ -209,8 +209,7 @@ type ArtifactRepositoryGCSProvider struct {
 	ServiceAccountJSON      string                   `yaml:"omitempty"`
 }
 
-/*
-	ArtifactRepositoryProvider is used to setup access into AWS Cloud Storage
+/*	ArtifactRepositoryProvider is used to setup access into AWS Cloud Storage
 	or Google Cloud storage.
 	- The relevant sub-struct (S3, GCS) is unmarshalled into from the cluster configmap.
 	Right now, either the S3 or GCS struct will be filled in. Multiple cloud

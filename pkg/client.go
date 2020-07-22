@@ -65,9 +65,8 @@ func NewClient(config *Config, db *DB, systemConfig SystemConfig) (client *Clien
 	}, nil
 }
 
-/*
-	GetS3Client initializes a client to Amazon Cloud Storage.
-*/
+/* GetS3Client initializes a client to Amazon Cloud Storage.
+ */
 func (c *Client) GetS3Client(namespace string, config *ArtifactRepositoryS3Provider) (s3Client *s3.Client, err error) {
 	s3Client, err = s3.NewClient(s3.Config{
 		Endpoint:  config.Endpoint,

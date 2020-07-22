@@ -9,9 +9,8 @@ import (
 	"io"
 )
 
-/*
-	Client is a struct used for accessing Google Cloud Storage.
-*/
+/* Client is a struct used for accessing Google Cloud Storage.
+ */
 type Client struct {
 	*storage.Client
 }
