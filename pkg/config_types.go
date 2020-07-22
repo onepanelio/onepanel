@@ -1,13 +1,12 @@
 package v1
 
 import (
-	"gopkg.in/yaml.v3"
 	"encoding/base64"
 	"fmt"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/yaml"
 	"strings"
 )
 
