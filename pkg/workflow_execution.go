@@ -2,15 +2,18 @@ package v1
 
 import (
 	"bufio"
+	"cloud.google.com/go/storage"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
+	"github.com/onepanelio/core/pkg/util/gcs"
 	"github.com/onepanelio/core/pkg/util/label"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
+	"golang.org/x/net/context"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
@@ -107,8 +110,26 @@ func injectArtifactRepositoryConfig(artifact *wfv1.Artifact, namespaceConfig *Na
 		artifact.S3.Bucket = s3Config.Bucket
 		artifact.S3.Region = s3Config.Region
 		artifact.S3.Insecure = ptr.Bool(s3Config.Insecure)
-		artifact.S3.SecretKeySecret = s3Config.SecretKeySecret
-		artifact.S3.AccessKeySecret = s3Config.AccessKeySecret
+		artifact.S3.SecretKeySecret = corev1.SecretKeySelector{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: s3Config.SecretKeySecret.Name,
+			},
+			Key: s3Config.SecretKeySecret.Key,
+		}
+		artifact.S3.AccessKeySecret = corev1.SecretKeySelector{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: s3Config.AccessKeySecret.Name,
+			},
+			Key: s3Config.AccessKeySecret.Key,
+		}
+	}
+
+	if artifact.GCS != nil && namespaceConfig.ArtifactRepository.GCS != nil {
+		gcsConfig := namespaceConfig.ArtifactRepository.GCS
+		artifact.GCS.Bucket = gcsConfig.Bucket
+		artifact.GCS.Key = gcsConfig.KeyFormat
+		artifact.GCS.ServiceAccountKeySecret.Name = "onepanel"
+		artifact.GCS.ServiceAccountKeySecret.Key = "serviceAccountKey"
 	}
 
 	// Default to no compression for artifacts
@@ -854,6 +875,7 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName
 	var (
 		stream    io.ReadCloser
 		s3Client  *s3.Client
+		gcsClient *gcs.Client
 		config    *NamespaceConfig
 		endOffset int
 	)
@@ -871,27 +893,58 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName
 			return nil, util.NewUserError(codes.NotFound, "Can't get configuration.")
 		}
 
-		s3Client, err = c.GetS3Client(namespace, config.ArtifactRepository.S3)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"Namespace":     namespace,
-				"UID":           uid,
-				"PodName":       podName,
-				"ContainerName": containerName,
-				"Error":         err.Error(),
-			}).Error("Can't connect to S3 storage.")
-			return nil, util.NewUserError(codes.NotFound, "Can't connect to S3 storage.")
-		}
+		switch {
+		case config.ArtifactRepository.S3 != nil:
+			{
+				s3Client, err = c.GetS3Client(namespace, config.ArtifactRepository.S3)
+				if err != nil {
+					log.WithFields(log.Fields{
+						"Namespace":     namespace,
+						"UID":           uid,
+						"PodName":       podName,
+						"ContainerName": containerName,
+						"Error":         err.Error(),
+					}).Error("Can't connect to S3 storage.")
+					return nil, util.NewUserError(codes.NotFound, "Can't connect to S3 storage.")
+				}
 
-		opts := s3.GetObjectOptions{}
-		endOffset, err = strconv.Atoi(readEndOffset)
-		if err != nil {
-			return nil, util.NewUserError(codes.InvalidArgument, "Invaild range.")
-		}
-		opts.SetRange(0, int64(endOffset))
+				opts := s3.GetObjectOptions{}
+				endOffset, err = strconv.Atoi(readEndOffset)
+				if err != nil {
+					return nil, util.NewUserError(codes.InvalidArgument, "Invalid range.")
+				}
+				err = opts.SetRange(0, int64(endOffset))
+				if err != nil {
+					log.WithFields(log.Fields{
+						"Namespace":     namespace,
+						"UID":           uid,
+						"PodName":       podName,
+						"ContainerName": containerName,
+						"Error":         err.Error(),
+					}).Error("Can't set range.")
+					return nil, util.NewUserError(codes.NotFound, "Can't connect to S3 storage.")
+				}
 
-		key := config.ArtifactRepository.S3.FormatKey(namespace, uid, podName) + "/" + containerName + ".log"
-		stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, key, opts)
+				key := config.ArtifactRepository.S3.FormatKey(namespace, uid, podName) + "/" + containerName + ".log"
+				stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, key, opts)
+			}
+		case config.ArtifactRepository.GCS != nil:
+			{
+				gcsClient, err = c.GetGCSClient(namespace, config.ArtifactRepository.GCS)
+				if err != nil {
+					log.WithFields(log.Fields{
+						"Namespace":     namespace,
+						"UID":           uid,
+						"PodName":       podName,
+						"ContainerName": containerName,
+						"Error":         err.Error(),
+					}).Error("Can't connect to GCS storage.")
+					return nil, util.NewUserError(codes.NotFound, "Can't connect to GCS storage.")
+				}
+				key := config.ArtifactRepository.GCS.FormatKey(namespace, uid, podName) + "/" + containerName + ".log"
+				stream, err = gcsClient.GetObject(config.ArtifactRepository.GCS.Bucket, key)
+			}
+		}
 	} else {
 		stream, err = c.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{
 			Container:  containerName,
@@ -942,9 +995,10 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, uid, podName string) (me
 	}
 
 	var (
-		stream   io.ReadCloser
-		s3Client *s3.Client
-		config   *NamespaceConfig
+		stream    io.ReadCloser
+		s3Client  *s3.Client
+		gcsClient *gcs.Client
+		config    *NamespaceConfig
 	)
 
 	config, err = c.GetNamespaceConfig(namespace)
@@ -958,30 +1012,60 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, uid, podName string) (me
 		return nil, util.NewUserError(codes.NotFound, "Can't get configuration.")
 	}
 
-	s3Client, err = c.GetS3Client(namespace, config.ArtifactRepository.S3)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"UID":       uid,
-			"PodName":   podName,
-			"Error":     err.Error(),
-		}).Error("Can't connect to S3 storage.")
-		return nil, util.NewUserError(codes.NotFound, "Can't connect to S3 storage.")
+	switch {
+	case config.ArtifactRepository.S3 != nil:
+		{
+			s3Client, err = c.GetS3Client(namespace, config.ArtifactRepository.S3)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"PodName":   podName,
+					"Error":     err.Error(),
+				}).Error("Can't connect to S3 storage.")
+				return nil, util.NewUserError(codes.NotFound, "Can't connect to S3 storage.")
+			}
+
+			opts := s3.GetObjectOptions{}
+
+			key := config.ArtifactRepository.S3.FormatKey(namespace, uid, podName) + "/sys-metrics.json"
+			stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, key, opts)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"PodName":   podName,
+					"Error":     err.Error(),
+				}).Error("Metrics do not exist.")
+				return nil, util.NewUserError(codes.NotFound, "Metrics do not exist.")
+			}
+		}
+	case config.ArtifactRepository.GCS != nil:
+		{
+			gcsClient, err = c.GetGCSClient(namespace, config.ArtifactRepository.GCS)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"PodName":   podName,
+					"Error":     err.Error(),
+				}).Error("Can't connect to GCS storage.")
+				return nil, util.NewUserError(codes.NotFound, "Can't connect to GCS storage.")
+			}
+			key := config.ArtifactRepository.GCS.FormatKey(namespace, uid, podName) + "/sys-metrics.json"
+			stream, err = gcsClient.GetObject(config.ArtifactRepository.GCS.Bucket, key)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"PodName":   podName,
+					"Error":     err.Error(),
+				}).Error("Metrics do not exist.")
+				return nil, util.NewUserError(codes.NotFound, "Metrics do not exist.")
+			}
+		}
 	}
 
-	opts := s3.GetObjectOptions{}
-
-	key := config.ArtifactRepository.S3.FormatKey(namespace, uid, podName) + "/sys-metrics.json"
-	stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, key, opts)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"UID":       uid,
-			"PodName":   podName,
-			"Error":     err.Error(),
-		}).Error("Metrics do not exist.")
-		return nil, util.NewUserError(codes.NotFound, "Metrics do not exist.")
-	}
 	content, err := ioutil.ReadAll(stream)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -1088,22 +1172,50 @@ func (c *Client) GetArtifact(namespace, uid, key string) (data []byte, err error
 	if err != nil {
 		return
 	}
+	var (
+		stream io.ReadCloser
+	)
+	switch {
+	case config.ArtifactRepository.S3 != nil:
+		{
+			s3Client, err := c.GetS3Client(namespace, config.ArtifactRepository.S3)
+			if err != nil {
+				return nil, err
+			}
 
-	s3Client, err := c.GetS3Client(namespace, config.ArtifactRepository.S3)
-	if err != nil {
-		return
-	}
-
-	opts := s3.GetObjectOptions{}
-	stream, err := s3Client.GetObject(config.ArtifactRepository.S3.Bucket, key, opts)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"UID":       uid,
-			"Key":       key,
-			"Error":     err.Error(),
-		}).Error("Metrics do not exist.")
-		return
+			opts := s3.GetObjectOptions{}
+			stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, key, opts)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"Key":       key,
+					"Error":     err.Error(),
+				}).Error("Artifact does not exist.")
+				return nil, err
+			}
+		}
+	case config.ArtifactRepository.GCS != nil:
+		{
+			gcsClient, err := c.GetGCSClient(namespace, config.ArtifactRepository.GCS)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"Error":     err.Error(),
+				}).Error("Artifact does not exist.")
+				return nil, util.NewUserError(codes.NotFound, "Artifact does not exist.")
+			}
+			stream, err = gcsClient.GetObject(config.ArtifactRepository.GCS.Bucket, key)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"Error":     err.Error(),
+				}).Error("Artifact does not exist.")
+				return nil, util.NewUserError(codes.NotFound, "Artifact does not exist.")
+			}
+		}
 	}
 
 	data, err = ioutil.ReadAll(stream)
@@ -1120,11 +1232,6 @@ func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
 		return
 	}
 
-	s3Client, err := c.GetS3Client(namespace, config.ArtifactRepository.S3)
-	if err != nil {
-		return
-	}
-
 	files = make([]*File, 0)
 
 	if len(key) > 0 {
@@ -1132,28 +1239,75 @@ func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
 			key += "/"
 		}
 	}
+	switch {
+	case config.ArtifactRepository.S3 != nil:
+		{
+			s3Client, err := c.GetS3Client(namespace, config.ArtifactRepository.S3)
+			if err != nil {
+				return nil, err
+			}
 
-	doneCh := make(chan struct{})
-	defer close(doneCh)
-	for objInfo := range s3Client.ListObjectsV2(config.ArtifactRepository.S3.Bucket, key, false, doneCh) {
-		if objInfo.Key == key {
-			continue
+			doneCh := make(chan struct{})
+			defer close(doneCh)
+			for objInfo := range s3Client.ListObjectsV2(config.ArtifactRepository.S3.Bucket, key, false, doneCh) {
+				if objInfo.Key == key {
+					continue
+				}
+
+				isDirectory := (objInfo.ETag == "" || strings.HasSuffix(objInfo.Key, "/")) && objInfo.Size == 0
+
+				newFile := &File{
+					Path:         objInfo.Key,
+					Name:         FilePathToName(objInfo.Key),
+					Extension:    FilePathToExtension(objInfo.Key),
+					Size:         objInfo.Size,
+					LastModified: objInfo.LastModified,
+					ContentType:  objInfo.ContentType,
+					Directory:    isDirectory,
+				}
+				files = append(files, newFile)
+			}
 		}
+	case config.ArtifactRepository.GCS != nil:
+		{
+			ctx := context.Background()
+			gcsClient, err := c.GetGCSClient(namespace, config.ArtifactRepository.GCS)
+			if err != nil {
+				return nil, err
+			}
+			q := &storage.Query{
+				Delimiter: "",
+				Prefix:    key,
+				Versions:  false,
+			}
+			bucketFiles := gcsClient.Bucket(config.ArtifactRepository.GCS.Bucket).Objects(ctx, q)
 
-		isDirectory := (objInfo.ETag == "" || strings.HasSuffix(objInfo.Key, "/")) && objInfo.Size == 0
+			for true {
+				file, err := bucketFiles.Next()
+				if err != nil {
+					if err.Error() == "no more items in iterator" {
+						break
+					}
+					return nil, err
+				}
+				if file.Name == key {
+					continue
+				}
+				isDirectory := (file.Etag == "" || strings.HasSuffix(file.Name, "/")) && file.Size == 0
 
-		newFile := &File{
-			Path:         objInfo.Key,
-			Name:         FilePathToName(objInfo.Key),
-			Extension:    FilePathToExtension(objInfo.Key),
-			Size:         objInfo.Size,
-			LastModified: objInfo.LastModified,
-			ContentType:  objInfo.ContentType,
-			Directory:    isDirectory,
+				newFile := &File{
+					Path:         file.Name,
+					Name:         FilePathToName(file.Name),
+					Extension:    FilePathToExtension(file.Name),
+					Size:         file.Size,
+					LastModified: file.Updated,
+					ContentType:  file.ContentType,
+					Directory:    isDirectory,
+				}
+				files = append(files, newFile)
+			}
 		}
-		files = append(files, newFile)
 	}
-
 	return
 }
 

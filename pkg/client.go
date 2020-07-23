@@ -3,6 +3,7 @@ package v1
 import (
 	sq "github.com/Masterminds/squirrel"
 	argoprojv1alpha1 "github.com/argoproj/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
+	"github.com/onepanelio/core/pkg/util/gcs"
 	"github.com/onepanelio/core/pkg/util/s3"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
@@ -64,7 +65,8 @@ func NewClient(config *Config, db *DB, systemConfig SystemConfig) (client *Clien
 	}, nil
 }
 
-func (c *Client) GetS3Client(namespace string, config *ArtifactRepositoryS3Config) (s3Client *s3.Client, err error) {
+// GetS3Client initializes a client to Amazon Cloud Storage.
+func (c *Client) GetS3Client(namespace string, config *ArtifactRepositoryS3Provider) (s3Client *s3.Client, err error) {
 	s3Client, err = s3.NewClient(s3.Config{
 		Endpoint:  config.Endpoint,
 		Region:    config.Region,
@@ -80,6 +82,10 @@ func (c *Client) GetS3Client(namespace string, config *ArtifactRepositoryS3Confi
 		}).Error("getS3Client failed when initializing a new S3 client.")
 		return
 	}
-
 	return
+}
+
+// GetGCSClient initializes a client to Google Cloud Storage.
+func (c *Client) GetGCSClient(namespace string, config *ArtifactRepositoryGCSProvider) (gcsClient *gcs.Client, err error) {
+	return gcs.NewClient(namespace, config.ServiceAccountJSON)
 }
