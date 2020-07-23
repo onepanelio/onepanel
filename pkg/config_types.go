@@ -219,10 +219,10 @@ type ArtifactRepositoryProvider struct {
 	GCS *ArtifactRepositoryGCSProvider `yaml:"gcs,omitempty"`
 }
 
-//	ArtifactRepositorySecret holds information about a kubernetes Secret.
-//	- The "key" is the specific key inside the Secret.
-//	- The "name" is the name of the Secret.
-//	Usually, this is used to figure out what secret to look into for a specific value.
+// ArtifactRepositorySecret holds information about a kubernetes Secret.
+// - The "key" is the specific key inside the Secret.
+// - The "name" is the name of the Secret.
+// Usually, this is used to figure out what secret to look into for a specific value.
 type ArtifactRepositorySecret struct {
 	Key  string `yaml:"key"`
 	Name string `yaml:"name"`
@@ -260,10 +260,8 @@ func (a *ArtifactRepositoryS3Provider) MarshalToYaml() (string, error) {
 	return builder.String(), nil
 }
 
-/*
-	MarshalToYaml is used by the CLI to generate configmaps during deployment
-	or build operations.
-*/
+// MarshalToYaml is used by the CLI to generate configmaps during deployment
+// or build operations.
 func (g *ArtifactRepositoryGCSProvider) MarshalToYaml() (string, error) {
 	builder := &strings.Builder{}
 	encoder := yaml.NewEncoder(builder)
