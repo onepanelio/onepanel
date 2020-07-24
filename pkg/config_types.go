@@ -3,11 +3,12 @@ package v1
 import (
 	"encoding/base64"
 	"fmt"
+	"strings"
+
 	"github.com/onepanelio/core/pkg/util/ptr"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
-	"strings"
 )
 
 // SystemConfig is configuration loaded from kubernetes config and secrets that includes information about the
@@ -192,8 +193,8 @@ type ArtifactRepositoryS3Provider struct {
 	Region          string
 	AccessKeySecret ArtifactRepositorySecret `yaml:"accessKeySecret"`
 	SecretKeySecret ArtifactRepositorySecret `yaml:"secretKeySecret"`
-	AccessKey       string                   `yaml:"accessKey"`
-	Secretkey       string                   `yaml:"secretKey"`
+	AccessKey       string                   `yaml:"accessKey,omitempty"`
+	Secretkey       string                   `yaml:"secretKey,omitempty"`
 }
 
 // ArtifactRepositoryGCSProvider is meant to be used
@@ -206,7 +207,7 @@ type ArtifactRepositoryGCSProvider struct {
 	Insecure                bool
 	ServiceAccountKey       string                   `yaml:"serviceAccountKey,omitempty"`
 	ServiceAccountKeySecret ArtifactRepositorySecret `yaml:"serviceAccountKeySecret"`
-	ServiceAccountJSON      string                   `yaml:"omitempty"`
+	ServiceAccountJSON      string                   `yaml:"serviceAccountJSON,omitempty"`
 }
 
 // ArtifactRepositoryProvider is used to setup access into AWS Cloud Storage
