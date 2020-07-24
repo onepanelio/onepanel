@@ -10,7 +10,6 @@ import (
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	k8yaml "sigs.k8s.io/yaml"
-	"strings"
 )
 
 // SystemConfig is configuration loaded from kubernetes config and secrets that includes information about the
