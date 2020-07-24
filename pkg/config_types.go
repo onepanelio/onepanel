@@ -276,7 +276,7 @@ func (g *ArtifactRepositoryGCSProvider) MarshalToYaml() (string, error) {
 			Endpoint:  g.Endpoint,
 			Insecure:  g.Insecure,
 			ServiceAccountKeySecret: ArtifactRepositorySecret{
-				Key:  "serviceAccountKey",
+				Key:  "artifactRepositoryGCSServiceAccountKey", //artifactRepositoryGCSServiceAccountKey //serviceAccountKey
 				Name: "onepanel",
 			},
 		},
