@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package api;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+service ComponentService {
+    rpc GetComponent(GetComponentRequest) returns (Component) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/component/{name}"
+        };
+    }
+
+    rpc ListComponents(ListComponentsRequest) returns (ListComponentsResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/components"
+        };
+    }
+}
+
+message Component {
+    string name = 1;
+    string url = 2;
+}
+
+message GetComponentRequest {
+    string namespace = 1;
+    string name = 2;
+}
+
+message ListComponentsRequest {
+    string namespace = 1;
+    int32 pageSize = 2;
+    int32 page = 3;
+}
+
+message ListComponentsResponse {
+    int32 count = 1;
+    repeated Component components = 2;
+    int32 page = 3;
+    int32 pages = 4;
+    int32 totalCount = 5;
+}
