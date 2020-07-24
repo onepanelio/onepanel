@@ -295,20 +295,12 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (work
 
 	workflowTemplate.Labels = labelsMap[workflowTemplate.WorkflowTemplateVersionID]
 
-	params, err := workflowTemplate.GetParametersKeyString()
+	params, err := ParseParametersFromManifest(workflowTemplate.GetManifestBytes())
 	if err != nil {
 		return workflowTemplate, err
 	}
 
-	var sParams []Parameter
-	for k, v := range params {
-		p := Parameter{
-			Name:  k,
-			Value: &v,
-		}
-		sParams = append(sParams, p)
-	}
-	workflowTemplate.Parameters = sParams
+	workflowTemplate.Parameters = params
 
 	return workflowTemplate, nil
 }
