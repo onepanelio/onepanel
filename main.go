@@ -15,6 +15,7 @@ import (
 	"net"
 	"net/http"
 	"path/filepath"
+	"strings"
 
 	"github.com/gorilla/handlers"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -159,7 +160,7 @@ func startHTTPProxy() {
 
 	// Register gRPC server endpoint
 	// Note: Make sure the gRPC server is running properly and accessible
-	mux := runtime.NewServeMux()
+	mux := runtime.NewServeMux(runtime.WithIncomingHeaderMatcher(customHeaderMatcher))
 	opts := []grpc.DialOption{grpc.WithInsecure()}
 
 	registerHandler(api.RegisterWorkflowTemplateServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
@@ -250,4 +251,17 @@ func watchConfigmapChanges(client *v1.Client, namespace string, stopCh <-chan st
 	// We don't want the watcher to ever stop, so give it a channel that will never be hit.
 	neverStopCh := make(chan struct{})
 	controller.Run(neverStopCh)
+}
+
+// customHeaderMatcher is used to allow certain headers so we don't require a grpc-gateway prefix
+func customHeaderMatcher(key string) (string, bool) {
+	lowerCaseKey := strings.ToLower(key)
+	switch lowerCaseKey {
+	case "onepanel-auth-token":
+		return lowerCaseKey, true
+	case "cookie":
+		return lowerCaseKey, true
+	default:
+		return runtime.DefaultHeaderMatcher(key)
+	}
 }

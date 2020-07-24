@@ -72,11 +72,11 @@ func (c *Client) GetNamespaceConfig(namespace string) (config *NamespaceConfig, 
 		return
 	}
 	config = &NamespaceConfig{
-		ArtifactRepository: ArtifactRepositoryConfig{},
+		ArtifactRepository: ArtifactRepositoryProvider{},
 	}
 
 	err = yaml.Unmarshal([]byte(configMap.Data["artifactRepository"]), &config.ArtifactRepository)
-	if err != nil || config.ArtifactRepository.S3 == nil {
+	if err != nil || (config.ArtifactRepository.S3 == nil && config.ArtifactRepository.GCS == nil) {
 		return nil, util.NewUserError(codes.NotFound, "Artifact repository config not found.")
 	}
 
@@ -89,14 +89,22 @@ func (c *Client) GetNamespaceConfig(namespace string) (config *NamespaceConfig, 
 		return
 	}
 
-	// TODO: replace with switch statement to support additional object storage
-	if config.ArtifactRepository.S3 == nil {
+	switch {
+	case config.ArtifactRepository.S3 != nil:
+		{
+			accessKey, _ := base64.StdEncoding.DecodeString(secret.Data[config.ArtifactRepository.S3.AccessKeySecret.Key])
+			config.ArtifactRepository.S3.AccessKey = string(accessKey)
+			secretKey, _ := base64.StdEncoding.DecodeString(secret.Data[config.ArtifactRepository.S3.SecretKeySecret.Key])
+			config.ArtifactRepository.S3.Secretkey = string(secretKey)
+		}
+	case config.ArtifactRepository.GCS != nil:
+		{
+			serviceJSON, _ := base64.StdEncoding.DecodeString(secret.Data[config.ArtifactRepository.GCS.ServiceAccountKeySecret.Key])
+			config.ArtifactRepository.GCS.ServiceAccountJSON = string(serviceJSON)
+		}
+	default:
 		return nil, util.NewUserError(codes.NotFound, "Artifact repository config not found.")
 	}
-	accessKey, _ := base64.StdEncoding.DecodeString(secret.Data[config.ArtifactRepository.S3.AccessKeySecret.Key])
-	config.ArtifactRepository.S3.AccessKey = string(accessKey)
-	secretKey, _ := base64.StdEncoding.DecodeString(secret.Data[config.ArtifactRepository.S3.SecretKeySecret.Key])
-	config.ArtifactRepository.S3.Secretkey = string(secretKey)
 
 	return
 }
