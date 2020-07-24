@@ -3,12 +3,13 @@ package v1
 import (
 	"encoding/base64"
 	"fmt"
+	"strings"
+
 	"github.com/onepanelio/core/pkg/util/ptr"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	k8yaml "sigs.k8s.io/yaml"
-	"strings"
 )
 
 // SystemConfig is configuration loaded from kubernetes config and secrets that includes information about the
@@ -275,7 +276,7 @@ func (g *ArtifactRepositoryGCSProvider) MarshalToYaml() (string, error) {
 			Endpoint:  g.Endpoint,
 			Insecure:  g.Insecure,
 			ServiceAccountKeySecret: ArtifactRepositorySecret{
-				Key:  "serviceAccountKey",
+				Key:  "artifactRepositoryGCSServiceAccountKey", //artifactRepositoryGCSServiceAccountKey //serviceAccountKey
 				Name: "onepanel",
 			},
 		},
