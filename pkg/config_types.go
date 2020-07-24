@@ -9,6 +9,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
+	k8yaml "sigs.k8s.io/yaml"
+	"strings"
 )
 
 // SystemConfig is configuration loaded from kubernetes config and secrets that includes information about the
@@ -100,7 +102,7 @@ func (s SystemConfig) NodePoolOptions() (options []*NodePoolOption, err error) {
 		return nil, fmt.Errorf("no nodePoolOptions in config")
 	}
 
-	if err = yaml.Unmarshal([]byte(*data), &options); err != nil {
+	if err = k8yaml.Unmarshal([]byte(*data), &options); err != nil {
 		return
 	}
 
