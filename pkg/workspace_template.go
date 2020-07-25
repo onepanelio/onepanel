@@ -323,6 +323,14 @@ func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string) (s
 			Name:      "sys-dshm",
 			MountPath: "/dev/shm",
 		})
+		// Mount namespace config for system containers
+		if strings.HasPrefix(container.Name, "sys-") {
+			container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+				Name:      "sys-namespace-config",
+				MountPath: "/etc/onepanel",
+				ReadOnly:  true,
+			})
+		}
 	}
 
 	template := corev1.PodTemplateSpec{
@@ -342,6 +350,29 @@ func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string) (s
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{
 							Medium: corev1.StorageMediumMemory,
+						},
+					},
+				},
+				{
+					Name: "sys-namespace-config",
+					VolumeSource: corev1.VolumeSource{
+						Projected: &corev1.ProjectedVolumeSource{
+							Sources: []corev1.VolumeProjection{
+								{
+									ConfigMap: &corev1.ConfigMapProjection{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: "onepanel",
+										},
+									},
+								},
+								{
+									Secret: &corev1.SecretProjection{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: "onepanel",
+										},
+									},
+								},
+							},
 						},
 					},
 				},
