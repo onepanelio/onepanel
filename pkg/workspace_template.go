@@ -156,6 +156,14 @@ func generateArguments(spec *WorkspaceSpec, config SystemConfig) (err error) {
 	}
 	systemParameters = append(systemParameters, runtimeParameters...)
 
+	if spec.Arguments == nil {
+		spec.Arguments = &Arguments{
+			Parameters: []Parameter{},
+		}
+	}
+	spec.Arguments.Parameters = append(systemParameters, spec.Arguments.Parameters...)
+
+	systemVolumeParameters := make([]Parameter, 0)
 	// Map all the volumeClaimTemplates that have storage set
 	volumeStorageQuantityIsSet := make(map[string]bool)
 	for _, v := range spec.VolumeClaimTemplates {
@@ -172,7 +180,7 @@ func generateArguments(spec *WorkspaceSpec, config SystemConfig) (err error) {
 				continue
 			}
 
-			systemParameters = append(systemParameters, Parameter{
+			systemVolumeParameters = append(systemVolumeParameters, Parameter{
 				Name:        fmt.Sprintf("sys-%v-volume-size", v.Name),
 				Type:        "input.number",
 				Value:       ptr.String("20480"),
@@ -185,12 +193,7 @@ func generateArguments(spec *WorkspaceSpec, config SystemConfig) (err error) {
 		}
 	}
 
-	if spec.Arguments == nil {
-		spec.Arguments = &Arguments{
-			Parameters: []Parameter{},
-		}
-	}
-	spec.Arguments.Parameters = append(systemParameters, spec.Arguments.Parameters...)
+	spec.Arguments.Parameters = append(spec.Arguments.Parameters, systemVolumeParameters...)
 
 	return
 }
