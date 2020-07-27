@@ -12,9 +12,9 @@ const cvatWorkspaceTemplate4 = `# Workspace arguments
 arguments:
   parameters:
   - name: storage-prefix
-    displayName: Object storage prefix
+    displayName: Directory in default object storage
     value: data
-    hint: Location of data in object storage, will mount to '/mnt/share'
+    hint: Location of data and models in default object storage, will continuously sync to '/mnt/share'
 containers:
 - name: cvat-db
   image: postgres:10-alpine
