@@ -5,16 +5,16 @@ import (
 	v1 "github.com/onepanelio/core/pkg"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"github.com/pressly/goose"
+	"strings"
 )
 
-const cvatWorkspaceTemplate4 = `# CVAT Workspace Template
-# Uncomment following lines only if you have added a FileSyncer
-# arguments:
-#   parameters:
-#   - name: storage-prefix
-#     displayName: Object storage prefix
-#     value: data
-#     hint: Object storage prefix to continuously sync to or from '/mnt/share'
+const cvatWorkspaceTemplate4 = `# Workspace arguments
+arguments:
+  parameters:
+  - name: storage-prefix
+    displayName: Object storage prefix
+    value: data
+    hint: Location of data in object storage, will mount to '/mnt/share'
 containers:
 - name: cvat-db
   image: postgres:10-alpine
@@ -65,25 +65,30 @@ containers:
     mountPath: /home/django/models
   - name: share
     mountPath: /home/django/share
+  - name: sys-namespace-config
+    mountPath: /etc/onepanel
+    readOnly: true
 - name: cvat-ui
   image: onepanel/cvat-ui:v0.7.10-stable
   ports:
   - containerPort: 80
     name: http
-# Uncomment the following lines to add a FileSyncer sidecar container to sync from your default object storage.
-# You can add multiple FileSyncer sidecar containers as needed as long as you prefix their names with 'sys-'.
-# - name: sys-filesyncer
-#   image: onepanel/filesyncer:s3
-#   args:
-#   - download
-#   env:
-#   - name: FS_PATH
-#     value: /mnt/share
-#   - name: FS_PREFIX
-#     value: '{{workspace.parameters.storage-prefix}}'
-#   volumeMounts:
-#   - name: share
-#     mountPath: /mnt/share
+# You can add multiple FileSyncer sidecar containers if needed
+- name: filesyncer
+  image: onepanel/filesyncer:{{.ArtifactRepositoryType}}
+  args:
+  - download
+  env:
+  - name: FS_PATH
+    value: /mnt/share
+  - name: FS_PREFIX
+    value: '{{workspace.parameters.storage-prefix}}'
+  volumeMounts:
+  - name: share
+    mountPath: /mnt/share
+  - name: sys-namespace-config
+    mountPath: /etc/onepanel
+    readOnly: true
 ports:
 - name: cvat-ui
   port: 80
@@ -173,6 +178,16 @@ func Up20200724220450(tx *sql.Tx) error {
 	}
 
 	for _, namespace := range namespaces {
+		artifactRepositoryType := "s3"
+		nsConfig, err := client.GetNamespaceConfig(namespace.Name)
+		if err != nil {
+			return err
+		}
+		if nsConfig.ArtifactRepository.GCS != nil {
+			artifactRepositoryType = "gcs"
+		}
+		workspaceTemplate.Manifest = strings.NewReplacer(
+			"{{.ArtifactRepositoryType}}", artifactRepositoryType).Replace(workspaceTemplate.Manifest)
 		if _, err := client.UpdateWorkspaceTemplate(namespace.Name, workspaceTemplate); err != nil {
 			return err
 		}

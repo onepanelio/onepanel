@@ -283,6 +283,11 @@ func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string) (s
 
 		volumeClaimsMapped[v.ObjectMeta.Name] = true
 	}
+
+	// Don't generate a volumeClaimTemplate for system volumes volumeMounts
+	volumeClaimsMapped["sys-dshm"] = true
+	volumeClaimsMapped["sys-namespace-config"] = true
+
 	// Automatically map the remaining ones
 	for i, c := range spec.Containers {
 		container := &spec.Containers[i]
@@ -323,14 +328,6 @@ func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string) (s
 			Name:      "sys-dshm",
 			MountPath: "/dev/shm",
 		})
-		// Mount namespace config for system containers
-		if strings.HasPrefix(container.Name, "sys-") {
-			container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
-				Name:      "sys-namespace-config",
-				MountPath: "/etc/onepanel",
-				ReadOnly:  true,
-			})
-		}
 	}
 
 	template := corev1.PodTemplateSpec{
