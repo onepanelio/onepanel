@@ -246,6 +246,15 @@ func (c *Client) getWorkflowTemplateVersionDB(namespace, name, version string) (
 
 	err = c.DB.Getx(workflowTemplateVersion, sb)
 
+	if err != nil {
+		return
+	}
+
+	workflowTemplateVersion.Parameters = make([]Parameter, 0)
+	if err := json.Unmarshal(workflowTemplateVersion.ParametersBytes, &workflowTemplateVersion.Parameters); err != nil {
+		return nil, err
+	}
+
 	return
 }
 
