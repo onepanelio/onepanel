@@ -59,7 +59,7 @@ func apiWorkflowExecution(wf *v1.WorkflowExecution, router router.Web) (workflow
 
 	if router != nil {
 		workflow.Metadata = &api.WorkflowExecutionMetadata{
-			Url: router.WorkflowExecution(wf.Name, wf.UID),
+			Url: router.WorkflowExecution(wf.Namespace, wf.UID),
 		}
 	}
 
