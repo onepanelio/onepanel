@@ -36,7 +36,11 @@ func Up20200727144157(tx *sql.Tx) error {
 		return err
 	}
 
-	paginator := pagination.NewRequest(0, 1000)
+	var pageSize int32
+	var page int32
+	pageSize = 100
+	page = 0
+	paginator := pagination.NewRequest(page, pageSize)
 	wtsResults := -1
 	for _, namespace := range namespaces {
 		for wtsResults != 0 {
@@ -44,7 +48,12 @@ func Up20200727144157(tx *sql.Tx) error {
 			if err != nil {
 				return err
 			}
+			//Exit condition; Check for more results
 			wtsResults = len(wts)
+			if int32(wtsResults) == pageSize {
+				page++
+				paginator = pagination.NewRequest(page, pageSize)
+			}
 
 			for _, wt := range wts {
 				wtvs, err := client.ListWorkflowTemplateVersionsDB(namespace.Name, wt.UID)
@@ -52,7 +61,7 @@ func Up20200727144157(tx *sql.Tx) error {
 					return err
 				}
 				for _, wtv := range wtvs {
-					params, err := v1.ParseParametersFromManifest(wtv.WorkflowTemplate.GetManifestBytes())
+					params, err := v1.ParseParametersFromManifest([]byte(wtv.Manifest))
 					if err != nil {
 						return err
 					}
