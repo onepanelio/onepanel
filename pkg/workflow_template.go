@@ -656,6 +656,15 @@ func (c *Client) ListWorkflowTemplateVersions(namespace, uid string) (workflowTe
 // this function should no longer be necessary and removed.
 // See: https://github.com/onepanelio/core/issues/436
 func (c *Client) ListWorkflowTemplateVersionsDB(namespace, uid string) (workflowTemplateVersions []*WorkflowTemplateVersion, err error) {
+	workflowTemplateVersions, err = c.listWorkflowTemplateVersionsDB(namespace, uid)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"UID":       uid,
+			"Error":     err.Error(),
+		}).Error("Workflow template versions not found.")
+		return nil, util.NewUserError(codes.NotFound, "Workflow template versions not found.")
+	}
 	return
 }
 
