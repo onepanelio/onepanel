@@ -14,6 +14,7 @@ type WorkflowExecution struct {
 	CreatedAt        time.Time `db:"created_at"`
 	UID              string
 	Name             string
+	Namespace        string
 	GenerateName     string
 	Parameters       []Parameter
 	ParametersBytes  []byte `db:"parameters"` // to load from database

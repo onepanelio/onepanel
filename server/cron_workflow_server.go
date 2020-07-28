@@ -31,7 +31,7 @@ func apiCronWorkflow(cwf *v1.CronWorkflow) (cronWorkflow *api.CronWorkflow) {
 	}
 
 	if cwf.WorkflowExecution != nil {
-		cronWorkflow.WorkflowExecution = GenApiWorkflowExecution(cwf.WorkflowExecution)
+		cronWorkflow.WorkflowExecution = apiWorkflowExecution(cwf.WorkflowExecution, nil)
 		for _, param := range cwf.WorkflowExecution.Parameters {
 			convertedParam := &api.Parameter{
 				Name:  param.Name,

@@ -3165,6 +3165,17 @@
           "items": {
             "$ref": "#/definitions/KeyValue"
           }
+        },
+        "metadata": {
+          "$ref": "#/definitions/WorkflowExecutionMetadata"
+        }
+      }
+    },
+    "WorkflowExecutionMetadata": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
         }
       }
     },

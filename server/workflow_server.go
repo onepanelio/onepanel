@@ -6,6 +6,7 @@ import (
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/pagination"
+	"github.com/onepanelio/core/pkg/util/router"
 	"github.com/onepanelio/core/server/converter"
 	"google.golang.org/grpc/codes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,11 +27,9 @@ func NewWorkflowServer() *WorkflowServer {
 	return &WorkflowServer{}
 }
 
-func GenApiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecution) {
-	return apiWorkflowExecution(wf)
-}
-
-func apiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecution) {
+// apiWorkflowExecution converts a package workflow execution to the api version
+// router is optional
+func apiWorkflowExecution(wf *v1.WorkflowExecution, router router.Web) (workflow *api.WorkflowExecution) {
 	workflow = &api.WorkflowExecution{
 		CreatedAt: wf.CreatedAt.Format(time.RFC3339),
 		Uid:       wf.UID,
@@ -46,11 +45,9 @@ func apiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecu
 	if wf.FinishedAt != nil && !wf.FinishedAt.IsZero() {
 		workflow.FinishedAt = wf.FinishedAt.Format(time.RFC3339)
 	}
-
 	if wf.WorkflowTemplate != nil {
 		workflow.WorkflowTemplate = apiWorkflowTemplate(wf.WorkflowTemplate)
 	}
-
 	if wf.ParametersBytes != nil {
 		parameters, err := wf.LoadParametersFromBytes()
 		if err != nil {
@@ -58,6 +55,12 @@ func apiWorkflowExecution(wf *v1.WorkflowExecution) (workflow *api.WorkflowExecu
 		}
 
 		workflow.Parameters = converter.ParametersToAPI(parameters)
+	}
+
+	if router != nil {
+		workflow.Metadata = &api.WorkflowExecutionMetadata{
+			Url: router.WorkflowExecution(wf.Name, wf.UID),
+		}
 	}
 
 	return
@@ -93,8 +96,14 @@ func (s *WorkflowServer) CreateWorkflowExecution(ctx context.Context, req *api.C
 	if err != nil {
 		return nil, err
 	}
+	wf.Namespace = req.Namespace
 
-	return apiWorkflowExecution(wf), nil
+	webRouter, err := client.GetWebRouter()
+	if err != nil {
+		return nil, err
+	}
+
+	return apiWorkflowExecution(wf, webRouter), nil
 }
 
 func (s *WorkflowServer) CloneWorkflowExecution(ctx context.Context, req *api.CloneWorkflowExecutionRequest) (*api.WorkflowExecution, error) {
@@ -108,8 +117,14 @@ func (s *WorkflowServer) CloneWorkflowExecution(ctx context.Context, req *api.Cl
 	if err != nil {
 		return nil, err
 	}
+	wf.Namespace = req.Namespace
 
-	return apiWorkflowExecution(wf), nil
+	webRouter, err := client.GetWebRouter()
+	if err != nil {
+		return nil, err
+	}
+
+	return apiWorkflowExecution(wf, webRouter), nil
 }
 
 func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, req *api.AddWorkflowExecutionStatisticRequest) (*empty.Empty, error) {
@@ -171,8 +186,13 @@ func (s *WorkflowServer) GetWorkflowExecution(ctx context.Context, req *api.GetW
 	if labels, ok := mappedLabels[wf.ID]; ok {
 		wf.Labels = labels
 	}
+	wf.Namespace = req.Namespace
 
-	return apiWorkflowExecution(wf), nil
+	webRouter, err := client.GetWebRouter()
+	if err != nil {
+		return nil, err
+	}
+	return apiWorkflowExecution(wf, webRouter), nil
 }
 
 func (s *WorkflowServer) WatchWorkflowExecution(req *api.WatchWorkflowExecutionRequest, stream api.WorkflowService_WatchWorkflowExecutionServer) error {
@@ -187,11 +207,17 @@ func (s *WorkflowServer) WatchWorkflowExecution(req *api.WatchWorkflowExecutionR
 		return err
 	}
 
+	webRouter, err := client.GetWebRouter()
+	if err != nil {
+		return err
+	}
+
 	for wf := range watcher {
 		if wf == nil {
 			break
 		}
-		if err := stream.Send(apiWorkflowExecution(wf)); err != nil {
+		wf.Namespace = req.Namespace
+		if err := stream.Send(apiWorkflowExecution(wf, webRouter)); err != nil {
 			return err
 		}
 	}
@@ -269,9 +295,15 @@ func (s *WorkflowServer) ListWorkflowExecutions(ctx context.Context, req *api.Li
 		return nil, err
 	}
 
+	webRouter, err := client.GetWebRouter()
+	if err != nil {
+		return nil, err
+	}
+
 	var apiWorkflowExecutions []*api.WorkflowExecution
 	for _, wf := range workflows {
-		apiWorkflowExecutions = append(apiWorkflowExecutions, apiWorkflowExecution(wf))
+		wf.Namespace = req.Namespace
+		apiWorkflowExecutions = append(apiWorkflowExecutions, apiWorkflowExecution(wf, webRouter))
 	}
 
 	count, err := client.CountWorkflowExecutions(req.Namespace, req.WorkflowTemplateUid, req.WorkflowTemplateVersion)
@@ -300,7 +332,13 @@ func (s *WorkflowServer) ResubmitWorkflowExecution(ctx context.Context, req *api
 		return nil, err
 	}
 
-	return apiWorkflowExecution(wf), nil
+	wf.Namespace = req.Namespace
+	webRouter, err := client.GetWebRouter()
+	if err != nil {
+		return nil, err
+	}
+
+	return apiWorkflowExecution(wf, webRouter), nil
 }
 
 func (s *WorkflowServer) TerminateWorkflowExecution(ctx context.Context, req *api.TerminateWorkflowExecutionRequest) (*empty.Empty, error) {
