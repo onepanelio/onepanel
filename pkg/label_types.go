@@ -32,12 +32,20 @@ func LabelsToMapping(labels ...*Label) map[string]string {
 func LabelsFromString(value string) (labels []*Label, err error) {
 	labels = make([]*Label, 0)
 
+	if value == "" {
+		return
+	}
+
 	labelParts := strings.Split(value, "&")
 	if len(labelParts) == 0 {
 		return
 	}
 
 	for _, part := range labelParts {
+		if part == "" {
+			continue
+		}
+
 		newLabel, err := LabelFromString(part)
 		if err != nil {
 			return labels, err
