@@ -331,20 +331,18 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (work
 
 	workflowTemplate.Version = templateVersion
 
+	wtv, err := c.getWorkflowTemplateVersionDB(namespace, workflowTemplate.Name, strconv.FormatInt(templateVersion, 10))
+	if err != nil {
+		return workflowTemplate, err
+	}
+
 	labelsMap, err := c.GetDBLabelsMapped(TypeWorkflowTemplateVersion, workflowTemplate.WorkflowTemplateVersionID)
 	if err != nil {
 		return workflowTemplate, err
 	}
 
 	workflowTemplate.Labels = labelsMap[workflowTemplate.WorkflowTemplateVersionID]
-
-	params, err := ParseParametersFromManifest(workflowTemplate.GetManifestBytes())
-	if err != nil {
-		return workflowTemplate, err
-	}
-
-	workflowTemplate.Parameters = params
-
+	workflowTemplate.Parameters = wtv.Parameters
 	return workflowTemplate, nil
 }
 
