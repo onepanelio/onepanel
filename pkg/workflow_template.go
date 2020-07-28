@@ -322,6 +322,7 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (work
 	return workflowTemplate, nil
 }
 
+// listWorkflowTemplateVersions grabs WorkflowTemplateVersions and returns them as WorkflowTemplates.
 func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTemplateVersions []*WorkflowTemplate, err error) {
 	dbVersions, err := c.selectWorkflowTemplateVersionsDB(namespace, uid)
 	if err != nil {
@@ -356,6 +357,18 @@ func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTe
 	}
 
 	return
+}
+
+// listWorkflowTemplateVersionsDB grabs WorkflowTemplateVersions from the database.
+// This is a workaround for listWorkflowTemplateVersions until it is refactored.
+// See https://github.com/onepanelio/core/issues/436
+func (c *Client) listWorkflowTemplateVersionsDB(namespace, uid string) (workflowTemplateVersions []*WorkflowTemplateVersion, err error) {
+	dbVersions, err := c.selectWorkflowTemplateVersionsDB(namespace, uid)
+	if err != nil {
+		return nil, err
+	}
+
+	return dbVersions, err
 }
 
 // selectWorkflowTemplatesDB loads workflow templates from the database for the input namespace
@@ -585,6 +598,7 @@ func (c *Client) CountWorkflowTemplateVersions(namespace, uid string) (count uin
 	return
 }
 
+// ListWorkflowTemplateVersions returns all the WorkflowTemplates for a given namespace and uid.
 func (c *Client) ListWorkflowTemplateVersions(namespace, uid string) (workflowTemplateVersions []*WorkflowTemplate, err error) {
 	workflowTemplateVersions, err = c.listWorkflowTemplateVersions(namespace, uid)
 	if err != nil {
@@ -596,6 +610,14 @@ func (c *Client) ListWorkflowTemplateVersions(namespace, uid string) (workflowTe
 		return nil, util.NewUserError(codes.NotFound, "Workflow template versions not found.")
 	}
 
+	return
+}
+
+// ListWorkflowTemplateVersionsDB returns all the WorkflowTemplateVersions from the database.
+// This function is a work-around for ListWorkflowTemplateVersions. Once that function is refactored,
+// this function should no longer be necessary and removed.
+// See: https://github.com/onepanelio/core/issues/436
+func (c *Client) ListWorkflowTemplateVersionsDB(namespace, uid string) (workflowTemplateVersions []*WorkflowTemplateVersion, err error) {
 	return
 }
 
