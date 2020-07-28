@@ -49,6 +49,23 @@ func createWorkflowTemplateVersionDB(runner sq.BaseRunner, workflowTemplateID ui
 	return
 }
 
+// updateWorkflowTemplateVersionDB will update a WorkflowTemplateVersion row in the database.
+func updateWorkflowTemplateVersionDB(runner sq.BaseRunner, wtv *WorkflowTemplateVersion) (err error) {
+	_, err = sb.Update("workflow_template_versions").
+		SetMap(sq.Eq{
+			"uid":        wtv.UID,
+			"manifest":   wtv.Manifest,
+			"created_at": wtv.CreatedAt,
+			"is_latest":  wtv.IsLatest,
+			"parameters": wtv.Parameters,
+			"version":    wtv.Version,
+		}).
+		Where(sq.Eq{
+			"id": wtv.ID,
+		}).RunWith(runner).Exec()
+	return
+}
+
 // createLatestWorkflowTemplateVersionDB creates a new workflow template version and marks all previous versions as not latest.
 func createLatestWorkflowTemplateVersionDB(runner sq.BaseRunner, workflowTemplateID uint64, manifest string) (workflowTemplateVersion *WorkflowTemplateVersion, err error) {
 	_, err = sb.Update("workflow_template_versions").
