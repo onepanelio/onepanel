@@ -535,6 +535,31 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 	return workflowTemplate, nil
 }
 
+// UpdateWorkflowTemplateVersionDB will update a given WorkflowTemplateVersion in the database.
+// The intent is to change specific database values for a WorkflowTemplateVersion.
+func (c *Client) UpdateWorkflowTemplateVersionDB(namespace string, wtv *WorkflowTemplateVersion) error {
+	if wtv.ID == 0 {
+		return fmt.Errorf("id required for UpdateWorkflowTemplateVersionDB")
+	}
+
+	if err := c.validateWorkflowTemplate(namespace, wtv.WorkflowTemplate); err != nil {
+		return util.NewUserError(codes.InvalidArgument, err.Error())
+	}
+
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	err = updateWorkflowTemplateVersionDB(tx, wtv)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // GetWorkflowTemplate returns a WorkflowTemplate with data loaded from various sources
 // If version is 0, it returns the latest version data.
 //
