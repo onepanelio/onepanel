@@ -17,6 +17,7 @@ type WorkflowTemplateVersion struct {
 	CreatedAt        time.Time         `db:"created_at"`
 	WorkflowTemplate *WorkflowTemplate `db:"workflow_template"`
 	Labels           map[string]string
+	Parameters       []Parameter `db:"parameters"`
 }
 
 // WorkflowTemplateVersionsToIDs returns an array of ids from the input WorkflowTemplateVersion with no duplicates.
