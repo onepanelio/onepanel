@@ -331,7 +331,7 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (work
 
 	workflowTemplate.Version = templateVersion
 
-	wtv, err := c.getWorkflowTemplateVersionDB(namespace, workflowTemplate.Name, strconv.FormatInt(templateVersion, 10))
+	wtv, err := c.getWorkflowTemplateVersionDB(namespace, workflowTemplate.Name, versionAsString)
 	if err != nil {
 		return workflowTemplate, err
 	}
