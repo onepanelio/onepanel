@@ -194,8 +194,16 @@ func (s *WorkflowTemplateServer) ListWorkflowTemplates(ctx context.Context, req 
 		return nil, err
 	}
 
+	labelFilter, err := v1.LabelsFromString(req.Labels)
+	if err != nil {
+		return nil, err
+	}
+	filter := v1.WorkflowTemplateFilter{
+		Labels: labelFilter,
+	}
+
 	paginator := pagination.NewRequest(req.Page, req.PageSize)
-	workflowTemplates, err := client.ListWorkflowTemplates(req.Namespace, &paginator)
+	workflowTemplates, err := client.ListWorkflowTemplates(req.Namespace, &paginator, &filter)
 	if err != nil {
 		return nil, err
 	}

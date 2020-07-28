@@ -20,6 +20,10 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type WorkflowTemplateFilter struct {
+	Labels []*Label
+}
+
 // createWorkflowTemplateVersionDB inserts a record into workflow_template_versions using the current time accurate to nanoseconds
 // the data is returned in the resulting WorkflowTemplateVersion struct.
 func createWorkflowTemplateVersionDB(runner sq.BaseRunner, workflowTemplateID uint64, manifest string, latest bool) (workflowTemplateVersion *WorkflowTemplateVersion, err error) {
@@ -575,7 +579,7 @@ func (c *Client) ListWorkflowTemplateVersions(namespace, uid string) (workflowTe
 	return
 }
 
-func (c *Client) ListWorkflowTemplates(namespace string, paginator *pagination.PaginationRequest) (workflowTemplateVersions []*WorkflowTemplate, err error) {
+func (c *Client) ListWorkflowTemplates(namespace string, paginator *pagination.PaginationRequest, filter *WorkflowTemplateFilter) (workflowTemplateVersions []*WorkflowTemplate, err error) {
 	workflowTemplateVersions, err = c.selectWorkflowTemplatesDB(namespace, paginator)
 	if err != nil {
 		log.WithFields(log.Fields{
