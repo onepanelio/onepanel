@@ -559,10 +559,6 @@ func (c *Client) UpdateWorkflowTemplateVersionDB(namespace string, wtv *Workflow
 		return fmt.Errorf("id required for UpdateWorkflowTemplateVersionDB")
 	}
 
-	if err := c.validateWorkflowTemplate(namespace, wtv.WorkflowTemplate); err != nil {
-		return util.NewUserError(codes.InvalidArgument, err.Error())
-	}
-
 	tx, err := c.DB.Begin()
 	if err != nil {
 		return err
