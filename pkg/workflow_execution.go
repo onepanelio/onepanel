@@ -805,7 +805,7 @@ func (c *Client) WatchWorkflowExecution(namespace, uid string) (<-chan *Workflow
 					CreatedAt:  workflow.CreationTimestamp.UTC(),
 					StartedAt:  ptr.Time(workflow.Status.StartedAt.UTC()),
 					FinishedAt: ptr.Time(workflow.Status.FinishedAt.UTC()),
-					UID:        string(workflow.UID),
+					UID:        workflow.Name,
 					Name:       workflow.Name,
 					Manifest:   string(manifest),
 				}
