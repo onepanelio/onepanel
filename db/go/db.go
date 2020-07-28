@@ -18,6 +18,7 @@ func Initialize() {
 	initialize20200605090535()
 	initialize20200626113635()
 	initialize20200704151301()
+	initialize20200727144157()
 }
 
 func getClient() (*v1.Client, error) {
