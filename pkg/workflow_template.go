@@ -108,6 +108,10 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, nil, err
 	}
 
+	if err := c.ReplaceLabelsUsingKnownID(namespace, TypeWorkflowTemplate, workflowTemplate.ID, workflowTemplate.UID, workflowTemplate.Labels); err != nil {
+		return nil, nil, err
+	}
+
 	argoWft, err := createArgoWorkflowTemplate(workflowTemplate, workflowTemplateVersion.Version)
 	if err != nil {
 		return nil, nil, err
@@ -340,7 +344,7 @@ func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTe
 
 // selectWorkflowTemplatesDB loads workflow templates from the database for the input namespace
 // it also selects the total number of versions and latest version id
-func (c *Client) selectWorkflowTemplatesDB(namespace string, paginator *pagination.PaginationRequest) (workflowTemplates []*WorkflowTemplate, err error) {
+func (c *Client) selectWorkflowTemplatesDB(namespace string, paginator *pagination.PaginationRequest, filter *WorkflowTemplateFilter) (workflowTemplates []*WorkflowTemplate, err error) {
 	workflowTemplates = make([]*WorkflowTemplate, 0)
 
 	sb := c.workflowTemplatesSelectBuilder(namespace).
@@ -352,6 +356,18 @@ func (c *Client) selectWorkflowTemplatesDB(namespace string, paginator *paginati
 			"wt.is_system":   false,
 		}).
 		OrderBy("wt.created_at DESC")
+
+	if len(filter.Labels) > 0 {
+		sb = sb.Join("labels l ON wt.id = l.resource_id AND l.resource = 'workflow_template'")
+
+		// Note: multiple labels are not yet supported. The below will not correctly AND label selection.
+		for _, lbl := range filter.Labels {
+			sb = sb.Where(sq.Eq{
+				"l.key":   lbl.Key,
+				"l.value": lbl.Value,
+			})
+		}
+	}
 	sb = *paginator.ApplyToSelect(&sb)
 
 	err = c.DB.Selectx(&workflowTemplates, sb)
@@ -361,15 +377,28 @@ func (c *Client) selectWorkflowTemplatesDB(namespace string, paginator *paginati
 
 // CountWorkflowTemplates counts the total number of workflow templates for the given namespace
 // archived, and system templates are ignored.
-func (c *Client) CountWorkflowTemplates(namespace string) (count int, err error) {
-	err = sb.Select("COUNT(*)").
+func (c *Client) CountWorkflowTemplates(namespace string, filter *WorkflowTemplateFilter) (count int, err error) {
+	sb := sb.Select("COUNT(*)").
 		From("workflow_templates wt").
 		Where(sq.Eq{
 			"wt.namespace":   namespace,
 			"wt.is_archived": false,
 			"wt.is_system":   false,
-		}).
-		RunWith(c.DB).
+		})
+
+	if len(filter.Labels) > 0 {
+		sb = sb.Join("labels l ON wt.id = l.resource_id AND l.resource = 'workflow_template'")
+
+		// Note: multiple labels are not yet supported. The below will not correctly AND label selection.
+		for _, lbl := range filter.Labels {
+			sb = sb.Where(sq.Eq{
+				"l.key":   lbl.Key,
+				"l.value": lbl.Value,
+			})
+		}
+	}
+
+	err = sb.RunWith(c.DB).
 		QueryRow().
 		Scan(&count)
 
@@ -497,6 +526,7 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 		return nil, err
 	}
 
+	workflowTemplate.ID = workflowTemplateDB.ID
 	workflowTemplate.Version = workflowTemplateVersion.Version
 
 	return workflowTemplate, nil
@@ -580,7 +610,7 @@ func (c *Client) ListWorkflowTemplateVersions(namespace, uid string) (workflowTe
 }
 
 func (c *Client) ListWorkflowTemplates(namespace string, paginator *pagination.PaginationRequest, filter *WorkflowTemplateFilter) (workflowTemplateVersions []*WorkflowTemplate, err error) {
-	workflowTemplateVersions, err = c.selectWorkflowTemplatesDB(namespace, paginator)
+	workflowTemplateVersions, err = c.selectWorkflowTemplatesDB(namespace, paginator, filter)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,

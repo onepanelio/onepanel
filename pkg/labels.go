@@ -163,7 +163,8 @@ func (c *Client) ReplaceLabelsUsingKnownID(namespace, resource string, resourceI
 		Where(sq.Eq{
 			"resource":    resource,
 			"resource_id": resourceID,
-		}).RunWith(tx).
+		}).
+		RunWith(tx).
 		Exec()
 	if err != nil {
 		return err
