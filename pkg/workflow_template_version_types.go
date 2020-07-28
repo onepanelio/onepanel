@@ -39,6 +39,6 @@ func WorkflowTemplateVersionsToIDs(resources []*WorkflowTemplateVersion) (ids []
 // getWorkflowTemplateVersionColumns returns all of the columns for workflow template versions modified by alias, destination.
 // see formatColumnSelect
 func getWorkflowTemplateVersionColumns(aliasAndDestination ...string) []string {
-	columns := []string{"id", "created_at", "version", "is_latest", "manifest"}
+	columns := []string{"id", "created_at", "version", "is_latest", "manifest", "parameters"}
 	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }
