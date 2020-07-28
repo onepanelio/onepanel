@@ -2,6 +2,7 @@ package v1
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/onepanelio/core/pkg/util/pagination"
@@ -22,7 +23,7 @@ import (
 
 // createWorkflowTemplateVersionDB inserts a record into workflow_template_versions using the current time accurate to nanoseconds
 // the data is returned in the resulting WorkflowTemplateVersion struct.
-func createWorkflowTemplateVersionDB(runner sq.BaseRunner, workflowTemplateID uint64, manifest string, latest bool) (workflowTemplateVersion *WorkflowTemplateVersion, err error) {
+func createWorkflowTemplateVersionDB(runner sq.BaseRunner, workflowTemplateID uint64, manifest string, latest bool, parameters []Parameter) (workflowTemplateVersion *WorkflowTemplateVersion, err error) {
 	ts := time.Now().UnixNano()
 
 	workflowTemplateVersion = &WorkflowTemplateVersion{
@@ -34,12 +35,17 @@ func createWorkflowTemplateVersionDB(runner sq.BaseRunner, workflowTemplateID ui
 		Version:  ts,
 	}
 
+	pj, err := json.Marshal(parameters)
+	if err != nil {
+		return
+	}
 	err = sb.Insert("workflow_template_versions").
 		SetMap(sq.Eq{
 			"workflow_template_id": workflowTemplateID,
 			"version":              ts,
 			"is_latest":            true,
 			"manifest":             manifest,
+			"parameters":           pj,
 		}).
 		Suffix("RETURNING id").
 		RunWith(runner).
@@ -51,13 +57,16 @@ func createWorkflowTemplateVersionDB(runner sq.BaseRunner, workflowTemplateID ui
 
 // updateWorkflowTemplateVersionDB will update a WorkflowTemplateVersion row in the database.
 func updateWorkflowTemplateVersionDB(runner sq.BaseRunner, wtv *WorkflowTemplateVersion) (err error) {
+	pj, err := json.Marshal(wtv.Parameters)
+	if err != nil {
+		return
+	}
 	_, err = sb.Update("workflow_template_versions").
 		SetMap(sq.Eq{
-			"uid":        wtv.UID,
 			"manifest":   wtv.Manifest,
 			"created_at": wtv.CreatedAt,
 			"is_latest":  wtv.IsLatest,
-			"parameters": wtv.Parameters,
+			"parameters": pj,
 			"version":    wtv.Version,
 		}).
 		Where(sq.Eq{
@@ -79,7 +88,11 @@ func createLatestWorkflowTemplateVersionDB(runner sq.BaseRunner, workflowTemplat
 		return nil, err
 	}
 
-	return createWorkflowTemplateVersionDB(runner, workflowTemplateID, manifest, true)
+	params, err := ParseParametersFromManifest([]byte(manifest))
+	if err != nil {
+		return nil, err
+	}
+	return createWorkflowTemplateVersionDB(runner, workflowTemplateID, manifest, true, params)
 }
 
 // createWorkflowTemplate creates a WorkflowTemplate and all of the DB/Argo/K8s related resources
@@ -110,7 +123,11 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		return nil, nil, err
 	}
 
-	workflowTemplateVersion, err := createWorkflowTemplateVersionDB(tx, workflowTemplate.ID, workflowTemplate.Manifest, true)
+	params, err := ParseParametersFromManifest([]byte(workflowTemplate.Manifest))
+	if err != nil {
+		return nil, nil, err
+	}
+	workflowTemplateVersion, err := createWorkflowTemplateVersionDB(tx, workflowTemplate.ID, workflowTemplate.Manifest, true, params)
 	if err != nil {
 		return nil, nil, err
 	}
