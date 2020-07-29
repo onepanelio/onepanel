@@ -184,6 +184,10 @@ message LogEntry {
     string content = 2;
 }
 
+message WorkflowExecutionMetadata {
+    string url = 1;
+}
+
 message WorkflowExecution {
     string createdAt = 1;
     string uid = 2;
@@ -198,6 +202,8 @@ message WorkflowExecution {
     WorkflowTemplate workflowTemplate = 9;
 
     repeated KeyValue labels = 10;
+
+    WorkflowExecutionMetadata metadata = 11;
 }
 
 message ArtifactResponse {
