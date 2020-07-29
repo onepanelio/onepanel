@@ -42,7 +42,7 @@ func Up20200727144157(tx *sql.Tx) error {
 		}
 		//Exit condition; Check for more results
 		wtvsResults = len(wtvs)
-		if int32(wtvsResults) > 0 {
+		if wtvsResults > 0 {
 			page++
 			paginator = pagination.NewRequest(page, pageSize)
 		}
