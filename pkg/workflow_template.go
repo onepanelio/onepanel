@@ -20,6 +20,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// WorkflowTemplateFilter represents the available ways we can filter WorkflowTemplates
 type WorkflowTemplateFilter struct {
 	Labels []*Label
 }
