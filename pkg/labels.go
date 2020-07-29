@@ -262,6 +262,24 @@ func (c *Client) DeleteLabels(namespace, resource, uid string, keyValues map[str
 	return nil
 }
 
+// DeleteResourceLabels deletes all of the labels for a specific resource, like workflow templates.
+// NOTE: this does NOT delete k8s labels, and is only meant to be used for special cases.
+func (c *Client) DeleteResourceLabels(runner sq.BaseRunner, resource string) error {
+	tableName := TypeToTableName(resource)
+	if tableName == "" {
+		return fmt.Errorf("unknown resources '%v'", resource)
+	}
+
+	_, err := sb.Delete("labels").
+		Where(sq.Eq{
+			"resource": resource,
+		}).
+		RunWith(runner).
+		Exec()
+
+	return err
+}
+
 func (c *Client) InsertLabelsBuilder(resource string, resourceID uint64, keyValues map[string]string) sq.InsertBuilder {
 	sb := sb.Insert("labels").
 		Columns("resource", "resource_id", "key", "value")

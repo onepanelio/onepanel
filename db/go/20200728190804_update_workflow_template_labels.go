@@ -10,7 +10,7 @@ import (
 func initialize20200728190804() {
 	if _, ok := initializedMigrations[20200728190804]; !ok {
 		goose.AddMigration(Up20200728190804, Down20200728190804)
-		initializedMigrations[20200704151301] = true
+		initializedMigrations[20200728190804] = true
 	}
 }
 
@@ -19,18 +19,13 @@ func initialize20200728190804() {
 // for workflow templates themselves.
 func Up20200728190804(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
+	if migrationHasAlreadyBeenRun(20200728190804) {
+		return nil
+	}
+
 	client, err := getClient()
 	if err != nil {
 		return err
-	}
-
-	migrationsRan, err := getRanSQLMigrations(client)
-	if err != nil {
-		return err
-	}
-
-	if _, ok := migrationsRan[20200728190804]; ok {
-		return nil
 	}
 
 	namespaces, err := client.ListOnepanelEnabledNamespaces()
@@ -39,12 +34,11 @@ func Up20200728190804(tx *sql.Tx) error {
 	}
 
 	for _, namespace := range namespaces {
-		page := int32(1)
-		paginator := pagination.NewRequest(page, 500)
+		paginator := pagination.Start(500)
 
 		resultCount := -1
 		for resultCount != 0 {
-			workflowTemplates, err := client.ListAllWorkflowTemplates(namespace.Name, &paginator, nil)
+			workflowTemplates, err := client.ListAllWorkflowTemplates(namespace.Name, paginator, nil)
 			if err != nil {
 				return err
 			}
@@ -56,6 +50,7 @@ func Up20200728190804(tx *sql.Tx) error {
 			}
 
 			resultCount = len(workflowTemplates)
+			paginator = paginator.Advance()
 		}
 	}
 
