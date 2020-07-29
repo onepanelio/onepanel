@@ -94,6 +94,8 @@ message ListWorkflowTemplatesRequest {
     string namespace = 1;
     int32 pageSize = 2;
     int32 page = 3;
+
+    string labels = 4;
 }
 
 message ListWorkflowTemplatesResponse {

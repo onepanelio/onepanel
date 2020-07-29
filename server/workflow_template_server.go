@@ -98,6 +98,10 @@ func (s *WorkflowTemplateServer) CreateWorkflowTemplateVersion(ctx context.Conte
 		return nil, err
 	}
 
+	if err := client.ReplaceLabelsUsingKnownID(req.Namespace, v1.TypeWorkflowTemplate, workflowTemplate.ID, workflowTemplate.UID, workflowTemplate.Labels); err != nil {
+		return nil, err
+	}
+
 	req.WorkflowTemplate.Uid = workflowTemplate.UID
 	req.WorkflowTemplate.Name = workflowTemplate.Name
 	req.WorkflowTemplate.Version = workflowTemplate.Version
@@ -194,8 +198,16 @@ func (s *WorkflowTemplateServer) ListWorkflowTemplates(ctx context.Context, req 
 		return nil, err
 	}
 
+	labelFilter, err := v1.LabelsFromString(req.Labels)
+	if err != nil {
+		return nil, err
+	}
+	filter := v1.WorkflowTemplateFilter{
+		Labels: labelFilter,
+	}
+
 	paginator := pagination.NewRequest(req.Page, req.PageSize)
-	workflowTemplates, err := client.ListWorkflowTemplates(req.Namespace, &paginator)
+	workflowTemplates, err := client.ListWorkflowTemplates(req.Namespace, &paginator, &filter)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +217,7 @@ func (s *WorkflowTemplateServer) ListWorkflowTemplates(ctx context.Context, req 
 		apiWorkflowTemplates = append(apiWorkflowTemplates, apiWorkflowTemplate(wtv))
 	}
 
-	count, err := client.CountWorkflowTemplates(req.Namespace)
+	count, err := client.CountWorkflowTemplates(req.Namespace, &filter)
 	if err != nil {
 		return nil, err
 	}

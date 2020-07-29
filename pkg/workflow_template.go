@@ -20,6 +20,11 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// WorkflowTemplateFilter represents the available ways we can filter WorkflowTemplates
+type WorkflowTemplateFilter struct {
+	Labels []*Label
+}
+
 // createWorkflowTemplateVersionDB inserts a record into workflow_template_versions using the current time accurate to nanoseconds
 // the data is returned in the resulting WorkflowTemplateVersion struct.
 func createWorkflowTemplateVersionDB(runner sq.BaseRunner, workflowTemplateID uint64, manifest string, latest bool) (workflowTemplateVersion *WorkflowTemplateVersion, err error) {
@@ -101,6 +106,10 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 
 	_, err = c.InsertLabelsRunner(tx, TypeWorkflowTemplateVersion, workflowTemplateVersion.ID, workflowTemplate.Labels)
 	if err != nil {
+		return nil, nil, err
+	}
+
+	if err := c.ReplaceLabelsUsingKnownID(namespace, TypeWorkflowTemplate, workflowTemplate.ID, workflowTemplate.UID, workflowTemplate.Labels); err != nil {
 		return nil, nil, err
 	}
 
@@ -334,22 +343,51 @@ func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTe
 	return
 }
 
-// selectWorkflowTemplatesDB loads workflow templates from the database for the input namespace
-// it also selects the total number of versions and latest version id
-func (c *Client) selectWorkflowTemplatesDB(namespace string, paginator *pagination.PaginationRequest) (workflowTemplates []*WorkflowTemplate, err error) {
-	workflowTemplates = make([]*WorkflowTemplate, 0)
-
-	sb := c.workflowTemplatesSelectBuilder(namespace).
+func (c *Client) selectWorkflowTemplatesQuery(namespace string, paginator *pagination.PaginationRequest, filter *WorkflowTemplateFilter) (sb sq.SelectBuilder) {
+	sb = c.workflowTemplatesSelectBuilder(namespace).
 		Column("COUNT(wtv.*) versions, MAX(wtv.id) workflow_template_version_id").
 		Join("workflow_template_versions wtv ON wtv.workflow_template_id = wt.id").
 		GroupBy("wt.id", "wt.created_at", "wt.uid", "wt.name", "wt.is_archived").
+		OrderBy("wt.created_at DESC")
+
+	if filter != nil && len(filter.Labels) > 0 {
+		sb = sb.Join("labels l ON wt.id = l.resource_id AND l.resource = 'workflow_template'")
+
+		// Note: multiple labels are not yet supported. The below will not correctly AND label selection.
+		for _, lbl := range filter.Labels {
+			sb = sb.Where(sq.Eq{
+				"l.key":   lbl.Key,
+				"l.value": lbl.Value,
+			})
+		}
+	}
+	sb = *paginator.ApplyToSelect(&sb)
+
+	return
+}
+
+// selectWorkflowTemplatesDB loads non-archived and non-system workflow templates from the database for the input namespace
+// it also selects the total number of versions and latest version id
+func (c *Client) selectWorkflowTemplatesDB(namespace string, paginator *pagination.PaginationRequest, filter *WorkflowTemplateFilter) (workflowTemplates []*WorkflowTemplate, err error) {
+	workflowTemplates = make([]*WorkflowTemplate, 0)
+
+	sb := c.selectWorkflowTemplatesQuery(namespace, paginator, filter).
 		Where(sq.Eq{
 			"wt.is_archived": false,
 			"wt.is_system":   false,
-		}).
-		OrderBy("wt.created_at DESC")
-	sb = *paginator.ApplyToSelect(&sb)
+		})
 
+	err = c.DB.Selectx(&workflowTemplates, sb)
+
+	return
+}
+
+// selectAllWorkflowTemplatesDB loads all workflow templates from the database for the input namespace
+// it also selects the total number of versions and latest version id
+func (c *Client) selectAllWorkflowTemplatesDB(namespace string, paginator *pagination.PaginationRequest, filter *WorkflowTemplateFilter) (workflowTemplates []*WorkflowTemplate, err error) {
+	workflowTemplates = make([]*WorkflowTemplate, 0)
+
+	sb := c.selectWorkflowTemplatesQuery(namespace, paginator, filter)
 	err = c.DB.Selectx(&workflowTemplates, sb)
 
 	return
@@ -357,15 +395,28 @@ func (c *Client) selectWorkflowTemplatesDB(namespace string, paginator *paginati
 
 // CountWorkflowTemplates counts the total number of workflow templates for the given namespace
 // archived, and system templates are ignored.
-func (c *Client) CountWorkflowTemplates(namespace string) (count int, err error) {
-	err = sb.Select("COUNT(*)").
+func (c *Client) CountWorkflowTemplates(namespace string, filter *WorkflowTemplateFilter) (count int, err error) {
+	sb := sb.Select("COUNT(*)").
 		From("workflow_templates wt").
 		Where(sq.Eq{
 			"wt.namespace":   namespace,
 			"wt.is_archived": false,
 			"wt.is_system":   false,
-		}).
-		RunWith(c.DB).
+		})
+
+	if filter != nil && len(filter.Labels) > 0 {
+		sb = sb.Join("labels l ON wt.id = l.resource_id AND l.resource = 'workflow_template'")
+
+		// Note: multiple labels are not yet supported. The below will not correctly AND label selection.
+		for _, lbl := range filter.Labels {
+			sb = sb.Where(sq.Eq{
+				"l.key":   lbl.Key,
+				"l.value": lbl.Value,
+			})
+		}
+	}
+
+	err = sb.RunWith(c.DB).
 		QueryRow().
 		Scan(&count)
 
@@ -493,6 +544,7 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 		return nil, err
 	}
 
+	workflowTemplate.ID = workflowTemplateDB.ID
 	workflowTemplate.Version = workflowTemplateVersion.Version
 
 	return workflowTemplate, nil
@@ -575,8 +627,10 @@ func (c *Client) ListWorkflowTemplateVersions(namespace, uid string) (workflowTe
 	return
 }
 
-func (c *Client) ListWorkflowTemplates(namespace string, paginator *pagination.PaginationRequest) (workflowTemplateVersions []*WorkflowTemplate, err error) {
-	workflowTemplateVersions, err = c.selectWorkflowTemplatesDB(namespace, paginator)
+// ListWorkflowTemplates lists all of the workflow templates that are not system specific or archived.
+// This is the function to call when you need workflow templates unless you have specific requirements.
+func (c *Client) ListWorkflowTemplates(namespace string, paginator *pagination.PaginationRequest, filter *WorkflowTemplateFilter) (workflowTemplateVersions []*WorkflowTemplate, err error) {
+	workflowTemplateVersions, err = c.selectWorkflowTemplatesDB(namespace, paginator, filter)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -585,13 +639,38 @@ func (c *Client) ListWorkflowTemplates(namespace string, paginator *pagination.P
 		return nil, util.NewUserError(codes.NotFound, "Workflow templates not found.")
 	}
 
+	err = c.appendExtraWorkflowTemplateData(namespace, workflowTemplateVersions)
+
+	return
+}
+
+// ListAllWorkflowTemplates lists all of the workflow templates, including archived and system specific
+func (c *Client) ListAllWorkflowTemplates(namespace string, paginator *pagination.PaginationRequest, filter *WorkflowTemplateFilter) (workflowTemplateVersions []*WorkflowTemplate, err error) {
+	workflowTemplateVersions, err = c.selectAllWorkflowTemplatesDB(namespace, paginator, filter)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Error":     err.Error(),
+		}).Error("Workflow templates not found.")
+		return nil, util.NewUserError(codes.NotFound, "Workflow templates not found.")
+	}
+
+	err = c.appendExtraWorkflowTemplateData(namespace, workflowTemplateVersions)
+
+	return
+}
+
+// appendExtraWorkflowTemplateData adds extra information to workflow templates
+// * execution statistics (including cron)
+// * labels
+func (c *Client) appendExtraWorkflowTemplateData(namespace string, workflowTemplateVersions []*WorkflowTemplate) (err error) {
 	err = c.GetWorkflowExecutionStatisticsForTemplates(workflowTemplateVersions...)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Error":     err.Error(),
 		}).Error("Unable to get Workflow Execution Statistic for Templates.")
-		return nil, util.NewUserError(codes.NotFound, "Unable to get Workflow Execution Statistic for Templates.")
+		return util.NewUserError(codes.NotFound, "Unable to get Workflow Execution Statistic for Templates.")
 	}
 
 	err = c.GetCronWorkflowStatisticsForTemplates(workflowTemplateVersions...)
@@ -600,7 +679,7 @@ func (c *Client) ListWorkflowTemplates(namespace string, paginator *pagination.P
 			"Namespace": namespace,
 			"Error":     err.Error(),
 		}).Error("Unable to get Cron Workflow Statistic for Templates.")
-		return nil, util.NewUserError(codes.NotFound, "Unable to get Cron Workflow Statistic for Templates.")
+		return util.NewUserError(codes.NotFound, "Unable to get Cron Workflow Statistic for Templates.")
 	}
 
 	labelsMap, err := c.GetDBLabelsMapped(TypeWorkflowTemplateVersion, WorkflowTemplatesToVersionIDs(workflowTemplateVersions)...)
@@ -609,7 +688,7 @@ func (c *Client) ListWorkflowTemplates(namespace string, paginator *pagination.P
 			"Namespace": namespace,
 			"Error":     err.Error(),
 		}).Error("Unable to get Workflow Template Labels")
-		return nil, err
+		return err
 	}
 
 	for _, workflowTemplate := range workflowTemplateVersions {
