@@ -14,6 +14,8 @@ func initialize20200727144157() {
 	}
 }
 
+// Up20200727144157 will go through all WorkflowTemplateVersion database entries
+// and attempt to generate the "parameters" column from the "manifests" column.
 func Up20200727144157(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 
@@ -63,6 +65,8 @@ func Up20200727144157(tx *sql.Tx) error {
 	return nil
 }
 
+// Down20200727144157 can be run before 20200727155027_add_parameters_col_to_workflow_template_version.sql
+// Nothing happens because the referenced SQL file will drop the "parameters" column.
 func Down20200727144157(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return nil
