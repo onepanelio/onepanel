@@ -726,6 +726,8 @@ func (c *Client) ListWorkflowTemplateVersionsAll(paginator *pagination.Paginatio
 	return
 }
 
+// ListWorkflowTemplates returns all WorkflowTemplates where the results
+// are filtered by is_archived and is_System is false.
 func (c *Client) ListWorkflowTemplates(namespace string, paginator *pagination.PaginationRequest, filter *WorkflowTemplateFilter) (workflowTemplateVersions []*WorkflowTemplate, err error) {
 	workflowTemplateVersions, err = c.selectWorkflowTemplatesDB(namespace, paginator, filter)
 	if err != nil {
