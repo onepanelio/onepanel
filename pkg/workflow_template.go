@@ -388,22 +388,6 @@ func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTe
 	return
 }
 
-func (c *Client) listWorkflowTemplateVersionsDBAll(paginator *pagination.PaginationRequest) (workflowTemplateVersions []*WorkflowTemplateVersion, err error) {
-	return c.selectAllWorkflowTemplateVersionsDB(paginator)
-}
-
-// listWorkflowTemplateVersionsDB grabs WorkflowTemplateVersions from the database.
-// This is a workaround for listWorkflowTemplateVersions until it is refactored.
-// See https://github.com/onepanelio/core/issues/436
-func (c *Client) listWorkflowTemplateVersionsDB(namespace, uid string) (workflowTemplateVersions []*WorkflowTemplateVersion, err error) {
-	dbVersions, err := c.selectWorkflowTemplateVersionsDB(namespace, uid)
-	if err != nil {
-		return nil, err
-	}
-
-	return dbVersions, err
-}
-
 // selectWorkflowTemplatesDB loads workflow templates from the database for the input namespace
 // it also selects the total number of versions and latest version id
 func (c *Client) selectWorkflowTemplatesDB(namespace string, paginator *pagination.PaginationRequest) (workflowTemplates []*WorkflowTemplate, err error) {
@@ -661,7 +645,7 @@ func (c *Client) ListWorkflowTemplateVersions(namespace, uid string) (workflowTe
 // this function should no longer be necessary and removed.
 // See: https://github.com/onepanelio/core/issues/436
 func (c *Client) ListWorkflowTemplateVersionsModels(namespace, uid string) (workflowTemplateVersions []*WorkflowTemplateVersion, err error) {
-	workflowTemplateVersions, err = c.listWorkflowTemplateVersionsDB(namespace, uid)
+	workflowTemplateVersions, err = c.selectWorkflowTemplateVersionsDB(namespace, uid)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -675,7 +659,7 @@ func (c *Client) ListWorkflowTemplateVersionsModels(namespace, uid string) (work
 
 // ListWorkflowTemplateVersionsAll returns all WorkflowTemplateVersions with no filtering.
 func (c *Client) ListWorkflowTemplateVersionsAll(paginator *pagination.PaginationRequest) (workflowTemplateVersions []*WorkflowTemplateVersion, err error) {
-	workflowTemplateVersions, err = c.listWorkflowTemplateVersionsDBAll(paginator)
+	workflowTemplateVersions, err = c.selectAllWorkflowTemplateVersionsDB(paginator)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Error": err.Error(),
