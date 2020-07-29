@@ -17,6 +17,8 @@ type WorkflowTemplateVersion struct {
 	CreatedAt        time.Time         `db:"created_at"`
 	WorkflowTemplate *WorkflowTemplate `db:"workflow_template"`
 	Labels           map[string]string
+	Parameters       []Parameter
+	ParametersBytes  []byte `db:"parameters"` // to load from database
 }
 
 // WorkflowTemplateVersionsToIDs returns an array of ids from the input WorkflowTemplateVersion with no duplicates.
@@ -38,6 +40,6 @@ func WorkflowTemplateVersionsToIDs(resources []*WorkflowTemplateVersion) (ids []
 // getWorkflowTemplateVersionColumns returns all of the columns for workflow template versions modified by alias, destination.
 // see formatColumnSelect
 func getWorkflowTemplateVersionColumns(aliasAndDestination ...string) []string {
-	columns := []string{"id", "created_at", "version", "is_latest", "manifest"}
+	columns := []string{"id", "created_at", "version", "is_latest", "manifest", "parameters"}
 	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }

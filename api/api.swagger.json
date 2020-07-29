@@ -3255,6 +3255,12 @@
         },
         "cronStats": {
           "$ref": "#/definitions/CronWorkflowStatisticsReport"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Parameter"
+          }
         }
       }
     },
