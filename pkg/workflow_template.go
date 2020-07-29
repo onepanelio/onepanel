@@ -44,6 +44,11 @@ func createWorkflowTemplateVersionDB(runner sq.BaseRunner, workflowTemplateID ui
 	if err != nil {
 		return
 	}
+
+	if pj == nil {
+		pj = []byte("[]")
+	}
+
 	err = sb.Insert("workflow_template_versions").
 		SetMap(sq.Eq{
 			"workflow_template_id": workflowTemplateID,
