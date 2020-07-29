@@ -726,8 +726,8 @@ func (c *Client) ListWorkflowTemplateVersionsAll(paginator *pagination.Paginatio
 	return
 }
 
-func (c *Client) ListWorkflowTemplates(namespace string, paginator *pagination.PaginationRequest) (workflowTemplateVersions []*WorkflowTemplate, err error) {
-	workflowTemplateVersions, err = c.selectWorkflowTemplatesDB(namespace, paginator)
+func (c *Client) ListWorkflowTemplates(namespace string, paginator *pagination.PaginationRequest, filter *WorkflowTemplateFilter) (workflowTemplateVersions []*WorkflowTemplate, err error) {
+	workflowTemplateVersions, err = c.selectWorkflowTemplatesDB(namespace, paginator, filter)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
