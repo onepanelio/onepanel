@@ -140,6 +140,7 @@ func startRPCServer(db *v1.DB, kubeConfig *v1.Config, sysConfig v1.SystemConfig,
 	api.RegisterWorkspaceTemplateServiceServer(s, server.NewWorkspaceTemplateServer())
 	api.RegisterWorkspaceServiceServer(s, server.NewWorkspaceServer())
 	api.RegisterConfigServiceServer(s, server.NewConfigServer())
+	api.RegisterServiceServiceServer(s, server.NewServiceServer())
 
 	go func() {
 		if err := s.Serve(lis); err != nil {
@@ -173,6 +174,7 @@ func startHTTPProxy() {
 	registerHandler(api.RegisterWorkspaceTemplateServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
 	registerHandler(api.RegisterWorkspaceServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
 	registerHandler(api.RegisterConfigServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
+	registerHandler(api.RegisterServiceServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
 
 	log.Printf("Starting HTTP proxy on port %v", *httpPort)
 
