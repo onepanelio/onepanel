@@ -64,10 +64,8 @@ func updateWorkflowTemplateVersionDB(runner sq.BaseRunner, wtv *WorkflowTemplate
 	_, err = sb.Update("workflow_template_versions").
 		SetMap(sq.Eq{
 			"manifest":   wtv.Manifest,
-			"created_at": wtv.CreatedAt,
 			"is_latest":  wtv.IsLatest,
 			"parameters": string(pj),
-			"version":    wtv.Version,
 		}).
 		Where(sq.Eq{
 			"id": wtv.ID,
