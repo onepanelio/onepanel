@@ -31,44 +31,33 @@ func Up20200727144157(tx *sql.Tx) error {
 		return nil
 	}
 
-	namespaces, err := client.ListOnepanelEnabledNamespaces()
-	if err != nil {
-		return err
-	}
-
 	var pageSize int32
 	var page int32
 	pageSize = 100
 	page = 0
 	paginator := pagination.NewRequest(page, pageSize)
-	wtsResults := -1
-	for _, namespace := range namespaces {
-		for wtsResults != 0 {
-			wts, err := client.ListWorkflowTemplates(namespace.Name, &paginator)
+	wtvsResults := -1
+	for wtvsResults != 0 {
+		wtvs, err := client.ListWorkflowTemplateVersionsDBAll(&paginator)
+		if err != nil {
+			return err
+		}
+		//Exit condition; Check for more results
+		wtvsResults = len(wtvs)
+		if int32(wtvsResults) > 0 {
+			page++
+			paginator = pagination.NewRequest(page, pageSize)
+		}
+
+		for _, wtv := range wtvs {
+			params, err := v1.ParseParametersFromManifest([]byte(wtv.Manifest))
 			if err != nil {
 				return err
 			}
-			//Exit condition; Check for more results
-			wtsResults = len(wts)
-			if int32(wtsResults) > 0 {
-				page++
-				paginator = pagination.NewRequest(page, pageSize)
-			}
-
-			for _, wt := range wts {
-				wtvs, err := client.ListWorkflowTemplateVersionsDB(namespace.Name, wt.UID)
-				if err != nil {
-					return err
-				}
-				for _, wtv := range wtvs {
-					params, err := v1.ParseParametersFromManifest([]byte(wtv.Manifest))
-					if err != nil {
-						return err
-					}
-					wtv.Parameters = params
-					err = client.UpdateWorkflowTemplateVersionDB(namespace.Name, wtv)
-				}
-
+			wtv.Parameters = params
+			err = client.UpdateWorkflowTemplateVersionDB(wtv)
+			if err != nil {
+				return err
 			}
 		}
 	}
