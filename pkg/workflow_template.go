@@ -656,11 +656,11 @@ func (c *Client) ListWorkflowTemplateVersions(namespace, uid string) (workflowTe
 	return
 }
 
-// ListWorkflowTemplateVersionsDB returns all the WorkflowTemplateVersions from the database.
+// ListWorkflowTemplateVersionsModels returns all the WorkflowTemplateVersions from the database.
 // This function is a work-around for ListWorkflowTemplateVersions. Once that function is refactored,
 // this function should no longer be necessary and removed.
 // See: https://github.com/onepanelio/core/issues/436
-func (c *Client) ListWorkflowTemplateVersionsDB(namespace, uid string) (workflowTemplateVersions []*WorkflowTemplateVersion, err error) {
+func (c *Client) ListWorkflowTemplateVersionsModels(namespace, uid string) (workflowTemplateVersions []*WorkflowTemplateVersion, err error) {
 	workflowTemplateVersions, err = c.listWorkflowTemplateVersionsDB(namespace, uid)
 	if err != nil {
 		log.WithFields(log.Fields{
