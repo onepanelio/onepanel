@@ -561,7 +561,7 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 
 // UpdateWorkflowTemplateVersionDB will update a given WorkflowTemplateVersion in the database.
 // The intent is to change specific database values for a WorkflowTemplateVersion.
-func (c *Client) UpdateWorkflowTemplateVersionDB(namespace string, wtv *WorkflowTemplateVersion) (err error) {
+func (c *Client) UpdateWorkflowTemplateVersionDB(wtv *WorkflowTemplateVersion) (err error) {
 	if wtv.ID == 0 {
 		return fmt.Errorf("id required for UpdateWorkflowTemplateVersionDB")
 	}
