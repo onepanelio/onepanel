@@ -211,6 +211,13 @@ func (c *Client) workflowTemplatesVersionSelectBuilder(namespace string) sq.Sele
 	return sb
 }
 
+// workflowTemplateVersionSelectBuilderAll
+func (c *Client) workflowTemplateVersionSelectBuilderAll() sq.SelectBuilder {
+	sb := sb.Select(getWorkflowTemplateVersionColumns("wtv")...).
+		From("workflow_template_versions wtv")
+	return sb
+}
+
 // GetWorkflowTemplateDB returns a WorkflowTemplate from the database that is not archived, should one exist.
 func (c *Client) getWorkflowTemplateDB(namespace, name string) (workflowTemplate *WorkflowTemplate, err error) {
 	workflowTemplate = &WorkflowTemplate{}
@@ -381,6 +388,10 @@ func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTe
 	}
 
 	return
+}
+
+func (c *Client) listWorkflowTemplateVersionsDBAll(paginator *pagination.PaginationRequest) (workflowTemplateVersions []*WorkflowTemplateVersion, err error) {
+	return c.selectAllWorkflowTemplateVersionsDB(paginator)
 }
 
 // listWorkflowTemplateVersionsDB grabs WorkflowTemplateVersions from the database.
@@ -664,6 +675,18 @@ func (c *Client) ListWorkflowTemplateVersionsDB(namespace, uid string) (workflow
 	return
 }
 
+// ListWorkflowTemplateVersionsDBAll returns all WorkflowTemplateVersions with no filtering.
+func (c *Client) ListWorkflowTemplateVersionsDBAll(paginator *pagination.PaginationRequest) (workflowTemplateVersions []*WorkflowTemplateVersion, err error) {
+	workflowTemplateVersions, err = c.listWorkflowTemplateVersionsDBAll(paginator)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Error": err.Error(),
+		}).Error("Workflow template versions not found.")
+		return nil, util.NewUserError(codes.NotFound, "Workflow template versions not found.")
+	}
+	return
+}
+
 func (c *Client) ListWorkflowTemplates(namespace string, paginator *pagination.PaginationRequest) (workflowTemplateVersions []*WorkflowTemplate, err error) {
 	workflowTemplateVersions, err = c.selectWorkflowTemplatesDB(namespace, paginator)
 	if err != nil {
@@ -915,6 +938,17 @@ func (c *Client) selectWorkflowTemplateVersionsDB(namespace, workflowTemplateUID
 		}).
 		OrderBy("wtv.created_at DESC")
 
+	err = c.DB.Selectx(&versions, sb)
+
+	return
+}
+
+// selectAllWorkflowTemplateVersionsDB returns all WorkflowTemplateVersions from the database without filter.
+func (c *Client) selectAllWorkflowTemplateVersionsDB(paginator *pagination.PaginationRequest) (versions []*WorkflowTemplateVersion, err error) {
+	versions = make([]*WorkflowTemplateVersion, 0)
+
+	sb := c.workflowTemplateVersionSelectBuilderAll()
+	sb = *paginator.ApplyToSelect(&sb)
 	err = c.DB.Selectx(&versions, sb)
 
 	return
