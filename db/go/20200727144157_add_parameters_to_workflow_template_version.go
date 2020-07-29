@@ -36,7 +36,7 @@ func Up20200727144157(tx *sql.Tx) error {
 	paginator := pagination.NewRequest(page, pageSize)
 	wtvsResults := -1
 	for wtvsResults != 0 {
-		wtvs, err := client.ListWorkflowTemplateVersionsDBAll(&paginator)
+		wtvs, err := client.ListWorkflowTemplateVersionsAll(&paginator)
 		if err != nil {
 			return err
 		}
@@ -53,7 +53,7 @@ func Up20200727144157(tx *sql.Tx) error {
 				return err
 			}
 			wtv.Parameters = params
-			err = client.UpdateWorkflowTemplateVersionDB(wtv)
+			err = client.UpdateWorkflowTemplateVersion(wtv)
 			if err != nil {
 				return err
 			}

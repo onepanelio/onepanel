@@ -674,7 +674,7 @@ func (c *Client) ListWorkflowTemplateVersionsDB(namespace, uid string) (workflow
 }
 
 // ListWorkflowTemplateVersionsDBAll returns all WorkflowTemplateVersions with no filtering.
-func (c *Client) ListWorkflowTemplateVersionsDBAll(paginator *pagination.PaginationRequest) (workflowTemplateVersions []*WorkflowTemplateVersion, err error) {
+func (c *Client) ListWorkflowTemplateVersionsAll(paginator *pagination.PaginationRequest) (workflowTemplateVersions []*WorkflowTemplateVersion, err error) {
 	workflowTemplateVersions, err = c.listWorkflowTemplateVersionsDBAll(paginator)
 	if err != nil {
 		log.WithFields(log.Fields{
