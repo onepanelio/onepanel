@@ -66,7 +66,7 @@ func updateWorkflowTemplateVersionDB(runner sq.BaseRunner, wtv *WorkflowTemplate
 			"manifest":   wtv.Manifest,
 			"created_at": wtv.CreatedAt,
 			"is_latest":  wtv.IsLatest,
-			"parameters": pj,
+			"parameters": string(pj),
 			"version":    wtv.Version,
 		}).
 		Where(sq.Eq{
