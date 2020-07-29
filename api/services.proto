@@ -5,39 +5,39 @@ package api;
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
-service ComponentService {
-    rpc GetComponent(GetComponentRequest) returns (Component) {
+service ServiceService {
+    rpc GetService(GetServiceRequest) returns (Service) {
         option (google.api.http) = {
-            get: "/apis/v1beta1/{namespace}/component/{name}"
+            get: "/apis/v1beta1/{namespace}/service/{name}"
         };
     }
 
-    rpc ListComponents(ListComponentsRequest) returns (ListComponentsResponse) {
+    rpc ListServices(ListServicesRequest) returns (ListServicesResponse) {
         option (google.api.http) = {
-            get: "/apis/v1beta1/{namespace}/components"
+            get: "/apis/v1beta1/{namespace}/service"
         };
     }
 }
 
-message Component {
+message Service {
     string name = 1;
     string url = 2;
 }
 
-message GetComponentRequest {
+message GetServiceRequest {
     string namespace = 1;
     string name = 2;
 }
 
-message ListComponentsRequest {
+message ListServicesRequest {
     string namespace = 1;
     int32 pageSize = 2;
     int32 page = 3;
 }
 
-message ListComponentsResponse {
+message ListServicesResponse {
     int32 count = 1;
-    repeated Component components = 2;
+    repeated Service services = 2;
     int32 page = 3;
     int32 pages = 4;
     int32 totalCount = 5;
