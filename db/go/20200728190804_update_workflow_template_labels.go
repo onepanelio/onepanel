@@ -38,7 +38,7 @@ func Up20200728190804(tx *sql.Tx) error {
 
 		resultCount := -1
 		for resultCount != 0 {
-			workflowTemplates, err := client.ListWorkflowTemplates(namespace.Name, paginator, nil)
+			workflowTemplates, err := client.ListAllWorkflowTemplates(namespace.Name, paginator, nil)
 			if err != nil {
 				return err
 			}

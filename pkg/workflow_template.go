@@ -726,6 +726,22 @@ func (c *Client) ListWorkflowTemplateVersionsAll(paginator *pagination.Paginatio
 	return
 }
 
+// ListAllWorkflowTemplates lists all of the workflow templates, including archived and system specific
+func (c *Client) ListAllWorkflowTemplates(namespace string, paginator *pagination.PaginationRequest, filter *WorkflowTemplateFilter) (workflowTemplateVersions []*WorkflowTemplate, err error) {
+	workflowTemplateVersions, err = c.selectAllWorkflowTemplatesDB(namespace, paginator, filter)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Error":     err.Error(),
+		}).Error("Workflow templates not found.")
+		return nil, util.NewUserError(codes.NotFound, "Workflow templates not found.")
+	}
+
+	err = c.appendExtraWorkflowTemplateData(namespace, workflowTemplateVersions)
+
+	return
+}
+
 // ListWorkflowTemplates returns all WorkflowTemplates where the results
 // are filtered by is_archived and is_System is false.
 func (c *Client) ListWorkflowTemplates(namespace string, paginator *pagination.PaginationRequest, filter *WorkflowTemplateFilter) (workflowTemplateVersions []*WorkflowTemplate, err error) {
