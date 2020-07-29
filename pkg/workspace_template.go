@@ -156,6 +156,14 @@ func generateArguments(spec *WorkspaceSpec, config SystemConfig) (err error) {
 	}
 	systemParameters = append(systemParameters, runtimeParameters...)
 
+	if spec.Arguments == nil {
+		spec.Arguments = &Arguments{
+			Parameters: []Parameter{},
+		}
+	}
+	spec.Arguments.Parameters = append(systemParameters, spec.Arguments.Parameters...)
+
+	systemVolumeParameters := make([]Parameter, 0)
 	// Map all the volumeClaimTemplates that have storage set
 	volumeStorageQuantityIsSet := make(map[string]bool)
 	for _, v := range spec.VolumeClaimTemplates {
@@ -172,7 +180,7 @@ func generateArguments(spec *WorkspaceSpec, config SystemConfig) (err error) {
 				continue
 			}
 
-			systemParameters = append(systemParameters, Parameter{
+			systemVolumeParameters = append(systemVolumeParameters, Parameter{
 				Name:        fmt.Sprintf("sys-%v-volume-size", v.Name),
 				Type:        "input.number",
 				Value:       ptr.String("20480"),
@@ -185,12 +193,7 @@ func generateArguments(spec *WorkspaceSpec, config SystemConfig) (err error) {
 		}
 	}
 
-	if spec.Arguments == nil {
-		spec.Arguments = &Arguments{
-			Parameters: []Parameter{},
-		}
-	}
-	spec.Arguments.Parameters = append(systemParameters, spec.Arguments.Parameters...)
+	spec.Arguments.Parameters = append(spec.Arguments.Parameters, systemVolumeParameters...)
 
 	return
 }
@@ -283,6 +286,11 @@ func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string) (s
 
 		volumeClaimsMapped[v.ObjectMeta.Name] = true
 	}
+
+	// Don't generate a volumeClaimTemplate for system volumes volumeMounts
+	volumeClaimsMapped["sys-dshm"] = true
+	volumeClaimsMapped["sys-namespace-config"] = true
+
 	// Automatically map the remaining ones
 	for i, c := range spec.Containers {
 		container := &spec.Containers[i]
@@ -342,6 +350,29 @@ func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string) (s
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{
 							Medium: corev1.StorageMediumMemory,
+						},
+					},
+				},
+				{
+					Name: "sys-namespace-config",
+					VolumeSource: corev1.VolumeSource{
+						Projected: &corev1.ProjectedVolumeSource{
+							Sources: []corev1.VolumeProjection{
+								{
+									ConfigMap: &corev1.ConfigMapProjection{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: "onepanel",
+										},
+									},
+								},
+								{
+									Secret: &corev1.SecretProjection{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: "onepanel",
+										},
+									},
+								},
+							},
 						},
 					},
 				},
