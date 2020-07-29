@@ -31,10 +31,8 @@ func Up20200727144157(tx *sql.Tx) error {
 		return nil
 	}
 
-	var pageSize int32
-	var page int32
-	pageSize = 100
-	page = 0
+	pageSize := int32(100)
+	page := int32(0)
 	paginator := pagination.NewRequest(page, pageSize)
 	wtvsResults := -1
 	for wtvsResults != 0 {
