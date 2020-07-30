@@ -127,6 +127,7 @@ func Up20200528140124(tx *sql.Tx) error {
 	if err != nil {
 		return err
 	}
+	defer client.DB.Close()
 
 	migrationsRan, err := getRanSQLMigrations(client)
 	if err != nil {

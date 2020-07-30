@@ -27,6 +27,7 @@ func Up20200728190804(tx *sql.Tx) error {
 	if err != nil {
 		return err
 	}
+	defer client.DB.Close()
 
 	namespaces, err := client.ListOnepanelEnabledNamespaces()
 	if err != nil {
@@ -65,6 +66,7 @@ func Down20200728190804(tx *sql.Tx) error {
 	if err != nil {
 		return err
 	}
+	defer client.DB.Close()
 
 	return client.DeleteResourceLabels(tx, v1.TypeWorkflowTemplate)
 }
