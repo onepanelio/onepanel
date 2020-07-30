@@ -16,6 +16,7 @@ type ParameterOption struct {
 type Parameter struct {
 	Name        string             `json:"name" protobuf:"bytes,1,opt,name=name"`
 	Value       *string            `json:"value,omitempty" protobuf:"bytes,2,opt,name=value"`
+	Visibility  *string            `json:"visibility,omitempty"`
 	Type        string             `json:"type,omitempty" protobuf:"bytes,3,opt,name=type"`
 	DisplayName *string            `json:"displayName,omitempty" protobuf:"bytes,4,opt,name=displayName"`
 	Hint        *string            `json:"hint,omitempty" protobuf:"bytes,5,opt,name=hint"`

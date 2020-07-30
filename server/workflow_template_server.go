@@ -26,6 +26,9 @@ func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 		if p.Value != nil {
 			ap.Value = *p.Value
 		}
+		if p.Visibility != nil {
+			ap.Visibility = *p.Visibility
+		}
 
 		aParams = append(aParams, &ap)
 	}
