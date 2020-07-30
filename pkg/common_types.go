@@ -23,6 +23,27 @@ type Parameter struct {
 	Required    bool               `json:"required,omitempty" protobuf:"bytes,7,opt,name=required"`
 }
 
+type Arguments struct {
+	Parameters []Parameter `json:"parameters" protobuf:"bytes,1,opt,name=parameters"`
+}
+
+// WorkflowTemplateManifest is a client representation of a WorkflowTemplate
+// It is usually provided as YAML by a client and this struct helps to marshal/unmarshal it
+type WorkflowTemplateManifest struct {
+	Arguments Arguments
+}
+
+// WorkflowExecutionSpec is a client representation of a WorkflowExecution.
+// It is usually provided as YAML by a client and this struct helps to marshal/unmarshal it
+// This may be redundant with WorkflowTemplateManifest and should be looked at. # TODO
+type WorkflowExecutionSpec struct {
+	Arguments Arguments
+}
+
+// ParameterFromMap parses a parameter given a generic map of values
+// this should not be used anyway in favor of yaml marshaling/unmarshaling
+// left until it is refactored and tested
+// Deprecated
 func ParameterFromMap(paramMap map[interface{}]interface{}) *Parameter {
 	workflowParameter := Parameter{
 		Options: []*ParameterOption{},
@@ -89,41 +110,27 @@ func ParameterFromMap(paramMap map[interface{}]interface{}) *Parameter {
 	return &workflowParameter
 }
 
-type Arguments struct {
-	Parameters []Parameter `json:"parameters" protobuf:"bytes,1,opt,name=parameters"`
-}
-
+// ParseParametersFromManifest takes a manifest and picks out the parameters and returns them as structs
 func ParseParametersFromManifest(manifest []byte) ([]Parameter, error) {
-	var parameters []Parameter
+	manifestResult := &WorkflowTemplateManifest{
+		Arguments: Arguments{},
+	}
 
-	mappedData := make(map[string]interface{})
-
-	if err := yaml.Unmarshal(manifest, mappedData); err != nil {
+	err := yaml.Unmarshal(manifest, manifestResult)
+	if err != nil {
 		return nil, err
 	}
 
-	arguments, ok := mappedData["arguments"]
-	if !ok {
-		return parameters, nil
+	return manifestResult.Arguments.Parameters, nil
+}
+
+// MapParametersByName returns a map where the parameter name is the key and the parameter is the value
+func MapParametersByName(parameters []Parameter) map[string]Parameter {
+	result := make(map[string]Parameter)
+
+	for _, param := range parameters {
+		result[param.Name] = param
 	}
 
-	argumentsMap := arguments.(map[interface{}]interface{})
-	parametersRaw, ok := argumentsMap["parameters"]
-	if !ok {
-		return parameters, nil
-	}
-
-	parametersArray, ok := parametersRaw.([]interface{})
-	for _, parameter := range parametersArray {
-		paramMap, ok := parameter.(map[interface{}]interface{})
-		if !ok {
-			continue
-		}
-
-		workflowParameter := ParameterFromMap(paramMap)
-
-		parameters = append(parameters, *workflowParameter)
-	}
-
-	return parameters, nil
+	return result
 }

@@ -18,13 +18,15 @@ func NewWorkflowTemplateServer() *WorkflowTemplateServer {
 }
 
 func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
-
 	var aParams []*api.Parameter
 	for _, p := range wft.Parameters {
 		ap := api.Parameter{
-			Name:  p.Name,
-			Value: *p.Value,
+			Name: p.Name,
 		}
+		if p.Value != nil {
+			ap.Value = *p.Value
+		}
+
 		aParams = append(aParams, &ap)
 	}
 

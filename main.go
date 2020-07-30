@@ -77,12 +77,14 @@ func main() {
 			goose.SetTableName("goose_db_version")
 			if err := goose.Run("up", db.DB, filepath.Join("db", "sql")); err != nil {
 				log.Fatalf("Failed to run database sql migrations: %v", err)
+				db.Close()
 			}
 
 			goose.SetTableName("goose_db_go_version")
 			migrations.Initialize()
 			if err := goose.Run("up", db.DB, filepath.Join("db", "go")); err != nil {
 				log.Fatalf("Failed to run database go migrations: %v", err)
+				db.Close()
 			}
 
 			s := startRPCServer(v1.NewDB(db), kubeConfig, sysConfig, stopCh)
@@ -90,6 +92,9 @@ func main() {
 			<-stopCh
 
 			s.Stop()
+			if err := db.Close(); err != nil {
+				log.Printf("[error] closing db connection")
+			}
 		}
 	}()
 

@@ -40,6 +40,7 @@ func main() {
 
 	dbDriverName, dbDataSourceName := config.DatabaseConnection()
 	db := sqlx.MustConnect(dbDriverName, dbDataSourceName)
+	defer db.Close()
 
 	command := args[0]
 
