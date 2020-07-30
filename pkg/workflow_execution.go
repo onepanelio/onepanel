@@ -184,7 +184,7 @@ func injectContainerResourceQuotas(wf *wfv1.Workflow, template *wfv1.Template, s
 		parts := strings.Split(strings.Replace(value, "}}", "", -1), ".")
 		paramName := parts[len(parts)-1]
 		for _, param := range wf.Spec.Arguments.Parameters {
-			if param.Name == paramName {
+			if param.Name == paramName && param.Value != nil {
 				value = *param.Value
 				break
 			}
