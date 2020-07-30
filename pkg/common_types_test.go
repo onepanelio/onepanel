@@ -13,6 +13,7 @@ func TestParseParametersFromManifest(t *testing.T) {
     value: https://github.com/onepanelio/Mask_RCNN.git
   - name: dataset-path
     value: datasets/test_05142020170720
+    visibility: public
   - name: model-path
     value: models/rush/cvat6-20
   - name: extras
@@ -43,6 +44,12 @@ func TestParseParametersFromManifest(t *testing.T) {
 	assert.Len(t, parameters, 8)
 
 	keyedParameters := MapParametersByName(parameters)
+
+	// Make sure visibility is set
+	assert.Equal(t, *keyedParameters["dataset-path"].Visibility, "public")
+
+	// Make sure visibility is not set if omitted
+	assert.Nil(t, keyedParameters["tf-image"].Visibility)
 
 	// Make sure numbers, slashes, dashes, and letters are parsed correctly
 	assert.Equal(t, *keyedParameters["tf-image"].Value, "tensorflow/tensorflow:1.13.1-py3")
