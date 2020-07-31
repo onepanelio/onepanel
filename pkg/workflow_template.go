@@ -133,7 +133,7 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 
 	params, err := ParseParametersFromManifest([]byte(workflowTemplate.Manifest))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, util.NewUserError(codes.InvalidArgument, err.Error())
 	}
 	workflowTemplateVersion, err := createWorkflowTemplateVersionDB(tx, workflowTemplate.ID, workflowTemplate.Manifest, true, params)
 	if err != nil {
