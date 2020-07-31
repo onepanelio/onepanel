@@ -46,10 +46,13 @@ func NewUserErrorWrap(err error, entity string) error {
 		code    codes.Code
 		message string
 		pqErr   *pq.Error
+		userErr *UserError
 	)
 	if errors.As(err, &pqErr) {
 		code = pqError(pqErr)
 		message = fmt.Sprintf("%v already exists.", entity)
+	} else if errors.As(err, &userErr) {
+		return err
 	} else {
 		code = codes.Unknown
 		message = "Unknown error."
