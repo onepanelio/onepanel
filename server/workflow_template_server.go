@@ -17,25 +17,12 @@ func NewWorkflowTemplateServer() *WorkflowTemplateServer {
 	return &WorkflowTemplateServer{}
 }
 
+// apiWorkflowTemplate converts a *v1.WorkflowTemplate to a *api.WorkflowTemplate
 func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
-	var aParams []*api.Parameter
-	for _, p := range wft.Parameters {
-		ap := api.Parameter{
-			Name: p.Name,
-		}
-		if p.Value != nil {
-			ap.Value = *p.Value
-		}
-		if p.Visibility != nil {
-			ap.Visibility = *p.Visibility
-		}
-
-		aParams = append(aParams, &ap)
-	}
-
 	res := &api.WorkflowTemplate{
 		Uid:        wft.UID,
-		CreatedAt:  wft.CreatedAt.UTC().Format(time.RFC3339),
+		CreatedAt:  converter.TimestampToAPIString(&wft.CreatedAt),
+		ModifiedAt: converter.TimestampToAPIString(wft.ModifiedAt),
 		Name:       wft.Name,
 		Version:    wft.Version,
 		Versions:   wft.Versions,
@@ -43,11 +30,7 @@ func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 		IsLatest:   wft.IsLatest,
 		IsArchived: wft.IsArchived,
 		Labels:     converter.MappingToKeyValue(wft.Labels),
-		Parameters: aParams,
-	}
-
-	if wft.ModifiedAt != nil {
-		res.ModifiedAt = wft.ModifiedAt.UTC().Format(time.RFC3339)
+		Parameters: converter.ParametersToAPI(wft.Parameters),
 	}
 
 	if wft.WorkflowExecutionStatisticReport != nil {

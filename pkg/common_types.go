@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"fmt"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"gopkg.in/yaml.v2"
 )
@@ -22,6 +23,31 @@ type Parameter struct {
 	Hint        *string            `json:"hint,omitempty" protobuf:"bytes,5,opt,name=hint"`
 	Options     []*ParameterOption `json:"options,omitempty" protobuf:"bytes,6,opt,name=options"`
 	Required    bool               `json:"required,omitempty" protobuf:"bytes,7,opt,name=required"`
+}
+
+// IsValidParameter returns nil if the parameter is valid or an error otherwise
+func IsValidParameter(parameter Parameter) error {
+	if parameter.Visibility == nil {
+		return nil
+	}
+
+	visibility := *parameter.Visibility
+	if visibility != "public" && visibility != "protected" && visibility != "internal" && visibility != "private" {
+		return fmt.Errorf("invalid visibility '%v' for parameter '%v'", visibility, parameter.Name)
+	}
+
+	return nil
+}
+
+// IsValidParameters returns nil if all parameters are valid or an error otherwise
+func IsValidParameters(parameters []Parameter) error {
+	for _, param := range parameters {
+		if err := IsValidParameter(param); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 type Arguments struct {
@@ -119,6 +145,10 @@ func ParseParametersFromManifest(manifest []byte) ([]Parameter, error) {
 
 	err := yaml.Unmarshal(manifest, manifestResult)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := IsValidParameters(manifestResult.Arguments.Parameters); err != nil {
 		return nil, err
 	}
 
