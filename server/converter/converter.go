@@ -4,6 +4,7 @@ import (
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
 	"sort"
+	"time"
 )
 
 func APIKeyValueToLabel(apiKeyValues []*api.KeyValue) map[string]string {
@@ -76,13 +77,13 @@ func APIParameterOptionsToInternal(options []*api.ParameterOption) []*v1.Paramet
 	return result
 }
 
+// ParameterToAPI converts a v1.Parameter to a *api.Parameter
 func ParameterToAPI(param v1.Parameter) *api.Parameter {
 	apiParam := &api.Parameter{
 		Name:     param.Name,
 		Type:     param.Type,
 		Required: param.Required,
 	}
-
 	if param.Value != nil {
 		apiParam.Value = *param.Value
 	}
@@ -92,7 +93,9 @@ func ParameterToAPI(param v1.Parameter) *api.Parameter {
 	if param.Hint != nil {
 		apiParam.Hint = *param.Hint
 	}
-
+	if param.Visibility != nil {
+		apiParam.Visibility = *param.Visibility
+	}
 	if param.Options != nil {
 		apiParam.Options = ParameterOptionsToAPI(param.Options)
 	}
@@ -133,4 +136,14 @@ func APIParameterToInternal(param *api.Parameter) *v1.Parameter {
 	}
 
 	return result
+}
+
+// TimestampToAPIString converts a *time.Time to an API string in the RFC3339 format
+// if ts is nil, an empty string is returned
+func TimestampToAPIString(ts *time.Time) string {
+	if ts == nil {
+		return ""
+	}
+
+	return ts.UTC().Format(time.RFC3339)
 }
