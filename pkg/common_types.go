@@ -2,7 +2,6 @@ package v1
 
 import (
 	"fmt"
-	"github.com/onepanelio/core/pkg/util/ptr"
 	"gopkg.in/yaml.v2"
 )
 
@@ -50,8 +49,9 @@ func IsValidParameters(parameters []Parameter) error {
 	return nil
 }
 
+// Arguments are the arguments in a manifest file.
 type Arguments struct {
-	Parameters []Parameter `json:"parameters" protobuf:"bytes,1,opt,name=parameters"`
+	Parameters []Parameter `json:"parameters"`
 }
 
 // WorkflowTemplateManifest is a client representation of a WorkflowTemplate
@@ -65,76 +65,6 @@ type WorkflowTemplateManifest struct {
 // This may be redundant with WorkflowTemplateManifest and should be looked at. # TODO
 type WorkflowExecutionSpec struct {
 	Arguments Arguments
-}
-
-// ParameterFromMap parses a parameter given a generic map of values
-// this should not be used anyway in favor of yaml marshaling/unmarshaling
-// left until it is refactored and tested
-// Deprecated
-func ParameterFromMap(paramMap map[interface{}]interface{}) *Parameter {
-	workflowParameter := Parameter{
-		Options: []*ParameterOption{},
-	}
-
-	// TODO choose a consistent way and use that.
-	if value, ok := paramMap["displayname"]; ok {
-		if displayName, ok := value.(string); ok {
-			workflowParameter.DisplayName = &displayName
-		}
-	} else if value, ok := paramMap["displayName"]; ok {
-		if displayName, ok := value.(string); ok {
-			workflowParameter.DisplayName = &displayName
-		}
-	}
-
-	if value, ok := paramMap["hint"]; ok {
-		if hint, ok := value.(string); ok {
-			workflowParameter.Hint = ptr.String(hint)
-		}
-	}
-
-	if value, ok := paramMap["required"]; ok {
-		if required, ok := value.(bool); ok {
-			workflowParameter.Required = required
-		}
-	}
-
-	if value, ok := paramMap["type"]; ok {
-		if typeValue, ok := value.(string); ok {
-			workflowParameter.Type = typeValue
-		}
-	}
-
-	if value, ok := paramMap["name"]; ok {
-		if nameValue, ok := value.(string); ok {
-			workflowParameter.Name = nameValue
-		}
-	}
-
-	if value, ok := paramMap["value"]; ok {
-		if valueValue, ok := value.(string); ok {
-			workflowParameter.Value = &valueValue
-		}
-	}
-
-	options := paramMap["options"]
-	optionsArray, ok := options.([]interface{})
-	if !ok {
-		return &workflowParameter
-	}
-
-	for _, option := range optionsArray {
-		optionMap := option.(map[interface{}]interface{})
-
-		newOption := ParameterOption{
-			Name:  optionMap["name"].(string),
-			Value: optionMap["value"].(string),
-		}
-
-		workflowParameter.Options = append(workflowParameter.Options, &newOption)
-	}
-
-	return &workflowParameter
 }
 
 // ParseParametersFromManifest takes a manifest and picks out the parameters and returns them as structs

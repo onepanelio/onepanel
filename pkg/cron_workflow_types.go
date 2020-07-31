@@ -24,44 +24,21 @@ type CronWorkflow struct {
 	Namespace                 string `db:"namespace"`
 }
 
+// CronWorkflowManifest is a client representation of a CronWorkflowManifest
+// It is usually provided as YAML by a client and this struct helps to marshal/unmarshal it
+type CronWorkflowManifest struct {
+	WorkflowExecutionSpec WorkflowExecutionSpec `json:"workflowSpec" yaml:"workflowSpec"`
+}
+
 // GetParametersFromWorkflowSpec parses the parameters from the CronWorkflow's manifest
 func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]Parameter, error) {
-	var parameters []Parameter
+	manifestSpec := &CronWorkflowManifest{}
 
-	mappedData := make(map[string]interface{})
-
-	if err := yaml.Unmarshal([]byte(cw.Manifest), mappedData); err != nil {
+	if err := yaml.Unmarshal([]byte(cw.Manifest), manifestSpec); err != nil {
 		return nil, err
 	}
 
-	workflowSpec, ok := mappedData["workflowSpec"]
-	if !ok {
-		return parameters, nil
-	}
-
-	workflowSpecMap := workflowSpec.(map[interface{}]interface{})
-	arguments, ok := workflowSpecMap["arguments"]
-	if !ok {
-		return parameters, nil
-	}
-
-	argumentsMap := arguments.(map[interface{}]interface{})
-	parametersRaw, ok := argumentsMap["parameters"]
-	if !ok {
-		return parameters, nil
-	}
-
-	parametersArray, ok := parametersRaw.([]interface{})
-	for _, parameter := range parametersArray {
-		paramMap, ok := parameter.(map[interface{}]interface{})
-		if !ok {
-			continue
-		}
-
-		workflowParameter := ParameterFromMap(paramMap)
-
-		parameters = append(parameters, *workflowParameter)
-	}
+	parameters := manifestSpec.WorkflowExecutionSpec.Arguments.Parameters
 
 	return parameters, nil
 }
