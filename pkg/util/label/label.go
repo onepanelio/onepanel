@@ -17,6 +17,11 @@ const (
 	VersionLatest               = OnepanelPrefix + "version-latest"
 )
 
+type Label struct {
+	Key   string
+	Value string
+}
+
 // Function that modifies an input string
 type StringModifier func(string) string
 
