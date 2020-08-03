@@ -745,16 +745,6 @@ func (c *Client) CountWorkflowExecutions(namespace, workflowTemplateUID, workflo
 		RunWith(c.DB).
 		QueryRow().
 		Scan(&count)
-	//
-	//test := types.Labels{}
-	//test["test"] = "how"
-	//test["language"] = "golang"
-	//
-	//_, err = sb.Update("workflow_executions").
-	//	SetMap(sq.Eq{
-	//		"labels": test,
-	//	}).Where("id = 738").RunWith(c.DB).
-	//	Exec()
 
 	return
 }
