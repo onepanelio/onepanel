@@ -18,7 +18,8 @@
     "application/json"
   ],
   "produces": [
-    "application/json"
+    "application/json",
+    "application/octet-stream"
   ],
   "paths": {
     "/apis/v1beta1/auth": {
