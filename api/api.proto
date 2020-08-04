@@ -19,6 +19,7 @@ option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
 	schemes: HTTPS;
 	consumes: "application/json";
 	produces: "application/json";
+	produces: "application/octet-stream";
 	security_definitions: {
 		security: {
 			key: "Bearer";
