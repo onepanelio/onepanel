@@ -12,6 +12,7 @@ import (
 	k8runtime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
+	"math"
 	"net"
 	"net/http"
 	"path/filepath"
@@ -134,7 +135,7 @@ func startRPCServer(db *v1.DB, kubeConfig *v1.Config, sysConfig v1.SystemConfig,
 			grpc_logrus.StreamServerInterceptor(logEntry),
 			grpc_recovery.StreamServerInterceptor(recoveryOpts...),
 			auth.StreamingInterceptor(kubeConfig, db, sysConfig)),
-	))
+	), grpc.MaxRecvMsgSize(math.MaxInt64), grpc.MaxSendMsgSize(math.MaxInt64))
 	api.RegisterWorkflowTemplateServiceServer(s, server.NewWorkflowTemplateServer())
 	api.RegisterCronWorkflowServiceServer(s, server.NewCronWorkflowServer())
 	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer())
@@ -167,7 +168,8 @@ func startHTTPProxy() {
 	// Register gRPC server endpoint
 	// Note: Make sure the gRPC server is running properly and accessible
 	mux := runtime.NewServeMux(runtime.WithIncomingHeaderMatcher(customHeaderMatcher))
-	opts := []grpc.DialOption{grpc.WithInsecure()}
+	opts := []grpc.DialOption{grpc.WithInsecure(), grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(math.MaxInt64),
+		grpc.MaxCallRecvMsgSize(math.MaxInt64))}
 
 	registerHandler(api.RegisterWorkflowTemplateServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
 	registerHandler(api.RegisterWorkflowServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
