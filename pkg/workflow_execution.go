@@ -523,6 +523,8 @@ func (c *Client) CloneWorkflowExecution(namespace, uid string) (*WorkflowExecuti
 		return nil, util.NewUserError(codes.NotFound, "Error with getting workflow template.")
 	}
 
+	// We remove the name because CreateWorkflowExecution will otherwise use it to try and create an execution with that name
+	workflowExecution.Name = ""
 	return c.CreateWorkflowExecution(namespace, workflowExecution, workflowTemplate)
 }
 
@@ -1198,6 +1200,7 @@ func (c *Client) GetArtifact(namespace, uid, key string) (data []byte, err error
 	case config.ArtifactRepository.GCS != nil:
 		{
 			gcsClient, err := c.GetGCSClient(namespace, config.ArtifactRepository.GCS)
+
 			if err != nil {
 				log.WithFields(log.Fields{
 					"Namespace": namespace,
