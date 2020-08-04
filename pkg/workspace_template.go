@@ -251,7 +251,7 @@ func createVirtualServiceManifest(spec *WorkspaceSpec) (virtualServiceManifest s
 	return
 }
 
-func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string) (statefulSetManifest string, err error) {
+func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string, services []*Service) (statefulSetManifest string, err error) {
 	var volumeClaims []map[string]interface{}
 	volumeClaimsMapped := make(map[string]bool)
 	// Add volumeClaims that the user has added first
@@ -301,6 +301,11 @@ func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string) (s
 		env.PrependEnvVarToContainer(container, "ONEPANEL_PROVIDER", config["ONEPANEL_PROVIDER"])
 		env.PrependEnvVarToContainer(container, "ONEPANEL_RESOURCE_NAMESPACE", "{{workflow.namespace}}")
 		env.PrependEnvVarToContainer(container, "ONEPANEL_RESOURCE_UID", "{{workflow.parameters.sys-name}}")
+
+		for _, service := range services {
+			envName := fmt.Sprintf("ONEPANEL_SERVICES_%v_API_URL", strings.ToUpper(service.Name))
+			env.PrependEnvVarToContainer(container, envName, service.URL)
+		}
 
 		for _, v := range c.VolumeMounts {
 			if volumeClaimsMapped[v.Name] {
@@ -832,7 +837,12 @@ func (c *Client) generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *Wo
 		return nil, err
 	}
 
-	statefulSetManifest, err := createStatefulSetManifest(workspaceSpec, config)
+	services, err := c.ListServices(workspaceTemplate.Namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	statefulSetManifest, err := createStatefulSetManifest(workspaceSpec, config, services)
 	if err != nil {
 		return nil, err
 	}
