@@ -18,7 +18,7 @@ type Parameter struct {
 	Value       *string            `json:"value,omitempty" protobuf:"bytes,2,opt,name=value"`
 	Visibility  *string            `json:"visibility,omitempty"`
 	Type        string             `json:"type,omitempty" protobuf:"bytes,3,opt,name=type"`
-	DisplayName *string            `json:"displayName,omitempty" protobuf:"bytes,4,opt,name=displayName"`
+	DisplayName *string            `json:"displayName,omitempty" yaml:"displayName"`
 	Hint        *string            `json:"hint,omitempty" protobuf:"bytes,5,opt,name=hint"`
 	Options     []*ParameterOption `json:"options,omitempty" protobuf:"bytes,6,opt,name=options"`
 	Required    bool               `json:"required,omitempty" protobuf:"bytes,7,opt,name=required"`
