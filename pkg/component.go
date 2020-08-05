@@ -22,6 +22,10 @@ func (c *Client) generateServiceURL(namespace, name string) (string, error) {
 
 // ListServices finds all of the services in the given namespace
 func (c *Client) ListServices(namespace string) ([]*Service, error) {
+	if namespace == "" {
+		return nil, fmt.Errorf("namespace is empty")
+	}
+
 	labelSelect := fmt.Sprintf("%v=%v", "service.onepanel.io/part-of", "onepanel")
 
 	serviceList, err := c.CoreV1().Services(namespace).List(ListOptions{

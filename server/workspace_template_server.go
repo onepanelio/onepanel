@@ -72,9 +72,10 @@ func (s *WorkspaceTemplateServer) CreateWorkspaceTemplate(ctx context.Context, r
 	}
 
 	workspaceTemplate := &v1.WorkspaceTemplate{
-		Name:     req.WorkspaceTemplate.Name,
-		Manifest: req.WorkspaceTemplate.Manifest,
-		Labels:   converter.APIKeyValueToLabel(req.WorkspaceTemplate.Labels),
+		Namespace: req.Namespace,
+		Name:      req.WorkspaceTemplate.Name,
+		Manifest:  req.WorkspaceTemplate.Manifest,
+		Labels:    converter.APIKeyValueToLabel(req.WorkspaceTemplate.Labels),
 	}
 	workspaceTemplate, err = client.CreateWorkspaceTemplate(req.Namespace, workspaceTemplate)
 	if err != nil {
@@ -94,9 +95,10 @@ func (s *WorkspaceTemplateServer) UpdateWorkspaceTemplate(ctx context.Context, r
 	}
 
 	workspaceTemplate := &v1.WorkspaceTemplate{
-		UID:      req.Uid,
-		Manifest: req.WorkspaceTemplate.Manifest,
-		Labels:   converter.APIKeyValueToLabel(req.WorkspaceTemplate.Labels),
+		Namespace: req.Namespace,
+		UID:       req.Uid,
+		Manifest:  req.WorkspaceTemplate.Manifest,
+		Labels:    converter.APIKeyValueToLabel(req.WorkspaceTemplate.Labels),
 	}
 	workspaceTemplate, err = client.UpdateWorkspaceTemplate(req.Namespace, workspaceTemplate)
 	if err != nil {
