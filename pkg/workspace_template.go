@@ -884,6 +884,7 @@ func (c *Client) CreateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	if err != nil {
 		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
 	}
+	workspaceTemplate.Namespace = namespace
 
 	existingWorkspaceTemplate, err := c.getWorkspaceTemplateByName(namespace, workspaceTemplate.Name)
 	if err != nil {
@@ -967,6 +968,7 @@ func (c *Client) UpdateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	}
 	workspaceTemplate.ID = existingWorkspaceTemplate.ID
 	workspaceTemplate.Name = existingWorkspaceTemplate.UID
+	workspaceTemplate.Namespace = existingWorkspaceTemplate.Namespace
 
 	updatedWorkflowTemplate, err := c.generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate)
 	if err != nil {
