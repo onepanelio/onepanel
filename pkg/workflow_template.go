@@ -107,7 +107,7 @@ func createLatestWorkflowTemplateVersionDB(runner sq.BaseRunner, workflowTemplat
 // The returned WorkflowTemplate has the ArgoWorkflowTemplate set to the newly created one.
 func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *WorkflowTemplate) (*WorkflowTemplate, *WorkflowTemplateVersion, error) {
 	if err := workflowTemplate.GenerateUID(workflowTemplate.Name); err != nil {
-		return nil, nil, err
+		return nil, nil, util.NewUserError(codes.InvalidArgument, "Template name must be 30 characters or less")
 	}
 
 	tx, err := c.DB.Begin()
