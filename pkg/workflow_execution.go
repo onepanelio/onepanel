@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"bufio"
 	"cloud.google.com/go/storage"
 	"database/sql"
 	"encoding/json"
@@ -969,10 +970,11 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName
 	logWatcher := make(chan *LogEntry)
 	go func() {
 		buffer := make([]byte, 4096)
+		reader := bufio.NewReader(stream)
 
 		newLine := true
 		for {
-			bytesRead, err := stream.Read(buffer)
+			bytesRead, err := reader.Read(buffer)
 			if err != nil && err.Error() != "EOF" {
 				break
 			}
