@@ -3,6 +3,7 @@ package v1
 import (
 	"fmt"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/onepanelio/core/pkg/util/types"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"github.com/onepanelio/core/util/sql"
 	"sigs.k8s.io/yaml"
@@ -22,7 +23,7 @@ type WorkspaceTemplate struct {
 	Manifest                   string
 	IsLatest                   bool
 	WorkflowTemplate           *WorkflowTemplate `db:"workflow_template"`
-	Labels                     map[string]string
+	Labels                     types.JSONLabels
 	WorkflowTemplateID         uint64 `db:"workflow_template_id"`
 }
 
@@ -98,6 +99,6 @@ func WorkspaceTemplatesToVersionIDs(resources []*WorkspaceTemplate) (ids []uint6
 // getWorkspaceTemplateColumns returns all of the columns for workspace template modified by alias, destination.
 // see formatColumnSelect
 func getWorkspaceTemplateColumns(aliasAndDestination ...string) []string {
-	columns := []string{"id", "uid", "created_at", "modified_at", "name", "namespace", "is_archived", "workflow_template_id"}
+	columns := []string{"id", "uid", "created_at", "modified_at", "name", "namespace", "is_archived", "workflow_template_id", "labels"}
 	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }

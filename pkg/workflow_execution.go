@@ -556,6 +556,7 @@ func (c *Client) createWorkflowExecutionDB(namespace string, workflowExecution *
 			"phase":                        wfv1.NodePending,
 			"parameters":                   string(parametersJSON),
 			"is_archived":                  false,
+			"labels":                       workflowExecution.Labels,
 		}).
 		Suffix("RETURNING id").
 		RunWith(c.DB).

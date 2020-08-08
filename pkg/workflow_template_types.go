@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/onepanelio/core/pkg/util/mapping"
+	"github.com/onepanelio/core/pkg/util/types"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"github.com/onepanelio/core/util/sql"
 	log "github.com/sirupsen/logrus"
@@ -31,7 +32,7 @@ type WorkflowTemplate struct {
 	IsArchived                       bool `db:"is_archived"`
 	IsSystem                         bool `db:"is_system"`
 	ArgoWorkflowTemplate             *wfv1.WorkflowTemplate
-	Labels                           map[string]string
+	Labels                           types.JSONLabels
 	WorkflowExecutionStatisticReport *WorkflowExecutionStatisticReport
 	CronWorkflowsStatisticsReport    *CronWorkflowStatisticReport
 	WorkflowTemplateVersionID        uint64  `db:"workflow_template_version_id"` // Reference to the associated workflow template version.
@@ -274,6 +275,6 @@ func (wt *WorkflowTemplate) AddWorkflowTemplateParametersFromAnnotations(spec ma
 // getWorkflowTemplateColumns returns all of the columns for workflowTemplate modified by alias, destination.
 // see formatColumnSelect
 func getWorkflowTemplateColumns(aliasAndDestination ...string) []string {
-	columns := []string{"id", "created_at", "uid", "name", "namespace", "modified_at", "is_archived"}
+	columns := []string{"id", "created_at", "uid", "name", "namespace", "modified_at", "is_archived", "labels"}
 	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }
