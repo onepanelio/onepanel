@@ -778,7 +778,6 @@ func (c *Client) ListWorkflowTemplates(namespace string, paginator *pagination.P
 
 // appendExtraWorkflowTemplateData adds extra information to workflow templates
 // * execution statistics (including cron)
-// * labels
 func (c *Client) appendExtraWorkflowTemplateData(namespace string, workflowTemplateVersions []*WorkflowTemplate) (err error) {
 	err = c.GetWorkflowExecutionStatisticsForTemplates(workflowTemplateVersions...)
 	if err != nil {
@@ -796,19 +795,6 @@ func (c *Client) appendExtraWorkflowTemplateData(namespace string, workflowTempl
 			"Error":     err.Error(),
 		}).Error("Unable to get Cron Workflow Statistic for Templates.")
 		return util.NewUserError(codes.NotFound, "Unable to get Cron Workflow Statistic for Templates.")
-	}
-
-	labelsMap, err := c.GetDBLabelsMapped(TypeWorkflowTemplateVersion, WorkflowTemplatesToVersionIDs(workflowTemplateVersions)...)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"Error":     err.Error(),
-		}).Error("Unable to get Workflow Template Labels")
-		return err
-	}
-
-	for _, workflowTemplate := range workflowTemplateVersions {
-		workflowTemplate.Labels = labelsMap[workflowTemplate.WorkflowTemplateVersionID]
 	}
 
 	return

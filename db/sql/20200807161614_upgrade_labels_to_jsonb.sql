@@ -6,10 +6,12 @@ ALTER TABLE workflow_executions ADD COLUMN labels JSONB DEFAULT '{}'::JSONB;
 ALTER TABLE workspaces ADD COLUMN labels JSONB DEFAULT '{}'::JSONB;
 ALTER TABLE workspace_templates ADD COLUMN labels JSONB DEFAULT '{}'::JSONB;
 ALTER TABLE workspace_template_versions ADD COLUMN labels JSONB DEFAULT '{}'::JSONB;
+ALTER TABLE cron_workflows ADD COLUMN labels JSONB DEFAULT '{}'::JSONB;
 
 
 -- +goose Down
 -- SQL in this section is executed when the migration is rolled back.
+ALTER TABLE cron_workflows DROP COLUMN labels;
 ALTER TABLE workspace_template_versions DROP COLUMN labels;
 ALTER TABLE workspace_templates DROP COLUMN labels;
 ALTER TABLE workspaces DROP COLUMN labels;

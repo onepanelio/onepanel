@@ -342,14 +342,6 @@ func (c *Client) ListWorkspacesByTemplateID(namespace string, templateID uint64)
 		return nil, err
 	}
 
-	labelMap, err := c.GetDBLabelsMapped(TypeWorkspace, WorkspacesToIDs(workspaces)...)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, workspace := range workspaces {
-		workspace.Labels = labelMap[workspace.ID]
-	}
 	return
 }
 
