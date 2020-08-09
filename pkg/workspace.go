@@ -188,6 +188,7 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 			"started_at":                 time.Now().UTC(),
 			"workspace_template_id":      workspace.WorkspaceTemplate.ID,
 			"workspace_template_version": workspace.WorkspaceTemplate.Version,
+			"labels":                     workspace.Labels,
 		}).
 		Suffix("RETURNING id, created_at").
 		RunWith(c.DB).
@@ -259,10 +260,6 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 		return nil, err
 	}
 
-	if _, err := c.InsertLabels(TypeWorkspace, workspace.ID, workspace.Labels); err != nil {
-		return nil, err
-	}
-
 	return workspace, nil
 }
 
@@ -298,16 +295,7 @@ func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err 
 	}
 	workspace.WorkflowTemplateVersion.Manifest = workspace.WorkspaceTemplate.WorkflowTemplate.Manifest
 
-	if err = json.Unmarshal(workspace.ParametersBytes, &workspace.Parameters); err != nil {
-		return
-	}
-
-	labelsMap, err := c.GetDBLabelsMapped(TypeWorkspace, workspace.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	workspace.Labels = labelsMap[workspace.ID]
+	err = json.Unmarshal(workspace.ParametersBytes, &workspace.Parameters)
 
 	return
 }
@@ -384,15 +372,6 @@ func (c *Client) ListWorkspaces(namespace string, paginator *pagination.Paginati
 
 	if err := c.DB.Selectx(&workspaces, sb); err != nil {
 		return nil, err
-	}
-
-	labelMap, err := c.GetDBLabelsMapped(TypeWorkspace, WorkspacesToIDs(workspaces)...)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, workspace := range workspaces {
-		workspace.Labels = labelMap[workspace.ID]
 	}
 
 	return
