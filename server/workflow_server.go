@@ -179,13 +179,6 @@ func (s *WorkflowServer) GetWorkflowExecution(ctx context.Context, req *api.GetW
 		return nil, err
 	}
 
-	mappedLabels, err := client.GetDBLabelsMapped(v1.TypeWorkflowExecution, wf.ID)
-	if err != nil {
-		return nil, err
-	}
-	if labels, ok := mappedLabels[wf.ID]; ok {
-		wf.Labels = labels
-	}
 	wf.Namespace = req.Namespace
 
 	webRouter, err := client.GetWebRouter()

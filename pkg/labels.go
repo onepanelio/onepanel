@@ -7,44 +7,45 @@ import (
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/onepanelio/core/pkg/util/label"
 	"github.com/onepanelio/core/pkg/util/mapping"
+	"github.com/onepanelio/core/pkg/util/types"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (c *Client) ListLabels(resource string, uid string) (labels []*Label, err error) {
-	sb := sb.Select("l.id", "l.created_at", "l.key", "l.value", "l.resource", "l.resource_id").
-		From("labels l").
-		Where(sq.Eq{
-			"resource": resource,
-		}).
-		OrderBy("l.created_at")
+	sb := sb.Select("labels").
+		From(TypeToTableName(resource))
 
 	switch resource {
 	case TypeWorkflowTemplate:
-		sb = sb.Join("workflow_templates wt ON wt.id = l.resource_id").
-			Where(sq.Eq{"wt.uid": uid})
+		sb = sb.Where(sq.Eq{"uid": uid})
 	case TypeWorkflowExecution:
-		sb = sb.Join("workflow_executions we ON we.id = l.resource_id").
-			Where(sq.Eq{"we.uid": uid})
+		sb = sb.Where(sq.Eq{"uid": uid})
 	case TypeCronWorkflow:
-		sb = sb.Join("cron_workflows cw ON cw.id = l.resource_id").
-			Where(sq.Eq{"cw.uid": uid})
+		sb = sb.Where(sq.Eq{"uid": uid})
 	case TypeWorkspace:
-		sb = sb.Join("workspaces ws ON ws.id = l.resource_id").
-			Where(sq.And{
-				sq.Eq{"ws.uid": uid},
-				sq.NotEq{"ws.phase": "Terminated"},
-			})
+		sb = sb.Where(sq.And{
+			sq.Eq{"uid": uid},
+			sq.NotEq{"phase": "Terminated"},
+		})
 	default:
 		return nil, fmt.Errorf("unsupported label resource %v", resource)
 	}
 
-	query, args, sqlErr := sb.ToSql()
-	if sqlErr != nil {
-		err = sqlErr
+	result := types.JSONLabels{}
+	err = c.DB.Getx(&result, sb)
+	if err != nil {
 		return
 	}
 
-	err = c.DB.Select(&labels, query, args...)
+	for key, value := range result {
+		newLabel := &Label{
+			Key:      key,
+			Value:    value,
+			Resource: resource,
+		}
+
+		labels = append(labels, newLabel)
+	}
 
 	return
 }
@@ -138,50 +139,25 @@ func (c *Client) ReplaceLabels(namespace, resource, uid string, keyValues map[st
 			}
 	}
 
-	resourceID := uint64(0)
-	err = sb.Select("id").
-		From(tableName).
-		Where(whereCondition).
-		RunWith(tx).
-		QueryRow().
-		Scan(&resourceID)
-	if err != nil {
-		return err
-	}
-
-	return c.ReplaceLabelsUsingKnownID(namespace, resource, resourceID, uid, keyValues)
-}
-
-func (c *Client) ReplaceLabelsUsingKnownID(namespace, resource string, resourceID uint64, uid string, keyValues map[string]string) error {
-	tx, err := c.DB.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	_, err = sb.Delete("labels").
-		Where(sq.Eq{
-			"resource":    resource,
-			"resource_id": resourceID,
+	_, err = sb.Update(tableName).
+		SetMap(sq.Eq{
+			"labels": types.JSONLabels(keyValues),
 		}).
+		Where(whereCondition).
 		RunWith(tx).
 		Exec()
 	if err != nil {
 		return err
 	}
 
-	if len(keyValues) > 0 {
-		_, err = c.InsertLabelsBuilder(resource, resourceID, keyValues).
-			RunWith(tx).
-			Exec()
-		if err != nil {
-			return err
-		}
-	}
 	if err := tx.Commit(); err != nil {
 		return err
 	}
 
+	return c.ReplaceLabelsUsingKnownID(namespace, resource, uid, keyValues)
+}
+
+func (c *Client) ReplaceLabelsUsingKnownID(namespace, resource string, uid string, keyValues map[string]string) error {
 	source, meta, err := c.GetK8sLabelResource(namespace, resource, uid)
 	if err != nil {
 		return err

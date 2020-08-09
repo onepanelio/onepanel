@@ -102,3 +102,10 @@ func getWorkspaceTemplateColumns(aliasAndDestination ...string) []string {
 	columns := []string{"id", "uid", "created_at", "modified_at", "name", "namespace", "is_archived", "workflow_template_id", "labels"}
 	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }
+
+// getWorkspaceTemplateColumnsWithoutLabels returns all of the columns for workspace template, excluding labels, modified by alias, destination.
+// see formatColumnSelect
+func getWorkspaceTemplateColumnsWithoutLabels(aliasAndDestination ...string) []string {
+	columns := []string{"id", "uid", "created_at", "modified_at", "name", "namespace", "is_archived", "workflow_template_id"}
+	return sql.FormatColumnSelect(columns, aliasAndDestination...)
+}

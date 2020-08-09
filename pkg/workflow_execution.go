@@ -12,6 +12,7 @@ import (
 	"github.com/onepanelio/core/pkg/util/label"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
+	"github.com/onepanelio/core/pkg/util/types"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"golang.org/x/net/context"
 	"gopkg.in/yaml.v2"
@@ -330,7 +331,7 @@ func (c *Client) ArchiveWorkflowExecution(namespace, uid string) error {
 // createWorkflow creates the workflow in the database and argo.
 // Name is == to UID, no user friendly name.
 // Workflow execution name == uid, example: name = my-friendly-wf-name-8skjz, uid = my-friendly-wf-name-8skjz
-func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, workflowTemplateVersionID uint64, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (createdWorkflow *WorkflowExecution, err error) {
+func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, workflowTemplateVersionID uint64, wf *wfv1.Workflow, opts *WorkflowExecutionOptions, labels types.JSONLabels) (createdWorkflow *WorkflowExecution, err error) {
 	if opts == nil {
 		opts = &WorkflowExecutionOptions{}
 	}
@@ -396,6 +397,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 			WorkflowTemplateVersionID: workflowTemplateVersionID,
 		},
 		Parameters: opts.Parameters,
+		Labels:     labels,
 	}
 
 	if err = createdWorkflow.GenerateUID(createdArgoWorkflow.Name); err != nil {
@@ -483,17 +485,13 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 		return nil, fmt.Errorf("workflow Template contained more than 1 workflow execution")
 	}
 
-	createdWorkflow, err := c.createWorkflow(namespace, workflowTemplate.ID, workflowTemplate.WorkflowTemplateVersionID, &workflows[0], opts)
+	createdWorkflow, err := c.createWorkflow(namespace, workflowTemplate.ID, workflowTemplate.WorkflowTemplateVersionID, &workflows[0], opts, workflow.Labels)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
 			"Workflow":  workflow,
 			"Error":     err.Error(),
 		}).Error("Error parsing workflow.")
-		return nil, err
-	}
-
-	if _, err := c.InsertLabels(TypeWorkflowExecution, createdWorkflow.ID, workflow.Labels); err != nil {
 		return nil, err
 	}
 
