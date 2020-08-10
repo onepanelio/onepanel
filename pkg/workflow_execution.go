@@ -969,21 +969,43 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName
 
 	logWatcher := make(chan *LogEntry)
 	go func() {
-		scanner := bufio.NewScanner(stream)
-		for scanner.Scan() {
-			text := scanner.Text()
-			parts := strings.Split(text, " ")
-			timestamp, err := time.Parse(time.RFC3339, parts[0])
-			if err != nil {
-				logWatcher <- &LogEntry{Content: text}
-			} else {
-				logWatcher <- &LogEntry{
-					Timestamp: timestamp,
-					Content:   strings.Join(parts[1:], " "),
+		buffer := make([]byte, 4096)
+		reader := bufio.NewReader(stream)
+
+		newLine := true
+		for {
+			bytesRead, err := reader.Read(buffer)
+			if err != nil && err.Error() != "EOF" {
+				break
+			}
+			content := string(buffer[:bytesRead])
+
+			if newLine {
+				parts := strings.Split(content, " ")
+				if len(parts) == 0 {
+					logWatcher <- &LogEntry{Content: content}
+				} else {
+					timestamp, err := time.Parse(time.RFC3339, parts[0])
+					if err != nil {
+						logWatcher <- &LogEntry{Content: content}
+					} else {
+						logWatcher <- &LogEntry{
+							Timestamp: timestamp,
+							Content:   strings.Join(parts[1:], " "),
+						}
+					}
 				}
+			} else {
+				logWatcher <- &LogEntry{Content: content}
 			}
 
+			if err != nil && err.Error() == "EOF" {
+				break
+			}
+
+			newLine = strings.Contains(content, "\n")
 		}
+
 		close(logWatcher)
 	}()
 
