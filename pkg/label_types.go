@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -95,4 +96,17 @@ func LabelFromString(value string) (label *Label, err error) {
 	}
 
 	return label, nil
+}
+
+// LabelsToJSONString converts an array of labels to a json string representing an object
+// where the keys are the label keys and the values are the label values
+func LabelsToJSONString(labels []*Label) (string, error) {
+	labelMap := LabelsToMapping(labels...)
+
+	resultBytes, err := json.Marshal(labelMap)
+	if err != nil {
+		return "", err
+	}
+
+	return string(resultBytes), nil
 }

@@ -136,7 +136,6 @@ func (s *WorkflowTemplateServer) CloneWorkflowTemplate(ctx context.Context, req 
 	}
 
 	//Verify the cloned template name doesn't exist already
-
 	templatesCount, err := client.CountWorkflowTemplatesByName(req.Name, req.Name, nil)
 	if err != nil {
 		return nil, err

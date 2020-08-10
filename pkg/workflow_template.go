@@ -409,14 +409,11 @@ func (c *Client) selectWorkflowTemplatesQuery(namespace string, paginator *pagin
 		OrderBy("wt.created_at DESC")
 
 	if filter != nil && len(filter.Labels) > 0 {
-		sb = sb.Join("labels l ON wt.id = l.resource_id AND l.resource = 'workflow_template'")
-
-		// Note: multiple labels are not yet supported. The below will not correctly AND label selection.
-		for _, lbl := range filter.Labels {
-			sb = sb.Where(sq.Eq{
-				"l.key":   lbl.Key,
-				"l.value": lbl.Value,
-			})
+		labelsJSON, err := LabelsToJSONString(filter.Labels)
+		if err != nil {
+			log.Printf("[error] %v", err)
+		} else {
+			sb = sb.Where("wt.labels @> ?", labelsJSON)
 		}
 	}
 	sb = *paginator.ApplyToSelect(&sb)
