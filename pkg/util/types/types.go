@@ -6,6 +6,8 @@ import (
 	"errors"
 )
 
+// JSONLabels is a wrapper type to support JSONB database operations.
+// Add a JSONLabels type to a class field and use it with a JSONB column
 type JSONLabels map[string]string
 
 // Unmarshal unmarshal's the json in j to v, as in json.Unmarshal.

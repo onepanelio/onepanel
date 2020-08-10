@@ -110,6 +110,8 @@ func (c *Client) ReplaceLabels(namespace, resource, uid string, keyValues map[st
 	return c.ReplaceLabelsUsingKnownID(namespace, resource, uid, keyValues)
 }
 
+// ReplaceLabelsUsingKnownID updates the k8s resource labels for the given resource/uid
+// deprecated
 func (c *Client) ReplaceLabelsUsingKnownID(namespace, resource string, uid string, keyValues map[string]string) error {
 	source, meta, err := c.GetK8sLabelResource(namespace, resource, uid)
 	if err != nil {
