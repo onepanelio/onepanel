@@ -69,6 +69,7 @@ message WorkspaceTemplate {
     WorkflowTemplate workflowTemplate = 7;
     repeated KeyValue labels = 8;
     bool isArchived = 9;
+    string description = 10;
 }
 
 message GenerateWorkspaceTemplateWorkflowTemplateRequest {
