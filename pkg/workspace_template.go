@@ -173,6 +173,9 @@ func generateArguments(spec *WorkspaceSpec, config SystemConfig) (err error) {
 	}
 	// Volume size parameters
 	volumeClaimsMapped := make(map[string]bool)
+	// Don't generate parameters for system volumes volumeMounts
+	volumeClaimsMapped["sys-dshm"] = true
+	volumeClaimsMapped["sys-namespace-config"] = true
 	for _, c := range spec.Containers {
 		for _, v := range c.VolumeMounts {
 			// Skip if already mapped or storage size is set
