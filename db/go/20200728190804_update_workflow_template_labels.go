@@ -3,7 +3,6 @@ package migration
 import (
 	"database/sql"
 	v1 "github.com/onepanelio/core/pkg"
-	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/pressly/goose"
 )
 
@@ -14,7 +13,8 @@ func initialize20200728190804() {
 	}
 }
 
-// Up20200728190804 updates labels so that we keep track of WorkflowTemplate labels.
+// Up20200728190804 is a legacy migration. Due to code changes, it no longer does anything.
+// It used to update labels so that we keep track of WorkflowTemplate labels.
 // Before, only workflow template versions had labels, but to speed up some queries, we now cache the latest version's labels
 // for workflow templates themselves.
 func Up20200728190804(tx *sql.Tx) error {
@@ -23,37 +23,7 @@ func Up20200728190804(tx *sql.Tx) error {
 		return nil
 	}
 
-	client, err := getClient()
-	if err != nil {
-		return err
-	}
-	defer client.DB.Close()
-
-	namespaces, err := client.ListOnepanelEnabledNamespaces()
-	if err != nil {
-		return err
-	}
-
-	for _, namespace := range namespaces {
-		paginator := pagination.Start(500)
-
-		resultCount := -1
-		for resultCount != 0 {
-			workflowTemplates, err := client.ListAllWorkflowTemplates(namespace.Name, paginator, nil)
-			if err != nil {
-				return err
-			}
-
-			for _, workflowTemplate := range workflowTemplates {
-				if err := client.ReplaceLabelsUsingKnownID(namespace.Name, v1.TypeWorkflowTemplate, workflowTemplate.ID, workflowTemplate.UID, workflowTemplate.Labels); err != nil {
-					return err
-				}
-			}
-
-			resultCount = len(workflowTemplates)
-			paginator = paginator.Advance()
-		}
-	}
+	// Do nothing, be preserve for legacy.
 
 	return nil
 }
