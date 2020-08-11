@@ -105,42 +105,14 @@ func (c *Client) UpdateCronWorkflow(namespace string, uid string, cronWorkflow *
 	// Manifests could get big, don't return them in this case.
 	cronWorkflow.WorkflowExecution.WorkflowTemplate.Manifest = ""
 
-	tx, err := c.DB.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-
 	_, err = sb.Update("cron_workflows").
 		SetMap(sq.Eq{
 			"manifest": cronWorkflow.Manifest,
-		}).Where(sq.Eq{
-		"id": cronWorkflow.ID,
-	}).
-		RunWith(tx).
+			"labels":   cronWorkflow.Labels,
+		}).Where(sq.Eq{"id": cronWorkflow.ID}).
+		RunWith(c.DB).
 		Exec()
 	if err != nil {
-		return nil, err
-	}
-
-	// delete all labels then replace
-	_, err = sb.Delete("labels").
-		Where(sq.Eq{
-			"resource":    TypeCronWorkflow,
-			"resource_id": cronWorkflow.ID,
-		}).
-		RunWith(tx).
-		Exec()
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = c.InsertLabelsRunner(tx, TypeCronWorkflow, cronWorkflow.ID, cronWorkflow.Labels)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -159,7 +131,7 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 		return nil, util.NewUserError(codes.NotFound, "Error with getting workflow template.")
 	}
 
-	//// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
+	// TODO: Need to pull system parameters from k8s config/secret here, example: HOST
 	opts := &WorkflowExecutionOptions{
 		Labels: make(map[string]string),
 	}
@@ -239,12 +211,6 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 	// Manifests could get big, don't return them in this case.
 	cronWorkflow.WorkflowExecution.WorkflowTemplate.Manifest = ""
 
-	tx, err := c.DB.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-
 	err = sb.Insert("cron_workflows").
 		SetMap(sq.Eq{
 			"uid":                          cronWorkflow.UID,
@@ -253,38 +219,25 @@ func (c *Client) CreateCronWorkflow(namespace string, cronWorkflow *CronWorkflow
 			"manifest":                     cronWorkflow.Manifest,
 			"namespace":                    namespace,
 			"is_archived":                  false,
+			"labels":                       cronWorkflow.Labels,
 		}).
 		Suffix("RETURNING id").
-		RunWith(tx).
+		RunWith(c.DB).
 		QueryRow().
 		Scan(&cronWorkflow.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(cronWorkflow.Labels) > 0 {
-		_, err = c.InsertLabelsBuilder(TypeCronWorkflow, cronWorkflow.ID, cronWorkflow.Labels).
-			RunWith(tx).
-			Exec()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		return nil, err
-	}
-
 	return cronWorkflow, nil
 }
 
+// GetCronWorkflow gets information about a cron workflow uniquely identified by a namespace/uid
 func (c *Client) GetCronWorkflow(namespace, uid string) (cronWorkflow *CronWorkflow, err error) {
 	cronWorkflow = &CronWorkflow{}
 
-	err = c.cronWorkflowSelectBuilderNoColumns(namespace, uid).
-		RunWith(c.DB).
-		QueryRow().
-		Scan(cronWorkflow)
+	sb := c.cronWorkflowSelectBuilder(namespace, uid)
+	err = c.Getx(cronWorkflow, sb)
 
 	return
 }
@@ -355,6 +308,7 @@ func (c *Client) DeleteCronWorkflowLabel(namespace, name string, keysToDelete ..
 	return wf.Labels, nil
 }
 
+// ListCronWorkflows selects all of the cron workflows for the given namespace and workflow template uid
 func (c *Client) ListCronWorkflows(namespace, workflowTemplateUID string, pagination *pagination.PaginationRequest) (cronWorkflows []*CronWorkflow, err error) {
 	sb := c.cronWorkflowSelectBuilder(namespace, workflowTemplateUID).
 		OrderBy("cw.created_at DESC")
@@ -362,18 +316,6 @@ func (c *Client) ListCronWorkflows(namespace, workflowTemplateUID string, pagina
 
 	if err := c.DB.Selectx(&cronWorkflows, sb); err != nil {
 		return nil, err
-	}
-	labelsMap, err := c.GetDBLabelsMapped(TypeCronWorkflow, CronWorkflowsToIDs(cronWorkflows)...)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"Error":     err.Error(),
-		}).Error("Unable to get Cron Workflow Labels")
-		return nil, err
-	}
-
-	for _, resource := range cronWorkflows {
-		resource.Labels = labelsMap[resource.ID]
 	}
 
 	return

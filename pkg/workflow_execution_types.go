@@ -3,6 +3,7 @@ package v1
 import (
 	"encoding/json"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/onepanelio/core/pkg/util/types"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"github.com/onepanelio/core/util/sql"
 	"time"
@@ -23,7 +24,7 @@ type WorkflowExecution struct {
 	StartedAt        *time.Time        `db:"started_at"`
 	FinishedAt       *time.Time        `db:"finished_at"`
 	WorkflowTemplate *WorkflowTemplate `db:"workflow_template"`
-	Labels           map[string]string
+	Labels           types.JSONLabels
 	ArgoWorkflow     *wfv1.Workflow
 }
 
@@ -104,6 +105,6 @@ func (we *WorkflowExecution) GetParameterValue(name string) *string {
 // getWorkflowExecutionColumns returns all of the columns for workflowExecution modified by alias, destination.
 // see formatColumnSelect
 func getWorkflowExecutionColumns(aliasAndDestination ...string) []string {
-	columns := []string{"id", "created_at", "uid", "name", "parameters", "phase", "started_at", "finished_at"}
+	columns := []string{"id", "created_at", "uid", "name", "parameters", "phase", "started_at", "finished_at", "labels"}
 	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }

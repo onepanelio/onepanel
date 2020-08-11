@@ -93,14 +93,6 @@ func (s *WorkflowTemplateServer) CreateWorkflowTemplateVersion(ctx context.Conte
 		return nil, err
 	}
 
-	if _, err := client.InsertLabels(v1.TypeWorkflowTemplateVersion, workflowTemplate.WorkflowTemplateVersionID, workflowTemplate.Labels); err != nil {
-		return nil, err
-	}
-
-	if err := client.ReplaceLabelsUsingKnownID(req.Namespace, v1.TypeWorkflowTemplate, workflowTemplate.ID, workflowTemplate.UID, workflowTemplate.Labels); err != nil {
-		return nil, err
-	}
-
 	req.WorkflowTemplate.Uid = workflowTemplate.UID
 	req.WorkflowTemplate.Name = workflowTemplate.Name
 	req.WorkflowTemplate.Version = workflowTemplate.Version
@@ -144,7 +136,6 @@ func (s *WorkflowTemplateServer) CloneWorkflowTemplate(ctx context.Context, req 
 	}
 
 	//Verify the cloned template name doesn't exist already
-
 	templatesCount, err := client.CountWorkflowTemplatesByName(req.Name, req.Name, nil)
 	if err != nil {
 		return nil, err

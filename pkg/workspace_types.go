@@ -3,6 +3,7 @@ package v1
 import (
 	"fmt"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/onepanelio/core/pkg/util/types"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"github.com/onepanelio/core/util/sql"
 	networking "istio.io/api/networking/v1alpha3"
@@ -36,7 +37,7 @@ type Workspace struct {
 	Namespace                string
 	UID                      string `valid:"stringlength(3|30)~UID should be between 3 to 30 characters,dns,required"`
 	Name                     string `valid:"stringlength(3|30)~Name should be between 3 to 30 characters,matches(^[a-zA-Z]([-a-z0-9 ]*[a-z0-9])?)~Name must start with an alphabetic character and otherwise contain alphanumeric characters or -,required"`
-	Labels                   map[string]string
+	Labels                   types.JSONLabels
 	Parameters               []Parameter
 	ParametersBytes          []byte                   `db:"parameters"` // to load from database
 	Status                   WorkspaceStatus          `db:"status"`
@@ -90,7 +91,7 @@ func (w *Workspace) GenerateUID(name string) error {
 // getWorkspaceColumns returns all of the columns for workspace modified by alias, destination.
 // see formatColumnSelect
 func getWorkspaceColumns(aliasAndDestination ...string) []string {
-	columns := []string{"id", "created_at", "modified_at", "uid", "name", "namespace", "parameters", "workspace_template_id", "workspace_template_version"}
+	columns := []string{"id", "created_at", "modified_at", "uid", "name", "namespace", "parameters", "workspace_template_id", "workspace_template_version", "labels"}
 	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }
 

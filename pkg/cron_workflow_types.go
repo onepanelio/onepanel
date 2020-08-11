@@ -3,6 +3,7 @@ package v1
 import (
 	"encoding/json"
 	"github.com/onepanelio/core/pkg/util/mapping"
+	"github.com/onepanelio/core/pkg/util/types"
 	"github.com/onepanelio/core/util/sql"
 	"gopkg.in/yaml.v2"
 	"time"
@@ -17,7 +18,7 @@ type CronWorkflow struct {
 	Name                      string
 	GenerateName              string
 	WorkflowExecution         *WorkflowExecution
-	Labels                    map[string]string
+	Labels                    types.JSONLabels
 	Version                   int64
 	WorkflowTemplateVersionID uint64 `db:"workflow_template_version_id"`
 	Manifest                  string
@@ -85,7 +86,7 @@ func (cw *CronWorkflow) AddToManifestSpec(key, manifest string) error {
 // getCronWorkflowColumns returns all of the columns for cronWorkflow modified by alias, destination.
 // see formatColumnSelect
 func getCronWorkflowColumns(aliasAndDestination ...string) []string {
-	columns := []string{"id", "created_at", "uid", "name", "workflow_template_version_id", "manifest", "namespace"}
+	columns := []string{"id", "created_at", "uid", "name", "workflow_template_version_id", "manifest", "namespace", "labels"}
 	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }
 
