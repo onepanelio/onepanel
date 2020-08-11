@@ -139,32 +139,6 @@ func injectArtifactRepositoryConfig(artifact *wfv1.Artifact, namespaceConfig *Na
 	}
 }
 
-// injectNvidiaGPUFields adds GPU specific fields if there is a GPU request
-func injectNvidiaGPUFields(template *wfv1.Template, systemConfig SystemConfig) {
-	limitsGPUCount := template.Container.Resources.Limits["nvidia.com/gpu"]
-	requestsGPUCount := template.Container.Resources.Requests["nvidia.com/gpu"]
-	if limitsGPUCount.IsZero() && requestsGPUCount.IsZero() {
-		return
-	}
-
-	// TODO: Remove once https://github.com/Azure/AKS/issues/1271 is addressed
-	if systemConfig["ONEPANEL_PROVIDER"] == "aks" {
-		template.Volumes = append(template.Volumes, corev1.Volume{
-			Name: "nvidia",
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/usr/local/nvidia",
-				},
-			},
-		})
-		template.Container.VolumeMounts = append(template.Container.VolumeMounts, corev1.VolumeMount{
-			Name:      "nvidia",
-			MountPath: "/usr/bin/nvidia-smi",
-			SubPath:   "nvidia-smi",
-		})
-	}
-}
-
 // injectContainerResourceQuotas adds resource requests and limits if they exist
 func injectContainerResourceQuotas(wf *wfv1.Workflow, template *wfv1.Template, systemConfig SystemConfig) {
 	if template.NodeSelector == nil {
@@ -284,7 +258,6 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		}
 
 		injectContainerResourceQuotas(wf, template, systemConfig)
-		injectNvidiaGPUFields(template, systemConfig)
 
 		//Generate ENV vars from secret, if there is a container present in the workflow
 		//Get template ENV vars, avoid over-writing them with secret values
