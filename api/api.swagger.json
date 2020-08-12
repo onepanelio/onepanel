@@ -3494,6 +3494,9 @@
         "isArchived": {
           "type": "boolean",
           "format": "boolean"
+        },
+        "description": {
+          "type": "string"
         }
       }
     },

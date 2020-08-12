@@ -732,6 +732,7 @@ func (c *Client) createWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 		SetMap(sq.Eq{
 			"uid":                  workspaceTemplate.UID,
 			"name":                 workspaceTemplate.Name,
+			"description":          workspaceTemplate.Description,
 			"namespace":            namespace,
 			"workflow_template_id": workspaceTemplate.WorkflowTemplate.ID,
 			"labels":               workspaceTemplate.Labels,
@@ -1013,7 +1014,10 @@ func (c *Client) UpdateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	}
 
 	_, err = sb.Update("workspace_templates").
-		Set("labels", workspaceTemplate.Labels).
+		SetMap(sq.Eq{
+			"labels":      workspaceTemplate.Labels,
+			"description": workspaceTemplate.Description,
+		}).
 		Where(sq.Eq{
 			"uid":       workspaceTemplate.UID,
 			"namespace": workspaceTemplate.Namespace,
