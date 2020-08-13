@@ -173,8 +173,25 @@ func injectContainerResourceQuotas(wf *wfv1.Workflow, template *wfv1.Template, s
 	if option != nil && option.Resources.Limits != nil {
 		// If a node is selected specifically, match the resources request to limits
 		option.Resources.Requests = option.Resources.Limits
-		template.Container.Resources = option.Resources
+		if template.Container != nil {
+			template.Container.Resources = option.Resources
+		}
+		if template.Script != nil {
+			template.Script.Container.Resources = option.Resources
+		}
 	}
+}
+
+func injectEnvironmentVariables(container *corev1.Container, systemConfig SystemConfig) {
+	//Generate ENV vars from secret, if there is a container present in the workflow
+	//Get template ENV vars, avoid over-writing them with secret values
+	env.AddDefaultEnvVarsToContainer(container)
+	env.PrependEnvVarToContainer(container, "ONEPANEL_API_URL", systemConfig["ONEPANEL_API_URL"])
+	env.PrependEnvVarToContainer(container, "ONEPANEL_FQDN", systemConfig["ONEPANEL_FQDN"])
+	env.PrependEnvVarToContainer(container, "ONEPANEL_DOMAIN", systemConfig["ONEPANEL_DOMAIN"])
+	env.PrependEnvVarToContainer(container, "ONEPANEL_PROVIDER", systemConfig["ONEPANEL_PROVIDER"])
+	env.PrependEnvVarToContainer(container, "ONEPANEL_RESOURCE_NAMESPACE", "{{workflow.namespace}}")
+	env.PrependEnvVarToContainer(container, "ONEPANEL_RESOURCE_UID", "{{workflow.name}}")
 }
 
 func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (err error) {
@@ -226,48 +243,46 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		}
 		template.Metadata.Annotations["sidecar.istio.io/inject"] = "false"
 
-		if template.Container == nil {
-			continue
+		if template.Container != nil {
+			// Mount dev/shm
+			template.Container.VolumeMounts = append(template.Container.VolumeMounts, corev1.VolumeMount{
+				Name:      "sys-dshm",
+				MountPath: "/dev/shm",
+			})
+
+			injectContainerResourceQuotas(wf, template, systemConfig)
+
+			injectEnvironmentVariables(template.Container, systemConfig)
 		}
 
-		// Mount dev/shm
-		template.Container.VolumeMounts = append(template.Container.VolumeMounts, corev1.VolumeMount{
-			Name:      "sys-dshm",
-			MountPath: "/dev/shm",
-		})
+		if template.Script != nil {
+			injectContainerResourceQuotas(wf, template, systemConfig)
 
-		// Always add output artifacts for metrics but make them optional
-		template.Outputs.Artifacts = append(template.Outputs.Artifacts, wfv1.Artifact{
-			Name:     "sys-metrics",
-			Path:     "/tmp/sys-metrics.json",
-			Optional: true,
-			Archive: &wfv1.ArchiveStrategy{
-				None: &wfv1.NoneStrategy{},
-			},
-		})
-
-		// Extend artifact credentials if only key is provided
-		for j, artifact := range template.Outputs.Artifacts {
-			injectArtifactRepositoryConfig(&artifact, namespaceConfig)
-			template.Outputs.Artifacts[j] = artifact
+			injectEnvironmentVariables(&template.Script.Container, systemConfig)
 		}
 
-		for j, artifact := range template.Inputs.Artifacts {
-			injectArtifactRepositoryConfig(&artifact, namespaceConfig)
-			template.Inputs.Artifacts[j] = artifact
+		if template.Container != nil || template.Script != nil {
+			// Always add output artifacts for metrics but make them optional
+			template.Outputs.Artifacts = append(template.Outputs.Artifacts, wfv1.Artifact{
+				Name:     "sys-metrics",
+				Path:     "/tmp/sys-metrics.json",
+				Optional: true,
+				Archive: &wfv1.ArchiveStrategy{
+					None: &wfv1.NoneStrategy{},
+				},
+			})
+
+			// Extend artifact credentials if only key is provided
+			for j, artifact := range template.Outputs.Artifacts {
+				injectArtifactRepositoryConfig(&artifact, namespaceConfig)
+				template.Outputs.Artifacts[j] = artifact
+			}
+
+			for j, artifact := range template.Inputs.Artifacts {
+				injectArtifactRepositoryConfig(&artifact, namespaceConfig)
+				template.Inputs.Artifacts[j] = artifact
+			}
 		}
-
-		injectContainerResourceQuotas(wf, template, systemConfig)
-
-		//Generate ENV vars from secret, if there is a container present in the workflow
-		//Get template ENV vars, avoid over-writing them with secret values
-		env.AddDefaultEnvVarsToContainer(template.Container)
-		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_API_URL", systemConfig["ONEPANEL_API_URL"])
-		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_FQDN", systemConfig["ONEPANEL_FQDN"])
-		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_DOMAIN", systemConfig["ONEPANEL_DOMAIN"])
-		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_PROVIDER", systemConfig["ONEPANEL_PROVIDER"])
-		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_RESOURCE_NAMESPACE", "{{workflow.namespace}}")
-		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_RESOURCE_UID", "{{workflow.name}}")
 	}
 
 	return
