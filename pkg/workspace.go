@@ -138,6 +138,16 @@ func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, wor
 //   WorkspaceTemplate.WorkflowTemplate.UID
 //   WorkspaceTemplate.WorkflowTemplate.Version
 func (c *Client) createWorkspace(namespace string, parameters []byte, workspace *Workspace) (*Workspace, error) {
+	if workspace == nil {
+		return nil, fmt.Errorf("workspace is nil")
+	}
+	if workspace.WorkspaceTemplate == nil {
+		return nil, fmt.Errorf("workspace.WorkspaceTemplate is nil")
+	}
+	if workspace.WorkspaceTemplate.WorkflowTemplate == nil {
+		return nil, fmt.Errorf("workspace.WorkspaceTemplate.WorkflowTemplate is nil")
+	}
+
 	systemConfig, err := c.GetSystemConfig()
 	if err != nil {
 		return nil, err
@@ -250,7 +260,7 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 	}
 
 	workspaceTemplate, err := c.GetWorkspaceTemplate(namespace, workspace.WorkspaceTemplate.UID, workspace.WorkspaceTemplate.Version)
-	if err != nil {
+	if err != nil || workspaceTemplate == nil {
 		return nil, util.NewUserError(codes.NotFound, "Workspace template not found.")
 	}
 	workspace.WorkspaceTemplate = workspaceTemplate
