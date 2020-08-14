@@ -137,7 +137,6 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfi
 				if dotIndex != -1 {
 					workspaceAndNamespace := xOriginalAuth[0:dotIndex]
 					pieces := strings.Split(workspaceAndNamespace, "--")
-
 					if len(pieces) > 1 {
 						workspaceName := pieces[0]
 						namespace := pieces[1]
