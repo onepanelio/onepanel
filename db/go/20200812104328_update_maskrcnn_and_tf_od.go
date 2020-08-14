@@ -5,6 +5,7 @@ import (
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/pressly/goose"
 	"log"
+	"strings"
 )
 
 const maskRCNNWorkflowTemplate = `arguments:
@@ -448,7 +449,12 @@ func Up20200812104328(tx *sql.Tx) error {
 	for _, namespace := range namespaces {
 		existingWorkflowTemplate, err := client.GetLatestWorkflowTemplate(namespace.Name, workflowTemplate.UID)
 		if err != nil {
-			return err
+			if strings.Contains(err.Error(), "Workflow template not found") {
+				err = nil
+				existingWorkflowTemplate = nil
+			} else {
+				return err
+			}
 		}
 		if existingWorkflowTemplate != nil {
 			log.Printf("Skipping creating template '%v'. It already exists in namespace '%v'", workflowTemplate.Name, namespace.Name)
