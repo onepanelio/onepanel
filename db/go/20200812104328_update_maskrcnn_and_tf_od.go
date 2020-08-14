@@ -5,6 +5,7 @@ import (
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/pressly/goose"
 	"log"
+	"strings"
 )
 
 const maskRCNNWorkflowTemplate = `arguments:
@@ -414,6 +415,7 @@ func initialize20200812104328() {
 	}
 }
 
+// Up20200812104328 runs the migration to update MaskRCNN and TF_OD templates
 func Up20200812104328(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	client, err := getClient()
@@ -440,6 +442,9 @@ func Up20200812104328(tx *sql.Tx) error {
 	workflowTemplate := &v1.WorkflowTemplate{
 		Name:     maskRCNNWorkflowTemplateName,
 		Manifest: maskRCNNWorkflowTemplate,
+		Labels: map[string]string{
+			"used-by": "cvat",
+		},
 	}
 	if err := workflowTemplate.GenerateUID(workflowTemplate.Name); err != nil {
 		return err
@@ -448,7 +453,12 @@ func Up20200812104328(tx *sql.Tx) error {
 	for _, namespace := range namespaces {
 		existingWorkflowTemplate, err := client.GetLatestWorkflowTemplate(namespace.Name, workflowTemplate.UID)
 		if err != nil {
-			return err
+			if strings.Contains(err.Error(), "Workflow template not found") {
+				err = nil
+				existingWorkflowTemplate = nil
+			} else {
+				return err
+			}
 		}
 		if existingWorkflowTemplate != nil {
 			log.Printf("Skipping creating template '%v'. It already exists in namespace '%v'", workflowTemplate.Name, namespace.Name)
@@ -464,6 +474,9 @@ func Up20200812104328(tx *sql.Tx) error {
 	workflowTemplate = &v1.WorkflowTemplate{
 		Name:     tensorflowWorkflowTemplateName,
 		Manifest: tensorflowWorkflowTemplate2,
+		Labels: map[string]string{
+			"used-by": "cvat",
+		},
 	}
 	if err := workflowTemplate.GenerateUID(workflowTemplate.Name); err != nil {
 		return err
@@ -478,6 +491,7 @@ func Up20200812104328(tx *sql.Tx) error {
 	return nil
 }
 
+// Down20200812104328 does nothing
 func Down20200812104328(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return nil
