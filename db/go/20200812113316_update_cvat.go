@@ -153,6 +153,7 @@ func initialize20200812113316() {
 	}
 }
 
+// Up20200812113316 runs the go migration to update cvat template
 func Up20200812113316(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	client, err := getClient()
@@ -205,6 +206,7 @@ func Up20200812113316(tx *sql.Tx) error {
 	return nil
 }
 
+// Down20200812113316 does nothing
 func Down20200812113316(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return nil

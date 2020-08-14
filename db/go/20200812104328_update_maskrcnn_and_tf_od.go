@@ -415,6 +415,7 @@ func initialize20200812104328() {
 	}
 }
 
+// Up20200812104328 runs the migration to update MaskRCNN and TF_OD templates
 func Up20200812104328(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	client, err := getClient()
@@ -490,6 +491,7 @@ func Up20200812104328(tx *sql.Tx) error {
 	return nil
 }
 
+// Down20200812104328 does nothing
 func Down20200812104328(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return nil
