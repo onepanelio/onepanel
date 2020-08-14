@@ -441,6 +441,9 @@ func Up20200812104328(tx *sql.Tx) error {
 	workflowTemplate := &v1.WorkflowTemplate{
 		Name:     maskRCNNWorkflowTemplateName,
 		Manifest: maskRCNNWorkflowTemplate,
+		Labels: map[string]string{
+			"used-by": "cvat",
+		},
 	}
 	if err := workflowTemplate.GenerateUID(workflowTemplate.Name); err != nil {
 		return err
@@ -470,6 +473,9 @@ func Up20200812104328(tx *sql.Tx) error {
 	workflowTemplate = &v1.WorkflowTemplate{
 		Name:     tensorflowWorkflowTemplateName,
 		Manifest: tensorflowWorkflowTemplate2,
+		Labels: map[string]string{
+			"used-by": "cvat",
+		},
 	}
 	if err := workflowTemplate.GenerateUID(workflowTemplate.Name); err != nil {
 		return err
