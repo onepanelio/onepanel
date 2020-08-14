@@ -39,7 +39,7 @@ containers:
   - containerPort: 6379
     name: tcp
 - name: cvat
-  image: onepanel/cvat:0.12.0_cvat.1.0.0-beta.2
+  image: onepanel/cvat:0.12.0_cvat.1.0.0-beta.2-cuda
   env:
   - name: DJANGO_MODWSGI_EXTRA_ARGS
     value: ""
@@ -53,6 +53,12 @@ containers:
     value: /home/django/data
   - name: ONEPANEL_SYNC_DIRECTORY
     value: '{{workspace.parameters.sync-directory}}'
+  - name: NVIDIA_VISIBLE_DEVICES
+    value: all
+  - name: NVIDIA_DRIVER_CAPABILITIES
+    value: compute,utility
+  - name: NVIDIA_REQUIRE_CUDA
+    value: "cuda>=10.0 brand=tesla,driver>=384,driver<385 brand=tesla,driver>=410,driver<411"
   ports:
   - containerPort: 8080
     name: http
@@ -77,7 +83,7 @@ containers:
     name: http
 # You can add multiple FileSyncer sidecar containers if needed
 - name: filesyncer
-  image: onepanel/filesyncer:s3
+  image: onepanel/filesyncer:{{.ArtifactRepositoryType}}
   imagePullPolicy: Always
   args:
   - download
@@ -174,9 +180,10 @@ func Up20200812113316(tx *sql.Tx) error {
 		return err
 	}
 	workspaceTemplate := &v1.WorkspaceTemplate{
-		UID:      uid,
-		Name:     cvatTemplateName,
-		Manifest: cvatWorkspaceTemplate5,
+		UID:         uid,
+		Name:        cvatTemplateName,
+		Manifest:    cvatWorkspaceTemplate5,
+		Description: "Powerful and efficient Computer Vision Annotation Tool (CVAT)",
 	}
 
 	for _, namespace := range namespaces {
