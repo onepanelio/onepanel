@@ -137,16 +137,19 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfi
 				if dotIndex != -1 {
 					workspaceAndNamespace := xOriginalAuth[0:dotIndex]
 					pieces := strings.Split(workspaceAndNamespace, "--")
-					workspaceName := pieces[0]
-					namespace := pieces[1]
 
-					isAuthorizedRequest, ok := req.(*api.IsAuthorizedRequest)
-					if ok {
-						isAuthorizedRequest.IsAuthorized.Namespace = namespace
-						isAuthorizedRequest.IsAuthorized.Resource = "workspaces"
-						isAuthorizedRequest.IsAuthorized.Group = "onepanel.io"
-						isAuthorizedRequest.IsAuthorized.ResourceName = workspaceName
-						isAuthorizedRequest.IsAuthorized.Verb = "get"
+					if len(pieces) > 1 {
+						workspaceName := pieces[0]
+						namespace := pieces[1]
+
+						isAuthorizedRequest, ok := req.(*api.IsAuthorizedRequest)
+						if ok {
+							isAuthorizedRequest.IsAuthorized.Namespace = namespace
+							isAuthorizedRequest.IsAuthorized.Resource = "workspaces"
+							isAuthorizedRequest.IsAuthorized.Group = "onepanel.io"
+							isAuthorizedRequest.IsAuthorized.ResourceName = workspaceName
+							isAuthorizedRequest.IsAuthorized.Verb = "get"
+						}
 					}
 				}
 			}
