@@ -2,6 +2,7 @@ package v1
 
 import (
 	"fmt"
+	"github.com/onepanelio/core/pkg/util/ptr"
 	"gopkg.in/yaml.v2"
 )
 
@@ -76,6 +77,14 @@ func ParseParametersFromManifest(manifest []byte) ([]Parameter, error) {
 	err := yaml.Unmarshal(manifest, manifestResult)
 	if err != nil {
 		return nil, err
+	}
+
+	// Default parameter value
+	for i := range manifestResult.Arguments.Parameters {
+		parameter := &manifestResult.Arguments.Parameters[i]
+		if parameter.Visibility == nil {
+			parameter.Visibility = ptr.String("public")
+		}
 	}
 
 	if err := IsValidParameters(manifestResult.Arguments.Parameters); err != nil {
