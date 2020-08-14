@@ -11,45 +11,71 @@ const maskRCNNWorkflowTemplate = `arguments:
   parameters:
   - name: source
     value: https://github.com/onepanelio/Mask_RCNN.git
+    displayName: Model source code
+    type: hidden
+    visibility: private
+
   - name: sys-annotation-path
     value: annotation-dump/sample_dataset
-    hint: Please enter path which exists in cloud storage (i.e s3). In CVAT, this will be pre-populated. Some CVAT features may not work properly if you change that.
+    hint: Path to annotated data in default object storage (i.e S3). In CVAT, this parameter will be pre-populated.
     displayName: Dataset path
+    visibility: private
+    
   - name: sys-output-path
     value: workflow-data/output/sample_output
-    hint: If you want to use this output in CVAT, it must have '<namespace>/workflow-data/output/<dir-name>' prefix.
+    hint: Path to store output artifacts in default object storage (i.e s3). In CVAT, this parameter will be pre-populated.
     displayName: Workflow output path
-  - name: extras
-    value: none
-  - name: num-classes
-    value: 2
-    hint: "Number of classes you have (i.e in CVAT task) +  1 for Background class."
-    displayName: Number of classes
+    visibility: private
+
   - name: sys-finetune-checkpoint
-    value: ""
-    hint: "Default value is for demo purpose only. Please enter path which exists in cloud storage (i.e s3) or leave it empty."
+    value: ''
+    hint: Select the last fine-tune checkpoint for this model. It may take up to 5 minutes for a recent checkpoint show here. Leave empty if this is the first time you're training this model.
     displayName: Checkpoint path
-  - name: stage-1-epochs
-    value: 1
-    displayName: Epochs for network heads
-  - name: stage-2-epochs
-    value: 2
-    displayName: Epochs for finetune layers (ResNet)
-  - name: stage-3-epochs
-    value: 3
-    displayName: Epochs for finetuning all layers
+    visibility: public
+  
+  - name: sys-num-classes
+    displayName: Number of classes
+    hint: Number of classes (i.e in CVAT taks) + 1 for background
+    value: 81
+    visibility: private
+    
+  - name: extras
+    displayName: Hyperparameters
+    visibility: public
+    type: textarea.textarea
+    value: |-
+      stage-1-epochs=1    #  Epochs for network heads
+      stage-2-epochs=2    #  Epochs for finetune layers
+      stage-3-epochs=3    #  Epochs for all layers
+    hint: "Please refer to our <a href='https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model#arguments-optional' target='_blank'>documentation</a> for more information on parameters. Number of classes will be automatically populated if you had 'sys-num-classes' parameter in a workflow."
+    
+  - name: dump-format
+    type: select.select
+    value: cvat_coco
+    displayName: CVAT dump format
+    visibility: public
+    options:
+    - name: 'MS COCO'
+      value: 'cvat_coco'
+    - name: 'TF Detection API'
+      value: 'cvat_tfrecord'
+      
   - name: tf-image
+    visibility: public
     value: tensorflow/tensorflow:1.13.1-py3
     type: select.select
-    displayName: Select tensorflow image
+    displayName: Select TensorFlow image
+    hint: Select the GPU image if you are running on a GPU node pool
     options:
-    - name: 'Tensorflow 1.13.1 CPU Image'
+    - name: 'TensorFlow 1.13.1 CPU Image'
       value: 'tensorflow/tensorflow:1.13.1-py3'
-    - name: 'Tensorflow 1.13.1 GPU Image'
+    - name: 'TensorFlow 1.13.1 GPU Image'
       value: 'tensorflow/tensorflow:1.13.1-gpu-py3'
+  
   - displayName: Node pool
-    hint: Name of node pool or group
+    hint: Name of node pool or group to run this workflow task
     type: select.select
+    visibility: public
     name: sys-node-pool
     value: Standard_D4s_v3
     required: true
@@ -60,6 +86,7 @@ const maskRCNNWorkflowTemplate = `arguments:
       value: Standard_D4s_v3
     - name: 'GPU: 1xK80, CPU: 6, RAM: 56GB'
       value: Standard_NC6
+
 entrypoint: main
 templates:
 - dag:
@@ -94,12 +121,10 @@ templates:
       && wget https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5 \
       && python setup.py install && ls \
       && python samples/coco/cvat.py train --dataset=/mnt/data/datasets \
-        --model=workflow_maskrcnn --stage1_epochs={{workflow.parameters.stage-1-epochs}} \
-        --stage2_epochs={{workflow.parameters.stage-2-epochs}} \
-        --stage3_epochs={{workflow.parameters.stage-3-epochs}} \
-        --num_classes={{workflow.parameters.num-classes}} \
+        --model=workflow_maskrcnn \
         --extras="{{workflow.parameters.extras}}"  \
         --ref_model_path="{{workflow.parameters.sys-finetune-checkpoint}}"  \
+        --num_classes="{{workflow.parameters.sys-num-classes}}" \
       && cd /mnt/src/ \
       && python prepare_dataset.py /mnt/data/datasets/annotations/instances_default.json
     command:
@@ -169,8 +194,7 @@ volumeClaimTemplates:
     - ReadWriteOnce
     resources:
       requests:
-        storage: 200Gi
-`
+        storage: 200Gi`
 
 const maskRCNNWorkflowTemplateName = "MaskRCNN Training"
 
@@ -178,23 +202,34 @@ const tensorflowWorkflowTemplate2 = `arguments:
   parameters:
   - name: source
     value: https://github.com/tensorflow/models.git
+    displayName: Model source code
+    type: hidden
+    visibility: private
+
   - name: trainingsource
     value: https://github.com/onepanelio/cvat-training.git
+    type: hidden
+
   - name: revision
     value: v1.13.0
+    type: hidden 
+
   - name: sys-annotation-path
     value: annotation-dump/sample_dataset
     displayName: Dataset path
-    hint: Please enter path which exists in cloud storage (i.e s3). In CVAT, this will be pre-populated. Some CVAT features may not work properly if you change that.
+    hint: Path to annotated data in default object storage (i.e S3). In CVAT, this parameter will be pre-populated.
+
   - name: sys-output-path
     value: workflow-data/output/sample_output
-    hint: If you want to use this output in CVAT, it must have '<namespace>/workflow-data/output/<dir-name>' prefix.
+    hint: Path to store output artifacts in default object storage (i.e s3). In CVAT, this parameter will be pre-populated.
     displayName: Workflow output path
+
   - name: ref-model
     value: frcnn-res50-coco
-    displayName: Reference model
-    hint: Detection API's model to use for training.
+    displayName: Model
+    hint: TF Detection API's model to use for training.
     type: select.select
+    visibility: public
     options:
     - name: 'Faster RCNN-ResNet 101-COCO'
       value: frcnn-res101-coco
@@ -210,29 +245,45 @@ const tensorflowWorkflowTemplate2 = `arguments:
       value: ssd-mobilenet-v2-coco
     - name: 'SSDLite MobileNet-COCO'
       value: ssdlite-mobilenet-coco
+  
   - name: extras
-    value: '"epochs"="1000","schedule_step_1"=15000,"schedule_step_2"=18000'
+    value: |-
+      epochs=1000
+    displayName: Hyperparameters
+    visibility: public
+    type: textarea.textarea
+    hint: "Please refer to our <a href='https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model#arguments-optional' target='_blank'>documentation</a> for more information on parameters. Number of classes will be automatically populated if you had 'sys-num-classes' parameter in a workflow."
+  
   - name: sys-finetune-checkpoint
     value: ''
-    hint: Please enter path which exists in cloud storage (i.e s3) or leave it empty.
+    hint: Select the last fine-tune checkpoint for this model. It may take up to 5 minutes for a recent checkpoint show here. Leave empty if this is the first time you're training this model.
     displayName: Checkpoint path
-  - name: num-classes
-    value: '5'
+    visibility: public
+    
+  - name: sys-num-classes
+    value: 81
+    hint: Number of classes
     displayName: Number of classes
+    visibility: private
+
   - name: tf-image
     value: tensorflow/tensorflow:1.13.1-py3
     type: select.select
-    displayName: Select tensorflow image
+    displayName: Select TensorFlow image
+    visibility: public
+    hint: Select the GPU image if you are running on a GPU node pool
     options:
-    - name: 'Tensorflow 1.13.1 CPU Image'
+    - name: 'TensorFlow 1.13.1 CPU Image'
       value: 'tensorflow/tensorflow:1.13.1-py3'
-    - name: 'Tensorflow 1.13.1 GPU Image'
+    - name: 'TensorFlow 1.13.1 GPU Image'
       value: 'tensorflow/tensorflow:1.13.1-gpu-py3'
+
   - displayName: Node pool
-    hint: Name of node pool or group
+    hint: Name of node pool or group to run this workflow task
     type: select.select
     name: sys-node-pool
     value: Standard_D4s_v3
+    visibility: public
     required: true
     options:
     - name: 'CPU: 2, RAM: 8GB'
@@ -241,6 +292,9 @@ const tensorflowWorkflowTemplate2 = `arguments:
       value: Standard_D4s_v3
     - name: 'GPU: 1xK80, CPU: 6, RAM: 56GB'
       value: Standard_NC6
+  - name: dump-format
+    value: cvat_tfrecord
+    visibility: public
 entrypoint: main
 templates:
 - dag:
@@ -267,9 +321,13 @@ templates:
       apt-get install -y python3-pip git wget unzip libglib2.0-0 libsm6 libxext6 libxrender-dev && \
       pip install pillow lxml Cython contextlib2 jupyter matplotlib numpy scipy boto3 pycocotools pyyaml google-cloud-storage && \
       cd /mnt/src/tf/research && \
-      export PYTHONPATH=$PYTHONPATH:` + "`pwd`:`pwd`/slim &&" + `\
+      export PYTHONPATH=$PYTHONPATH:` + "pwd`:`pwd`/slim" + `&& \
       cd /mnt/src/train && \
-      python convert_workflow.py {{workflow.parameters.extras}},dataset=/mnt/data/datasets,model={{workflow.parameters.ref-model}},num_classes={{workflow.parameters.num-classes}},sys-finetune-checkpoint={{workflow.parameters.sys-finetune-checkpoint}}
+      python convert_workflow.py \
+        --extras="{{workflow.parameters.extras}}" \
+        --model="{{workflow.parameters.ref-model}}" \
+        --num_classes="{{workflow.parameters.sys-num-classes}}" \
+        --sys_finetune_checkpoint={{workflow.parameters.sys-finetune-checkpoint}}
     command:
     - sh
     - -c
@@ -288,6 +346,11 @@ templates:
       path: /mnt/data/datasets/
       s3:
         key: '{{workflow.namespace}}/{{workflow.parameters.sys-annotation-path}}'
+    - name: models
+      path: /mnt/data/models/
+      optional: true
+      s3:
+        key: '{{workflow.namespace}}/{{workflow.parameters.sys-finetune-checkpoint}}'
     - git:
         repo: '{{workflow.parameters.source}}'
         revision: '{{workflow.parameters.revision}}'
@@ -295,6 +358,7 @@ templates:
       path: /mnt/src/tf
     - git:
         repo: '{{workflow.parameters.trainingsource}}'
+        revision: 'optional-artifacts'
       name: tsrc
       path: /mnt/src/train
   name: tensorflow
@@ -341,8 +405,7 @@ volumeClaimTemplates:
     - ReadWriteOnce
     resources:
       requests:
-        storage: 200Gi
-`
+        storage: 200Gi`
 
 func initialize20200812104328() {
 	if _, ok := initializedMigrations[20200812104328]; !ok {

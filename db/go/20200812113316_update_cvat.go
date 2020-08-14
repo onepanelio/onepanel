@@ -11,10 +11,10 @@ import (
 const cvatWorkspaceTemplate5 = `# Workspace arguments
 arguments:
   parameters:
-  - name: storage-prefix
-    displayName: Directory in default object storage
+  - name: sync-directory
+    displayName: Directory to sync raw input and training output
     value: workflow-data
-    hint: Location of data and models in default object storage, will continuously sync to '/mnt/share'. This will be automatically prefixed with the namespace name.
+    hint: Location to sync raw input, models and checkpoints from default object storage. Note that this will be relative to the current namespace.
 containers:
 - name: cvat-db
   image: postgres:10-alpine
@@ -39,7 +39,7 @@ containers:
   - containerPort: 6379
     name: tcp
 - name: cvat
-  image: onepanel/cvat:v0.7.12-defaultuser-dynamic-workflow
+  image: onepanel/cvat:0.12.0_cvat.1.0.0-beta.2
   env:
   - name: DJANGO_MODWSGI_EXTRA_ARGS
     value: ""
@@ -51,6 +51,8 @@ containers:
     value: localhost
   - name: CVAT_SHARE_URL
     value: /home/django/data
+  - name: ONEPANEL_SYNC_DIRECTORY
+    value: '{{workspace.parameters.sync-directory}}'
   ports:
   - containerPort: 8080
     name: http
@@ -69,62 +71,27 @@ containers:
     mountPath: /etc/onepanel
     readOnly: true
 - name: cvat-ui
-  image: onepanel/cvat-ui:v0.7.12-defaultuser-dynamic-workflow
+  image: onepanel/cvat-ui:0.12.0_cvat.1.0.0-beta.2
   ports:
   - containerPort: 80
     name: http
 # You can add multiple FileSyncer sidecar containers if needed
 - name: filesyncer
   image: onepanel/filesyncer:s3
+  imagePullPolicy: Always
   args:
   - download
   env:
   - name: FS_PATH
     value: /mnt/share
   - name: FS_PREFIX
-    value: '{{workflow.namespace}}/{{workspace.parameters.storage-prefix}}'
+    value: '{{workflow.namespace}}/{{workspace.parameters.sync-directory}}'
   volumeMounts:
   - name: share
     mountPath: /mnt/share
   - name: sys-namespace-config
     mountPath: /etc/onepanel
     readOnly: true
-# Uncomment following lines to enable analytics
-# - name: cvat-elasticsearch
-#   image: onepanel/cvat-elasticsearch:v0.0.1
-#   volumeMounts:
-#   - name: events
-#     mountPath: /usr/share/elasticsearch/data
-#   ports:
-#   - containerPort: 9200
-#     name: http
-# - name: cvat-kibana
-#   image: onepanel/cvat-kibana:v0.0.1
-#   ports:
-#   - containerPort: 5601
-#     name: http
-#   env:
-#   - name: ELASTICSEARCH_URL
-#     value: http://localhost:9200
-# - name: cvat-kibana-setup
-#   image:  onepanel/cvat:v0.7.10-elastic
-#   command: ['bash']
-#   args: ['-c','/bin/bash wait-for-it.sh localhost:9200 -t 0 --; /bin/bash wait-for-it.sh localhost:5601 -t 0 -- ; /usr/bin/python3 /tmp/components/analytics/kibana/setup.py -Hlocalhost /tmp/components/analytics/kibana/export.json ; sleep infinity']
-#   env:
-#   - name: DJANGO_LOG_SERVER_HOST
-#     value: localhost
-#   - name: DJANGO_LOG_SERVER_PORT
-#     value: 5000
-#   - name: DJANGO_LOG_VIEWER_HOST
-#     value: localhost
-#   - name: DJANGO_LOG_VIEWER_PORT
-#     value: 5601
-# - name: cvat-logstash
-#   image: onepanel/cvat-logstash:v0.0.2
-#   ports:
-#  - containerPort: 5000
-#    name: tcp
-
 ports:
 - name: cvat-ui
   port: 80
@@ -171,8 +138,7 @@ routes:
 #       - SLACK_USERNAME=onepanel SLACK_TITLE="Your workspace is ready" SLACK_ICON=https://www.gravatar.com/avatar/5c4478592fe00878f62f0027be59c1bd SLACK_MESSAGE="Your workspace is now running" ./slack-notify
 #       command:
 #       - sh
-#       - -c
-`
+#       - -c`
 
 func initialize20200812113316() {
 	if _, ok := initializedMigrations[20200812113316]; !ok {
