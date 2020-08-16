@@ -48,7 +48,7 @@ const maskRCNNWorkflowTemplate = `arguments:
       stage-1-epochs=1    #  Epochs for network heads
       stage-2-epochs=2    #  Epochs for finetune layers
       stage-3-epochs=3    #  Epochs for all layers
-    hint: "Please refer to our <a href='https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model#arguments-optional' target='_blank'>documentation</a> for more information on parameters. Number of classes will be automatically populated if you had 'sys-num-classes' parameter in a workflow."
+    hint: "Please refer to our <a href='https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model#arguments-optional' target='_blank'>documentation</a> for more information on parameters."
     
   - name: dump-format
     type: select.select
