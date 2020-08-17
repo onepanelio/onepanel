@@ -3,8 +3,8 @@ package v1
 import (
 	"encoding/json"
 	"github.com/onepanelio/core/pkg/util/mapping"
+	"github.com/onepanelio/core/pkg/util/sql"
 	"github.com/onepanelio/core/pkg/util/types"
-	"github.com/onepanelio/core/util/sql"
 	"gopkg.in/yaml.v2"
 	"time"
 )

@@ -3,9 +3,9 @@ package v1
 import (
 	"encoding/json"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/onepanelio/core/pkg/util/sql"
 	"github.com/onepanelio/core/pkg/util/types"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
-	"github.com/onepanelio/core/util/sql"
 	"time"
 )
 
