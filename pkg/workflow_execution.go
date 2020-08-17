@@ -1556,11 +1556,7 @@ with statistics about the workflow that was just executed.
 */
 func getCURLNodeTemplate(name, curlMethod, curlPath, curlBody string, inputs wfv1.Inputs) (template *wfv1.Template, err error) {
 	host := "onepanel-core.onepanel.svc.cluster.local"
-	port := env.GetEnv("ONEPANEL_CORE_SERVICE_PORT", "80")
-	if port == "" {
-		err = errors.New("ONEPANEL_CORE_SERVICE_PORT is empty.")
-		return
-	}
+	port := "80"
 	endpoint := fmt.Sprintf("http://%s:%s%s", host, port, curlPath)
 	template = &wfv1.Template{
 		Name:   name,
