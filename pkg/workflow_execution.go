@@ -1555,11 +1555,7 @@ Will build a template that makes a CURL request to the onepanel-core API,
 with statistics about the workflow that was just executed.
 */
 func getCURLNodeTemplate(name, curlMethod, curlPath, curlBody string, inputs wfv1.Inputs) (template *wfv1.Template, err error) {
-	host := env.GetEnv("ONEPANEL_CORE_SERVICE_HOST", "onepanel-core.onepanel.svc.cluster.local")
-	if host == "" {
-		err = errors.New("ONEPANEL_CORE_SERVICE_HOST is empty.")
-		return
-	}
+	host := "onepanel-core.onepanel.svc.cluster.local"
 	port := env.GetEnv("ONEPANEL_CORE_SERVICE_PORT", "80")
 	if port == "" {
 		err = errors.New("ONEPANEL_CORE_SERVICE_PORT is empty.")

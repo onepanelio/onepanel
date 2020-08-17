@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
@@ -29,7 +30,7 @@ func apiWorkspace(wt *v1.Workspace, config v1.SystemConfig) *api.Workspace {
 		log.WithFields(log.Fields{
 			"Method": "apiWorkspace",
 			"Error":  "protocol is nil",
-		})
+		}).Error("apiWorkspace")
 
 		return nil
 	}
@@ -38,7 +39,7 @@ func apiWorkspace(wt *v1.Workspace, config v1.SystemConfig) *api.Workspace {
 		log.WithFields(log.Fields{
 			"Method": "apiWorkspace",
 			"Error":  "domain is nil",
-		})
+		}).Error("apiWorkspace")
 
 		return nil
 	}
