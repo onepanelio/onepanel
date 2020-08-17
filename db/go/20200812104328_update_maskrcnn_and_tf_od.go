@@ -48,7 +48,7 @@ const maskRCNNWorkflowTemplate = `arguments:
       stage-1-epochs=1    #  Epochs for network heads
       stage-2-epochs=2    #  Epochs for finetune layers
       stage-3-epochs=3    #  Epochs for all layers
-    hint: "Please refer to our <a href='https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model#arguments-optional' target='_blank'>documentation</a> for more information on parameters. Number of classes will be automatically populated if you had 'sys-num-classes' parameter in a workflow."
+    hint: "Please refer to our <a href='https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model#arguments-optional' target='_blank'>documentation</a> for more information on parameters."
     
   - name: dump-format
     type: select.select
@@ -199,7 +199,7 @@ volumeClaimTemplates:
 
 const maskRCNNWorkflowTemplateName = "MaskRCNN Training"
 
-const tensorflowWorkflowTemplate2 = `arguments:
+const tensorflowObjectDetectionWorkflowTemplate = `arguments:
   parameters:
   - name: source
     value: https://github.com/tensorflow/models.git
@@ -210,10 +210,12 @@ const tensorflowWorkflowTemplate2 = `arguments:
   - name: trainingsource
     value: https://github.com/onepanelio/cvat-training.git
     type: hidden
+    visibility: private
 
   - name: revision
     value: v1.13.0
     type: hidden 
+    visibility: private
 
   - name: sys-annotation-path
     value: annotation-dump/sample_dataset
@@ -224,6 +226,7 @@ const tensorflowWorkflowTemplate2 = `arguments:
     value: workflow-data/output/sample_output
     hint: Path to store output artifacts in default object storage (i.e s3). In CVAT, this parameter will be pre-populated.
     displayName: Workflow output path
+    visibility: private
 
   - name: ref-model
     value: frcnn-res50-coco
@@ -322,7 +325,7 @@ templates:
       apt-get install -y python3-pip git wget unzip libglib2.0-0 libsm6 libxext6 libxrender-dev && \
       pip install pillow lxml Cython contextlib2 jupyter matplotlib numpy scipy boto3 pycocotools pyyaml google-cloud-storage && \
       cd /mnt/src/tf/research && \
-      export PYTHONPATH=$PYTHONPATH:` + "pwd`:`pwd`/slim" + `&& \
+      export PYTHONPATH=$PYTHONPATH:` + "`pwd`:`pwd`/slim" + ` && \
       cd /mnt/src/train && \
       python convert_workflow.py \
         --extras="{{workflow.parameters.extras}}" \
@@ -408,6 +411,8 @@ volumeClaimTemplates:
       requests:
         storage: 200Gi`
 
+const tensorflowObjectDetectionWorkflowTemplateName = "TensorFlow Object Detection Training"
+
 func initialize20200812104328() {
 	if _, ok := initializedMigrations[20200812104328]; !ok {
 		goose.AddMigration(Up20200812104328, Down20200812104328)
@@ -472,8 +477,8 @@ func Up20200812104328(tx *sql.Tx) error {
 
 	// Update tf-od
 	workflowTemplate = &v1.WorkflowTemplate{
-		Name:     tensorflowWorkflowTemplateName,
-		Manifest: tensorflowWorkflowTemplate2,
+		Name:     tensorflowObjectDetectionWorkflowTemplateName,
+		Manifest: tensorflowObjectDetectionWorkflowTemplate,
 		Labels: map[string]string{
 			"used-by": "cvat",
 		},
