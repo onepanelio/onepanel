@@ -411,7 +411,7 @@ volumeClaimTemplates:
       requests:
         storage: 200Gi`
 
-const tensorflowObjectDetectionWorkflowTemplateName = "TensorFlow Object Detection Training"
+const tensorflowObjectDetectionWorkflowTemplateName = "TF Object Detection Training"
 
 func initialize20200812104328() {
 	if _, ok := initializedMigrations[20200812104328]; !ok {
