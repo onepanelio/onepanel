@@ -488,7 +488,7 @@ func Up20200812104328(tx *sql.Tx) error {
 	}
 
 	for _, namespace := range namespaces {
-		if _, err := client.CreateWorkflowTemplateVersion(namespace.Name, workflowTemplate); err != nil {
+		if _, err := client.CreateWorkflowTemplate(namespace.Name, workflowTemplate); err != nil {
 			return err
 		}
 	}
