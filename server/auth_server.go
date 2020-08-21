@@ -2,8 +2,10 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
+	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
@@ -41,7 +43,7 @@ func (a *AuthServer) IsAuthorized(ctx context.Context, request *api.IsAuthorized
 	allowed, err := auth.IsAuthorized(client, request.IsAuthorized.Namespace, request.IsAuthorized.Verb, request.IsAuthorized.Group, request.IsAuthorized.Resource, request.IsAuthorized.ResourceName)
 	if err != nil {
 		res.Authorized = false
-		return res, err
+		return res, util.NewUserError(codes.PermissionDenied, fmt.Sprintf("Namespace: %v, Verb: %v, Group: \"%v\", Resource: %v. Source: %v", request.IsAuthorized.Namespace, request.IsAuthorized.Verb, request.IsAuthorized.Group, request.IsAuthorized.ResourceName, err))
 	}
 
 	res.Authorized = allowed

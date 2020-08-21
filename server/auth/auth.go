@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/onepanelio/core/api"
 	"net/http"
 	"strings"
@@ -85,12 +86,13 @@ func IsAuthorized(c *v1.Client, namespace, verb, group, resource, name string) (
 		},
 	})
 
+	deniedMsg := fmt.Sprintf(`Permission denied. Namespace: '%v', Verb: '%v', Group: '%v', Resource '%v', Name: '%v'`, namespace, verb, group, resource, name)
 	if err != nil {
-		return false, status.Error(codes.PermissionDenied, "Permission denied.")
+		return false, status.Error(codes.PermissionDenied, deniedMsg)
 	}
 	allowed = review.Status.Allowed
 	if !allowed {
-		return false, status.Error(codes.PermissionDenied, "Permission denied.")
+		return false, status.Error(codes.PermissionDenied, deniedMsg)
 	}
 
 	return
