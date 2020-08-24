@@ -133,7 +133,7 @@ templates:
       apt-get install -y python3-pip git wget unzip libglib2.0-0 libsm6 libxext6 libxrender-dev && \
       pip install pillow lxml Cython contextlib2 jupyter matplotlib numpy scipy boto3 pycocotools pyyaml google-cloud-storage && \
       cd /mnt/src/tf/research && \
-      export PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/slim && \
+      export PYTHONPATH=$PYTHONPATH:` + "`pwd`:`pwd`" + `/slim && \
       cd /mnt/src/train && \
       python convert_workflow.py \
         --extras="{{workflow.parameters.hyperparameters}}" \

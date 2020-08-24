@@ -49,15 +49,9 @@ const maskRCNNTemplate2 = `arguments:
     hint: "Please refer to our <a href='https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model#arguments-optional' target='_blank'>documentation</a> for more information on parameters. Number of classes will be automatically populated if you had 'sys-num-classes' parameter in a workflow."
     
   - name: dump-format
-    type: select.select
     value: cvat_coco
     displayName: CVAT dump format
     visibility: public
-    options:
-    - name: 'MS COCO'
-      value: 'cvat_coco'
-    - name: 'TF Detection API'
-      value: 'cvat_tfrecord'
       
   - name: tf-image
     visibility: public
