@@ -202,6 +202,7 @@ func initialize20200824095513() {
 	}
 }
 
+// Up20200824095513 updates the maskrcnn workflow template
 func Up20200824095513(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	client, err := getClient()
@@ -245,6 +246,7 @@ func Up20200824095513(tx *sql.Tx) error {
 	return nil
 }
 
+// Down20200824095513 does nothing
 func Down20200824095513(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return nil

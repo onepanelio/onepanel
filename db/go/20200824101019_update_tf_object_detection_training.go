@@ -225,6 +225,7 @@ func initialize20200824101019() {
 	}
 }
 
+// Up20200824101019 updates the tf object detection training workflow template
 func Up20200824101019(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	client, err := getClient()
@@ -268,6 +269,7 @@ func Up20200824101019(tx *sql.Tx) error {
 	return nil
 }
 
+// Down20200824101019 does nothing
 func Down20200824101019(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return nil
