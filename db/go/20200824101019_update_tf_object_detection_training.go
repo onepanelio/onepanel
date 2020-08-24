@@ -24,18 +24,19 @@ const tensorflowObjectDetectionTraining2 = `arguments:
     type: hidden 
     visibility: private
 
-  - name: sys-annotation-path
+  - name: cvat-annotation-path
     value: annotation-dump/sample_dataset
     displayName: Dataset path
     hint: Path to annotated data in default object storage (i.e S3). In CVAT, this parameter will be pre-populated.
+    visibility: private
 
-  - name: sys-output-path
+  - name: cvat-output-path
     value: workflow-data/output/sample_output
     hint: Path to store output artifacts in default object storage (i.e s3). In CVAT, this parameter will be pre-populated.
     displayName: Workflow output path
     visibility: private
 
-  - name: ref-model
+  - name: cvat-model
     value: frcnn-res50-coco
     displayName: Model
     hint: TF Detection API's model to use for training.
@@ -57,21 +58,21 @@ const tensorflowObjectDetectionTraining2 = `arguments:
     - name: 'SSDLite MobileNet-COCO'
       value: ssdlite-mobilenet-coco
   
-  - name: extras
+  - name: hyperparameters
     value: |-
-      epochs=1000
+      num-steps=10000
     displayName: Hyperparameters
     visibility: public
     type: textarea.textarea
     hint: "Please refer to our <a href='https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model#arguments-optional' target='_blank'>documentation</a> for more information on parameters. Number of classes will be automatically populated if you had 'sys-num-classes' parameter in a workflow."
   
-  - name: sys-finetune-checkpoint
+  - name: cvat-finetune-checkpoint
     value: ''
     hint: Select the last fine-tune checkpoint for this model. It may take up to 5 minutes for a recent checkpoint show here. Leave empty if this is the first time you're training this model.
     displayName: Checkpoint path
     visibility: public
     
-  - name: sys-num-classes
+  - name: cvat-num-classes
     value: 81
     hint: Number of classes
     displayName: Number of classes
@@ -132,13 +133,13 @@ templates:
       apt-get install -y python3-pip git wget unzip libglib2.0-0 libsm6 libxext6 libxrender-dev && \
       pip install pillow lxml Cython contextlib2 jupyter matplotlib numpy scipy boto3 pycocotools pyyaml google-cloud-storage && \
       cd /mnt/src/tf/research && \
-      export PYTHONPATH=$PYTHONPATH:` + "`pwd`:`pwd`/slim" + ` && \
+      export PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/slim && \
       cd /mnt/src/train && \
       python convert_workflow.py \
-        --extras="{{workflow.parameters.extras}}" \
-        --model="{{workflow.parameters.ref-model}}" \
-        --num_classes="{{workflow.parameters.sys-num-classes}}" \
-        --sys_finetune_checkpoint={{workflow.parameters.sys-finetune-checkpoint}}
+        --extras="{{workflow.parameters.hyperparameters}}" \
+        --model="{{workflow.parameters.cvat-model}}" \
+        --num_classes="{{workflow.parameters.cvat-num-classes}}" \
+        --sys_finetune_checkpoint={{workflow.parameters.cvat-finetune-checkpoint}}
     command:
     - sh
     - -c
@@ -156,12 +157,12 @@ templates:
     - name: data
       path: /mnt/data/datasets/
       s3:
-        key: '{{workflow.namespace}}/{{workflow.parameters.sys-annotation-path}}'
+        key: '{{workflow.namespace}}/{{workflow.parameters.cvat-annotation-path}}'
     - name: models
       path: /mnt/data/models/
       optional: true
       s3:
-        key: '{{workflow.namespace}}/{{workflow.parameters.sys-finetune-checkpoint}}'
+        key: '{{workflow.namespace}}/{{workflow.parameters.cvat-finetune-checkpoint}}'
     - git:
         repo: '{{workflow.parameters.source}}'
         revision: '{{workflow.parameters.revision}}'
@@ -179,7 +180,7 @@ templates:
       optional: true
       path: /mnt/output
       s3:
-        key: '{{workflow.namespace}}/{{workflow.parameters.sys-output-path}}'
+        key: '{{workflow.namespace}}/{{workflow.parameters.cvat-output-path}}/{{workflow.name}}'
 # Uncomment the lines below if you want to send Slack notifications
 #- container:
 #    args:
