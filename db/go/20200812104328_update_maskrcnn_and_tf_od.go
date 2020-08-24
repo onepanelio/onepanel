@@ -475,7 +475,7 @@ func Up20200812104328(tx *sql.Tx) error {
 		}
 	}
 
-	// Update tf-od
+	// Create tf-od
 	workflowTemplate = &v1.WorkflowTemplate{
 		Name:     tensorflowObjectDetectionWorkflowTemplateName,
 		Manifest: tensorflowObjectDetectionWorkflowTemplate,
