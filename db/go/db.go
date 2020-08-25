@@ -96,6 +96,7 @@ func getRanSQLMigrations(client *v1.Client) (map[uint64]bool, error) {
 	return result, nil
 }
 
+// ReplaceArtifactRepositoryType will look for {{.ArtifactRepositoryType}} in the migration and replace it based on config.
 func ReplaceArtifactRepositoryType(client *v1.Client, namespace *v1.Namespace, workflowTemplate *v1.WorkflowTemplate, workspaceTemplate *v1.WorkspaceTemplate) error {
 	artifactRepositoryType := "s3"
 	nsConfig, err := client.GetNamespaceConfig(namespace.Name)
