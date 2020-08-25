@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	_ "github.com/onepanelio/core/db"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	corev1 "k8s.io/api/core/v1"
@@ -13,8 +12,11 @@ import (
 	k8runtime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
+	"math"
 	"net"
 	"net/http"
+	"path/filepath"
+	"strings"
 
 	"github.com/gorilla/handlers"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -23,6 +25,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/jmoiron/sqlx"
 	"github.com/onepanelio/core/api"
+	migrations "github.com/onepanelio/core/db/go"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util/env"
 	"github.com/onepanelio/core/server"
@@ -67,16 +70,22 @@ func main() {
 				log.Fatalf("Failed to get system config: %v", err)
 			}
 
-			databaseDataSourceName := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
-				sysConfig["databaseHost"], sysConfig["databaseUsername"], sysConfig["databasePassword"], sysConfig["databaseName"])
-
+			dbDriverName, databaseDataSourceName := sysConfig.DatabaseConnection()
 			// sqlx.MustConnect will panic when it can't connect to DB. In that case, this whole application will crash.
 			// This is okay, as the pod will restart and try connecting to DB again.
 			// dbDriverName may be nil, but sqlx will then panic.
-			dbDriverName := sysConfig.DatabaseDriverName()
-			db := sqlx.MustConnect(*dbDriverName, databaseDataSourceName)
-			if err := goose.Run("up", db.DB, "db"); err != nil {
-				log.Fatalf("Failed to run database migrations: %v", err)
+			db := sqlx.MustConnect(dbDriverName, databaseDataSourceName)
+			goose.SetTableName("goose_db_version")
+			if err := goose.Run("up", db.DB, filepath.Join("db", "sql")); err != nil {
+				log.Fatalf("Failed to run database sql migrations: %v", err)
+				db.Close()
+			}
+
+			goose.SetTableName("goose_db_go_version")
+			migrations.Initialize()
+			if err := goose.Run("up", db.DB, filepath.Join("db", "go")); err != nil {
+				log.Fatalf("Failed to run database go migrations: %v", err)
+				db.Close()
 			}
 
 			s := startRPCServer(v1.NewDB(db), kubeConfig, sysConfig, stopCh)
@@ -84,6 +93,9 @@ func main() {
 			<-stopCh
 
 			s.Stop()
+			if err := db.Close(); err != nil {
+				log.Printf("[error] closing db connection")
+			}
 		}
 	}()
 
@@ -123,7 +135,7 @@ func startRPCServer(db *v1.DB, kubeConfig *v1.Config, sysConfig v1.SystemConfig,
 			grpc_logrus.StreamServerInterceptor(logEntry),
 			grpc_recovery.StreamServerInterceptor(recoveryOpts...),
 			auth.StreamingInterceptor(kubeConfig, db, sysConfig)),
-	))
+	), grpc.MaxRecvMsgSize(math.MaxInt64), grpc.MaxSendMsgSize(math.MaxInt64))
 	api.RegisterWorkflowTemplateServiceServer(s, server.NewWorkflowTemplateServer())
 	api.RegisterCronWorkflowServiceServer(s, server.NewCronWorkflowServer())
 	api.RegisterWorkflowServiceServer(s, server.NewWorkflowServer())
@@ -134,6 +146,7 @@ func startRPCServer(db *v1.DB, kubeConfig *v1.Config, sysConfig v1.SystemConfig,
 	api.RegisterWorkspaceTemplateServiceServer(s, server.NewWorkspaceTemplateServer())
 	api.RegisterWorkspaceServiceServer(s, server.NewWorkspaceServer())
 	api.RegisterConfigServiceServer(s, server.NewConfigServer())
+	api.RegisterServiceServiceServer(s, server.NewServiceServer())
 
 	go func() {
 		if err := s.Serve(lis); err != nil {
@@ -154,8 +167,9 @@ func startHTTPProxy() {
 
 	// Register gRPC server endpoint
 	// Note: Make sure the gRPC server is running properly and accessible
-	mux := runtime.NewServeMux()
-	opts := []grpc.DialOption{grpc.WithInsecure()}
+	mux := runtime.NewServeMux(runtime.WithIncomingHeaderMatcher(customHeaderMatcher))
+	opts := []grpc.DialOption{grpc.WithInsecure(), grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(math.MaxInt64),
+		grpc.MaxCallRecvMsgSize(math.MaxInt64))}
 
 	registerHandler(api.RegisterWorkflowTemplateServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
 	registerHandler(api.RegisterWorkflowServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
@@ -167,6 +181,7 @@ func startHTTPProxy() {
 	registerHandler(api.RegisterWorkspaceTemplateServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
 	registerHandler(api.RegisterWorkspaceServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
 	registerHandler(api.RegisterConfigServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
+	registerHandler(api.RegisterServiceServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
 
 	log.Printf("Starting HTTP proxy on port %v", *httpPort)
 
@@ -245,4 +260,17 @@ func watchConfigmapChanges(client *v1.Client, namespace string, stopCh <-chan st
 	// We don't want the watcher to ever stop, so give it a channel that will never be hit.
 	neverStopCh := make(chan struct{})
 	controller.Run(neverStopCh)
+}
+
+// customHeaderMatcher is used to allow certain headers so we don't require a grpc-gateway prefix
+func customHeaderMatcher(key string) (string, bool) {
+	lowerCaseKey := strings.ToLower(key)
+	switch lowerCaseKey {
+	case "onepanel-auth-token":
+		return lowerCaseKey, true
+	case "cookie":
+		return lowerCaseKey, true
+	default:
+		return runtime.DefaultHeaderMatcher(key)
+	}
 }

@@ -1,0 +1,251 @@
+package migration
+
+import (
+	"database/sql"
+	v1 "github.com/onepanelio/core/pkg"
+	"github.com/pressly/goose"
+)
+
+const maskRCNNTemplate2 = `arguments:
+  parameters:
+  - name: source
+    value: https://github.com/onepanelio/Mask_RCNN.git
+    displayName: Model source code
+    type: hidden
+    visibility: private
+
+  - name: cvat-annotation-path
+    value: annotation-dump/sample_dataset
+    hint: Path to annotated data in default object storage (i.e S3). In CVAT, this parameter will be pre-populated.
+    displayName: Dataset path
+    visibility: private
+    
+  - name: cvat-output-path
+    value: workflow-data/output/sample_output
+    hint: Path to store output artifacts in default object storage (i.e s3). In CVAT, this parameter will be pre-populated.
+    displayName: Workflow output path
+    visibility: private
+
+  - name: cvat-finetune-checkpoint
+    value: ''
+    hint: Select the last fine-tune checkpoint for this model. It may take up to 5 minutes for a recent checkpoint show here. Leave empty if this is the first time you're training this model.
+    displayName: Checkpoint path
+    visibility: public
+  
+  - name: cvat-num-classes
+    displayName: Number of classes
+    hint: Number of classes (i.e in CVAT taks) + 1 for background
+    value: 81
+    visibility: private
+    
+  - name: hyperparameters
+    displayName: Hyperparameters
+    visibility: public
+    type: textarea.textarea
+    value: |-
+      stage-1-epochs=1    #  Epochs for network heads
+      stage-2-epochs=2    #  Epochs for finetune layers
+      stage-3-epochs=3    #  Epochs for all layers
+    hint: "Please refer to our <a href='https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model#arguments-optional' target='_blank'>documentation</a> for more information on parameters. Number of classes will be automatically populated if you had 'sys-num-classes' parameter in a workflow."
+    
+  - name: dump-format
+    value: cvat_coco
+    displayName: CVAT dump format
+    visibility: public
+      
+  - name: tf-image
+    visibility: public
+    value: tensorflow/tensorflow:1.13.1-py3
+    type: select.select
+    displayName: Select TensorFlow image
+    hint: Select the GPU image if you are running on a GPU node pool
+    options:
+    - name: 'TensorFlow 1.13.1 CPU Image'
+      value: 'tensorflow/tensorflow:1.13.1-py3'
+    - name: 'TensorFlow 1.13.1 GPU Image'
+      value: 'tensorflow/tensorflow:1.13.1-gpu-py3'
+  
+  - displayName: Node pool
+    hint: Name of node pool or group to run this workflow task
+    type: select.select
+    visibility: public
+    name: sys-node-pool
+    value: Standard_D4s_v3
+    required: true
+    options:
+    - name: 'CPU: 2, RAM: 8GB'
+      value: Standard_D2s_v3
+    - name: 'CPU: 4, RAM: 16GB'
+      value: Standard_D4s_v3
+    - name: 'GPU: 1xK80, CPU: 6, RAM: 56GB'
+      value: Standard_NC6
+
+entrypoint: main
+templates:
+- dag:
+    tasks:
+    - name: train-model
+      template: tensorflow
+# Uncomment the lines below if you want to send Slack notifications
+#    - arguments:
+#        artifacts:
+#        - from: '{{tasks.train-model.outputs.artifacts.sys-metrics}}'
+#          name: metrics
+#        parameters:
+#        - name: status
+#          value: '{{tasks.train-model.status}}'
+#      dependencies:
+#      - train-model
+#      name: notify-in-slack
+#      template: slack-notify-success
+  name: main
+- container:
+    args:
+    - |
+      apt-get update \
+      && apt-get install -y git wget libglib2.0-0 libsm6 libxext6 libxrender-dev \
+      && pip install -r requirements.txt \
+      && pip install boto3 pyyaml google-cloud-storage \
+      && git clone https://github.com/waleedka/coco \
+      && cd coco/PythonAPI \
+      && python setup.py build_ext install \
+      && rm -rf build \
+      && cd ../../ \
+      && wget https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5 \
+      && python setup.py install && ls \
+      && python samples/coco/cvat.py train --dataset=/mnt/data/datasets \
+        --model=workflow_maskrcnn \
+        --extras="{{workflow.parameters.hyperparameters}}"  \
+        --ref_model_path="{{workflow.parameters.cvat-finetune-checkpoint}}"  \
+        --num_classes="{{workflow.parameters.cvat-num-classes}}" \
+      && cd /mnt/src/ \
+      && python prepare_dataset.py /mnt/data/datasets/annotations/instances_default.json
+    command:
+    - sh
+    - -c
+    image: '{{workflow.parameters.tf-image}}'
+    volumeMounts:
+    - mountPath: /mnt/data
+      name: data
+    - mountPath: /mnt/output
+      name: output
+    workingDir: /mnt/src
+  nodeSelector:
+    beta.kubernetes.io/instance-type: '{{workflow.parameters.sys-node-pool}}'
+  inputs:
+    artifacts:
+    - name: data
+      path: /mnt/data/datasets/
+      {{.ArtifactRepositoryType}}:
+        key: '{{workflow.namespace}}/{{workflow.parameters.cvat-annotation-path}}'
+    - git:
+        repo: '{{workflow.parameters.source}}'
+        revision: "no-boto"
+      name: src
+      path: /mnt/src
+  name: tensorflow
+  outputs:
+    artifacts:
+    - name: model
+      optional: true
+      path: /mnt/output
+      {{.ArtifactRepositoryType}}:
+        key: '{{workflow.namespace}}/{{workflow.parameters.cvat-output-path}}/{{workflow.name}}'
+# Uncomment the lines below if you want to send Slack notifications
+#- container:
+#    args:
+#    - SLACK_USERNAME=Onepanel SLACK_TITLE="{{workflow.name}} {{inputs.parameters.status}}"
+#      SLACK_ICON=https://www.gravatar.com/avatar/5c4478592fe00878f62f0027be59c1bd
+#      SLACK_MESSAGE=$(cat /tmp/metrics.json)} ./slack-notify
+#    command:
+#    - sh
+#    - -c
+#    image: technosophos/slack-notify
+#  inputs:
+#    artifacts:
+#    - name: metrics
+#      optional: true
+#      path: /tmp/metrics.json
+#    parameters:
+#    - name: status
+#  name: slack-notify-success
+volumeClaimTemplates:
+- metadata:
+    creationTimestamp: null
+    name: data
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: 200Gi
+- metadata:
+    creationTimestamp: null
+    name: output
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: 200Gi`
+
+func initialize20200824095513() {
+	if _, ok := initializedMigrations[20200824095513]; !ok {
+		goose.AddMigration(Up20200824095513, Down20200824095513)
+		initializedMigrations[20200824095513] = true
+	}
+}
+
+// Up20200824095513 updates the maskrcnn workflow template
+func Up20200824095513(tx *sql.Tx) error {
+	// This code is executed when the migration is applied.
+	client, err := getClient()
+	if err != nil {
+		return err
+	}
+	defer client.DB.Close()
+
+	migrationsRan, err := getRanSQLMigrations(client)
+	if err != nil {
+		return err
+	}
+
+	if _, ok := migrationsRan[20200824095513]; ok {
+		return nil
+	}
+
+	namespaces, err := client.ListOnepanelEnabledNamespaces()
+	if err != nil {
+		return err
+	}
+
+	// Update maskrcnn
+	workflowTemplate := &v1.WorkflowTemplate{
+		Name:     maskRCNNWorkflowTemplateName,
+		Manifest: maskRCNNTemplate2,
+		Labels: map[string]string{
+			"used-by": "cvat",
+		},
+	}
+	if err := workflowTemplate.GenerateUID(workflowTemplate.Name); err != nil {
+		return err
+	}
+
+	for _, namespace := range namespaces {
+		err = ReplaceArtifactRepositoryType(client, namespace, workflowTemplate, nil)
+		if err != nil {
+			return err
+		}
+		if _, err := client.CreateWorkflowTemplateVersion(namespace.Name, workflowTemplate); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Down20200824095513 does nothing
+func Down20200824095513(tx *sql.Tx) error {
+	// This code is executed when the migration is rolled back.
+	return nil
+}

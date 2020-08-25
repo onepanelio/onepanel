@@ -15,7 +15,7 @@ service AuthService {
 
     rpc IsAuthorized(IsAuthorizedRequest) returns (IsAuthorizedResponse) {
         option (google.api.http) = {
-            post: "/apis/v1beta1/auth",
+            post: "/apis/v1beta1/auth"
             body: "isAuthorized"
         };
     }

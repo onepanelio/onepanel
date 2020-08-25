@@ -3,7 +3,7 @@
   "info": {
     "title": "Onepanel",
     "description": "Onepanel API",
-    "version": "0.11.0",
+    "version": "0.12.0-rc.0",
     "contact": {
       "name": "Onepanel project",
       "url": "https://github.com/onepanelio/core"
@@ -18,7 +18,8 @@
     "application/json"
   ],
   "produces": [
-    "application/json"
+    "application/json",
+    "application/octet-stream"
   ],
   "paths": {
     "/apis/v1beta1/auth": {
@@ -733,6 +734,86 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/service": {
+      "get": {
+        "operationId": "ListServices",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListServicesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "ServiceService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/service/{name}": {
+      "get": {
+        "operationId": "GetService",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/Service"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ServiceService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workflow_executions": {
       "get": {
         "operationId": "ListWorkflowExecutions",
@@ -1364,6 +1445,12 @@
             "required": false,
             "type": "integer",
             "format": "int32"
+          },
+          {
+            "name": "labels",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -1692,57 +1779,6 @@
             "in": "path",
             "required": true,
             "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/WorkflowTemplate"
-            }
-          }
-        ],
-        "tags": [
-          "WorkflowTemplateService"
-        ]
-      }
-    },
-    "/apis/v1beta1/{namespace}/workflow_templates/{workflowTemplate.uid}/versions/{workflowTemplate.version}": {
-      "put": {
-        "operationId": "UpdateWorkflowTemplateVersion",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/WorkflowTemplate"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "workflowTemplate.uid",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "workflowTemplate.version",
-            "in": "path",
-            "required": true,
-            "type": "string",
-            "format": "int64"
           },
           {
             "name": "body",
@@ -2871,6 +2907,33 @@
         }
       }
     },
+    "ListServicesResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "services": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Service"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pages": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "ListWorkflowExecutionsResponse": {
       "type": "object",
       "properties": {
@@ -3090,6 +3153,9 @@
           "type": "boolean",
           "format": "boolean"
         },
+        "visibility": {
+          "type": "string"
+        },
         "options": {
           "type": "array",
           "items": {
@@ -3129,6 +3195,17 @@
         "exists": {
           "type": "boolean",
           "format": "boolean"
+        }
+      }
+    },
+    "Service": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
         }
       }
     },
@@ -3216,6 +3293,17 @@
           "items": {
             "$ref": "#/definitions/KeyValue"
           }
+        },
+        "metadata": {
+          "$ref": "#/definitions/WorkflowExecutionMetadata"
+        }
+      }
+    },
+    "WorkflowExecutionMetadata": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
         }
       }
     },
@@ -3300,6 +3388,12 @@
         },
         "cronStats": {
           "$ref": "#/definitions/CronWorkflowStatisticsReport"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Parameter"
+          }
         }
       }
     },
@@ -3400,6 +3494,9 @@
         "isArchived": {
           "type": "boolean",
           "format": "boolean"
+        },
+        "description": {
+          "type": "string"
         }
       }
     },

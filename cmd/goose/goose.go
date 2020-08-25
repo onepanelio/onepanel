@@ -4,12 +4,12 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/onepanelio/core/db"
+	migrations "github.com/onepanelio/core/db/go"
 	v1 "github.com/onepanelio/core/pkg"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/pressly/goose"
 )
@@ -38,10 +38,9 @@ func main() {
 		log.Fatalf("Failed to get system config: %v", err)
 	}
 
-	databaseDataSourceName := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
-		config["databaseHost"], config["databaseUsername"], config["databasePassword"], config["databaseName"])
-
-	db := sqlx.MustConnect(config["databaseDriverName"], databaseDataSourceName)
+	dbDriverName, dbDataSourceName := config.DatabaseConnection()
+	db := sqlx.MustConnect(dbDriverName, dbDataSourceName)
+	defer db.Close()
 
 	command := args[0]
 
@@ -50,7 +49,14 @@ func main() {
 		arguments = append(arguments, args[2:]...)
 	}
 
-	if err := goose.Run(command, db.DB, *dir, arguments...); err != nil {
-		log.Fatalf("goose %v: %v", command, err)
+	goose.SetTableName("goose_db_version")
+	if err := goose.Run(command, db.DB, filepath.Join(*dir, "sql"), arguments...); err != nil {
+		log.Fatalf("Failed to run database sql migrations: %v %v", command, err)
+	}
+
+	goose.SetTableName("goose_db_go_version")
+	migrations.Initialize()
+	if err := goose.Run(command, db.DB, filepath.Join(*dir, "go"), arguments...); err != nil {
+		log.Fatalf("Failed to run database go migrations: %v %v", command, err)
 	}
 }

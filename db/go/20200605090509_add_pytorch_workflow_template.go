@@ -88,8 +88,11 @@ templates:
 
 const pytorchMnistWorkflowTemplateName = "PyTorch Training"
 
-func init() {
-	goose.AddMigration(Up20200605090509, Down20200605090509)
+func initialize20200605090509() {
+	if _, ok := initializedMigrations[20200605090509]; !ok {
+		goose.AddMigration(Up20200605090509, Down20200605090509)
+		initializedMigrations[20200605090509] = true
+	}
 }
 
 // Up20200605090509 will insert a Pytorch workflow template to each user.
@@ -99,6 +102,16 @@ func Up20200605090509(tx *sql.Tx) error {
 	client, err := getClient()
 	if err != nil {
 		return err
+	}
+	defer client.DB.Close()
+
+	migrationsRan, err := getRanSQLMigrations(client)
+	if err != nil {
+		return err
+	}
+
+	if _, ok := migrationsRan[20200605090509]; ok {
+		return nil
 	}
 
 	namespaces, err := client.ListOnepanelEnabledNamespaces()

@@ -3,6 +3,8 @@ package v1
 import (
 	"fmt"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/onepanelio/core/pkg/util/types"
+	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"github.com/onepanelio/core/util/sql"
 	networking "istio.io/api/networking/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
@@ -35,7 +37,7 @@ type Workspace struct {
 	Namespace                string
 	UID                      string `valid:"stringlength(3|30)~UID should be between 3 to 30 characters,dns,required"`
 	Name                     string `valid:"stringlength(3|30)~Name should be between 3 to 30 characters,matches(^[a-zA-Z]([-a-z0-9 ]*[a-z0-9])?)~Name must start with an alphabetic character and otherwise contain alphanumeric characters or -,required"`
-	Labels                   map[string]string
+	Labels                   types.JSONLabels
 	Parameters               []Parameter
 	ParametersBytes          []byte                   `db:"parameters"` // to load from database
 	Status                   WorkspaceStatus          `db:"status"`
@@ -63,10 +65,33 @@ func (w *Workspace) GetURL(protocol, domain string) string {
 	return fmt.Sprintf("%v%v--%v.%v", protocol, w.UID, w.Namespace, domain)
 }
 
+// GetParameterValue returns the value of the parameter with the given name, or nil if there is no such parameter
+func (w *Workspace) GetParameterValue(name string) *string {
+	for _, p := range w.Parameters {
+		if p.Name == name {
+			return p.Value
+		}
+	}
+
+	return nil
+}
+
+// GenerateUID generates a uid from the input name and sets it on the workspace
+func (w *Workspace) GenerateUID(name string) error {
+	result, err := uid2.GenerateUID(name, 30)
+	if err != nil {
+		return err
+	}
+
+	w.UID = result
+
+	return nil
+}
+
 // getWorkspaceColumns returns all of the columns for workspace modified by alias, destination.
 // see formatColumnSelect
 func getWorkspaceColumns(aliasAndDestination ...string) []string {
-	columns := []string{"id", "created_at", "modified_at", "uid", "name", "namespace", "parameters", "workspace_template_id", "workspace_template_version"}
+	columns := []string{"id", "created_at", "modified_at", "uid", "name", "namespace", "parameters", "workspace_template_id", "workspace_template_version", "labels"}
 	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }
 

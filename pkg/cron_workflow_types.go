@@ -3,6 +3,7 @@ package v1
 import (
 	"encoding/json"
 	"github.com/onepanelio/core/pkg/util/mapping"
+	"github.com/onepanelio/core/pkg/util/types"
 	"github.com/onepanelio/core/util/sql"
 	"gopkg.in/yaml.v2"
 	"time"
@@ -17,51 +18,28 @@ type CronWorkflow struct {
 	Name                      string
 	GenerateName              string
 	WorkflowExecution         *WorkflowExecution
-	Labels                    map[string]string
+	Labels                    types.JSONLabels
 	Version                   int64
 	WorkflowTemplateVersionID uint64 `db:"workflow_template_version_id"`
 	Manifest                  string
 	Namespace                 string `db:"namespace"`
 }
 
+// CronWorkflowManifest is a client representation of a CronWorkflowManifest
+// It is usually provided as YAML by a client and this struct helps to marshal/unmarshal it
+type CronWorkflowManifest struct {
+	WorkflowExecutionSpec WorkflowExecutionSpec `json:"workflowSpec" yaml:"workflowSpec"`
+}
+
 // GetParametersFromWorkflowSpec parses the parameters from the CronWorkflow's manifest
 func (cw *CronWorkflow) GetParametersFromWorkflowSpec() ([]Parameter, error) {
-	var parameters []Parameter
+	manifestSpec := &CronWorkflowManifest{}
 
-	mappedData := make(map[string]interface{})
-
-	if err := yaml.Unmarshal([]byte(cw.Manifest), mappedData); err != nil {
+	if err := yaml.Unmarshal([]byte(cw.Manifest), manifestSpec); err != nil {
 		return nil, err
 	}
 
-	workflowSpec, ok := mappedData["workflowSpec"]
-	if !ok {
-		return parameters, nil
-	}
-
-	workflowSpecMap := workflowSpec.(map[interface{}]interface{})
-	arguments, ok := workflowSpecMap["arguments"]
-	if !ok {
-		return parameters, nil
-	}
-
-	argumentsMap := arguments.(map[interface{}]interface{})
-	parametersRaw, ok := argumentsMap["parameters"]
-	if !ok {
-		return parameters, nil
-	}
-
-	parametersArray, ok := parametersRaw.([]interface{})
-	for _, parameter := range parametersArray {
-		paramMap, ok := parameter.(map[interface{}]interface{})
-		if !ok {
-			continue
-		}
-
-		workflowParameter := ParameterFromMap(paramMap)
-
-		parameters = append(parameters, *workflowParameter)
-	}
+	parameters := manifestSpec.WorkflowExecutionSpec.Arguments.Parameters
 
 	return parameters, nil
 }
@@ -108,7 +86,7 @@ func (cw *CronWorkflow) AddToManifestSpec(key, manifest string) error {
 // getCronWorkflowColumns returns all of the columns for cronWorkflow modified by alias, destination.
 // see formatColumnSelect
 func getCronWorkflowColumns(aliasAndDestination ...string) []string {
-	columns := []string{"id", "created_at", "uid", "name", "workflow_template_version_id", "manifest", "namespace"}
+	columns := []string{"id", "created_at", "uid", "name", "workflow_template_version_id", "manifest", "namespace", "labels"}
 	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }
 

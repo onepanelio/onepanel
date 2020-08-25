@@ -34,3 +34,8 @@ docker-push:
 	docker push onepanel/core:$(COMMIT_HASH)
 
 docker: docker-build docker-push
+
+run-tests:
+	docker run --rm --name test-onepanel-postgres -p 5432:5432 -e POSTGRES_USER=admin -e POSTGRES_PASSWORD=tester -e POSTGRES_DB=onepanel -d  postgres:12.3
+	go test github.com/onepanelio/core/pkg -count=1 ||:
+	docker stop test-onepanel-postgres

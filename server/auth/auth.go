@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/onepanelio/core/api"
 	"net/http"
 	"strings"
@@ -50,6 +51,10 @@ func getBearerToken(ctx context.Context) (*string, bool) {
 		}
 	}
 
+	for _, t := range md.Get("onepanel-auth-token") {
+		return &t, true
+	}
+
 	return nil, false
 }
 
@@ -81,12 +86,13 @@ func IsAuthorized(c *v1.Client, namespace, verb, group, resource, name string) (
 		},
 	})
 
+	deniedMsg := fmt.Sprintf(`Permission denied. Namespace: '%v', Verb: '%v', Group: '%v', Resource '%v', Name: '%v'`, namespace, verb, group, resource, name)
 	if err != nil {
-		return false, status.Error(codes.PermissionDenied, "Permission denied.")
+		return false, status.Error(codes.PermissionDenied, deniedMsg)
 	}
 	allowed = review.Status.Allowed
 	if !allowed {
-		return false, status.Error(codes.PermissionDenied, "Permission denied.")
+		return false, status.Error(codes.PermissionDenied, deniedMsg)
 	}
 
 	return
@@ -98,6 +104,7 @@ func IsAuthorized(c *v1.Client, namespace, verb, group, resource, name string) (
 //   2. Is there a token? There should be a token for everything except logging in.
 func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfig) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		// Check if the provided token is valid. This does not require a token in the header.
 		if info.FullMethod == "/api.AuthService/IsValidToken" {
 			md, ok := metadata.FromIncomingContext(ctx)
 			if !ok {
@@ -132,16 +139,18 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfi
 				if dotIndex != -1 {
 					workspaceAndNamespace := xOriginalAuth[0:dotIndex]
 					pieces := strings.Split(workspaceAndNamespace, "--")
-					workspaceName := pieces[0]
-					namespace := pieces[1]
+					if len(pieces) > 1 {
+						workspaceName := pieces[0]
+						namespace := pieces[1]
 
-					isAuthorizedRequest, ok := req.(*api.IsAuthorizedRequest)
-					if ok {
-						isAuthorizedRequest.IsAuthorized.Namespace = namespace
-						isAuthorizedRequest.IsAuthorized.Resource = "workspaces"
-						isAuthorizedRequest.IsAuthorized.Group = "onepanel.io"
-						isAuthorizedRequest.IsAuthorized.ResourceName = workspaceName
-						isAuthorizedRequest.IsAuthorized.Verb = "get"
+						isAuthorizedRequest, ok := req.(*api.IsAuthorizedRequest)
+						if ok {
+							isAuthorizedRequest.IsAuthorized.Namespace = namespace
+							isAuthorizedRequest.IsAuthorized.Resource = "workspaces"
+							isAuthorizedRequest.IsAuthorized.Group = "onepanel.io"
+							isAuthorizedRequest.IsAuthorized.ResourceName = workspaceName
+							isAuthorizedRequest.IsAuthorized.Verb = "get"
+						}
 					}
 				}
 			}

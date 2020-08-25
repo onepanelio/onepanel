@@ -5,13 +5,19 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
+	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/onepanelio/core/server/converter"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc/codes"
 	"time"
 )
+
+var reservedWorkspaceNames = map[string]bool{
+	"modeldb": true,
+}
 
 type WorkspaceServer struct{}
 
@@ -23,7 +29,7 @@ func apiWorkspace(wt *v1.Workspace, config v1.SystemConfig) *api.Workspace {
 		log.WithFields(log.Fields{
 			"Method": "apiWorkspace",
 			"Error":  "protocol is nil",
-		})
+		}).Error("apiWorkspace")
 
 		return nil
 	}
@@ -32,7 +38,7 @@ func apiWorkspace(wt *v1.Workspace, config v1.SystemConfig) *api.Workspace {
 		log.WithFields(log.Fields{
 			"Method": "apiWorkspace",
 			"Error":  "domain is nil",
-		})
+		}).Error("apiWorkspace")
 
 		return nil
 	}
@@ -106,6 +112,10 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 		})
 	}
 
+	if _, isReserved := reservedWorkspaceNames[workspace.Name]; isReserved {
+		return nil, util.NewUserError(codes.AlreadyExists, "That name is reserved, choose a different name for the workspace.")
+	}
+
 	workspace, err = client.CreateWorkspace(req.Namespace, workspace)
 	if err != nil {
 		return nil, err
@@ -143,6 +153,11 @@ func (s *WorkspaceServer) GetWorkspace(ctx context.Context, req *api.GetWorkspac
 	// We add the template parameters because they have additional information on the options for certain parameters.
 	// e.g. select types need to know the options so they can display them, and the selected option properly.
 	templateParameters, err := v1.ParseParametersFromManifest([]byte(workspace.WorkflowTemplateVersion.Manifest))
+	if err != nil {
+		return nil, err
+	}
+
+	templateParameters, err = sysConfig.UpdateNodePoolOptions(templateParameters)
 	if err != nil {
 		return nil, err
 	}

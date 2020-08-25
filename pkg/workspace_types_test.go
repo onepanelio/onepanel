@@ -28,7 +28,7 @@ func assertWorkspaceNameValid(t *testing.T, name string) {
 	assert.True(t, valid)
 }
 
-func TestWorkspaceNameValidation_RegexValid(t *testing.T) {
+func Test_WorkspaceNameValidation_RegexValid(t *testing.T) {
 	assertWorkspaceNameInvalid(t, "600s")
 
 	assertWorkspaceNameValid(t, "test-5")

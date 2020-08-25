@@ -16,13 +16,14 @@ type WorkspaceTemplateServer struct{}
 
 func apiWorkspaceTemplate(wt *v1.WorkspaceTemplate) *api.WorkspaceTemplate {
 	res := &api.WorkspaceTemplate{
-		Uid:       wt.UID,
-		Name:      wt.Name,
-		Version:   wt.Version,
-		Manifest:  wt.Manifest,
-		IsLatest:  wt.IsLatest,
-		CreatedAt: wt.CreatedAt.UTC().Format(time.RFC3339),
-		Labels:    converter.MappingToKeyValue(wt.Labels),
+		Uid:         wt.UID,
+		Name:        wt.Name,
+		Description: wt.Description,
+		Version:     wt.Version,
+		Manifest:    wt.Manifest,
+		IsLatest:    wt.IsLatest,
+		CreatedAt:   wt.CreatedAt.UTC().Format(time.RFC3339),
+		Labels:      converter.MappingToKeyValue(wt.Labels),
 	}
 
 	if wt.WorkflowTemplate != nil {
@@ -50,7 +51,8 @@ func (s WorkspaceTemplateServer) GenerateWorkspaceTemplateWorkflowTemplate(ctx c
 	}
 
 	workspaceTemplate := &v1.WorkspaceTemplate{
-		Manifest: req.WorkspaceTemplate.Manifest,
+		Namespace: req.Namespace,
+		Manifest:  req.WorkspaceTemplate.Manifest,
 	}
 	workflowTemplate, err := client.GenerateWorkspaceTemplateWorkflowTemplate(workspaceTemplate)
 
@@ -71,9 +73,11 @@ func (s *WorkspaceTemplateServer) CreateWorkspaceTemplate(ctx context.Context, r
 	}
 
 	workspaceTemplate := &v1.WorkspaceTemplate{
-		Name:     req.WorkspaceTemplate.Name,
-		Manifest: req.WorkspaceTemplate.Manifest,
-		Labels:   converter.APIKeyValueToLabel(req.WorkspaceTemplate.Labels),
+		Namespace:   req.Namespace,
+		Name:        req.WorkspaceTemplate.Name,
+		Manifest:    req.WorkspaceTemplate.Manifest,
+		Description: req.WorkspaceTemplate.Description,
+		Labels:      converter.APIKeyValueToLabel(req.WorkspaceTemplate.Labels),
 	}
 	workspaceTemplate, err = client.CreateWorkspaceTemplate(req.Namespace, workspaceTemplate)
 	if err != nil {
@@ -93,9 +97,11 @@ func (s *WorkspaceTemplateServer) UpdateWorkspaceTemplate(ctx context.Context, r
 	}
 
 	workspaceTemplate := &v1.WorkspaceTemplate{
-		UID:      req.Uid,
-		Manifest: req.WorkspaceTemplate.Manifest,
-		Labels:   converter.APIKeyValueToLabel(req.WorkspaceTemplate.Labels),
+		Namespace:   req.Namespace,
+		UID:         req.Uid,
+		Manifest:    req.WorkspaceTemplate.Manifest,
+		Description: req.WorkspaceTemplate.Description,
+		Labels:      converter.APIKeyValueToLabel(req.WorkspaceTemplate.Labels),
 	}
 	workspaceTemplate, err = client.UpdateWorkspaceTemplate(req.Namespace, workspaceTemplate)
 	if err != nil {

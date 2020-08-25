@@ -3,6 +3,8 @@ package v1
 import (
 	"fmt"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/onepanelio/core/pkg/util/types"
+	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"github.com/onepanelio/core/util/sql"
 	"sigs.k8s.io/yaml"
 	"time"
@@ -21,8 +23,21 @@ type WorkspaceTemplate struct {
 	Manifest                   string
 	IsLatest                   bool
 	WorkflowTemplate           *WorkflowTemplate `db:"workflow_template"`
-	Labels                     map[string]string
+	Labels                     types.JSONLabels
 	WorkflowTemplateID         uint64 `db:"workflow_template_id"`
+	Description                string
+}
+
+// GenerateUID generates a uid from the input name and sets it on the workflow template
+func (wt *WorkspaceTemplate) GenerateUID(name string) error {
+	result, err := uid2.GenerateUID(name, 30)
+	if err != nil {
+		return err
+	}
+
+	wt.UID = result
+
+	return nil
 }
 
 // InjectRuntimeParameters will inject all runtime variables into the WorkflowTemplate's manifest.
@@ -85,6 +100,13 @@ func WorkspaceTemplatesToVersionIDs(resources []*WorkspaceTemplate) (ids []uint6
 // getWorkspaceTemplateColumns returns all of the columns for workspace template modified by alias, destination.
 // see formatColumnSelect
 func getWorkspaceTemplateColumns(aliasAndDestination ...string) []string {
-	columns := []string{"id", "uid", "created_at", "modified_at", "name", "namespace", "is_archived", "workflow_template_id"}
+	columns := []string{"id", "uid", "created_at", "modified_at", "name", "description", "namespace", "is_archived", "workflow_template_id", "labels"}
+	return sql.FormatColumnSelect(columns, aliasAndDestination...)
+}
+
+// getWorkspaceTemplateColumnsWithoutLabels returns all of the columns for workspace template, excluding labels, modified by alias, destination.
+// see formatColumnSelect
+func getWorkspaceTemplateColumnsWithoutLabels(aliasAndDestination ...string) []string {
+	columns := []string{"id", "uid", "created_at", "modified_at", "name", "description", "namespace", "is_archived", "workflow_template_id"}
 	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }

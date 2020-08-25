@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"fmt"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"gopkg.in/yaml.v2"
 )
@@ -16,114 +17,90 @@ type ParameterOption struct {
 type Parameter struct {
 	Name        string             `json:"name" protobuf:"bytes,1,opt,name=name"`
 	Value       *string            `json:"value,omitempty" protobuf:"bytes,2,opt,name=value"`
+	Visibility  *string            `json:"visibility,omitempty"`
 	Type        string             `json:"type,omitempty" protobuf:"bytes,3,opt,name=type"`
-	DisplayName *string            `json:"displayName,omitempty" protobuf:"bytes,4,opt,name=displayName"`
+	DisplayName *string            `json:"displayName,omitempty" yaml:"displayName"`
 	Hint        *string            `json:"hint,omitempty" protobuf:"bytes,5,opt,name=hint"`
 	Options     []*ParameterOption `json:"options,omitempty" protobuf:"bytes,6,opt,name=options"`
 	Required    bool               `json:"required,omitempty" protobuf:"bytes,7,opt,name=required"`
 }
 
-func ParameterFromMap(paramMap map[interface{}]interface{}) *Parameter {
-	workflowParameter := Parameter{
-		Options: []*ParameterOption{},
+// IsValidParameter returns nil if the parameter is valid or an error otherwise
+func IsValidParameter(parameter Parameter) error {
+	if parameter.Visibility == nil {
+		return nil
 	}
 
-	// TODO choose a consistent way and use that.
-	if value, ok := paramMap["displayname"]; ok {
-		if displayName, ok := value.(string); ok {
-			workflowParameter.DisplayName = &displayName
-		}
-	} else if value, ok := paramMap["displayName"]; ok {
-		if displayName, ok := value.(string); ok {
-			workflowParameter.DisplayName = &displayName
-		}
+	visibility := *parameter.Visibility
+	if visibility != "public" && visibility != "protected" && visibility != "internal" && visibility != "private" {
+		return fmt.Errorf("invalid visibility '%v' for parameter '%v'", visibility, parameter.Name)
 	}
 
-	if value, ok := paramMap["hint"]; ok {
-		if hint, ok := value.(string); ok {
-			workflowParameter.Hint = ptr.String(hint)
-		}
-	}
-
-	if value, ok := paramMap["required"]; ok {
-		if required, ok := value.(bool); ok {
-			workflowParameter.Required = required
-		}
-	}
-
-	if value, ok := paramMap["type"]; ok {
-		if typeValue, ok := value.(string); ok {
-			workflowParameter.Type = typeValue
-		}
-	}
-
-	if value, ok := paramMap["name"]; ok {
-		if nameValue, ok := value.(string); ok {
-			workflowParameter.Name = nameValue
-		}
-	}
-
-	if value, ok := paramMap["value"]; ok {
-		if valueValue, ok := value.(string); ok {
-			workflowParameter.Value = &valueValue
-		}
-	}
-
-	options := paramMap["options"]
-	optionsArray, ok := options.([]interface{})
-	if !ok {
-		return &workflowParameter
-	}
-
-	for _, option := range optionsArray {
-		optionMap := option.(map[interface{}]interface{})
-
-		newOption := ParameterOption{
-			Name:  optionMap["name"].(string),
-			Value: optionMap["value"].(string),
-		}
-
-		workflowParameter.Options = append(workflowParameter.Options, &newOption)
-	}
-
-	return &workflowParameter
+	return nil
 }
 
+// IsValidParameters returns nil if all parameters are valid or an error otherwise
+func IsValidParameters(parameters []Parameter) error {
+	for _, param := range parameters {
+		if err := IsValidParameter(param); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Arguments are the arguments in a manifest file.
 type Arguments struct {
-	Parameters []Parameter `json:"parameters" protobuf:"bytes,1,opt,name=parameters"`
+	Parameters []Parameter `json:"parameters"`
 }
 
+// WorkflowTemplateManifest is a client representation of a WorkflowTemplate
+// It is usually provided as YAML by a client and this struct helps to marshal/unmarshal it
+type WorkflowTemplateManifest struct {
+	Arguments Arguments
+}
+
+// WorkflowExecutionSpec is a client representation of a WorkflowExecution.
+// It is usually provided as YAML by a client and this struct helps to marshal/unmarshal it
+// This may be redundant with WorkflowTemplateManifest and should be looked at. # TODO
+type WorkflowExecutionSpec struct {
+	Arguments Arguments
+}
+
+// ParseParametersFromManifest takes a manifest and picks out the parameters and returns them as structs
 func ParseParametersFromManifest(manifest []byte) ([]Parameter, error) {
-	var parameters []Parameter
+	manifestResult := &WorkflowTemplateManifest{
+		Arguments: Arguments{},
+	}
 
-	mappedData := make(map[string]interface{})
-
-	if err := yaml.Unmarshal(manifest, mappedData); err != nil {
+	err := yaml.Unmarshal(manifest, manifestResult)
+	if err != nil {
 		return nil, err
 	}
 
-	arguments, ok := mappedData["arguments"]
-	if !ok {
-		return parameters, nil
-	}
-
-	argumentsMap := arguments.(map[interface{}]interface{})
-	parametersRaw, ok := argumentsMap["parameters"]
-	if !ok {
-		return parameters, nil
-	}
-
-	parametersArray, ok := parametersRaw.([]interface{})
-	for _, parameter := range parametersArray {
-		paramMap, ok := parameter.(map[interface{}]interface{})
-		if !ok {
-			continue
+	// Default parameter value
+	for i := range manifestResult.Arguments.Parameters {
+		parameter := &manifestResult.Arguments.Parameters[i]
+		if parameter.Visibility == nil {
+			parameter.Visibility = ptr.String("public")
 		}
-
-		workflowParameter := ParameterFromMap(paramMap)
-
-		parameters = append(parameters, *workflowParameter)
 	}
 
-	return parameters, nil
+	if err := IsValidParameters(manifestResult.Arguments.Parameters); err != nil {
+		return nil, err
+	}
+
+	return manifestResult.Arguments.Parameters, nil
+}
+
+// MapParametersByName returns a map where the parameter name is the key and the parameter is the value
+func MapParametersByName(parameters []Parameter) map[string]Parameter {
+	result := make(map[string]Parameter)
+
+	for _, param := range parameters {
+		result[param.Name] = param
+	}
+
+	return result
 }

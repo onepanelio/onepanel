@@ -2,14 +2,19 @@ package v1
 
 import (
 	"bufio"
+	"cloud.google.com/go/storage"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
+	"github.com/onepanelio/core/pkg/util/gcs"
 	"github.com/onepanelio/core/pkg/util/label"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
+	"github.com/onepanelio/core/pkg/util/types"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
+	"golang.org/x/net/context"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
@@ -85,6 +90,18 @@ func UnmarshalWorkflows(wfBytes []byte, strict bool) (wfs []wfv1.Workflow, err e
 	return
 }
 
+// getWorkflowsFromWorkflowTemplate parses the WorkflowTemplate manifest and returns the argo workflows from it
+func getWorkflowsFromWorkflowTemplate(wt *WorkflowTemplate) (wfs []wfv1.Workflow, err error) {
+	manifest, err := wt.GetWorkflowManifestBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	wfs, err = UnmarshalWorkflows(manifest, true)
+
+	return
+}
+
 // appendArtifactRepositoryConfigIfMissing appends default artifact repository config to artifacts that have a key.
 // Artifacts that contain anything other than key are skipped.
 func injectArtifactRepositoryConfig(artifact *wfv1.Artifact, namespaceConfig *NamespaceConfig) {
@@ -94,14 +111,87 @@ func injectArtifactRepositoryConfig(artifact *wfv1.Artifact, namespaceConfig *Na
 		artifact.S3.Bucket = s3Config.Bucket
 		artifact.S3.Region = s3Config.Region
 		artifact.S3.Insecure = ptr.Bool(s3Config.Insecure)
-		artifact.S3.SecretKeySecret = s3Config.SecretKeySecret
-		artifact.S3.AccessKeySecret = s3Config.AccessKeySecret
+		artifact.S3.SecretKeySecret = corev1.SecretKeySelector{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: s3Config.SecretKeySecret.Name,
+			},
+			Key: s3Config.SecretKeySecret.Key,
+		}
+		artifact.S3.AccessKeySecret = corev1.SecretKeySelector{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: s3Config.AccessKeySecret.Name,
+			},
+			Key: s3Config.AccessKeySecret.Key,
+		}
+	}
+
+	if artifact.GCS != nil && namespaceConfig.ArtifactRepository.GCS != nil {
+		gcsConfig := namespaceConfig.ArtifactRepository.GCS
+		artifact.GCS.Bucket = gcsConfig.Bucket
+		artifact.GCS.Key = gcsConfig.KeyFormat
+		artifact.GCS.ServiceAccountKeySecret.Name = "onepanel"
+		artifact.GCS.ServiceAccountKeySecret.Key = "serviceAccountKey"
 	}
 
 	// Default to no compression for artifacts
 	artifact.Archive = &wfv1.ArchiveStrategy{
 		None: &wfv1.NoneStrategy{},
 	}
+}
+
+// injectContainerResourceQuotas adds resource requests and limits if they exist
+func injectContainerResourceQuotas(wf *wfv1.Workflow, template *wfv1.Template, systemConfig SystemConfig) {
+	if template.NodeSelector == nil {
+		return
+	}
+
+	var value string
+	for k, v := range template.NodeSelector {
+		if k == *systemConfig.NodePoolLabel() {
+			value = v
+			break
+		}
+	}
+	if value == "" {
+		return
+	}
+	if strings.Contains(value, "{{workflow.") {
+		parts := strings.Split(strings.Replace(value, "}}", "", -1), ".")
+		paramName := parts[len(parts)-1]
+		for _, param := range wf.Spec.Arguments.Parameters {
+			if param.Name == paramName && param.Value != nil {
+				value = *param.Value
+				break
+			}
+		}
+	}
+
+	option, err := systemConfig.NodePoolOptionByValue(value)
+	if err != nil {
+		return
+	}
+	if option != nil && option.Resources.Limits != nil {
+		// If a node is selected specifically, match the resources request to limits
+		option.Resources.Requests = option.Resources.Limits
+		if template.Container != nil {
+			template.Container.Resources = option.Resources
+		}
+		if template.Script != nil {
+			template.Script.Container.Resources = option.Resources
+		}
+	}
+}
+
+func injectEnvironmentVariables(container *corev1.Container, systemConfig SystemConfig) {
+	//Generate ENV vars from secret, if there is a container present in the workflow
+	//Get template ENV vars, avoid over-writing them with secret values
+	env.AddDefaultEnvVarsToContainer(container)
+	env.PrependEnvVarToContainer(container, "ONEPANEL_API_URL", systemConfig["ONEPANEL_API_URL"])
+	env.PrependEnvVarToContainer(container, "ONEPANEL_FQDN", systemConfig["ONEPANEL_FQDN"])
+	env.PrependEnvVarToContainer(container, "ONEPANEL_DOMAIN", systemConfig["ONEPANEL_DOMAIN"])
+	env.PrependEnvVarToContainer(container, "ONEPANEL_PROVIDER", systemConfig["ONEPANEL_PROVIDER"])
+	env.PrependEnvVarToContainer(container, "ONEPANEL_RESOURCE_NAMESPACE", "{{workflow.namespace}}")
+	env.PrependEnvVarToContainer(container, "ONEPANEL_RESOURCE_UID", "{{workflow.name}}")
 }
 
 func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (err error) {
@@ -144,63 +234,73 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 	if err != nil {
 		return err
 	}
-	for i, template := range wf.Spec.Templates {
+	for i := range wf.Spec.Templates {
+		template := &wf.Spec.Templates[i]
+
 		// Do not inject Istio sidecars in workflows
 		if template.Metadata.Annotations == nil {
-			wf.Spec.Templates[i].Metadata.Annotations = make(map[string]string)
+			template.Metadata.Annotations = make(map[string]string)
 		}
-		wf.Spec.Templates[i].Metadata.Annotations["sidecar.istio.io/inject"] = "false"
+		template.Metadata.Annotations["sidecar.istio.io/inject"] = "false"
 
-		if template.Container == nil {
-			continue
-		}
+		if template.Container != nil {
+			// Mount dev/shm
+			template.Container.VolumeMounts = append(template.Container.VolumeMounts, corev1.VolumeMount{
+				Name:      "sys-dshm",
+				MountPath: "/dev/shm",
+			})
 
-		// Mount dev/shm
-		wf.Spec.Templates[i].Container.VolumeMounts = append(template.Container.VolumeMounts, corev1.VolumeMount{
-			Name:      "sys-dshm",
-			MountPath: "/dev/shm",
-		})
+			injectContainerResourceQuotas(wf, template, systemConfig)
 
-		// Always add output artifacts for metrics but make them optional
-		wf.Spec.Templates[i].Outputs.Artifacts = append(template.Outputs.Artifacts, wfv1.Artifact{
-			Name:     "sys-metrics",
-			Path:     "/tmp/sys-metrics.json",
-			Optional: true,
-			Archive: &wfv1.ArchiveStrategy{
-				None: &wfv1.NoneStrategy{},
-			},
-		})
-
-		// Extend artifact credentials if only key is provided
-		for j, artifact := range template.Outputs.Artifacts {
-			injectArtifactRepositoryConfig(&artifact, namespaceConfig)
-			wf.Spec.Templates[i].Outputs.Artifacts[j] = artifact
+			injectEnvironmentVariables(template.Container, systemConfig)
 		}
 
-		for j, artifact := range template.Inputs.Artifacts {
-			injectArtifactRepositoryConfig(&artifact, namespaceConfig)
-			wf.Spec.Templates[i].Inputs.Artifacts[j] = artifact
+		if template.Script != nil {
+			injectContainerResourceQuotas(wf, template, systemConfig)
+
+			injectEnvironmentVariables(&template.Script.Container, systemConfig)
 		}
 
-		//Generate ENV vars from secret, if there is a container present in the workflow
-		//Get template ENV vars, avoid over-writing them with secret values
-		env.AddDefaultEnvVarsToContainer(template.Container)
-		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_API_URL", systemConfig["ONEPANEL_API_URL"])
-		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_FQDN", systemConfig["ONEPANEL_FQDN"])
-		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_DOMAIN", systemConfig["ONEPANEL_DOMAIN"])
-		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_PROVIDER_TYPE", systemConfig["PROVIDER_TYPE"])
-		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_RESOURCE_NAMESPACE", "{{workflow.namespace}}")
-		env.PrependEnvVarToContainer(template.Container, "ONEPANEL_RESOURCE_UID", "{{workflow.name}}")
+		if template.Container != nil || template.Script != nil {
+			// Always add output artifacts for metrics but make them optional
+			template.Outputs.Artifacts = append(template.Outputs.Artifacts, wfv1.Artifact{
+				Name:     "sys-metrics",
+				Path:     "/tmp/sys-metrics.json",
+				Optional: true,
+				Archive: &wfv1.ArchiveStrategy{
+					None: &wfv1.NoneStrategy{},
+				},
+			})
+
+			// Extend artifact credentials if only key is provided
+			for j, artifact := range template.Outputs.Artifacts {
+				injectArtifactRepositoryConfig(&artifact, namespaceConfig)
+				template.Outputs.Artifacts[j] = artifact
+			}
+
+			for j, artifact := range template.Inputs.Artifacts {
+				injectArtifactRepositoryConfig(&artifact, namespaceConfig)
+				template.Inputs.Artifacts[j] = artifact
+			}
+		}
 	}
 
 	return
 }
 
+// ArchiveWorkflowExecution marks a WorkflowExecution as archived in database
+// and deletes the argo workflow.
+//
+// If the database record does not exist, we still try to delete the argo workflow record.
+// No errors are returned if the records do not exist.
 func (c *Client) ArchiveWorkflowExecution(namespace, uid string) error {
-	_, err := sb.Update("workflow_executions").Set("is_archived", true).Where(sq.Eq{
-		"uid":       uid,
-		"namespace": namespace,
-	}).RunWith(c.DB).Exec()
+	_, err := sb.Update("workflow_executions").
+		Set("is_archived", true).
+		Where(sq.Eq{
+			"uid":       uid,
+			"namespace": namespace,
+		}).RunWith(c.DB).
+		Exec()
 	if err != nil {
 		return err
 	}
@@ -216,11 +316,10 @@ func (c *Client) ArchiveWorkflowExecution(namespace, uid string) error {
 	return nil
 }
 
-/*
-	Name is == to UID, no user friendly name.
-	Workflow execution name == uid, example: name = my-friendly-wf-name-8skjz, uid = my-friendly-wf-name-8skjz
-*/
-func (c *Client) createWorkflow(namespace string, workflowTemplateId uint64, workflowTemplateVersionId uint64, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (newDbId uint64, createdWorkflow *wfv1.Workflow, err error) {
+// createWorkflow creates the workflow in the database and argo.
+// Name is == to UID, no user friendly name.
+// Workflow execution name == uid, example: name = my-friendly-wf-name-8skjz, uid = my-friendly-wf-name-8skjz
+func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, workflowTemplateVersionID uint64, wf *wfv1.Workflow, opts *WorkflowExecutionOptions, labels types.JSONLabels) (createdWorkflow *WorkflowExecution, err error) {
 	if opts == nil {
 		opts = &WorkflowExecutionOptions{}
 	}
@@ -261,34 +360,42 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateId uint64, wor
 		wf.ObjectMeta.Labels = opts.Labels
 	}
 
-	err = injectWorkflowExecutionStatusCaller(wf, wfv1.NodeRunning)
-	if err != nil {
-		return 0, nil, err
+	if err = injectWorkflowExecutionStatusCaller(wf, wfv1.NodeRunning); err != nil {
+		return nil, err
 	}
 
-	err = injectExitHandlerWorkflowExecutionStatistic(wf, &workflowTemplateId)
-	if err != nil {
-		return 0, nil, err
+	if err = injectExitHandlerWorkflowExecutionStatistic(wf, &workflowTemplateID); err != nil {
+		return nil, err
 	}
 
 	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
-		return 0, nil, err
+		return nil, err
 	}
 
-	createdWorkflow, err = c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
+	createdArgoWorkflow, err := c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
 	if err != nil {
-		return 0, nil, err
+		return nil, err
 	}
 
-	uid, err := uid2.GenerateUID(createdWorkflow.Name, 63)
-	if err != nil {
-		return 0, nil, err
+	createdWorkflow = &WorkflowExecution{
+		Name:         createdArgoWorkflow.Name,
+		CreatedAt:    createdArgoWorkflow.CreationTimestamp.UTC(),
+		ArgoWorkflow: createdArgoWorkflow,
+		WorkflowTemplate: &WorkflowTemplate{
+			WorkflowTemplateVersionID: workflowTemplateVersionID,
+		},
+		Parameters: opts.Parameters,
+		Labels:     labels,
 	}
+
+	if err = createdWorkflow.GenerateUID(createdArgoWorkflow.Name); err != nil {
+		return nil, err
+	}
+
 	//Create an entry for workflow_executions statistic
 	//CURL code will hit the API endpoint that will update the db row
-	newDbId, err = c.insertPreWorkflowExecutionStatistic(namespace, createdWorkflow.Name, workflowTemplateVersionId, createdWorkflow.CreationTimestamp.UTC(), uid, opts.Parameters)
-	if err != nil {
-		return 0, nil, err
+	if err := c.createWorkflowExecutionDB(namespace, createdWorkflow); err != nil {
+		return nil, err
 	}
 
 	return
@@ -307,7 +414,9 @@ func (c *Client) ValidateWorkflowExecution(namespace string, manifest []byte) (e
 
 	wftmplGetter := templateresolution.WrapWorkflowTemplateInterface(c.ArgoprojV1alpha1().WorkflowTemplates(namespace))
 	for _, wf := range workflows {
-		c.injectAutomatedFields(namespace, &wf, &WorkflowExecutionOptions{})
+		if err = c.injectAutomatedFields(namespace, &wf, &WorkflowExecutionOptions{}); err != nil {
+			return err
+		}
 		_, err = validate.ValidateWorkflow(wftmplGetter, &wf, validate.ValidateOpts{})
 		if err != nil {
 			return
@@ -329,14 +438,20 @@ func (c *Client) ValidateWorkflowExecution(namespace string, manifest []byte) (e
 }
 
 // CreateWorkflowExecution creates an argo workflow execution and related resources.
-// Note that the workflow template is loaded from the database/k8s, so workflow.WorkflowTemplate.Manifest is not used.
-// Required:
-//  * workflow.Parameters
-//  * workflow.Labels (optional)
+// If workflow.Name is set, it is used instead of a generated name.
+// If there is a parameter named "workflow-execution-name" in workflow.Parameters, it is set as the name.
 func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExecution, workflowTemplate *WorkflowTemplate) (*WorkflowExecution, error) {
 	opts := &WorkflowExecutionOptions{
 		Labels:     make(map[string]string),
 		Parameters: workflow.Parameters,
+	}
+
+	if workflow.Name != "" {
+		opts.Name = workflow.Name
+	}
+
+	if workflowExecutionName := workflow.GetParameterValue("workflow-execution-name"); workflowExecutionName != nil {
+		opts.Name = *workflowExecutionName
 	}
 
 	nameUID, err := uid2.GenerateUID(workflowTemplate.Name, 63)
@@ -349,19 +464,16 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 	opts.Labels[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
 	label.MergeLabelsPrefix(opts.Labels, workflow.Labels, label.TagPrefix)
 
-	// @todo we need to enforce the below requirement in API.
-	//UX will prevent multiple workflows
-	manifest, err := workflowTemplate.GetWorkflowManifestBytes()
+	workflows, err := getWorkflowsFromWorkflowTemplate(workflowTemplate)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace":        namespace,
-			"WorkflowTemplate": workflowTemplate,
-			"Error":            err.Error(),
-		}).Error("Error with getting WorkflowManifest from workflow template")
 		return nil, err
 	}
 
-	workflows, err := UnmarshalWorkflows(manifest, true)
+	if len(workflows) != 1 {
+		return nil, fmt.Errorf("workflow Template contained more than 1 workflow execution")
+	}
+
+	createdWorkflow, err := c.createWorkflow(namespace, workflowTemplate.ID, workflowTemplate.WorkflowTemplateVersionID, &workflows[0], opts, workflow.Labels)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
@@ -371,35 +483,10 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 		return nil, err
 	}
 
-	id, createdWorkflow, err := c.createWorkflow(namespace, workflowTemplate.ID, workflowTemplate.WorkflowTemplateVersionID, &workflows[0], opts)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"Workflow":  workflow,
-			"Error":     err.Error(),
-		}).Error("Error parsing workflow.")
-		return nil, err
-	}
-
-	if _, err := c.InsertLabels(TypeWorkflowExecution, id, workflow.Labels); err != nil {
-		return nil, err
-	}
-
-	if createdWorkflow == nil {
-		err = errors.New("unable to create workflow")
-		log.WithFields(log.Fields{
-			"Namespace":        namespace,
-			"WorkflowTemplate": workflowTemplate,
-			"Error":            err.Error(),
-		}).Error("Error parsing workflow.")
-
-		return nil, err
-	}
-
-	workflow.ID = id
+	workflow.ID = createdWorkflow.ID
 	workflow.Name = createdWorkflow.Name
-	workflow.CreatedAt = createdWorkflow.CreationTimestamp.UTC()
-	workflow.UID = createdWorkflow.Name
+	workflow.CreatedAt = createdWorkflow.CreatedAt.UTC()
+	workflow.UID = createdWorkflow.UID
 	workflow.WorkflowTemplate = workflowTemplate
 
 	return workflow, nil
@@ -422,160 +509,115 @@ func (c *Client) CloneWorkflowExecution(namespace, uid string) (*WorkflowExecuti
 		return nil, util.NewUserError(codes.NotFound, "Error with getting workflow template.")
 	}
 
+	// We remove the name because CreateWorkflowExecution will otherwise use it to try and create an execution with that name
+	workflowExecution.Name = ""
 	return c.CreateWorkflowExecution(namespace, workflowExecution, workflowTemplate)
 }
 
-func (c *Client) insertPreWorkflowExecutionStatistic(namespace, name string, workflowTemplateVersionId uint64, createdAt time.Time, uid string, parameters []Parameter) (newId uint64, err error) {
-	tx, err := c.DB.Begin()
+// createWorkflowExecutionDB inserts a workflow execution into the database.
+// Required fields
+// * name
+// * createdAt // we sync the argo created at with the db
+// * parameters, if any
+// * WorkflowTemplate.WorkflowTemplateVersionID
+//
+// After success, the passed in WorkflowExecution will have it's ID set to the new db record.
+func (c *Client) createWorkflowExecutionDB(namespace string, workflowExecution *WorkflowExecution) (err error) {
+	parametersJSON, err := json.Marshal(workflowExecution.Parameters)
 	if err != nil {
-		return 0, err
-	}
-	defer tx.Rollback()
-
-	parametersJSON, err := json.Marshal(parameters)
-	if err != nil {
-		return 0, err
+		return err
 	}
 
-	insertMap := sq.Eq{
-		"uid":                          uid,
-		"workflow_template_version_id": workflowTemplateVersionId,
-		"name":                         name,
-		"namespace":                    namespace,
-		"created_at":                   createdAt.UTC(),
-		"phase":                        wfv1.NodePending,
-		"parameters":                   string(parametersJSON),
-		"is_archived":                  false,
+	if err := workflowExecution.GenerateUID(workflowExecution.Name); err != nil {
+		return err
 	}
 
 	err = sb.Insert("workflow_executions").
-		SetMap(insertMap).
+		SetMap(sq.Eq{
+			"UID":                          workflowExecution.UID,
+			"workflow_template_version_id": workflowExecution.WorkflowTemplate.WorkflowTemplateVersionID,
+			"name":                         workflowExecution.Name,
+			"namespace":                    namespace,
+			"created_at":                   workflowExecution.CreatedAt.UTC(),
+			"phase":                        wfv1.NodePending,
+			"parameters":                   string(parametersJSON),
+			"is_archived":                  false,
+			"labels":                       workflowExecution.Labels,
+		}).
 		Suffix("RETURNING id").
-		RunWith(tx).
+		RunWith(c.DB).
 		QueryRow().
-		Scan(&newId)
+		Scan(&workflowExecution.ID)
 
-	if err != nil {
-		return 0, err
-	}
-	err = tx.Commit()
-	if err != nil {
-		return 0, err
-	}
-	return newId, err
+	return
 }
 
 func (c *Client) FinishWorkflowExecutionStatisticViaExitHandler(namespace, name string, workflowTemplateID int64, phase wfv1.NodePhase, startedAt time.Time) (err error) {
-	tx, err := c.DB.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	updateMap := sq.Eq{
-		"started_at":  startedAt.UTC(),
-		"name":        name,
-		"namespace":   namespace,
-		"finished_at": time.Now().UTC(),
-		"phase":       phase,
-	}
-
 	_, err = sb.Update("workflow_executions").
-		SetMap(updateMap).Where(sq.Eq{"name": name}).RunWith(tx).Exec()
-	if err != nil {
-		return err
-	}
-	err = tx.Commit()
-	if err != nil {
-		return err
-	}
+		SetMap(sq.Eq{
+			"started_at":  startedAt.UTC(),
+			"name":        name,
+			"namespace":   namespace,
+			"finished_at": time.Now().UTC(),
+			"phase":       phase,
+		}).
+		Where(sq.Eq{"name": name}).
+		RunWith(c.DB).
+		Exec()
+
 	return err
 }
 
 func (c *Client) CronStartWorkflowExecutionStatisticInsert(namespace, uid string, workflowTemplateID int64) (err error) {
-	query, args, err := c.workflowTemplatesSelectBuilder(namespace).
+	queryWt := c.workflowTemplatesSelectBuilder(namespace).
 		Where(sq.Eq{
 			"wt.id": workflowTemplateID,
-		}).
-		ToSql()
-	if err != nil {
-		return err
-	}
+		})
 
 	workflowTemplate := &WorkflowTemplate{}
-	if err := c.DB.Get(workflowTemplate, query, args...); err != nil {
+	if err := c.DB.Getx(workflowTemplate, queryWt); err != nil {
 		return err
 	}
 
-	query, args, err = c.cronWorkflowSelectBuilder(namespace, workflowTemplate.UID).ToSql()
-	if err != nil {
-		return err
-	}
+	queryCw := c.cronWorkflowSelectBuilder(namespace, workflowTemplate.UID)
 
 	cronWorkflow := &CronWorkflow{}
-	if err := c.DB.Get(cronWorkflow, query, args...); err != nil {
+	if err := c.DB.Getx(cronWorkflow, queryCw); err != nil {
 		return err
 	}
-
-	cronLabels, err := c.GetDbLabels(TypeCronWorkflow, cronWorkflow.ID)
-	if err != nil {
-		return err
-	}
-
-	tx, err := c.DB.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
 
 	parametersJSON, err := cronWorkflow.GetParametersFromWorkflowSpecJSON()
 	if err != nil {
 		return err
 	}
 
-	insertMap := sq.Eq{
-		"uid":                          uid,
-		"workflow_template_version_id": cronWorkflow.WorkflowTemplateVersionID,
-		"name":                         uid,
-		"namespace":                    namespace,
-		"phase":                        wfv1.NodeRunning,
-		"started_at":                   time.Now().UTC(),
-		"cron_workflow_id":             cronWorkflow.ID,
-		"parameters":                   string(parametersJSON),
-	}
-
-	workflowExecutionId := uint64(0)
+	workflowExecutionID := uint64(0)
 	err = sb.Insert("workflow_executions").
-		SetMap(insertMap).
+		SetMap(sq.Eq{
+			"uid":                          uid,
+			"workflow_template_version_id": cronWorkflow.WorkflowTemplateVersionID,
+			"name":                         uid,
+			"namespace":                    namespace,
+			"phase":                        wfv1.NodeRunning,
+			"started_at":                   time.Now().UTC(),
+			"cron_workflow_id":             cronWorkflow.ID,
+			"parameters":                   string(parametersJSON),
+			"labels":                       cronWorkflow.Labels,
+		}).
 		Suffix("RETURNING id").
-		RunWith(tx).
+		RunWith(c.DB).
 		QueryRow().
-		Scan(&workflowExecutionId)
+		Scan(&workflowExecutionID)
 	if err != nil {
 		return err
 	}
 
-	if len(cronLabels) > 0 {
-		labelsMapped := LabelsToMapping(cronLabels...)
-		_, err = c.InsertLabelsBuilder(TypeWorkflowExecution, workflowExecutionId, labelsMapped).
-			RunWith(tx).
-			Exec()
-		if err != nil {
-			return err
-		}
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return err
-	}
 	return err
 }
 
 func (c *Client) GetWorkflowExecution(namespace, uid string) (workflow *WorkflowExecution, err error) {
 	workflow = &WorkflowExecution{}
-
-	query, args, err := sb.Select(getWorkflowExecutionColumns("we", "")...).
+	query := sb.Select(getWorkflowExecutionColumns("we")...).
 		Columns(getWorkflowTemplateColumns("wt", "workflow_template")...).
 		Columns(`wtv.manifest "workflow_template.manifest"`).
 		From("workflow_executions we").
@@ -585,12 +627,13 @@ func (c *Client) GetWorkflowExecution(namespace, uid string) (workflow *Workflow
 			"wt.namespace":   namespace,
 			"we.name":        uid,
 			"we.is_archived": false,
-		}).
-		ToSql()
-	if err != nil {
-		return nil, err
-	}
-	if err := c.DB.Get(workflow, query, args...); err != nil {
+		})
+
+	if err := c.DB.Getx(workflow, query); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+
 		return nil, err
 	}
 
@@ -608,7 +651,7 @@ func (c *Client) GetWorkflowExecution(namespace, uid string) (workflow *Workflow
 	version, err := strconv.ParseInt(
 		wf.ObjectMeta.Labels[workflowTemplateVersionLabelKey],
 		10,
-		32,
+		64,
 	)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -644,6 +687,7 @@ func (c *Client) GetWorkflowExecution(namespace, uid string) (workflow *Workflow
 	return
 }
 
+// ListWorkflowExecutions gets a list of WorkflowExecutions ordered by most recently created first.
 func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflowTemplateVersion string, paginator *pagination.PaginationRequest) (workflows []*WorkflowExecution, err error) {
 	sb := workflowExecutionsSelectBuilder(namespace, workflowTemplateUID, workflowTemplateVersion).
 		OrderBy("we.created_at DESC")
@@ -656,10 +700,11 @@ func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflow
 	return
 }
 
+// CountWorkflowExecutions returns the number of workflow executions
 func (c *Client) CountWorkflowExecutions(namespace, workflowTemplateUID, workflowTemplateVersion string) (count int, err error) {
 	err = workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, workflowTemplateVersion).
 		Columns("COUNT(*)").
-		RunWith(c.DB.DB).
+		RunWith(c.DB).
 		QueryRow().
 		Scan(&count)
 
@@ -722,7 +767,7 @@ func (c *Client) WatchWorkflowExecution(namespace, uid string) (<-chan *Workflow
 					CreatedAt:  workflow.CreationTimestamp.UTC(),
 					StartedAt:  ptr.Time(workflow.Status.StartedAt.UTC()),
 					FinishedAt: ptr.Time(workflow.Status.FinishedAt.UTC()),
-					UID:        string(workflow.UID),
+					UID:        workflow.Name,
 					Name:       workflow.Name,
 					Manifest:   string(manifest),
 				}
@@ -792,6 +837,7 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName
 	var (
 		stream    io.ReadCloser
 		s3Client  *s3.Client
+		gcsClient *gcs.Client
 		config    *NamespaceConfig
 		endOffset int
 	)
@@ -809,27 +855,58 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName
 			return nil, util.NewUserError(codes.NotFound, "Can't get configuration.")
 		}
 
-		s3Client, err = c.GetS3Client(namespace, config.ArtifactRepository.S3)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"Namespace":     namespace,
-				"UID":           uid,
-				"PodName":       podName,
-				"ContainerName": containerName,
-				"Error":         err.Error(),
-			}).Error("Can't connect to S3 storage.")
-			return nil, util.NewUserError(codes.NotFound, "Can't connect to S3 storage.")
-		}
+		switch {
+		case config.ArtifactRepository.S3 != nil:
+			{
+				s3Client, err = c.GetS3Client(namespace, config.ArtifactRepository.S3)
+				if err != nil {
+					log.WithFields(log.Fields{
+						"Namespace":     namespace,
+						"UID":           uid,
+						"PodName":       podName,
+						"ContainerName": containerName,
+						"Error":         err.Error(),
+					}).Error("Can't connect to S3 storage.")
+					return nil, util.NewUserError(codes.NotFound, "Can't connect to S3 storage.")
+				}
 
-		opts := s3.GetObjectOptions{}
-		endOffset, err = strconv.Atoi(readEndOffset)
-		if err != nil {
-			return nil, util.NewUserError(codes.InvalidArgument, "Invaild range.")
-		}
-		opts.SetRange(0, int64(endOffset))
+				opts := s3.GetObjectOptions{}
+				endOffset, err = strconv.Atoi(readEndOffset)
+				if err != nil {
+					return nil, util.NewUserError(codes.InvalidArgument, "Invalid range.")
+				}
+				err = opts.SetRange(0, int64(endOffset))
+				if err != nil {
+					log.WithFields(log.Fields{
+						"Namespace":     namespace,
+						"UID":           uid,
+						"PodName":       podName,
+						"ContainerName": containerName,
+						"Error":         err.Error(),
+					}).Error("Can't set range.")
+					return nil, util.NewUserError(codes.NotFound, "Can't connect to S3 storage.")
+				}
 
-		key := config.ArtifactRepository.S3.FormatKey(namespace, uid, podName) + "/" + containerName + ".log"
-		stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, key, opts)
+				key := config.ArtifactRepository.S3.FormatKey(namespace, uid, podName) + "/" + containerName + ".log"
+				stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, key, opts)
+			}
+		case config.ArtifactRepository.GCS != nil:
+			{
+				gcsClient, err = c.GetGCSClient(namespace, config.ArtifactRepository.GCS)
+				if err != nil {
+					log.WithFields(log.Fields{
+						"Namespace":     namespace,
+						"UID":           uid,
+						"PodName":       podName,
+						"ContainerName": containerName,
+						"Error":         err.Error(),
+					}).Error("Can't connect to GCS storage.")
+					return nil, util.NewUserError(codes.NotFound, "Can't connect to GCS storage.")
+				}
+				key := config.ArtifactRepository.GCS.FormatKey(namespace, uid, podName) + "/" + containerName + ".log"
+				stream, err = gcsClient.GetObject(config.ArtifactRepository.GCS.Bucket, key)
+			}
+		}
 	} else {
 		stream, err = c.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{
 			Container:  containerName,
@@ -852,21 +929,43 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName
 
 	logWatcher := make(chan *LogEntry)
 	go func() {
-		scanner := bufio.NewScanner(stream)
-		for scanner.Scan() {
-			text := scanner.Text()
-			parts := strings.Split(text, " ")
-			timestamp, err := time.Parse(time.RFC3339, parts[0])
-			if err != nil {
-				logWatcher <- &LogEntry{Content: text}
-			} else {
-				logWatcher <- &LogEntry{
-					Timestamp: timestamp,
-					Content:   strings.Join(parts[1:], " "),
+		buffer := make([]byte, 4096)
+		reader := bufio.NewReader(stream)
+
+		newLine := true
+		for {
+			bytesRead, err := reader.Read(buffer)
+			if err != nil && err.Error() != "EOF" {
+				break
+			}
+			content := string(buffer[:bytesRead])
+
+			if newLine {
+				parts := strings.Split(content, " ")
+				if len(parts) == 0 {
+					logWatcher <- &LogEntry{Content: content}
+				} else {
+					timestamp, err := time.Parse(time.RFC3339, parts[0])
+					if err != nil {
+						logWatcher <- &LogEntry{Content: content}
+					} else {
+						logWatcher <- &LogEntry{
+							Timestamp: timestamp,
+							Content:   strings.Join(parts[1:], " "),
+						}
+					}
 				}
+			} else {
+				logWatcher <- &LogEntry{Content: content}
 			}
 
+			if err != nil && err.Error() == "EOF" {
+				break
+			}
+
+			newLine = strings.Contains(content, "\n")
 		}
+
 		close(logWatcher)
 	}()
 
@@ -880,9 +979,10 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, uid, podName string) (me
 	}
 
 	var (
-		stream   io.ReadCloser
-		s3Client *s3.Client
-		config   *NamespaceConfig
+		stream    io.ReadCloser
+		s3Client  *s3.Client
+		gcsClient *gcs.Client
+		config    *NamespaceConfig
 	)
 
 	config, err = c.GetNamespaceConfig(namespace)
@@ -896,30 +996,60 @@ func (c *Client) GetWorkflowExecutionMetrics(namespace, uid, podName string) (me
 		return nil, util.NewUserError(codes.NotFound, "Can't get configuration.")
 	}
 
-	s3Client, err = c.GetS3Client(namespace, config.ArtifactRepository.S3)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"UID":       uid,
-			"PodName":   podName,
-			"Error":     err.Error(),
-		}).Error("Can't connect to S3 storage.")
-		return nil, util.NewUserError(codes.NotFound, "Can't connect to S3 storage.")
+	switch {
+	case config.ArtifactRepository.S3 != nil:
+		{
+			s3Client, err = c.GetS3Client(namespace, config.ArtifactRepository.S3)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"PodName":   podName,
+					"Error":     err.Error(),
+				}).Error("Can't connect to S3 storage.")
+				return nil, util.NewUserError(codes.NotFound, "Can't connect to S3 storage.")
+			}
+
+			opts := s3.GetObjectOptions{}
+
+			key := config.ArtifactRepository.S3.FormatKey(namespace, uid, podName) + "/sys-metrics.json"
+			stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, key, opts)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"PodName":   podName,
+					"Error":     err.Error(),
+				}).Error("Metrics do not exist.")
+				return nil, util.NewUserError(codes.NotFound, "Metrics do not exist.")
+			}
+		}
+	case config.ArtifactRepository.GCS != nil:
+		{
+			gcsClient, err = c.GetGCSClient(namespace, config.ArtifactRepository.GCS)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"PodName":   podName,
+					"Error":     err.Error(),
+				}).Error("Can't connect to GCS storage.")
+				return nil, util.NewUserError(codes.NotFound, "Can't connect to GCS storage.")
+			}
+			key := config.ArtifactRepository.GCS.FormatKey(namespace, uid, podName) + "/sys-metrics.json"
+			stream, err = gcsClient.GetObject(config.ArtifactRepository.GCS.Bucket, key)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"PodName":   podName,
+					"Error":     err.Error(),
+				}).Error("Metrics do not exist.")
+				return nil, util.NewUserError(codes.NotFound, "Metrics do not exist.")
+			}
+		}
 	}
 
-	opts := s3.GetObjectOptions{}
-
-	key := config.ArtifactRepository.S3.FormatKey(namespace, uid, podName) + "/sys-metrics.json"
-	stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, key, opts)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"UID":       uid,
-			"PodName":   podName,
-			"Error":     err.Error(),
-		}).Error("Metrics do not exist.")
-		return nil, util.NewUserError(codes.NotFound, "Metrics do not exist.")
-	}
 	content, err := ioutil.ReadAll(stream)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -1000,8 +1130,9 @@ func (c *Client) SuspendWorkflowExecution(namespace, uid string) (err error) {
 	return
 }
 
+// TerminateWorkflowExecution marks a workflows execution as terminated in DB and terminates the argo resource.
 func (c *Client) TerminateWorkflowExecution(namespace, uid string) (err error) {
-	query, args, err := sb.Update("workflow_executions").
+	_, err = sb.Update("workflow_executions").
 		Set("phase", "Terminated").
 		Set("started_at", time.Time.UTC(time.Now())).
 		Set("finished_at", time.Time.UTC(time.Now())).
@@ -1009,13 +1140,9 @@ func (c *Client) TerminateWorkflowExecution(namespace, uid string) (err error) {
 			"uid":       uid,
 			"namespace": namespace,
 		}).
-		ToSql()
-
+		RunWith(c.DB).
+		Exec()
 	if err != nil {
-		return err
-	}
-
-	if _, err := c.DB.Exec(query, args...); err != nil {
 		return err
 	}
 
@@ -1029,22 +1156,51 @@ func (c *Client) GetArtifact(namespace, uid, key string) (data []byte, err error
 	if err != nil {
 		return
 	}
+	var (
+		stream io.ReadCloser
+	)
+	switch {
+	case config.ArtifactRepository.S3 != nil:
+		{
+			s3Client, err := c.GetS3Client(namespace, config.ArtifactRepository.S3)
+			if err != nil {
+				return nil, err
+			}
 
-	s3Client, err := c.GetS3Client(namespace, config.ArtifactRepository.S3)
-	if err != nil {
-		return
-	}
+			opts := s3.GetObjectOptions{}
+			stream, err = s3Client.GetObject(config.ArtifactRepository.S3.Bucket, key, opts)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"Key":       key,
+					"Error":     err.Error(),
+				}).Error("Artifact does not exist.")
+				return nil, err
+			}
+		}
+	case config.ArtifactRepository.GCS != nil:
+		{
+			gcsClient, err := c.GetGCSClient(namespace, config.ArtifactRepository.GCS)
 
-	opts := s3.GetObjectOptions{}
-	stream, err := s3Client.GetObject(config.ArtifactRepository.S3.Bucket, key, opts)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Namespace": namespace,
-			"UID":       uid,
-			"Key":       key,
-			"Error":     err.Error(),
-		}).Error("Metrics do not exist.")
-		return
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"Error":     err.Error(),
+				}).Error("Artifact does not exist.")
+				return nil, util.NewUserError(codes.NotFound, "Artifact does not exist.")
+			}
+			stream, err = gcsClient.GetObject(config.ArtifactRepository.GCS.Bucket, key)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Namespace": namespace,
+					"UID":       uid,
+					"Error":     err.Error(),
+				}).Error("Artifact does not exist.")
+				return nil, util.NewUserError(codes.NotFound, "Artifact does not exist.")
+			}
+		}
 	}
 
 	data, err = ioutil.ReadAll(stream)
@@ -1061,11 +1217,6 @@ func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
 		return
 	}
 
-	s3Client, err := c.GetS3Client(namespace, config.ArtifactRepository.S3)
-	if err != nil {
-		return
-	}
-
 	files = make([]*File, 0)
 
 	if len(key) > 0 {
@@ -1073,28 +1224,75 @@ func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
 			key += "/"
 		}
 	}
+	switch {
+	case config.ArtifactRepository.S3 != nil:
+		{
+			s3Client, err := c.GetS3Client(namespace, config.ArtifactRepository.S3)
+			if err != nil {
+				return nil, err
+			}
 
-	doneCh := make(chan struct{})
-	defer close(doneCh)
-	for objInfo := range s3Client.ListObjectsV2(config.ArtifactRepository.S3.Bucket, key, false, doneCh) {
-		if objInfo.Key == key {
-			continue
+			doneCh := make(chan struct{})
+			defer close(doneCh)
+			for objInfo := range s3Client.ListObjectsV2(config.ArtifactRepository.S3.Bucket, key, false, doneCh) {
+				if objInfo.Key == key {
+					continue
+				}
+
+				isDirectory := (objInfo.ETag == "" || strings.HasSuffix(objInfo.Key, "/")) && objInfo.Size == 0
+
+				newFile := &File{
+					Path:         objInfo.Key,
+					Name:         FilePathToName(objInfo.Key),
+					Extension:    FilePathToExtension(objInfo.Key),
+					Size:         objInfo.Size,
+					LastModified: objInfo.LastModified,
+					ContentType:  objInfo.ContentType,
+					Directory:    isDirectory,
+				}
+				files = append(files, newFile)
+			}
 		}
+	case config.ArtifactRepository.GCS != nil:
+		{
+			ctx := context.Background()
+			gcsClient, err := c.GetGCSClient(namespace, config.ArtifactRepository.GCS)
+			if err != nil {
+				return nil, err
+			}
+			q := &storage.Query{
+				Delimiter: "",
+				Prefix:    key,
+				Versions:  false,
+			}
+			bucketFiles := gcsClient.Bucket(config.ArtifactRepository.GCS.Bucket).Objects(ctx, q)
 
-		isDirectory := (objInfo.ETag == "" || strings.HasSuffix(objInfo.Key, "/")) && objInfo.Size == 0
+			for true {
+				file, err := bucketFiles.Next()
+				if err != nil {
+					if err.Error() == "no more items in iterator" {
+						break
+					}
+					return nil, err
+				}
+				if file.Name == key {
+					continue
+				}
+				isDirectory := (file.Etag == "" || strings.HasSuffix(file.Name, "/")) && file.Size == 0
 
-		newFile := &File{
-			Path:         objInfo.Key,
-			Name:         FilePathToName(objInfo.Key),
-			Extension:    FilePathToExtension(objInfo.Key),
-			Size:         objInfo.Size,
-			LastModified: objInfo.LastModified,
-			ContentType:  objInfo.ContentType,
-			Directory:    isDirectory,
+				newFile := &File{
+					Path:         file.Name,
+					Name:         FilePathToName(file.Name),
+					Extension:    FilePathToExtension(file.Name),
+					Size:         file.Size,
+					LastModified: file.Updated,
+					ContentType:  file.ContentType,
+					Directory:    isDirectory,
+				}
+				files = append(files, newFile)
+			}
 		}
-		files = append(files, newFile)
 	}
-
 	return
 }
 
@@ -1357,17 +1555,8 @@ Will build a template that makes a CURL request to the onepanel-core API,
 with statistics about the workflow that was just executed.
 */
 func getCURLNodeTemplate(name, curlMethod, curlPath, curlBody string, inputs wfv1.Inputs) (template *wfv1.Template, err error) {
-	host := env.GetEnv("ONEPANEL_CORE_SERVICE_HOST", "onepanel-core.onepanel.svc.cluster.local")
-	if host == "" {
-		err = errors.New("ONEPANEL_CORE_SERVICE_HOST is empty.")
-		return
-	}
-	port := env.GetEnv("ONEPANEL_CORE_SERVICE_PORT", "80")
-	if port == "" {
-		err = errors.New("ONEPANEL_CORE_SERVICE_PORT is empty.")
-		return
-	}
-	endpoint := fmt.Sprintf("http://%s:%s%s", host, port, curlPath)
+	host := "onepanel-core.onepanel.svc.cluster.local"
+	endpoint := fmt.Sprintf("http://%s%s", host, curlPath)
 	template = &wfv1.Template{
 		Name:   name,
 		Inputs: inputs,
@@ -1536,7 +1725,7 @@ func workflowExecutionsSelectBuilder(namespace, workflowTemplateUID, workflowTem
 }
 
 func (c *Client) getWorkflowExecutionAndTemplate(namespace string, uid string) (workflow *WorkflowExecution, err error) {
-	query, args, err := sb.Select(getWorkflowExecutionColumns("we", "")...).
+	sb := sb.Select(getWorkflowExecutionColumns("we", "")...).
 		Columns(getWorkflowTemplateColumns("wt", "workflow_template")...).
 		Columns(`wtv.manifest "workflow_template.manifest"`, `wtv.version "workflow_template.version"`).
 		From("workflow_executions we").
@@ -1546,16 +1735,10 @@ func (c *Client) getWorkflowExecutionAndTemplate(namespace string, uid string) (
 			"wt.namespace":   namespace,
 			"we.name":        uid,
 			"we.is_archived": false,
-		}).
-		ToSql()
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO DB call
+		})
 
 	workflow = &WorkflowExecution{}
-	if err = c.DB.Get(workflow, query, args...); err != nil {
+	if err = c.DB.Getx(workflow, sb); err != nil {
 		return nil, err
 	}
 

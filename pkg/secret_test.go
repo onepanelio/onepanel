@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCreateSecret(t *testing.T) {
-	c := NewTestClient()
+func TestClient_CreateSecret(t *testing.T) {
+	c := DefaultTestClient()
 
 	err := c.CreateSecret("namespace", &Secret{
 		Name: "name",
@@ -15,8 +15,8 @@ func TestCreateSecret(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestGetSecret(t *testing.T) {
-	c := NewTestClient()
+func TestClient_GetSecret(t *testing.T) {
+	c := DefaultTestClient()
 
 	err := c.CreateSecret("namespace", &Secret{
 		Name: "name",

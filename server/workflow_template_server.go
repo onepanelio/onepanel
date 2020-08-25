@@ -17,10 +17,12 @@ func NewWorkflowTemplateServer() *WorkflowTemplateServer {
 	return &WorkflowTemplateServer{}
 }
 
+// apiWorkflowTemplate converts a *v1.WorkflowTemplate to a *api.WorkflowTemplate
 func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 	res := &api.WorkflowTemplate{
 		Uid:        wft.UID,
-		CreatedAt:  wft.CreatedAt.UTC().Format(time.RFC3339),
+		CreatedAt:  converter.TimestampToAPIString(&wft.CreatedAt),
+		ModifiedAt: converter.TimestampToAPIString(wft.ModifiedAt),
 		Name:       wft.Name,
 		Version:    wft.Version,
 		Versions:   wft.Versions,
@@ -28,10 +30,7 @@ func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 		IsLatest:   wft.IsLatest,
 		IsArchived: wft.IsArchived,
 		Labels:     converter.MappingToKeyValue(wft.Labels),
-	}
-
-	if wft.ModifiedAt != nil {
-		res.ModifiedAt = wft.ModifiedAt.UTC().Format(time.RFC3339)
+		Parameters: converter.ParametersToAPI(wft.Parameters),
 	}
 
 	if wft.WorkflowExecutionStatisticReport != nil {
@@ -94,31 +93,6 @@ func (s *WorkflowTemplateServer) CreateWorkflowTemplateVersion(ctx context.Conte
 		return nil, err
 	}
 
-	if _, err := client.InsertLabels(v1.TypeWorkflowTemplateVersion, workflowTemplate.WorkflowTemplateVersionID, workflowTemplate.Labels); err != nil {
-		return nil, err
-	}
-
-	req.WorkflowTemplate.Uid = workflowTemplate.UID
-	req.WorkflowTemplate.Name = workflowTemplate.Name
-	req.WorkflowTemplate.Version = workflowTemplate.Version
-
-	return req.WorkflowTemplate, nil
-}
-
-func (s *WorkflowTemplateServer) UpdateWorkflowTemplateVersion(ctx context.Context, req *api.UpdateWorkflowTemplateVersionRequest) (*api.WorkflowTemplate, error) {
-	client := getClient(ctx)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "workflowtemplates", req.WorkflowTemplate.Name)
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	workflowTemplate := &v1.WorkflowTemplate{
-		UID:      req.WorkflowTemplate.Uid,
-		Name:     req.WorkflowTemplate.Name,
-		Manifest: req.WorkflowTemplate.Manifest,
-		Version:  req.WorkflowTemplate.Version,
-	}
-
 	req.WorkflowTemplate.Uid = workflowTemplate.UID
 	req.WorkflowTemplate.Name = workflowTemplate.Name
 	req.WorkflowTemplate.Version = workflowTemplate.Version
@@ -162,7 +136,6 @@ func (s *WorkflowTemplateServer) CloneWorkflowTemplate(ctx context.Context, req 
 	}
 
 	//Verify the cloned template name doesn't exist already
-
 	templatesCount, err := client.CountWorkflowTemplatesByName(req.Name, req.Name, nil)
 	if err != nil {
 		return nil, err
@@ -215,8 +188,16 @@ func (s *WorkflowTemplateServer) ListWorkflowTemplates(ctx context.Context, req 
 		return nil, err
 	}
 
+	labelFilter, err := v1.LabelsFromString(req.Labels)
+	if err != nil {
+		return nil, err
+	}
+	filter := v1.WorkflowTemplateFilter{
+		Labels: labelFilter,
+	}
+
 	paginator := pagination.NewRequest(req.Page, req.PageSize)
-	workflowTemplates, err := client.ListWorkflowTemplates(req.Namespace, &paginator)
+	workflowTemplates, err := client.ListWorkflowTemplates(req.Namespace, &paginator, &filter)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +207,7 @@ func (s *WorkflowTemplateServer) ListWorkflowTemplates(ctx context.Context, req 
 		apiWorkflowTemplates = append(apiWorkflowTemplates, apiWorkflowTemplate(wtv))
 	}
 
-	count, err := client.CountWorkflowTemplates(req.Namespace)
+	count, err := client.CountWorkflowTemplates(req.Namespace, &filter)
 	if err != nil {
 		return nil, err
 	}

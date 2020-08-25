@@ -9,8 +9,9 @@ message Parameter {
     string displayName = 4;
     string hint = 5;
     bool required = 6;
+    string visibility = 7;
 
-    repeated ParameterOption options = 7;
+    repeated ParameterOption options = 8;
 }
 
 message ParameterOption {

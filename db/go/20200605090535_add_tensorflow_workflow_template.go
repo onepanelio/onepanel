@@ -88,8 +88,11 @@ templates:
 
 const tensorflowWorkflowTemplateName = "TensorFlow Training"
 
-func init() {
-	goose.AddMigration(Up20200605090535, Down20200605090535)
+func initialize20200605090535() {
+	if _, ok := initializedMigrations[20200605090535]; !ok {
+		goose.AddMigration(Up20200605090535, Down20200605090535)
+		initializedMigrations[20200605090535] = true
+	}
 }
 
 // Up20200605090535 will insert a tensorflow workflow template to each user.
@@ -99,6 +102,16 @@ func Up20200605090535(tx *sql.Tx) error {
 	client, err := getClient()
 	if err != nil {
 		return err
+	}
+	defer client.DB.Close()
+
+	migrationsRan, err := getRanSQLMigrations(client)
+	if err != nil {
+		return err
+	}
+
+	if _, ok := migrationsRan[20200605090535]; ok {
+		return nil
 	}
 
 	namespaces, err := client.ListOnepanelEnabledNamespaces()

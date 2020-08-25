@@ -71,14 +71,27 @@ routes:
 
 const jupyterLabTemplateName = "JupyterLab"
 
-func init() {
-	goose.AddMigration(Up20200525160514, Down20200525160514)
+func initialize20200525160514() {
+	if _, ok := initializedMigrations[20200525160514]; !ok {
+		goose.AddMigration(Up20200525160514, Down20200525160514)
+		initializedMigrations[20200525160514] = true
+	}
 }
 
 func Up20200525160514(tx *sql.Tx) error {
 	client, err := getClient()
 	if err != nil {
 		return err
+	}
+	defer client.DB.Close()
+
+	migrationsRan, err := getRanSQLMigrations(client)
+	if err != nil {
+		return err
+	}
+
+	if _, ok := migrationsRan[20200525160514]; ok {
+		return nil
 	}
 
 	namespaces, err := client.ListOnepanelEnabledNamespaces()

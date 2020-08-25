@@ -5,10 +5,9 @@ import (
 	v1 "github.com/onepanelio/core/pkg"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"github.com/pressly/goose"
-	"log"
 )
 
-const cvatWorkspaceTemplate = `# Docker containers that are part of the Workspace
+const cvatWorkspaceTemplate3 = `# Docker containers that are part of the Workspace
 containers:
 - name: cvat-db
   image: postgres:10-alpine
@@ -33,7 +32,7 @@ containers:
   - containerPort: 6379
     name: tcp
 - name: cvat
-  image: onepanel/cvat:v0.7.0
+  image: onepanel/cvat:v0.7.10-stable
   env:
   - name: DJANGO_MODWSGI_EXTRA_ARGS
     value: ""
@@ -57,11 +56,21 @@ containers:
     mountPath: /home/django/logs
   - name: models
     mountPath: /home/django/models
+  - name: share
+    mountPath: /home/django/share
 - name: cvat-ui
-  image: onepanel/cvat-ui:v0.7.0
+  image: onepanel/cvat-ui:v0.7.10-stable
   ports:
   - containerPort: 80
     name: http
+# Uncomment following lines to enable S3 FileSyncer
+# Refer to https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_quick_guide#setting-up-environment-variables
+#- name: filesyncer
+#  image: onepanel/filesyncer:v0.0.4
+#  command: ['python3', 'main.py']
+#  volumeMounts:
+#  - name: share
+#    mountPath: /mnt/share
 ports:
 - name: cvat-ui
   port: 80
@@ -82,6 +91,7 @@ routes:
   - destination:
       port:
         number: 8080
+  timeout: 600s
 - match:
   - uri:
       prefix: /
@@ -89,16 +99,18 @@ routes:
   - destination:
       port:
         number: 80
-# DAG Workflow to be executed once a Workspace action completes
-# postExecutionWorkflow:
-#   entrypoint: main
-#   templates:
-#   - name: main
-#     dag:
-#        tasks:
-#        - name: slack-notify
-#          template: slack-notify
-#   - name: slack-notify
+  timeout: 600s
+# DAG Workflow to be executed once a Workspace action completes (optional)
+# Uncomment the lines below if you want to send Slack notifications
+#postExecutionWorkflow:
+#  entrypoint: main
+#  templates:
+#  - name: main
+#    dag:
+#       tasks:
+#       - name: slack-notify
+#         template: slack-notify
+#  - name: slack-notify
 #     container:
 #       image: technosophos/slack-notify
 #       args:
@@ -108,53 +120,29 @@ routes:
 #       - -c
 `
 
-const cvatTemplateName = "CVAT"
-
-func init() {
-	goose.AddMigration(Up20200528140124, Down20200528140124)
+func initialize20200704151301() {
+	if _, ok := initializedMigrations[20200704151301]; !ok {
+		goose.AddMigration(Up20200704151301, Down20200704151301)
+		initializedMigrations[20200704151301] = true
+	}
 }
 
-// Up20200528140124 will insert the cvatTemplate to each user.
-// Each user is determined by onepanel enabled namespaces.
-// Any errors reported are logged as fatal.
-func Up20200528140124(tx *sql.Tx) error {
+// Up20200704151301 updates the CVAT template to a new version.
+func Up20200704151301(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
-
 	client, err := getClient()
 	if err != nil {
 		return err
 	}
+	defer client.DB.Close()
 
-	namespaces, err := client.ListOnepanelEnabledNamespaces()
+	migrationsRan, err := getRanSQLMigrations(client)
 	if err != nil {
 		return err
 	}
 
-	workspaceTemplate := &v1.WorkspaceTemplate{
-		Name:     cvatTemplateName,
-		Manifest: cvatWorkspaceTemplate,
-	}
-
-	for _, namespace := range namespaces {
-		if _, err := client.CreateWorkspaceTemplate(namespace.Name, workspaceTemplate); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// Down20200528140124 will attempt to remove cvatTemplate from each user.
-// Each user is determined by onepanel enabled namespaces.
-// DB entries are archived, K8S components are deleted.
-// Active workspaces with that template are terminated.
-// Any errors reported are logged as fatal.
-func Down20200528140124(tx *sql.Tx) error {
-	// This code is executed when the migration is rolled back.
-
-	client, err := getClient()
-	if err != nil {
-		return err
+	if _, ok := migrationsRan[20200704151301]; ok {
+		return nil
 	}
 
 	namespaces, err := client.ListOnepanelEnabledNamespaces()
@@ -166,11 +154,23 @@ func Down20200528140124(tx *sql.Tx) error {
 	if err != nil {
 		return err
 	}
+
 	for _, namespace := range namespaces {
-		if _, err := client.ArchiveWorkspaceTemplate(namespace.Name, uid); err != nil {
-			log.Fatalf("error %v", err.Error())
+		workspaceTemplate := &v1.WorkspaceTemplate{
+			UID:      uid,
+			Name:     cvatTemplateName,
+			Manifest: cvatWorkspaceTemplate3,
+		}
+		if _, err := client.UpdateWorkspaceTemplate(namespace.Name, workspaceTemplate); err != nil {
+			return err
 		}
 	}
 
+	return nil
+}
+
+// Down20200704151301 removes the CVAT template update
+func Down20200704151301(tx *sql.Tx) error {
+	// This code is executed when the migration is rolled back.
 	return nil
 }

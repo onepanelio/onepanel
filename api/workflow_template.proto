@@ -4,18 +4,12 @@ package api;
 
 import "google/api/annotations.proto";
 import "label.proto";
+import "common.proto";
 
 service WorkflowTemplateService {
     rpc CreateWorkflowTemplate (CreateWorkflowTemplateRequest) returns (WorkflowTemplate) {
         option (google.api.http) = {
             post: "/apis/v1beta1/{namespace}/workflow_templates"
-            body: "workflowTemplate"
-        };
-    }
-
-    rpc UpdateWorkflowTemplateVersion (UpdateWorkflowTemplateVersionRequest) returns (WorkflowTemplate) {
-        option (google.api.http) = {
-            put: "/apis/v1beta1/{namespace}/workflow_templates/{workflowTemplate.uid}/versions/{workflowTemplate.version}"
             body: "workflowTemplate"
         };
     }
@@ -101,6 +95,8 @@ message ListWorkflowTemplatesRequest {
     string namespace = 1;
     int32 pageSize = 2;
     int32 page = 3;
+
+    string labels = 4;
 }
 
 message ListWorkflowTemplatesResponse {
@@ -147,6 +143,7 @@ message WorkflowTemplate {
 
     WorkflowExecutionStatisticReport stats = 11;
     CronWorkflowStatisticsReport cronStats = 12;
+    repeated Parameter parameters = 13;
 }
 
 message GetWorkflowTemplateLabelsRequest {
