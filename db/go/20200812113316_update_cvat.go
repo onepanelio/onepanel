@@ -180,12 +180,6 @@ func Up20200812113316(tx *sql.Tx) error {
 	if err != nil {
 		return err
 	}
-	workspaceTemplate := &v1.WorkspaceTemplate{
-		UID:         uid,
-		Name:        cvatTemplateName,
-		Manifest:    cvatWorkspaceTemplate5,
-		Description: "Powerful and efficient Computer Vision Annotation Tool (CVAT)",
-	}
 
 	for _, namespace := range namespaces {
 		artifactRepositoryType := "s3"
@@ -195,6 +189,12 @@ func Up20200812113316(tx *sql.Tx) error {
 		}
 		if nsConfig.ArtifactRepository.GCS != nil {
 			artifactRepositoryType = "gcs"
+		}
+		workspaceTemplate := &v1.WorkspaceTemplate{
+			UID:         uid,
+			Name:        cvatTemplateName,
+			Manifest:    cvatWorkspaceTemplate5,
+			Description: "Powerful and efficient Computer Vision Annotation Tool (CVAT)",
 		}
 		workspaceTemplate.Manifest = strings.NewReplacer(
 			"{{.ArtifactRepositoryType}}", artifactRepositoryType).Replace(workspaceTemplate.Manifest)

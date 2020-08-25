@@ -179,12 +179,6 @@ func Up20200824101905(tx *sql.Tx) error {
 	if err != nil {
 		return err
 	}
-	workspaceTemplate := &v1.WorkspaceTemplate{
-		UID:         uid,
-		Name:        cvatTemplateName,
-		Manifest:    cvatWorkspaceTemplate6,
-		Description: "Powerful and efficient Computer Vision Annotation Tool (CVAT)",
-	}
 
 	for _, namespace := range namespaces {
 		err = ReplaceArtifactRepositoryType(client, namespace, nil, workspaceTemplate)
