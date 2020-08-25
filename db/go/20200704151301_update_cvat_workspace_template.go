@@ -154,13 +154,13 @@ func Up20200704151301(tx *sql.Tx) error {
 	if err != nil {
 		return err
 	}
-	workspaceTemplate := &v1.WorkspaceTemplate{
-		UID:      uid,
-		Name:     cvatTemplateName,
-		Manifest: cvatWorkspaceTemplate3,
-	}
 
 	for _, namespace := range namespaces {
+		workspaceTemplate := &v1.WorkspaceTemplate{
+			UID:      uid,
+			Name:     cvatTemplateName,
+			Manifest: cvatWorkspaceTemplate3,
+		}
 		if _, err := client.UpdateWorkspaceTemplate(namespace.Name, workspaceTemplate); err != nil {
 			return err
 		}
