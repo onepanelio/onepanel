@@ -144,7 +144,7 @@ templates:
     artifacts:
     - name: data
       path: /mnt/data/datasets/
-      s3:
+      {{.ArtifactRepositoryType}}:
         key: '{{workflow.namespace}}/{{workflow.parameters.sys-annotation-path}}'
     - git:
         repo: '{{workflow.parameters.source}}'
@@ -157,7 +157,7 @@ templates:
     - name: model
       optional: true
       path: /mnt/output
-      s3:
+      {{.ArtifactRepositoryType}}:
         key: '{{workflow.namespace}}/{{workflow.parameters.sys-output-path}}'
 # Uncomment the lines below if you want to send Slack notifications
 #- container:
@@ -348,12 +348,12 @@ templates:
     artifacts:
     - name: data
       path: /mnt/data/datasets/
-      s3:
+      {{.ArtifactRepositoryType}}:
         key: '{{workflow.namespace}}/{{workflow.parameters.sys-annotation-path}}'
     - name: models
       path: /mnt/data/models/
       optional: true
-      s3:
+      {{.ArtifactRepositoryType}}:
         key: '{{workflow.namespace}}/{{workflow.parameters.sys-finetune-checkpoint}}'
     - git:
         repo: '{{workflow.parameters.source}}'
@@ -371,7 +371,7 @@ templates:
     - name: model
       optional: true
       path: /mnt/output
-      s3:
+      {{.ArtifactRepositoryType}}:
         key: '{{workflow.namespace}}/{{workflow.parameters.sys-output-path}}'
 # Uncomment the lines below if you want to send Slack notifications
 #- container:
@@ -469,7 +469,10 @@ func Up20200812104328(tx *sql.Tx) error {
 			log.Printf("Skipping creating template '%v'. It already exists in namespace '%v'", workflowTemplate.Name, namespace.Name)
 			continue
 		}
-
+		err = ReplaceArtifactRepositoryType(client, namespace, workflowTemplate, nil)
+		if err != nil {
+			return err
+		}
 		if _, err := client.CreateWorkflowTemplate(namespace.Name, workflowTemplate); err != nil {
 			return err
 		}
@@ -488,6 +491,10 @@ func Up20200812104328(tx *sql.Tx) error {
 	}
 
 	for _, namespace := range namespaces {
+		err = ReplaceArtifactRepositoryType(client, namespace, workflowTemplate, nil)
+		if err != nil {
+			return err
+		}
 		if _, err := client.CreateWorkflowTemplate(namespace.Name, workflowTemplate); err != nil {
 			return err
 		}

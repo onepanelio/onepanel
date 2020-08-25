@@ -156,12 +156,12 @@ templates:
     artifacts:
     - name: data
       path: /mnt/data/datasets/
-      s3:
+      {{.ArtifactRepositoryType}}:
         key: '{{workflow.namespace}}/{{workflow.parameters.cvat-annotation-path}}'
     - name: models
       path: /mnt/data/models/
       optional: true
-      s3:
+      {{.ArtifactRepositoryType}}:
         key: '{{workflow.namespace}}/{{workflow.parameters.cvat-finetune-checkpoint}}'
     - git:
         repo: '{{workflow.parameters.source}}'
@@ -179,7 +179,7 @@ templates:
     - name: model
       optional: true
       path: /mnt/output
-      s3:
+      {{.ArtifactRepositoryType}}:
         key: '{{workflow.namespace}}/{{workflow.parameters.cvat-output-path}}/{{workflow.name}}'
 # Uncomment the lines below if you want to send Slack notifications
 #- container:
@@ -262,6 +262,10 @@ func Up20200824101019(tx *sql.Tx) error {
 	}
 
 	for _, namespace := range namespaces {
+		err = ReplaceArtifactRepositoryType(client, namespace, workflowTemplate, nil)
+		if err != nil {
+			return err
+		}
 		if _, err := client.CreateWorkflowTemplateVersion(namespace.Name, workflowTemplate); err != nil {
 			return err
 		}

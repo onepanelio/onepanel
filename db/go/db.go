@@ -1,10 +1,12 @@
 package migration
 
 import (
+	"errors"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	v1 "github.com/onepanelio/core/pkg"
 	"log"
+	"strings"
 )
 
 // initializedMigrations is used to keep track of which migrations have been initialized.
@@ -92,4 +94,29 @@ func getRanSQLMigrations(client *v1.Client) (map[uint64]bool, error) {
 	}
 
 	return result, nil
+}
+
+func ReplaceArtifactRepositoryType(client *v1.Client, namespace *v1.Namespace, workflowTemplate *v1.WorkflowTemplate, workspaceTemplate *v1.WorkspaceTemplate) error {
+	artifactRepositoryType := "s3"
+	nsConfig, err := client.GetNamespaceConfig(namespace.Name)
+	if err != nil {
+		return err
+	}
+	if nsConfig.ArtifactRepository.GCS != nil {
+		artifactRepositoryType = "gcs"
+	}
+
+	if workflowTemplate != nil {
+		workflowTemplate.Manifest = strings.NewReplacer(
+			"{{.ArtifactRepositoryType}}", artifactRepositoryType).Replace(workflowTemplate.Manifest)
+	}
+	if workspaceTemplate != nil {
+		workspaceTemplate.Manifest = strings.NewReplacer(
+			"{{.ArtifactRepositoryType}}", artifactRepositoryType).Replace(workspaceTemplate.Manifest)
+	}
+	if workflowTemplate == nil && workspaceTemplate == nil {
+		return errors.New("workflow and workspace template cannot be nil")
+	}
+
+	return nil
 }

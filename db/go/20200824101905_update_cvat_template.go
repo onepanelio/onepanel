@@ -5,7 +5,6 @@ import (
 	v1 "github.com/onepanelio/core/pkg"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"github.com/pressly/goose"
-	"strings"
 )
 
 const cvatWorkspaceTemplate6 = `# Workspace arguments
@@ -83,7 +82,7 @@ containers:
     name: http
 # You can add multiple FileSyncer sidecar containers if needed
 - name: filesyncer
-  image: onepanel/filesyncer:s3
+  image: onepanel/filesyncer:{{.ArtifactRepositoryType}}
   imagePullPolicy: Always
   args:
   - download
@@ -188,16 +187,10 @@ func Up20200824101905(tx *sql.Tx) error {
 	}
 
 	for _, namespace := range namespaces {
-		artifactRepositoryType := "s3"
-		nsConfig, err := client.GetNamespaceConfig(namespace.Name)
+		err = ReplaceArtifactRepositoryType(client, namespace, nil, workspaceTemplate)
 		if err != nil {
 			return err
 		}
-		if nsConfig.ArtifactRepository.GCS != nil {
-			artifactRepositoryType = "gcs"
-		}
-		workspaceTemplate.Manifest = strings.NewReplacer(
-			"{{.ArtifactRepositoryType}}", artifactRepositoryType).Replace(workspaceTemplate.Manifest)
 		if _, err := client.UpdateWorkspaceTemplate(namespace.Name, workspaceTemplate); err != nil {
 			return err
 		}
