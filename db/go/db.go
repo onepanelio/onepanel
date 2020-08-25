@@ -53,6 +53,7 @@ func Initialize() {
 	initialize20200824095513()
 	initialize20200824101019()
 	initialize20200824101905()
+	initialize20200825154403()
 
 	if err := client.DB.Close(); err != nil {
 		log.Printf("[error] closing db %v", err)
