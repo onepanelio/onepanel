@@ -11,7 +11,7 @@ const jupyterWorkspaceTemplate2 = `# Docker containers that are part of the Work
 containers:
 - name: jupyterlab-tensorflow
   image: onepanel/jupyterlab:1.0.1
-  command: ["/bin/bash", "-c", "mkdir /logs; tensorboard --host 0.0.0.0 --logdir logs & start.sh jupyter lab --LabApp.token='' --LabApp.allow_remote_access=True --LabApp.allow_origin=\"*\" --LabApp.disable_check_xsrf=True --LabApp.trust_xheaders=True --LabApp.base_url=/ --LabApp.tornado_settings='{\"headers\":{\"Content-Security-Policy\":\"frame-ancestors * \'self\'\"}}' --notebook-dir='/data' --allow-root"]
+  command: ["/bin/bash", "-c", "start.sh jupyter lab --LabApp.token='' --LabApp.allow_remote_access=True --LabApp.allow_origin=\"*\" --LabApp.disable_check_xsrf=True --LabApp.trust_xheaders=True --LabApp.base_url=/ --LabApp.tornado_settings='{\"headers\":{\"Content-Security-Policy\":\"frame-ancestors * \'self\'\"}}' --notebook-dir='/data' --allow-root"]
   env:
     - name: tornado
       value: "'{'headers':{'Content-Security-Policy':\"frame-ancestors\ *\ \'self'\"}}'"
