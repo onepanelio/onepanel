@@ -172,11 +172,6 @@ func Up20200724220450(tx *sql.Tx) error {
 	if err != nil {
 		return err
 	}
-	workspaceTemplate := &v1.WorkspaceTemplate{
-		UID:      uid,
-		Name:     cvatTemplateName,
-		Manifest: cvatWorkspaceTemplate4,
-	}
 
 	for _, namespace := range namespaces {
 		artifactRepositoryType := "s3"
@@ -186,6 +181,12 @@ func Up20200724220450(tx *sql.Tx) error {
 		}
 		if nsConfig.ArtifactRepository.GCS != nil {
 			artifactRepositoryType = "gcs"
+		}
+
+		workspaceTemplate := &v1.WorkspaceTemplate{
+			UID:      uid,
+			Name:     cvatTemplateName,
+			Manifest: cvatWorkspaceTemplate4,
 		}
 		workspaceTemplate.Manifest = strings.NewReplacer(
 			"{{.ArtifactRepositoryType}}", artifactRepositoryType).Replace(workspaceTemplate.Manifest)
