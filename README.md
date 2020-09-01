@@ -5,15 +5,17 @@
 [![release](https://img.shields.io/github/v/release/onepanelio/core?color=01579b)](https://github.com/onepanelio/core/releases)
 [![sdk](https://img.shields.io/pypi/v/onepanel-sdk?color=01579b&label=sdk)](https://pypi.org/project/onepanel-sdk/)
 [![docs](https://img.shields.io/github/v/release/onepanelio/core?color=01579b&label=docs)](https://docs.onepanel.io)
+[![issues](https://img.shields.io/github/issues-raw/onepanelio/core?color=01579b&label=issues)](https://github.com/onepanelio/core/issues)
+[![chat](https://img.shields.io/badge/support-slack-01579b)](https://join.slack.com/t/onepanel-ce/shared_invite/zt-eyjnwec0-nLaHhjif9Y~gA05KuX6AUg)
 [![license](https://img.shields.io/github/license/onepanelio/core?color=01579b)](https://opensource.org/licenses/Apache-2.0)
 
 Full stack vision AI platform with fully integrated modules for model building, semi-automated labeling, training and data pipelines, powered by Kubernetes.
 
 ## Features
-| | | |
-|:-------------------------:|:-------------------------:|:-------------------------:|
-|<img width="1604" src="img/automated-labelling.gif"> <h4>Image and video annotation with automatic pre-annotation</h4> |<img width="1604" src="img/jupyterlab.gif"> <h4>GPU optimized JupyterLab with Tensorflow and PyTorch</h4>|<img width="1604" src="img/training-pipeline.gif"> <h4>Highly scalable training pipelines with streaming logs</h4>|
-|![](https://via.placeholder.com/300x166)|![](https://via.placeholder.com/300x166)|![](https://via.placeholder.com/300x166)|
+| | |
+|:-------------------------:|:-------------------------:|
+|<img width="1604" src="img/auto-annotation.gif"> <h4>Image and video annotation with automatic pre-annotation and full integration with training pipelines</h4>|<img width="1604" src="img/jupyterlab.gif"> <h4>JupyterLab loaded with popular deep learning libraries like Tensorflow and PyTorch with GPU support</h4>
+|<img width="1604" src="img/pipelines.gif"> <h4>Build auto-scaling, distributed data processing and training pipelines with streaming logs and output snapshots</h4>|<img width="1604" src="img/tools.gif"> <h4>Bring your own IDEs, annotationg tools and workflows using YAML and Docker based templating system</h4>|
 
 ## Quick start
 See [Quick start guide](https://docs.onepanel.ai/docs/getting-started/quickstart) to get started with the platform of your choice.
