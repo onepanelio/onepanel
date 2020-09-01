@@ -1,12 +1,12 @@
-<p align="center"><img width="100px" src="img/logo.png"></p>
-<h1 align="center">Onepanel</h1>
+<img width="240px" src="img/logo.png">
 
-![Docker build](https://github.com/onepanelio/core/workflows/Build%20and%20publish%20to%20Docker%20Hub/badge.svg)
-[![release](https://img.shields.io/badge/release-0.12.0-01579b)](https://github.com/onepanelio/core/releases)
-[![pypi](https://img.shields.io/badge/pypi-0.12.0-01579b)](https://pypi.org/project/onepanel-sdk/)
-[![license](https://img.shields.io/badge/license-Apache%202.0-01579b)](https://opensource.org/licenses/Apache-2.0)
+![build](https://img.shields.io/github/workflow/status/onepanelio/core/Build%20and%20publish%20to%20Docker%20Hub/master?color=01579b)
+![code](https://img.shields.io/codacy/grade/d060fc4d1ac64b85b78f85c691ead86a?color=01579b)
+[![release](https://img.shields.io/github/v/release/onepanelio/core?color=01579b)](https://github.com/onepanelio/core/releases)
+[![sdk](https://img.shields.io/pypi/v/onepanel-sdk?color=01579b&label=sdk)](https://pypi.org/project/onepanel-sdk/)
+[![license](https://img.shields.io/github/license/onepanelio/core?color=01579b)](https://opensource.org/licenses/Apache-2.0)
 
-<h4 align="center">Unified vision AI platform with fully integrated modules for model building, semi-automated labeling, training, pipelines and model serving.</h4>
+Full stack vision AI platform with fully integrated modules for model building, semi-automated labeling, training and data pipelines, powered by Kubernetes.
 
 
 ## Getting started
