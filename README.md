@@ -2,6 +2,8 @@
 
 # Onepanel
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/bdeb248957be4d1bbc98c959c728c46b)](https://app.codacy.com/gh/onepanelio/core?utm_source=github.com&utm_medium=referral&utm_content=onepanelio/core&utm_campaign=Badge_Grade_Settings)
+
 Welcome to Onepanel! This is the main repository for the API. It is also where you can submit bugs and enhancement requests.
 
 ## Getting started
