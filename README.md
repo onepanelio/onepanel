@@ -18,15 +18,25 @@ Full stack vision AI platform with fully integrated modules for model building, 
 |<img width="1604" src="img/pipelines.gif"> <h4>Build auto-scaling, distributed data processing and training pipelines with streaming logs and output snapshots</h4>|<img width="1604" src="img/tools.gif"> <h4>Bring your own IDEs, annotationg tools and workflows using YAML and Docker based templating system</h4>|
 
 ## Quick start
-See [Quick start guide](https://docs.onepanel.ai/docs/getting-started/quickstart) to get started with the platform of your choice.
+See [quick start guide](https://docs.onepanel.ai/docs/getting-started/quickstart) to get started with the platform of your choice.
 
 ## Community
 
+
 ## Contributing
 
-This is the main repository for the API. It is also where you can submit bugs and enhancement requests.
+Onepanel consists of the following repositories:
 
-See our [Contribution guide](https://docs.onepanel.ai/docs/getting-started/contributing) to get started.
+[Core API](https://github.com/onepanelio/core/) (this repository) - Code base for backend (Go)\
+[Core UI](https://github.com/onepanelio/core-ui/) - Code base for UI (Angular + TypeScript)\
+[CLI](https://github.com/onepanelio/cli/) - Code base for Go CLI for installation and management (Go)\
+[Manifests](https://github.com/onepanelio/core-ui/) - Kustomize manifests used by CLI for installation and management (YAML)\
+[Python SDK](https://github.com/onepanelio/python-sdk/) - Python SDK code and documentation\
+[Templates](https://github.com/onepanelio/templates) - Various Workspace, Workflow, Task and Sidecar Templates\
+[Documentation](https://github.com/onepanelio/core-docs/) - The repository for documentation site\
+[API Documentation](https://github.com/onepanelio/core-api-docs/) - API documentation if you choose to use the API directly
+
+See `CONTRIBUTING.md` in each repository for development guidelines. Also, see [contribution guide](https://docs.onepanel.ai/docs/getting-started/contributing) for additional guidelines.
 
 ## Acknowledgments
 We use these excellent open source projects to power different areas of Onepanel:
