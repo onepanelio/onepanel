@@ -21,7 +21,11 @@ Full stack vision AI platform with fully integrated modules for model building, 
 See [quick start guide](https://docs.onepanel.ai/docs/getting-started/quickstart) to get started with the platform of your choice.
 
 ## Community
+See [documentation](https://docs.onepanel.ai) to get started or for more detailed operational and user guides.
 
+To submit a feature requests, report bugs or documentation issues, please open a GitHub [pull request](https://github.com/onepanelio/core/pulls) or [issue](https://github.com/onepanelio/core/issues).
+
+For help, questions, release announcements and contribution discussions, join us on [Slack](https://join.slack.com/t/onepanel-ce/shared_invite/zt-eyjnwec0-nLaHhjif9Y~gA05KuX6AUg).
 
 ## Contributing
 
