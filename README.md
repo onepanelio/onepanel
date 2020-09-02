@@ -15,7 +15,7 @@ Full stack vision AI platform with fully integrated modules for model building, 
 | | |
 |:-------------------------:|:-------------------------:|
 |<img width="1604" src="img/auto-annotation.gif"> <h4>Image and video annotation with automatic pre-annotation and full integration with training pipelines</h4>|<img width="1604" src="img/jupyterlab.gif"> <h4>JupyterLab loaded with popular deep learning libraries like Tensorflow, PyTorch and TensorBoard with GPU support</h4>
-|<img width="1604" src="img/pipelines.gif"> <h4>Build auto-scaling, distributed data processing and training pipelines with streaming logs and output snapshots</h4>|<img width="1604" src="img/tools.gif"> <h4>Bring your own IDEs, annotationg tools and workflows using YAML and Docker based templating system</h4>|
+|<img width="1604" src="img/pipelines.gif"> <h4>Build auto-scaling, distributed data processing and training pipelines with streaming logs and output snapshots</h4>|<img width="1604" src="img/tools.gif"> <h4>Bring your own IDEs, annotation tools and workflows using YAML and Docker based templating system</h4>|
 
 ## Quick start
 See [quick start guide](https://docs.onepanel.ai/docs/getting-started/quickstart) to get started with the platform of your choice.
