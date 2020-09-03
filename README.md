@@ -47,7 +47,7 @@ Production scale end-to-end vision AI platform with fully integrated modules for
       <h3>Version controlled pipelines and environments as code</h3>
       <img width="100%" src="img/tools.gif">
       <p>
-        Bring your own IDEs, annotation tools and pipelines using YAML and Docker based template engine
+        Bring your own IDEs, annotation tools and pipelines with a version controlled YAML and Docker based template engine
       </p>
     </td>
   </tr>
