@@ -16,6 +16,7 @@ Production scale end-to-end vision AI platform with fully integrated modules for
 - End-to-end workflow and infrastructure automation for production scale vision AI
 - Easily scale your data processing and training pipelines to multiple machines
 - Unified web interface and SDKs for all your deep learning tools and workflows
+- Scalability, flexiblity and resiliency of Kubernetes without the complexity
 
 ## Features
 <table>
@@ -53,6 +54,12 @@ Production scale end-to-end vision AI platform with fully integrated modules for
   </tr>
 </table>
 
+- Track and visualize model metrics and expriments with TensorBoard or bring your own experiment tracking tools.
+- Access and share tools like AirSim, Carla, Gazebo or OpenAI Gym through your browser with VNC enabled workspaces.
+- Extend Onepanel with powerful REST APIs and SDKs to further automate your pipelines and environments.
+- Workflows, environments and infrastructure are all defined as code and version controlled, making them reproducible and portable.
+- Powered by Kubernetes so you can deploy anywhere Kubernetes can run.
+
 ## Quick start
 See [quick start guide](https://docs.onepanel.ai/docs/getting-started/quickstart) to get started with the platform of your choice.
 
@@ -84,3 +91,9 @@ We use these excellent open source projects to power different areas of Onepanel
 [Argo](https://github.com/argoproj/argo)\
 [CVAT](https://github.com/opencv/cvat)\
 [JupyterLab](https://github.com/jupyterlab/jupyterlab)
+
+## License
+Onepanel is licensed under [Apache 2.0](https://github.com/onepanelio/core/blob/master/LICENSE).
+
+## Need a managed solution?
+Visit our [website](https://www.onepanel.io/) for more information about our managed offerings.
