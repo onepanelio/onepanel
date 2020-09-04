@@ -54,7 +54,7 @@ Production scale end-to-end vision AI platform with fully integrated modules for
   </tr>
 </table>
 
-- Track and visualize model metrics and expriments with TensorBoard or bring your own experiment tracking tools.
+- Track and visualize model metrics and experiments with TensorBoard or bring your own experiment tracking tools.
 - Access and share tools like AirSim, Carla, Gazebo or OpenAI Gym through your browser with VNC enabled workspaces.
 - Extend Onepanel with powerful REST APIs and SDKs to further automate your pipelines and environments.
 - Workflows, environments and infrastructure are all defined as code and version controlled, making them reproducible and portable.
