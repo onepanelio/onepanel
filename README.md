@@ -16,7 +16,7 @@ Production scale end-to-end vision AI platform with fully integrated modules for
 -  End-to-end workflow and infrastructure automation for production scale vision AI
 -  Easily scale your data processing and training pipelines to multiple machines
 -  Collaborate on all your deep learning tools and workflows through a unified web interface and SDKs
--  Scalability, flexiblity and resiliency of Kubernetes without the complexity
+-  Scalability, flexibility and resiliency of Kubernetes without the deployment and configuration complexities
 
 ## Features
 <table>
