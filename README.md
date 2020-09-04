@@ -6,16 +6,59 @@
 [![sdk](https://img.shields.io/pypi/v/onepanel-sdk?color=01579b&label=sdk)](https://pypi.org/project/onepanel-sdk/)
 [![docs](https://img.shields.io/github/v/release/onepanelio/core?color=01579b&label=docs)](https://docs.onepanel.io)
 [![issues](https://img.shields.io/github/issues-raw/onepanelio/core?color=01579b&label=issues)](https://github.com/onepanelio/core/issues)
-[![chat](https://img.shields.io/badge/support-slack-01579b)](https://join.slack.com/t/onepanel-ce/shared_invite/zt-eyjnwec0-nLaHhjif9Y~gA05KuX6AUg)
+[![chat](https://img.shields.io/badge/support-slack-01579b)](https://onepanel-ce.slack.com/join/shared_invite/zt-eyjnwec0-nLaHhjif9Y~gA05KuX6AUg#/)
 [![license](https://img.shields.io/github/license/onepanelio/core?color=01579b)](https://opensource.org/licenses/Apache-2.0)
 
-Full stack vision AI platform with fully integrated modules for model building, semi-automated labeling, training and data pipelines, powered by Kubernetes.
+Production scale end-to-end vision AI platform with fully integrated modules for model building, automated labeling, training and data pipelines on Kubernetes.
+
+## Why Onepanel?
+
+-  End-to-end workflow and infrastructure automation for production scale vision AI
+-  Easily scale your data processing and training pipelines to multiple machines
+-  Collaborate on all your deep learning tools and workflows through a unified web interface and SDKs
+-  Scalability, flexibility and resiliency of Kubernetes without the deployment and configuration complexities
 
 ## Features
-| | |
-|:-------------------------:|:-------------------------:|
-|<img width="1604" src="img/auto-annotation.gif"> <h4>Image and video annotation with automatic pre-annotation and full integration with training pipelines</h4>|<img width="1604" src="img/jupyterlab.gif"> <h4>JupyterLab loaded with popular deep learning libraries like Tensorflow, PyTorch and TensorBoard with GPU support</h4>|
-|<img width="1604" src="img/pipelines.gif"> <h4>Build auto-scaling, distributed data processing and training pipelines with streaming logs and output snapshots</h4>|<img width="1604" src="img/tools.gif"> <h4>Bring your own IDEs, annotation tools and workflows using YAML and Docker based templating system</h4>|
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <h3>Image and video annotation with automatic annotation</h3>
+      <img width="100%" src="img/auto-annotation.gif">
+      <p>
+        Annotate images and video with object tracking and semi-automatic annotation of bounding boxes and polygon masks
+      </p>
+    </td>
+    <td width="50%" align="center">
+      <h3>JupyterLab with TensorFlow, PyTorch and GPU support</h3>
+      <img width="100%" src="img/jupyterlab.gif">
+      <p>
+        JupyterLab loaded with popular deep learning libraries like Tensorflow, PyTorch and TensorBoard with GPU support
+      </p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <h3>Auto scaling, distributed data processing and training pipelines</h3>
+      <img width="100%" src="img/pipelines.gif">
+      <p>
+        Build production scale distributed data processing and training pipelines with streaming logs and output snapshots
+      </p>
+    </td>
+    <td width="50%" align="center">
+      <h3>Version controlled pipelines and environments as code</h3>
+      <img width="100%" src="img/tools.gif">
+      <p>
+        Bring your own IDEs, annotation tools and pipelines with a version controlled YAML and Docker based template engine
+      </p>
+    </td>
+  </tr>
+</table>
+
+-  Track and visualize model metrics and experiments with TensorBoard or bring your own experiment tracking tools.
+-  Access and share tools like AirSim, Carla, Gazebo or OpenAI Gym through your browser with VNC enabled workspaces.
+-  Extend Onepanel with powerful REST APIs and SDKs to further automate your pipelines and environments.
+-  Workflows, environments and infrastructure are all defined as code and version controlled, making them reproducible and portable.
+-  Powered by Kubernetes so you can deploy anywhere Kubernetes can run.
 
 ## Quick start
 See [quick start guide](https://docs.onepanel.ai/docs/getting-started/quickstart) to get started with the platform of your choice.
@@ -48,3 +91,9 @@ We use these excellent open source projects to power different areas of Onepanel
 [Argo](https://github.com/argoproj/argo)\
 [CVAT](https://github.com/opencv/cvat)\
 [JupyterLab](https://github.com/jupyterlab/jupyterlab)
+
+## License
+Onepanel is licensed under [Apache 2.0](https://github.com/onepanelio/core/blob/master/LICENSE).
+
+## Need a managed solution?
+Visit our [website](https://www.onepanel.io/) for more information about our managed offerings.
