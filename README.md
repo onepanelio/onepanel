@@ -9,7 +9,7 @@
 [![chat](https://img.shields.io/badge/support-slack-01579b)](https://onepanel-ce.slack.com/join/shared_invite/zt-eyjnwec0-nLaHhjif9Y~gA05KuX6AUg#/)
 [![license](https://img.shields.io/github/license/onepanelio/core?color=01579b)](https://opensource.org/licenses/Apache-2.0)
 
-Production scale end-to-end vision AI platform with fully integrated modules for model building, automated labeling, training and data pipelines on Kubernetes.
+Production scale end-to-end vision AI platform with fully integrated modules for model building, automated labeling, data processing and model training pipelines on Kubernetes.
 
 ## Why Onepanel?
 
@@ -26,23 +26,23 @@ Production scale end-to-end vision AI platform with fully integrated modules for
       <h3>Image and video annotation with automatic annotation</h3>
       <img width="100%" src="img/auto-annotation.gif">
       <p>
-        Annotate images and video with object tracking and semi-automatic annotation of bounding boxes and polygon masks
+        Annotate images and video with automatic annotation of bounding boxes and polygon masks, integrated with training pipelines to iteratively improve models for pre-annotation and inference
       </p>
     </td>
     <td width="50%" align="center">
       <h3>JupyterLab with TensorFlow, PyTorch and GPU support</h3>
       <img width="100%" src="img/jupyterlab.gif">
       <p>
-        JupyterLab loaded with popular deep learning libraries like Tensorflow, PyTorch and TensorBoard with GPU support
+        JupyterLab configured with extensions for debugging, Git/GitHub, notebook diffing and TensorBoard and support for Conda, OpenCV, Tensorflow and PyTorch with GPU and <a href="https://github.com/onepanelio/templates/tree/master/workspaces/jupyterlab">much more</a>
       </p>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center">
-      <h3>Auto scaling, distributed data processing and training pipelines</h3>
+      <h3>Auto scaling, distributed and parallel data processing and training pipelines</h3>
       <img width="100%" src="img/pipelines.gif">
       <p>
-        Build production scale distributed data processing and training pipelines with streaming logs and output snapshots
+        Build fully reproducible, distributed and parallel data processing and training pipelines with real-time logs and output snapshots
       </p>
     </td>
     <td width="50%" align="center">
@@ -73,7 +73,7 @@ For help, questions, release announcements and contribution discussions, join us
 
 ## Contributing
 
-Onepanel consists of the following repositories:
+Onepanel is modular and consists of the following repositories:
 
 [Core API](https://github.com/onepanelio/core/) (this repository) - Code base for backend (Go)\
 [Core UI](https://github.com/onepanelio/core-ui/) - Code base for UI (Angular + TypeScript)\
@@ -87,11 +87,12 @@ Onepanel consists of the following repositories:
 See `CONTRIBUTING.md` in each repository for development guidelines. Also, see [contribution guide](https://docs.onepanel.ai/docs/getting-started/contributing) for additional guidelines.
 
 ## Acknowledgments
-We use these excellent open source projects to power different areas of Onepanel:
+Onepanel seamlessly integrates the following excellent open source projects. We are grateful for the support these communities provide and do our best to contribute back as much as possible.
 
 [Argo](https://github.com/argoproj/argo)\
 [CVAT](https://github.com/opencv/cvat)\
 [JupyterLab](https://github.com/jupyterlab/jupyterlab)
+
 
 ## License
 Onepanel is licensed under [Apache 2.0](https://github.com/onepanelio/core/blob/master/LICENSE).
