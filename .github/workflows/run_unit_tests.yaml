@@ -2,7 +2,7 @@ name: Run Unit Tests
 on:
   push:
     branches:
-      - test/docker.database
+      - master
 jobs:
   test-code-job:
     runs-on: ubuntu-latest
