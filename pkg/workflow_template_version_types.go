@@ -1,8 +1,8 @@
 package v1
 
 import (
+	"github.com/onepanelio/core/pkg/util/sql"
 	"github.com/onepanelio/core/pkg/util/types"
-	"github.com/onepanelio/core/util/sql"
 	"time"
 )
 
