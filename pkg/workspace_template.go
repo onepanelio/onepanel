@@ -12,6 +12,7 @@ import (
 	"github.com/onepanelio/core/pkg/util/env"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
+	"github.com/onepanelio/core/pkg/util/router"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	networking "istio.io/api/networking/v1alpha3"
@@ -469,6 +470,17 @@ metadata:
 `
 	templates := []wfv1.Template{
 		{
+			Name: "handleExit",
+			DAG: &wfv1.DAGTemplate{
+				Tasks: []wfv1.DAGTask{
+					{
+						Name:     "exit-handler",
+						Template: "sys-update-workspace-status",
+					},
+				},
+			},
+		},
+		{
 			Name: "workspace",
 			DAG: &wfv1.DAGTemplate{
 				FailFast: ptr.Bool(false),
@@ -648,16 +660,36 @@ metadata:
 			},
 		},
 	}
-	// Add curl template
-	curlPath := fmt.Sprintf("/apis/v1beta1/{{workflow.namespace}}/workspaces/{{workflow.parameters.sys-uid}}/status")
+
+	webRouter, err := router.NewRelativeAPIRouter()
+	if err != nil {
+		return "", err
+	}
+	curlUpdateWorkspaceStatusPath := webRouter.UpdateWorkspaceStatus("{{workflow.namespace}}", "{{workflow.parameters.sys-uid}}")
 	status := map[string]interface{}{
-		"phase": "{{inputs.parameters.sys-workspace-phase}}",
+		"phase": "{{workflow.status}}",
 	}
 	statusBytes, err := json.Marshal(status)
 	if err != nil {
 		return
 	}
-	inputs := wfv1.Inputs{
+	inputs := wfv1.Inputs{}
+	curlUpdateWorkspaceNodeTemplate, err := getCURLNodeTemplate("sys-update-workspace-status", http.MethodPut, curlUpdateWorkspaceStatusPath, string(statusBytes), inputs)
+	if err != nil {
+		return
+	}
+	templates = append(templates, *curlUpdateWorkspaceNodeTemplate)
+
+	// Add curl template
+	curlPath := fmt.Sprintf("/apis/v1beta1/{{workflow.namespace}}/workspaces/{{workflow.parameters.sys-uid}}/status")
+	status = map[string]interface{}{
+		"phase": "{{inputs.parameters.sys-workspace-phase}}",
+	}
+	statusBytes, err = json.Marshal(status)
+	if err != nil {
+		return
+	}
+	inputs = wfv1.Inputs{
 		Parameters: []wfv1.Parameter{
 			{Name: "sys-workspace-phase"},
 		},
@@ -683,6 +715,7 @@ metadata:
 	workflowTemplateSpec := map[string]interface{}{
 		"arguments":  spec.Arguments,
 		"entrypoint": "workspace",
+		"onExit":     "handleExit",
 		"templates":  templates,
 	}
 

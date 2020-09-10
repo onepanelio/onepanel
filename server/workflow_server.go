@@ -178,6 +178,9 @@ func (s *WorkflowServer) GetWorkflowExecution(ctx context.Context, req *api.GetW
 	if err != nil {
 		return nil, err
 	}
+	if wf == nil {
+		return nil, util.NewUserError(codes.NotFound, "Workflow not found")
+	}
 
 	wf.Namespace = req.Namespace
 
