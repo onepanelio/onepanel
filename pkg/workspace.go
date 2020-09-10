@@ -211,8 +211,12 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 				"args":    []interface{}{"-c", "while :; do sleep 2073600; done"},
 				"resources": map[string]interface{}{
 					"requests": map[string]interface{}{
-						"cpu":    "3000m",
-						"memory": "11000Mi",
+						"cpu":            "3000m",
+						"memory":         "11000Mi",
+						"nvidia.com/gpu": "1",
+					},
+					"limits": map[string]interface{}{
+						"nvidia.com/gpu": "1",
 					},
 				},
 			}
