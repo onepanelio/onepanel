@@ -185,9 +185,7 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 
 	templates := argoTemplate.Spec.Templates
 	for i, t := range templates {
-		//todo constant
-
-		if t.Name == "stateful-set-resource" {
+		if t.Name == WorkspaceTemplateCreateStatefulSet {
 			//due to placeholders, we can't unmarshal into a k8s statefulset
 			statefulSet := map[string]interface{}{}
 			if err := yaml.Unmarshal([]byte(t.Resource.Manifest), &statefulSet); err != nil {
