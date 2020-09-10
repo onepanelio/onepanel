@@ -3,9 +3,11 @@ package v1
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/asaskevich/govalidator"
+	"github.com/ghodss/yaml"
 	"github.com/lib/pq"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/pagination"
@@ -178,6 +180,55 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 		value := runtimeParametersMap[p.Name]
 		if value != nil {
 			argoTemplate.Spec.Arguments.Parameters[i].Value = value
+		}
+	}
+
+	templates := argoTemplate.Spec.Templates
+	for i, t := range templates {
+		//todo constant
+
+		if t.Name == "stateful-set-resource" {
+			//due to placeholders, we can't unmarshal into a k8s statefulset
+			statefulSet := map[string]interface{}{}
+			if err := yaml.Unmarshal([]byte(t.Resource.Manifest), &statefulSet); err != nil {
+				return nil, err
+			}
+			spec, ok := statefulSet["spec"].(map[string]interface{})
+			if !ok {
+				return nil, errors.New("unable to type check statefulset manifest")
+			}
+			template, ok := spec["template"].(map[string]interface{})
+			if !ok {
+				return nil, errors.New("unable to type check statefulset manifest")
+			}
+			templateSpec, ok := template["spec"].(map[string]interface{})
+			if !ok {
+				return nil, errors.New("unable to type check statefulset manifest")
+			}
+
+			extraContainer := map[string]interface{}{
+				"image":   "alpine:latest",
+				"name":    "resource-requester",
+				"command": []interface{}{"/bin/sh"},
+				"args":    []interface{}{"-c", "while :; do sleep 2073600; done"},
+				"resources": map[string]interface{}{
+					"requests": map[string]interface{}{
+						"cpu":    "3000m",
+						"memory": "11000Mi",
+					},
+				},
+			}
+
+			containers, ok := templateSpec["containers"].([]interface{})
+			if !ok {
+				return nil, errors.New("unable to type check statefulset manifest")
+			}
+			templateSpec["containers"] = append([]interface{}{extraContainer}, containers...)
+			resultManifest, err := yaml.Marshal(statefulSet)
+			if err != nil {
+				return nil, err
+			}
+			templates[i].Resource.Manifest = string(resultManifest)
 		}
 	}
 
