@@ -22,6 +22,18 @@ import (
 	"strings"
 )
 
+const WorkspaceTemplateCreateStatefulSet = "create-stateful-set"
+const WorkspaceTemplateGetStatefulSet = "get-stateful-set"
+const WorkspaceTemplateService = "service"
+const WorkspaceTemplateVirtualService = "virtual-service"
+const WorkspaceTemplateCreateWorkspace = "create-workspace"
+const WorkspaceTemplateDeleteStatefulSet = "delete-stateful-set"
+const WorkspaceTemplateDeleteWorkspace = "delete-workspace"
+const WorkspaceTemplateDeletePVC = "delete-pvc"
+const WorkspaceTemplateSysSetPhaseRunning = "sys-set-phase-running"
+const WorkspaceTemplateSysSetPhasePaused = "sys-set-phase-paused"
+const WorkspaceTemplateSysSetPhaseTerminated = "sys-set-phase-terminated"
+
 // createWorkspaceTemplateVersionDB creates a workspace template version in the database.
 func createWorkspaceTemplateVersionDB(tx sq.BaseRunner, template *WorkspaceTemplate) (err error) {
 	err = sb.Insert("workspace_template_versions").
@@ -467,6 +479,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{inputs.parameters.sys-pvc-name}}-{{workflow.parameters.sys-uid}}-0
 `
+
 	templates := []wfv1.Template{
 		{
 			Name: "workspace",
@@ -474,24 +487,24 @@ metadata:
 				FailFast: ptr.Bool(false),
 				Tasks: []wfv1.DAGTask{
 					{
-						Name:     "service",
+						Name:     WorkspaceTemplateService,
 						Template: "service-resource",
 					},
 					{
-						Name:         "virtual-service",
+						Name:         WorkspaceTemplateVirtualService,
 						Template:     "virtual-service-resource",
-						Dependencies: []string{"service"},
+						Dependencies: []string{WorkspaceTemplateService},
 					},
 					{
-						Name:         "create-stateful-set",
+						Name:         WorkspaceTemplateCreateStatefulSet,
 						Template:     "stateful-set-resource",
-						Dependencies: []string{"virtual-service"},
+						Dependencies: []string{WorkspaceTemplateVirtualService},
 						When:         "{{workflow.parameters.sys-workspace-action}} == create || {{workflow.parameters.sys-workspace-action}} == update",
 					},
 					{
-						Name:         "get-stateful-set",
+						Name:         WorkspaceTemplateGetStatefulSet,
 						Template:     "get-stateful-set-resource",
-						Dependencies: []string{"create-stateful-set"},
+						Dependencies: []string{WorkspaceTemplateCreateStatefulSet},
 						When:         "{{workflow.parameters.sys-workspace-action}} == create || {{workflow.parameters.sys-workspace-action}} == update",
 						Arguments: wfv1.Arguments{
 							Parameters: []wfv1.Parameter{
@@ -503,27 +516,27 @@ metadata:
 						},
 					},
 					{
-						Name:         "create-workspace",
+						Name:         WorkspaceTemplateCreateWorkspace,
 						Template:     "workspace-resource",
-						Dependencies: []string{"get-stateful-set"},
+						Dependencies: []string{WorkspaceTemplateGetStatefulSet},
 						When:         "{{workflow.parameters.sys-workspace-action}} == create || {{workflow.parameters.sys-workspace-action}} == update",
 					},
 					{
-						Name:         "delete-stateful-set",
+						Name:         WorkspaceTemplateDeleteStatefulSet,
 						Template:     "delete-stateful-set-resource",
-						Dependencies: []string{"virtual-service"},
+						Dependencies: []string{WorkspaceTemplateVirtualService},
 						When:         "{{workflow.parameters.sys-workspace-action}} == pause || {{workflow.parameters.sys-workspace-action}} == delete",
 					},
 					{
-						Name:         "delete-workspace",
+						Name:         WorkspaceTemplateDeleteWorkspace,
 						Template:     "workspace-resource",
-						Dependencies: []string{"delete-stateful-set"},
+						Dependencies: []string{WorkspaceTemplateDeleteStatefulSet},
 						When:         "{{workflow.parameters.sys-workspace-action}} == pause || {{workflow.parameters.sys-workspace-action}} == delete",
 					},
 					{
-						Name:         "delete-pvc",
+						Name:         WorkspaceTemplateDeletePVC,
 						Template:     "delete-pvc-resource",
-						Dependencies: []string{"delete-workspace"},
+						Dependencies: []string{WorkspaceTemplateDeleteWorkspace},
 						Arguments: wfv1.Arguments{
 							Parameters: []wfv1.Parameter{
 								{
@@ -536,9 +549,9 @@ metadata:
 						WithItems: volumeClaimItems,
 					},
 					{
-						Name:         "sys-set-phase-running",
+						Name:         WorkspaceTemplateSysSetPhaseRunning,
 						Template:     "sys-update-status",
-						Dependencies: []string{"create-workspace"},
+						Dependencies: []string{WorkspaceTemplateCreateWorkspace},
 						Arguments: wfv1.Arguments{
 							Parameters: []wfv1.Parameter{
 								{
@@ -550,9 +563,9 @@ metadata:
 						When: "{{workflow.parameters.sys-workspace-action}} == create || {{workflow.parameters.sys-workspace-action}} == update",
 					},
 					{
-						Name:         "sys-set-phase-paused",
+						Name:         WorkspaceTemplateSysSetPhasePaused,
 						Template:     "sys-update-status",
-						Dependencies: []string{"delete-workspace"},
+						Dependencies: []string{WorkspaceTemplateDeleteWorkspace},
 						Arguments: wfv1.Arguments{
 							Parameters: []wfv1.Parameter{
 								{
@@ -564,9 +577,9 @@ metadata:
 						When: "{{workflow.parameters.sys-workspace-action}} == pause",
 					},
 					{
-						Name:         "sys-set-phase-terminated",
+						Name:         WorkspaceTemplateSysSetPhaseTerminated,
 						Template:     "sys-update-status",
-						Dependencies: []string{"delete-pvc"},
+						Dependencies: []string{WorkspaceTemplateDeletePVC},
 						Arguments: wfv1.Arguments{
 							Parameters: []wfv1.Parameter{
 								{
@@ -672,7 +685,7 @@ metadata:
 		dag := wfv1.DAGTask{
 			Name:         spec.PostExecutionWorkflow.Entrypoint,
 			Template:     spec.PostExecutionWorkflow.Entrypoint,
-			Dependencies: []string{"sys-set-phase-running", "sys-set-phase-paused", "sys-set-phase-terminated"},
+			Dependencies: []string{WorkspaceTemplateSysSetPhaseRunning, WorkspaceTemplateSysSetPhasePaused, WorkspaceTemplateSysSetPhaseTerminated},
 		}
 
 		templates[0].DAG.Tasks = append(templates[0].DAG.Tasks, dag)
