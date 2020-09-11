@@ -62,12 +62,6 @@ func workspaceStatusToFieldMap(status *WorkspaceStatus) sq.Eq {
 func updateWorkspaceStatusBuilder(namespace, uid string, status *WorkspaceStatus) sq.UpdateBuilder {
 	fieldMap := workspaceStatusToFieldMap(status)
 
-	log.WithFields(log.Fields{
-		"Namespace":   namespace,
-		"Workspace":   uid,
-		"Final Phase": fieldMap["phase"],
-	}).Info("Updating workspace status")
-
 	// Failed, Error, Succeeded
 	ub := sb.Update("workspaces").
 		SetMap(fieldMap).
