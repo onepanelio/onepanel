@@ -9,7 +9,7 @@
 [![chat](https://img.shields.io/badge/support-slack-01579b)](https://onepanel-ce.slack.com/join/shared_invite/zt-eyjnwec0-nLaHhjif9Y~gA05KuX6AUg#/)
 [![license](https://img.shields.io/github/license/onepanelio/core?color=01579b)](https://opensource.org/licenses/Apache-2.0)
 
-Production scale vision AI platform based on Kubernetes, with fully integrated modules for model building, automated labeling, data processing and model training pipelines.
+Production scale, Kubernetes-native vision AI platform, with fully integrated components for model building, automated labeling, data processing and model training pipelines.
 
 ## Why Onepanel?
 
