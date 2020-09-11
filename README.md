@@ -65,7 +65,7 @@ Production scale vision AI platform based on Kubernetes, with fully integrated m
 See [quick start guide](https://docs.onepanel.ai/docs/getting-started/quickstart) to get started with the platform of your choice.
 
 ### Quick start videos
-[EKS deployment](https://youtu.be/Ipdd8f6D6IM)
+[Getting started with Amazon EKS](https://youtu.be/Ipdd8f6D6IM)
 
 ## Community
 See [documentation](https://docs.onepanel.ai) to get started or for more detailed operational and user guides.
