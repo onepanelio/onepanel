@@ -9,7 +9,7 @@
 [![chat](https://img.shields.io/badge/support-slack-01579b)](https://onepanel-ce.slack.com/join/shared_invite/zt-eyjnwec0-nLaHhjif9Y~gA05KuX6AUg#/)
 [![license](https://img.shields.io/github/license/onepanelio/core?color=01579b)](https://opensource.org/licenses/Apache-2.0)
 
-Production scale end-to-end vision AI platform with fully integrated modules for model building, automated labeling, data processing and model training pipelines on Kubernetes.
+Production scale vision AI platform based on Kubernetes, with fully integrated modules for model building, automated labeling, data processing and model training pipelines.
 
 ## Why Onepanel?
 
@@ -63,6 +63,9 @@ Production scale end-to-end vision AI platform with fully integrated modules for
 
 ## Quick start
 See [quick start guide](https://docs.onepanel.ai/docs/getting-started/quickstart) to get started with the platform of your choice.
+
+### Quick start videos
+[EKS deployment](https://youtu.be/Ipdd8f6D6IM)
 
 ## Community
 See [documentation](https://docs.onepanel.ai) to get started or for more detailed operational and user guides.
