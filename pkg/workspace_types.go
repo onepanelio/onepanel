@@ -15,13 +15,18 @@ type WorkspacePhase string
 
 // Workspace phases
 const (
-	WorkspaceLaunching   WorkspacePhase = "Launching"
-	WorkspaceRunning     WorkspacePhase = "Running"
-	WorkspaceUpdating    WorkspacePhase = "Updating"
-	WorkspacePausing     WorkspacePhase = "Pausing"
-	WorkspacePaused      WorkspacePhase = "Paused"
-	WorkspaceTerminating WorkspacePhase = "Terminating"
-	WorkspaceTerminated  WorkspacePhase = "Terminated"
+	WorkspaceLaunching         WorkspacePhase = "Launching"
+	WorkspaceRunning           WorkspacePhase = "Running"
+	WorkspaceUpdating          WorkspacePhase = "Updating"
+	WorkspacePausing           WorkspacePhase = "Pausing"
+	WorkspacePaused            WorkspacePhase = "Paused"
+	WorkspaceTerminating       WorkspacePhase = "Terminating"
+	WorkspaceTerminated        WorkspacePhase = "Terminated"
+	WorkspaceFailedToPause     WorkspacePhase = "Failed to pause"
+	WorkspaceFailedToResume    WorkspacePhase = "Failed to resume"
+	WorkspaceFailedToTerminate WorkspacePhase = "Failed to terminate"
+	WorkspaceFailedToLaunch    WorkspacePhase = "Failed to launch"
+	WorkspaceFailedToUpdate    WorkspacePhase = "Failed to upgrade"
 )
 
 type WorkspaceStatus struct {

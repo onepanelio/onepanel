@@ -10,7 +10,7 @@ type Web interface {
 	WorkflowExecution(namespace, uid string) string
 }
 
-// web is a basic implementation of WebRouter
+// web is a basic implementation of router.Web
 type web struct {
 	protocol string
 	fqdn     string
@@ -18,7 +18,7 @@ type web struct {
 
 // WorkflowExecution generates a url to view a specific workflow
 func (w *web) WorkflowExecution(namespace, uid string) string {
-	// <protocol>:<fqdn>/<namespace>/workflows/<uid>
+	// <protocol><fqdn>/<namespace>/workflows/<uid>
 	return fmt.Sprintf("%v%v/%v/workflows/%v", w.protocol, w.fqdn, namespace, uid)
 }
 
@@ -27,5 +27,13 @@ func NewWebRouter(protocol, fqdn string) (Web, error) {
 	return &web{
 		protocol: protocol,
 		fqdn:     fqdn,
+	}, nil
+}
+
+// NewRelativeWebRouter creates a web router that does relative routes, with no protocol or fqdn
+func NewRelativeWebRouter() (Web, error) {
+	return &web{
+		protocol: "",
+		fqdn:     "",
 	}, nil
 }
