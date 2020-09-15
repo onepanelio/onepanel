@@ -48,8 +48,8 @@ func TestParseParametersFromManifest(t *testing.T) {
 	// Make sure visibility is set
 	assert.Equal(t, *keyedParameters["dataset-path"].Visibility, "public")
 
-	// Make sure visibility is not set if omitted
-	assert.Nil(t, keyedParameters["tf-image"].Visibility)
+	// Make sure visibility is public if omitted
+	assert.Equal(t, *keyedParameters["tf-image"].Visibility, "public")
 
 	// Make sure numbers, slashes, dashes, and letters are parsed correctly
 	assert.Equal(t, *keyedParameters["tf-image"].Value, "tensorflow/tensorflow:1.13.1-py3")

@@ -100,7 +100,6 @@ func DefaultTestClient() *Client {
 func clearDatabase(t *testing.T) {
 	// We do not delete from goose_db_version as we need it to mark the migrations as ran.
 	query := `
-		DELETE FROM labels;
 		DELETE FROM workspaces;
 		DELETE FROM workflow_executions;
 		DELETE FROM cron_workflows;
