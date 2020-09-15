@@ -22,6 +22,7 @@ jobs:
         with:
           args: go test github.com/onepanelio/core/pkg -db=postgres
   build:
+    needs: test-code-job
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
