@@ -215,6 +215,9 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 				if parameter.Name == labelKey {
 					labelKeyVal = *parameter.Value
 				}
+			}
+
+			for _, parameter := range workspace.Parameters {
 				if parameter.Name == nodePoolKey {
 					nodePoolVal = *parameter.Value
 				}
