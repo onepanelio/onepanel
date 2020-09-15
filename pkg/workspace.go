@@ -14,6 +14,8 @@ import (
 	"github.com/onepanelio/core/pkg/util/ptr"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -204,6 +206,41 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 				return nil, errors.New("unable to type check statefulset manifest")
 			}
 
+			//Get node selected
+			labelKey := "sys-node-pool-label"
+			labelKeyVal := ""
+			nodePoolKey := "sys-node-pool"
+			nodePoolVal := ""
+			for _, parameter := range argoTemplate.Spec.Arguments.Parameters {
+				if parameter.Name == labelKey {
+					labelKeyVal = *parameter.Value
+				}
+				if parameter.Name == nodePoolKey {
+					nodePoolVal = *parameter.Value
+				}
+			}
+
+			runningNodes, err := c.Interface.CoreV1().Nodes().List(v1.ListOptions{})
+			if err != nil {
+				return nil, err
+			}
+			var cpu string
+			var memory string
+			var gpu int64
+			for _, node := range runningNodes.Items {
+				if node.Labels[labelKeyVal] == nodePoolVal {
+					cpuInt := node.Status.Allocatable.Cpu().MilliValue()
+					cpu = strconv.FormatFloat(float64(cpuInt)*.9, 'f', 0, 64) + "m"
+					//12932380Ki
+					memoryInt := node.Status.Allocatable.Memory().MilliValue()
+					kiBase := 1024.0
+					ninetyPerc := float64(memoryInt) * .9
+					toKi := ninetyPerc / kiBase / kiBase
+					memory = strconv.FormatFloat(toKi, 'f', 0, 64) + "Ki"
+					gpuQuantity := node.Status.Allocatable["nvidia.com/gpu"]
+					gpu = gpuQuantity.Value()
+				}
+			}
 			extraContainer := map[string]interface{}{
 				"image":   "alpine:latest",
 				"name":    "resource-requester",
@@ -211,14 +248,29 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 				"args":    []interface{}{"-c", "while :; do sleep 2073600; done"},
 				"resources": map[string]interface{}{
 					"requests": map[string]interface{}{
-						"cpu":            "3000m",
-						"memory":         "11000Mi",
-						"nvidia.com/gpu": "1",
+						"cpu":    cpu,
+						"memory": memory,
 					},
-					"limits": map[string]interface{}{
-						"nvidia.com/gpu": "1",
-					},
+					"limits": map[string]interface{}{},
 				},
+			}
+
+			if gpu > 0 {
+				res, ok := extraContainer["resources"].(map[string]interface{})
+				if !ok {
+					return nil, errors.New("unable to type check extraContainer")
+				}
+				reqs, ok := res["requests"].(map[string]interface{})
+				if !ok {
+					return nil, errors.New("unable to type check extraContainer")
+				}
+				reqs["nvidia.com/gpu"] = gpu
+
+				limits, ok := res["limits"].(map[string]interface{})
+				if !ok {
+					return nil, errors.New("unable to type check extraContainer")
+				}
+				limits["nvidia.com/gpu"] = gpu
 			}
 
 			containers, ok := templateSpec["containers"].([]interface{})
