@@ -2,8 +2,28 @@ name: Publish dev docker image
 on:
   push:
     branches:
-      - master
+      - *
 jobs:
+  test-code-job:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:12.3
+        env:
+          POSTGRES_DB: onepanel
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: tester
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@master
+      - name: Run testing code
+        uses: cedrickring/golang-action@1.5.2
+        with:
+          args: go test github.com/onepanelio/core/pkg -db=postgres
   build:
     runs-on: ubuntu-latest
     steps:
