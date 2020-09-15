@@ -227,6 +227,7 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 			var cpu string
 			var memory string
 			var gpu int64
+			gpuManufacturer := ""
 			for _, node := range runningNodes.Items {
 				if node.Labels[labelKeyVal] == nodePoolVal {
 					cpuInt := node.Status.Allocatable.Cpu().MilliValue()
@@ -237,8 +238,20 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 					ninetyPerc := float64(memoryInt) * .9
 					toKi := ninetyPerc / kiBase / kiBase
 					memory = strconv.FormatFloat(toKi, 'f', 0, 64) + "Ki"
+					//Check for Nvidia
 					gpuQuantity := node.Status.Allocatable["nvidia.com/gpu"]
-					gpu = gpuQuantity.Value()
+					if gpuQuantity.IsZero() == false {
+						gpu = gpuQuantity.Value()
+						gpuManufacturer = "nvidia.com/gpu"
+					}
+
+					//Check for AMD
+					//Source: https://github.com/RadeonOpenCompute/k8s-device-plugin/blob/master/example/pod/alexnet-gpu.yaml
+					gpuQuantity = node.Status.Allocatable["amd.com/gpu"]
+					if gpuQuantity.IsZero() == false {
+						gpu = gpuQuantity.Value()
+						gpuManufacturer = "amd.com/gpu"
+					}
 				}
 			}
 			extraContainer := map[string]interface{}{
@@ -264,13 +277,13 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 				if !ok {
 					return nil, errors.New("unable to type check extraContainer")
 				}
-				reqs["nvidia.com/gpu"] = gpu
+				reqs[gpuManufacturer] = gpu
 
 				limits, ok := res["limits"].(map[string]interface{})
 				if !ok {
 					return nil, errors.New("unable to type check extraContainer")
 				}
-				limits["nvidia.com/gpu"] = gpu
+				limits[gpuManufacturer] = gpu
 			}
 
 			containers, ok := templateSpec["containers"].([]interface{})
