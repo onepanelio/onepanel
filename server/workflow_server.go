@@ -448,3 +448,29 @@ func (s *WorkflowServer) UpdateWorkflowExecutionStatus(ctx context.Context, req 
 
 	return &empty.Empty{}, err
 }
+
+// GetWorkflowExecutionStatisticsForNamespace returns statistics on workflow executions for a given namespace
+func (s *WorkflowServer) GetWorkflowExecutionStatisticsForNamespace(ctx context.Context, req *api.GetWorkflowExecutionStatisticsForNamespaceRequest) (*api.GetWorkflowExecutionStatisticsForNamespaceResponse, error) {
+	client := getClient(ctx)
+
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "workflows", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	report, err := client.GetWorkflowExecutionStatisticsForNamespace(req.Namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.GetWorkflowExecutionStatisticsForNamespaceResponse{
+		Stats: &api.WorkflowExecutionStatisticReport{
+			Total:        report.Total,
+			LastExecuted: report.LastExecuted.Format(time.RFC3339),
+			Running:      report.Running,
+			Completed:    report.Completed,
+			Failed:       report.Failed,
+			Terminated:   report.Terminated,
+		},
+	}, nil
+}

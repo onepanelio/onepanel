@@ -1520,6 +1520,30 @@ func (c *Client) SetWorkflowTemplateLabels(namespace, uid, prefix string, keyVal
 	return filteredMap, nil
 }
 
+// GetWorkflowExecutionStatisticsForNamespace loads statistics on workflow executions for the provided namespace
+func (c *Client) GetWorkflowExecutionStatisticsForNamespace(namespace string) (report *WorkflowExecutionStatisticReport, err error) {
+	statsSelect := `
+		MAX(we.created_at) last_executed,
+		COUNT(*) FILTER (WHERE finished_at IS NULL AND (phase = 'Running' OR phase = 'Pending')) running,
+		COUNT(*) FILTER (WHERE finished_at IS NOT NULL AND phase = 'Succeeded') completed,
+		COUNT(*) FILTER (WHERE finished_at IS NOT NULL AND (phase = 'Failed' OR phase = 'Error')) failed,
+		COUNT(*) FILTER (WHERE phase = 'Terminated') terminated,
+		COUNT(*) total`
+
+	query := sb.Select(statsSelect).
+		From("workflow_executions we").
+		Where(sq.Eq{
+			"we.namespace": namespace,
+		})
+
+	report = &WorkflowExecutionStatisticReport{}
+	err = c.DB.Getx(report, query)
+
+	return
+}
+
+// GetWorkflowExecutionStatisticsForTemplates loads statistics on workflow executions for the provided
+// workflowTemplates and sets it as the WorkflowExecutionStatisticReport property
 func (c *Client) GetWorkflowExecutionStatisticsForTemplates(workflowTemplates ...*WorkflowTemplate) (err error) {
 	if len(workflowTemplates) == 0 {
 		return nil
@@ -1529,16 +1553,6 @@ func (c *Client) GetWorkflowExecutionStatisticsForTemplates(workflowTemplates ..
 	if err != nil {
 		return err
 	}
-
-	whereIn := "wtv.workflow_template_id IN (?"
-	for i := range workflowTemplates {
-		if i == 0 {
-			continue
-		}
-
-		whereIn += ",?"
-	}
-	whereIn += ")"
 
 	ids := make([]interface{}, len(workflowTemplates))
 	for i, workflowTemplate := range workflowTemplates {
@@ -1559,7 +1573,9 @@ func (c *Client) GetWorkflowExecutionStatisticsForTemplates(workflowTemplates ..
 	query, args, err := sb.Select(statsSelect).
 		From("workflow_executions we").
 		Join("workflow_template_versions wtv ON wtv.id = we.workflow_template_version_id").
-		Where(whereIn, ids...).
+		Where(sq.Eq{
+			"wtv.workflow_template_id": ids,
+		}).
 		GroupBy("wtv.workflow_template_id").
 		ToSql()
 
