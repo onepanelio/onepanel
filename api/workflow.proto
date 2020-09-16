@@ -169,6 +169,8 @@ message ListWorkflowExecutionsRequest {
     string workflowTemplateVersion = 3;
     int32 pageSize = 4;
     int32 page = 5;
+    string order = 6;
+    string labels = 7;
 }
 
 message ListWorkflowExecutionsResponse {

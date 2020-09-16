@@ -3,7 +3,7 @@ package migration
 import (
 	"database/sql"
 	v1 "github.com/onepanelio/core/pkg"
-	"github.com/onepanelio/core/pkg/util/pagination"
+	"github.com/onepanelio/core/pkg/util/request/pagination"
 	"github.com/pressly/goose"
 )
 

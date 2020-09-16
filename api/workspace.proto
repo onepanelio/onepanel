@@ -121,6 +121,8 @@ message ListWorkspaceRequest {
 	string namespace = 1;
 	int32 pageSize = 2;
 	int32 page = 3;
+	string order = 4;
+	string labels = 5;
 }
 
 message ListWorkspaceResponse {

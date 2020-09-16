@@ -5,7 +5,8 @@ import (
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/onepanelio/core/pkg/util"
-	"github.com/onepanelio/core/pkg/util/pagination"
+	"github.com/onepanelio/core/pkg/util/request"
+	"github.com/onepanelio/core/pkg/util/request/pagination"
 	"github.com/onepanelio/core/pkg/util/router"
 	"github.com/onepanelio/core/server/converter"
 	"google.golang.org/grpc/codes"
@@ -19,6 +20,8 @@ import (
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/server/auth"
+
+	requestSort "github.com/onepanelio/core/pkg/util/request/sort"
 )
 
 type WorkflowServer struct{}
@@ -275,6 +278,7 @@ func (s *WorkflowServer) GetWorkflowExecutionMetrics(ctx context.Context, req *a
 	return &api.GetWorkflowExecutionMetricsResponse{Metrics: apiMetrics}, nil
 }
 
+// ListWorkflowExecutions returns a list of workflow executions that are specified by the criteria in the ListWorkflowExecutionsRequest
 func (s *WorkflowServer) ListWorkflowExecutions(ctx context.Context, req *api.ListWorkflowExecutionsRequest) (*api.ListWorkflowExecutionsResponse, error) {
 	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "workflows", "")
@@ -282,8 +286,24 @@ func (s *WorkflowServer) ListWorkflowExecutions(ctx context.Context, req *api.Li
 		return nil, err
 	}
 
-	paginator := pagination.NewRequest(req.Page, req.PageSize)
-	workflows, err := client.ListWorkflowExecutions(req.Namespace, req.WorkflowTemplateUid, req.WorkflowTemplateVersion, &paginator)
+	labelFilter, err := v1.LabelsFromString(req.Labels)
+	if err != nil {
+		return nil, err
+	}
+	reqSort, err := requestSort.New(req.Order)
+	if err != nil {
+		return nil, err
+	}
+
+	resourceRequest := &request.Request{
+		Pagination: pagination.New(req.Page, req.PageSize),
+		Filter: v1.WorkflowExecutionFilter{
+			Labels: labelFilter,
+		},
+		Sort: reqSort,
+	}
+
+	workflows, err := client.ListWorkflowExecutions(req.Namespace, req.WorkflowTemplateUid, req.WorkflowTemplateVersion, resourceRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -299,11 +319,12 @@ func (s *WorkflowServer) ListWorkflowExecutions(ctx context.Context, req *api.Li
 		apiWorkflowExecutions = append(apiWorkflowExecutions, apiWorkflowExecution(wf, webRouter))
 	}
 
-	count, err := client.CountWorkflowExecutions(req.Namespace, req.WorkflowTemplateUid, req.WorkflowTemplateVersion)
+	count, err := client.CountWorkflowExecutions(req.Namespace, req.WorkflowTemplateUid, req.WorkflowTemplateVersion, resourceRequest)
 	if err != nil {
 		return nil, err
 	}
 
+	paginator := resourceRequest.Pagination
 	return &api.ListWorkflowExecutionsResponse{
 		Count:              int32(len(apiWorkflowExecutions)),
 		WorkflowExecutions: apiWorkflowExecutions,

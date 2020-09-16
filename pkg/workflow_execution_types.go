@@ -108,3 +108,28 @@ func getWorkflowExecutionColumns(aliasAndDestination ...string) []string {
 	columns := []string{"id", "created_at", "uid", "name", "parameters", "phase", "started_at", "finished_at", "labels"}
 	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }
+
+// getWorkflowExecutionColumnsMap returns a map where the keys are the columns of the workflow execution table
+// the value is the raw column name as it is in the database
+func getWorkflowExecutionColumnsMap(camelCase bool) map[string]string {
+	result := map[string]string{
+		"id":         "id",
+		"uid":        "uid",
+		"name":       "name",
+		"parameters": "parameters",
+		"phase":      "phase",
+		"labels":     "labels",
+	}
+
+	if camelCase {
+		result["createdAt"] = "created_at"
+		result["startedAt"] = "started_at"
+		result["finishedAt"] = "finished_at"
+	} else {
+		result["created_at"] = "created_at"
+		result["started_at"] = "started_at"
+		result["finished_at"] = "finished_at"
+	}
+
+	return result
+}
