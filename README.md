@@ -89,40 +89,6 @@ Onepanel is modular and consists of the following repositories:
 
 See `CONTRIBUTING.md` in each repository for development guidelines. Also, see [contribution guide](https://docs.onepanel.ai/docs/getting-started/contributing) for additional guidelines.
 
-## FAQ
-
-REMOVE NOTES:  Need to format the Q&A section somehow, maybe indent the A:?
-
-Q: How is Onepanel different from using Google Colab?
-
-A: Colab is great for small scale experiments but not geared for production. Onepanel's goal is to provide an end-to-end platform for building, training, and deploying computer vision projects into production. Out of the box, you can use TensorFlow or PyTorch along with JupyterLab as your main IDE/notebook. You can also create templates for your own frameworks/IDEs, for example, here is a simple one for VS Code.
-
-In a typical production project, you have an annotation team that works on labeling data, a data science team that will build/train models based on the labeled data, and a data/ML engineering team that will build the data processing, continuous training pipelines so you can iteratively improve your data and models. In smaller teams, this may be a couple of people wearing multiple hats.
-
-With Onepanel, you get the infrastructure and tools to make this end-to-end workflow possible. With Colab, you really only get the model building and training aspect of this workflow. The other issue with Colab is that it runs on a single machine. If you are training on real-world data, you'd probably want to train your models in parallel, use different hyperparameters and run the training on different machines to expedite your training. This requires a system like Onepanel to automatically scale up these machines, run the training scripts, aggregate and snapshot metrics and output data (models, logs, etc.) and then scale down the machines when training is complete.
-
-Q: Why deploy Onepanel on-premises vs. using a PaaS?
-
-A: Most InfoSec and Compliance departments at larger enterprises will require strict requirements for data security and privacy.  A good example is the EU's https://gdpr.eu/what-is-gdpr/).  Onepanel can be deployed on-premises where all security and privacy controls can be rigorously maintained.
-
-Q: What hardware is needed to run Onepanel CE 
-
-A: INSERT REQUIREMENTS HERE FOR A.) DESKTOP B:) Minimum cloud requirements C.) Link back to the docs section
-
-Q: Why make it a computer vision platform instead of a more general-purpose tool? 
-
-A: Nothing stops you from using Onepanel for other types of ML tasks. In fact, right now, you can use all the features other than the image/video labeling tool for let's say NLP. You can even create your own template for a text annotation tool like doccano and plug that into your workflow.
-
-Our goal is to initially focus on computer vision and provide exceptional tooling and user experience, but at the same time make the platform flexible so that we can extend to additional subfields and provide the best UX and tooling for those subfields.
-
-Q: What's the difference between using Onepanel CE and AWS Sagemaker?
-
-A: Onepanel can be deployed on any cloud provider or on-premise.  Onepanel abstracts many of the time consuming and complex infrastructure needed to deploy a seamless end-to-end computer vision pipeline.
-
-Q: Can I create my own Workspace modules from my own Docker image and integrate it into Onepanel?
-
-A: Yes, Onepanel was fundamentally designed to be fully modular and extensible.  You can create or customize existing templates using YAML to fully integrate any tools required for your computer vision pipeline
-
 
 ## Acknowledgments
 Onepanel seamlessly integrates the following excellent open source projects. We are grateful for the support these communities provide and do our best to contribute back as much as possible.
