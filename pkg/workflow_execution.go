@@ -10,8 +10,8 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/onepanelio/core/pkg/util/gcs"
 	"github.com/onepanelio/core/pkg/util/label"
-	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
+	"github.com/onepanelio/core/pkg/util/request"
 	"github.com/onepanelio/core/pkg/util/types"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"golang.org/x/net/context"
@@ -60,6 +60,29 @@ func typeWorkflow(wf *wfv1.Workflow) (workflow *WorkflowExecution) {
 	}
 
 	return
+}
+
+// WorkflowExecutionFilter represents the available ways we can filter WorkflowExecutions
+type WorkflowExecutionFilter struct {
+	Labels []*Label
+}
+
+// applyWorkflowExecutionLabelSelectQuery returns a query builder that adds where statements to filter by labels in the request,
+// if there are any
+func applyWorkflowExecutionLabelSelectQuery(sb sq.SelectBuilder, request *request.Request) sq.SelectBuilder {
+	if request.Filter != nil {
+		filter, ok := request.Filter.(WorkflowExecutionFilter)
+		if ok {
+			labelsJSON, err := LabelsToJSONString(filter.Labels)
+			if err != nil {
+				log.Printf("[error] %v", err)
+			} else {
+				sb = sb.Where("we.labels @> ?", labelsJSON)
+			}
+		}
+	}
+
+	return sb
 }
 
 func UnmarshalWorkflows(wfBytes []byte, strict bool) (wfs []wfv1.Workflow, err error) {
@@ -688,10 +711,22 @@ func (c *Client) GetWorkflowExecution(namespace, uid string) (workflow *Workflow
 }
 
 // ListWorkflowExecutions gets a list of WorkflowExecutions ordered by most recently created first.
-func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflowTemplateVersion string, paginator *pagination.PaginationRequest) (workflows []*WorkflowExecution, err error) {
-	sb := workflowExecutionsSelectBuilder(namespace, workflowTemplateUID, workflowTemplateVersion).
-		OrderBy("we.created_at DESC")
-	sb = *paginator.ApplyToSelect(&sb)
+func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflowTemplateVersion string, request *request.Request) (workflows []*WorkflowExecution, err error) {
+	sb := workflowExecutionsSelectBuilder(namespace, workflowTemplateUID, workflowTemplateVersion)
+
+	if request.HasSorting() {
+		properties := getWorkflowExecutionColumnsMap(true)
+		for _, order := range request.Sort.Properties {
+			if columnName, ok := properties[order.Property]; ok {
+				sb = sb.OrderBy(fmt.Sprintf("we.%v %v", columnName, order.Direction))
+			}
+		}
+	} else {
+		sb = sb.OrderBy("we.created_at DESC")
+	}
+
+	sb = applyWorkflowExecutionLabelSelectQuery(sb, request)
+	sb = *request.Pagination.ApplyToSelect(&sb)
 
 	if err := c.DB.Selectx(&workflows, sb); err != nil {
 		return nil, err
@@ -701,10 +736,13 @@ func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflow
 }
 
 // CountWorkflowExecutions returns the number of workflow executions
-func (c *Client) CountWorkflowExecutions(namespace, workflowTemplateUID, workflowTemplateVersion string) (count int, err error) {
-	err = workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, workflowTemplateVersion).
-		Columns("COUNT(*)").
-		RunWith(c.DB).
+func (c *Client) CountWorkflowExecutions(namespace, workflowTemplateUID, workflowTemplateVersion string, request *request.Request) (count int, err error) {
+	sb := workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, workflowTemplateVersion).
+		Columns("COUNT(*)")
+
+	sb = applyWorkflowExecutionLabelSelectQuery(sb, request)
+
+	err = sb.RunWith(c.DB).
 		QueryRow().
 		Scan(&count)
 
@@ -1700,11 +1738,14 @@ func injectWorkflowExecutionStatusCaller(wf *wfv1.Workflow, phase wfv1.NodePhase
 func workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, workflowTemplateVersion string) sq.SelectBuilder {
 	whereMap := sq.Eq{
 		"wt.namespace":   namespace,
-		"wt.uid":         workflowTemplateUID,
 		"we.is_archived": false,
 	}
-	if workflowTemplateVersion != "" {
-		whereMap["wtv.version"] = workflowTemplateVersion
+	if workflowTemplateUID != "" {
+		whereMap["wt.uid"] = workflowTemplateUID
+
+		if workflowTemplateVersion != "" {
+			whereMap["wtv.version"] = workflowTemplateVersion
+		}
 	}
 
 	sb := sb.Select().

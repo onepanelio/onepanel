@@ -5,7 +5,7 @@ import (
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util"
-	"github.com/onepanelio/core/pkg/util/pagination"
+	"github.com/onepanelio/core/pkg/util/request/pagination"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/onepanelio/core/server/converter"
 	"google.golang.org/grpc/codes"

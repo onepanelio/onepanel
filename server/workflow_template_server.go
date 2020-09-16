@@ -5,7 +5,8 @@ import (
 	"errors"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
-	"github.com/onepanelio/core/pkg/util/pagination"
+	"github.com/onepanelio/core/pkg/util/request"
+	"github.com/onepanelio/core/pkg/util/request/pagination"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/onepanelio/core/server/converter"
 	"time"
@@ -192,12 +193,15 @@ func (s *WorkflowTemplateServer) ListWorkflowTemplates(ctx context.Context, req 
 	if err != nil {
 		return nil, err
 	}
-	filter := v1.WorkflowTemplateFilter{
-		Labels: labelFilter,
+
+	resourceRequest := &request.Request{
+		Pagination: pagination.New(req.Page, req.PageSize),
+		Filter: v1.WorkflowTemplateFilter{
+			Labels: labelFilter,
+		},
 	}
 
-	paginator := pagination.NewRequest(req.Page, req.PageSize)
-	workflowTemplates, err := client.ListWorkflowTemplates(req.Namespace, &paginator, &filter)
+	workflowTemplates, err := client.ListWorkflowTemplates(req.Namespace, resourceRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -207,11 +211,12 @@ func (s *WorkflowTemplateServer) ListWorkflowTemplates(ctx context.Context, req 
 		apiWorkflowTemplates = append(apiWorkflowTemplates, apiWorkflowTemplate(wtv))
 	}
 
-	count, err := client.CountWorkflowTemplates(req.Namespace, &filter)
+	count, err := client.CountWorkflowTemplates(req.Namespace, resourceRequest)
 	if err != nil {
 		return nil, err
 	}
 
+	paginator := resourceRequest.Pagination
 	return &api.ListWorkflowTemplatesResponse{
 		Count:             int32(len(apiWorkflowTemplates)),
 		WorkflowTemplates: apiWorkflowTemplates,
