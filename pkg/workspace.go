@@ -15,7 +15,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	v1 "k8s.io/api/core/v1"
-	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
 	"time"
 )
@@ -221,8 +221,8 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 			antiAffinityLabelKey := "onepanel.io/reserves-instance-type"
 			podAntiAffinity := v1.Affinity{
 				PodAntiAffinity: &v1.PodAntiAffinity{RequiredDuringSchedulingIgnoredDuringExecution: []v1.PodAffinityTerm{
-					{LabelSelector: &v12.LabelSelector{
-						MatchExpressions: []v12.LabelSelectorRequirement{
+					{LabelSelector: &metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
 							{Key: antiAffinityLabelKey, Operator: "In", Values: []string{nodePoolVal}},
 						},
 					}, TopologyKey: "kubernetes.io/hostname"},
