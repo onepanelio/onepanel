@@ -3,15 +3,19 @@ package v1
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/asaskevich/govalidator"
+	"github.com/ghodss/yaml"
 	"github.com/lib/pq"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
 	"time"
 )
@@ -175,6 +179,63 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 		value := runtimeParametersMap[p.Name]
 		if value != nil {
 			argoTemplate.Spec.Arguments.Parameters[i].Value = value
+		}
+	}
+
+	templates := argoTemplate.Spec.Templates
+	for i, t := range templates {
+		if t.Name == WorkspaceStatefulSetResource {
+			//due to placeholders, we can't unmarshal into a k8s statefulset
+			statefulSet := map[string]interface{}{}
+			if err := yaml.Unmarshal([]byte(t.Resource.Manifest), &statefulSet); err != nil {
+				return nil, err
+			}
+			spec, ok := statefulSet["spec"].(map[string]interface{})
+			if !ok {
+				return nil, errors.New("unable to type check statefulset manifest")
+			}
+			template, ok := spec["template"].(map[string]interface{})
+			if !ok {
+				return nil, errors.New("unable to type check statefulset manifest")
+			}
+			templateMetadata, ok := template["metadata"].(map[string]interface{})
+			if !ok {
+				return nil, errors.New("unable to type check statefulset manifest")
+			}
+			templateMetadataLabels, ok := templateMetadata["labels"].(map[string]interface{})
+			if !ok {
+				return nil, errors.New("unable to type check statefulset manifest")
+			}
+			templateSpec, ok := template["spec"].(map[string]interface{})
+			if !ok {
+				return nil, errors.New("unable to type check statefulset manifest")
+			}
+
+			nodePoolKey := "sys-node-pool"
+			nodePoolVal := ""
+			for _, parameter := range workspace.Parameters {
+				if parameter.Name == nodePoolKey {
+					nodePoolVal = *parameter.Value
+				}
+			}
+			antiAffinityLabelKey := "onepanel.io/reserves-instance-type"
+			podAntiAffinity := v1.Affinity{
+				PodAntiAffinity: &v1.PodAntiAffinity{RequiredDuringSchedulingIgnoredDuringExecution: []v1.PodAffinityTerm{
+					{LabelSelector: &metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{Key: antiAffinityLabelKey, Operator: "In", Values: []string{nodePoolVal}},
+						},
+					}, TopologyKey: "kubernetes.io/hostname"},
+				}},
+			}
+
+			templateMetadataLabels[antiAffinityLabelKey] = nodePoolVal
+			templateSpec["affinity"] = podAntiAffinity
+			resultManifest, err := yaml.Marshal(statefulSet)
+			if err != nil {
+				return nil, err
+			}
+			templates[i].Resource.Manifest = string(resultManifest)
 		}
 	}
 
