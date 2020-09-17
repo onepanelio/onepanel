@@ -214,33 +214,25 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 				return nil, errors.New("unable to type check statefulset manifest")
 			}
 
-			//Get node selected
-			labelKey := "sys-node-pool-label"
-			labelKeyVal := ""
 			nodePoolKey := "sys-node-pool"
 			nodePoolVal := ""
-			for _, parameter := range argoTemplate.Spec.Arguments.Parameters {
-				if parameter.Name == labelKey {
-					labelKeyVal = *parameter.Value
-				}
-			}
-
 			for _, parameter := range workspace.Parameters {
 				if parameter.Name == nodePoolKey {
 					nodePoolVal = *parameter.Value
 				}
 			}
+			antiAffinityLabelKey := "onepanel.io/reserves-instance-type"
 			podAntiAffinity := v1.Affinity{
 				PodAntiAffinity: &v1.PodAntiAffinity{RequiredDuringSchedulingIgnoredDuringExecution: []v1.PodAffinityTerm{
 					{LabelSelector: &v12.LabelSelector{
 						MatchExpressions: []v12.LabelSelectorRequirement{
-							{Key: labelKeyVal, Operator: "In", Values: []string{nodePoolVal}},
+							{Key: antiAffinityLabelKey, Operator: "In", Values: []string{nodePoolVal}},
 						},
 					}, TopologyKey: "kubernetes.io/hostname"},
 				}},
 			}
 
-			templateMetadataLabels[labelKeyVal] = nodePoolVal
+			templateMetadataLabels[antiAffinityLabelKey] = nodePoolVal
 			templateSpec["affinity"] = podAntiAffinity
 			resultManifest, err := yaml.Marshal(statefulSet)
 			if err != nil {
