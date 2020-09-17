@@ -23,24 +23,42 @@ import (
 	"strings"
 )
 
+// WorkspaceDAGTemplateCreateStatefulSet is used inside the DAG creation for the workspace.
 const WorkspaceDAGTemplateCreateStatefulSet = "create-stateful-set"
+// WorkspaceDAGTemplateGetStatefulSet is used inside the DAG creation for the workspace.
 const WorkspaceDAGTemplateGetStatefulSet = "get-stateful-set"
+// WorkspaceDAGTemplateService is used inside the DAG creation for the workspace.
 const WorkspaceDAGTemplateService = "service"
+// WorkspaceDAGTemplateVirtualService is used inside the DAG creation for the workspace.
 const WorkspaceDAGTemplateVirtualService = "virtual-service"
+// WorkspaceDAGTemplateCreateWorkspace is used inside the DAG creation for the workspace.
 const WorkspaceDAGTemplateCreateWorkspace = "create-workspace"
+// WorkspaceDAGTemplateDeleteStatefulSet is used inside the DAG creation for the workspace.
 const WorkspaceDAGTemplateDeleteStatefulSet = "delete-stateful-set"
+// WorkspaceDAGTemplateDeleteWorkspace is used inside the DAG creation for the workspace.
 const WorkspaceDAGTemplateDeleteWorkspace = "delete-workspace"
+// WorkspaceDAGTemplateDeletePVC is used inside the DAG creation for the workspace.
 const WorkspaceDAGTemplateDeletePVC = "delete-pvc"
+// WorkspaceDAGTemplateSysSetPhaseRunning is used inside the DAG creation for the workspace.
 const WorkspaceDAGTemplateSysSetPhaseRunning = "sys-set-phase-running"
+// WorkspaceDAGTemplateSysSetPhasePaused is used inside the DAG creation for the workspace.
 const WorkspaceDAGTemplateSysSetPhasePaused = "sys-set-phase-paused"
+// WorkspaceDAGTemplateSysSetPhaseTerminated is used inside the DAG creation for the workspace.
 const WorkspaceDAGTemplateSysSetPhaseTerminated = "sys-set-phase-terminated"
 
+// WorkspaceServiceResource is resource used in workspace template creation.
 const WorkspaceServiceResource = "service-resource"
+// WorkspaceVirtualServiceResource is resource used in workspace template creation.
 const WorkspaceVirtualServiceResource = "virtual-service-resource"
+// WorkspaceStatefulSetResource is resource used in workspace template creation.
 const WorkspaceStatefulSetResource = "stateful-set-resource"
+// WorkspaceGetStatefulSetResource is resource used in workspace template creation.
 const WorkspaceGetStatefulSetResource = "get-stateful-set-resource"
+// WorkspaceDeleteStatefulSetResource is resource used in workspace template creation.
 const WorkspaceDeleteStatefulSetResource = "delete-stateful-set-resource"
+// WorkspaceResource is resource used in workspace template creation.
 const WorkspaceResource = "workspace-resource"
+// WorkspaceDeletePVCResource is resource used in workspace template creation.
 const WorkspaceDeletePVCResource = "delete-pvc-resource"
 
 // createWorkspaceTemplateVersionDB creates a workspace template version in the database.
