@@ -3,7 +3,7 @@
   "info": {
     "title": "Onepanel",
     "description": "Onepanel API",
-    "version": "0.12.0-rc.0",
+    "version": "0.13.0",
     "contact": {
       "name": "Onepanel project",
       "url": "https://github.com/onepanelio/core"
@@ -2306,6 +2306,42 @@
     "/apis/v1beta1/{namespace}/workspaces/{uid}/resume": {
       "put": {
         "operationId": "ResumeWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workspaces/{uid}/retry": {
+      "put": {
+        "operationId": "RetryLastWorkspaceAction",
         "responses": {
           "200": {
             "description": "A successful response.",

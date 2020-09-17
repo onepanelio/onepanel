@@ -177,6 +177,7 @@ func (s *WorkspaceServer) UpdateWorkspaceStatus(ctx context.Context, req *api.Up
 	status := &v1.WorkspaceStatus{
 		Phase: v1.WorkspacePhase(req.Status.Phase),
 	}
+
 	err = client.UpdateWorkspaceStatus(req.Namespace, req.Uid, status)
 
 	return &empty.Empty{}, err
@@ -273,6 +274,67 @@ func (s *WorkspaceServer) DeleteWorkspace(ctx context.Context, req *api.DeleteWo
 	}
 
 	err = client.DeleteWorkspace(req.Namespace, req.Uid)
+
+	return &empty.Empty{}, err
+}
+
+// RetryLastWorkspaceAction will attempt the last action on the workspace again.
+func (s *WorkspaceServer) RetryLastWorkspaceAction(ctx context.Context, req *api.RetryActionWorkspaceRequest) (*empty.Empty, error) {
+	client := getClient(ctx)
+
+	workspace, err := client.GetWorkspace(req.Namespace, req.Uid)
+	if err != nil {
+		return nil, err
+	}
+	if workspace == nil {
+		return nil, util.NewUserError(codes.NotFound, "workspace not found")
+	}
+
+	verb := ""
+	switch workspace.Status.Phase {
+	case v1.WorkspaceFailedToLaunch:
+		verb = "create"
+	case v1.WorkspaceFailedToPause:
+		verb = "update"
+	case v1.WorkspaceFailedToResume:
+		verb = "update"
+	case v1.WorkspaceFailedToTerminate:
+		verb = "delete"
+	case v1.WorkspaceFailedToUpdate:
+		verb = "update"
+	default:
+		return nil, util.NewUserError(codes.InvalidArgument, "Workspace is not in a failed state")
+	}
+
+	allowed, err := auth.IsAuthorized(client, req.Namespace, verb, "onepanel.io", "workspaces", req.Uid)
+	if err != nil || !allowed {
+		return &empty.Empty{}, err
+	}
+
+	switch workspace.Status.Phase {
+	case v1.WorkspaceFailedToLaunch:
+		if _, err := client.StartWorkspace(req.Namespace, workspace); err != nil {
+			return nil, err
+		}
+	case v1.WorkspaceFailedToPause:
+		if err := client.PauseWorkspace(req.Namespace, workspace.UID); err != nil {
+			return nil, err
+		}
+	case v1.WorkspaceFailedToResume:
+		if err := client.ResumeWorkspace(req.Namespace, workspace.UID); err != nil {
+			return nil, err
+		}
+	case v1.WorkspaceFailedToTerminate:
+		if err := client.DeleteWorkspace(req.Namespace, workspace.UID); err != nil {
+			return nil, err
+		}
+	case v1.WorkspaceFailedToUpdate:
+		if err := client.UpdateWorkspace(req.Namespace, workspace.UID, workspace.Parameters); err != nil {
+			return nil, err
+		}
+	default:
+		return nil, util.NewUserError(codes.InvalidArgument, "Workspace is not in a failed state")
+	}
 
 	return &empty.Empty{}, err
 }

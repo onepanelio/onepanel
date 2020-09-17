@@ -59,6 +59,12 @@ service WorkspaceService {
             delete: "/apis/v1beta1/{namespace}/workspaces/{uid}"
         };
 	}
+
+	rpc RetryLastWorkspaceAction (RetryActionWorkspaceRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+            put: "/apis/v1beta1/{namespace}/workspaces/{uid}/retry"
+        };
+	}
 }
 
 message Workspace {
@@ -142,6 +148,11 @@ message ResumeWorkspaceRequest {
 }
 
 message DeleteWorkspaceRequest {
+	string namespace = 1;
+	string uid = 2;
+}
+
+message RetryActionWorkspaceRequest {
 	string namespace = 1;
 	string uid = 2;
 }

@@ -47,20 +47,16 @@ func workspaceStatusToFieldMap(status *WorkspaceStatus) sq.Eq {
 	case WorkspaceLaunching:
 		fieldMap["paused_at"] = pq.NullTime{}
 		fieldMap["started_at"] = time.Now().UTC()
-		break
 	case WorkspacePausing:
 		fieldMap["started_at"] = pq.NullTime{}
 		fieldMap["paused_at"] = time.Now().UTC()
-		break
 	case WorkspaceUpdating:
 		fieldMap["paused_at"] = pq.NullTime{}
 		fieldMap["updated_at"] = time.Now().UTC()
-		break
 	case WorkspaceTerminating:
 		fieldMap["started_at"] = pq.NullTime{}
 		fieldMap["paused_at"] = pq.NullTime{}
 		fieldMap["terminated_at"] = time.Now().UTC()
-		break
 	}
 
 	return fieldMap
@@ -70,6 +66,7 @@ func workspaceStatusToFieldMap(status *WorkspaceStatus) sq.Eq {
 func updateWorkspaceStatusBuilder(namespace, uid string, status *WorkspaceStatus) sq.UpdateBuilder {
 	fieldMap := workspaceStatusToFieldMap(status)
 
+	// Failed, Error, Succeeded
 	ub := sb.Update("workspaces").
 		SetMap(fieldMap).
 		Where(sq.And{
@@ -276,14 +273,96 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 	return workspace, nil
 }
 
-// CreateWorkspace creates a workspace by triggering the corresponding workflow
-func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Workspace, error) {
-	config, err := c.GetSystemConfig()
+// startWorkspace starts a workspace and related resources. It assumes a DB record already exists
+// The following are required on the workspace:
+//   WorkspaceTemplate.WorkflowTemplate.UID
+//   WorkspaceTemplate.WorkflowTemplate.Version
+func (c *Client) startWorkspace(namespace string, parameters []byte, workspace *Workspace) (*Workspace, error) {
+	if workspace == nil {
+		return nil, fmt.Errorf("workspace is nil")
+	}
+	if workspace.WorkspaceTemplate == nil {
+		return nil, fmt.Errorf("workspace.WorkspaceTemplate is nil")
+	}
+	if workspace.WorkspaceTemplate.WorkflowTemplate == nil {
+		return nil, fmt.Errorf("workspace.WorkspaceTemplate.WorkflowTemplate is nil")
+	}
+
+	systemConfig, err := c.GetSystemConfig()
 	if err != nil {
 		return nil, err
 	}
 
+	workflowTemplate, err := c.GetWorkflowTemplate(namespace, workspace.WorkspaceTemplate.WorkflowTemplate.UID, workspace.WorkspaceTemplate.WorkflowTemplate.Version)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Workspace": workspace,
+			"Error":     err.Error(),
+		}).Error("Error with getting workflow template.")
+		return nil, util.NewUserError(codes.NotFound, "Error with getting workflow template.")
+	}
+
+	runtimeParameters, err := generateRuntimeParameters(systemConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	runtimeParametersMap := make(map[string]*string)
+	for _, p := range runtimeParameters {
+		runtimeParametersMap[p.Name] = p.Value
+	}
+
+	argoTemplate := workflowTemplate.ArgoWorkflowTemplate
+	for i, p := range argoTemplate.Spec.Arguments.Parameters {
+		value := runtimeParametersMap[p.Name]
+		if value != nil {
+			argoTemplate.Spec.Arguments.Parameters[i].Value = value
+		}
+	}
+
+	_, err = c.CreateWorkflowExecution(namespace, &WorkflowExecution{
+		Parameters: workspace.Parameters,
+	}, workflowTemplate)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = sb.Update("workspaces").
+		SetMap(sq.Eq{
+			"phase":      WorkspaceLaunching,
+			"started_at": time.Now().UTC(),
+		}).
+		Where(sq.Eq{"id": workspace.ID}).
+		RunWith(c.DB).
+		Exec()
+	if err != nil {
+		if strings.Contains(err.Error(), "invalid input syntax for type json") {
+			return nil, util.NewUserError(codes.InvalidArgument, err.Error())
+		}
+
+		return nil, util.NewUserError(codes.Unknown, err.Error())
+	}
+
+	return workspace, nil
+}
+
+// CreateWorkspace creates a workspace by triggering the corresponding workflow
+func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Workspace, error) {
 	if err := workspace.GenerateUID(workspace.Name); err != nil {
+		return nil, err
+	}
+
+	existingWorkspace, err := c.GetWorkspace(namespace, workspace.UID)
+	if err != nil {
+		return nil, err
+	}
+	if existingWorkspace != nil {
+		return nil, util.NewUserError(codes.AlreadyExists, "Workspace already exists.")
+	}
+
+	config, err := c.GetSystemConfig()
+	if err != nil {
 		return nil, err
 	}
 
@@ -306,12 +385,55 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 		return nil, fmt.Errorf("sys-host parameter not found")
 	}
 
-	existingWorkspace, err := c.GetWorkspace(namespace, workspace.UID)
+	// Validate workspace fields
+	valid, err := govalidator.ValidateStruct(workspace)
+	if err != nil || !valid {
+		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
+	}
+
+	workspaceTemplate, err := c.GetWorkspaceTemplate(namespace, workspace.WorkspaceTemplate.UID, workspace.WorkspaceTemplate.Version)
+	if err != nil || workspaceTemplate == nil {
+		return nil, util.NewUserError(codes.NotFound, "Workspace template not found.")
+	}
+	workspace.WorkspaceTemplate = workspaceTemplate
+
+	workspace, err = c.createWorkspace(namespace, parameters, workspace)
 	if err != nil {
 		return nil, err
 	}
-	if existingWorkspace != nil {
-		return nil, util.NewUserError(codes.AlreadyExists, "Workspace already exists.")
+
+	return workspace, nil
+}
+
+// StartWorkspace starts a workspace
+func (c *Client) StartWorkspace(namespace string, workspace *Workspace) (*Workspace, error) {
+	// If already started and not failed, return an error
+	if workspace.ID != 0 && workspace.Status.Phase != WorkspaceFailedToLaunch {
+		return workspace, fmt.Errorf("unable to start a workspace with phase %v", workspace.Status.Phase)
+	}
+
+	config, err := c.GetSystemConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	parameters, err := json.Marshal(workspace.Parameters)
+	if err != nil {
+		return nil, err
+	}
+
+	err = injectWorkspaceSystemParameters(namespace, workspace, "create", "apply", config)
+	if err != nil {
+		return nil, err
+	}
+	workspace.Parameters = append(workspace.Parameters, Parameter{
+		Name:  "sys-uid",
+		Value: ptr.String(workspace.UID),
+	})
+
+	sysHost := workspace.GetParameterValue("sys-host")
+	if sysHost == nil {
+		return nil, fmt.Errorf("sys-host parameter not found")
 	}
 
 	// Validate workspace fields
@@ -326,7 +448,7 @@ func (c *Client) CreateWorkspace(namespace string, workspace *Workspace) (*Works
 	}
 	workspace.WorkspaceTemplate = workspaceTemplate
 
-	workspace, err = c.createWorkspace(namespace, parameters, workspace)
+	workspace, err = c.startWorkspace(namespace, parameters, workspace)
 	if err != nil {
 		return nil, err
 	}
@@ -373,6 +495,30 @@ func (c *Client) GetWorkspace(namespace, uid string) (workspace *Workspace, err 
 
 // UpdateWorkspaceStatus updates workspace status and times based on phase
 func (c *Client) UpdateWorkspaceStatus(namespace, uid string, status *WorkspaceStatus) (err error) {
+	// A succeeded status is passed in when a DAG succeeds. We don't need to do anything in this case.
+	if status.Phase == "Succeeded" {
+		return nil
+	}
+
+	if status.Phase == "Failed" || status.Phase == "Error" {
+		workspace, err := c.GetWorkspace(namespace, uid)
+		if err != nil {
+			return err
+		}
+
+		if workspace.Status.Phase == WorkspaceLaunching && workspace.Status.PausedAt == nil {
+			status.Phase = WorkspaceFailedToLaunch
+		} else if workspace.Status.Phase == WorkspaceLaunching && workspace.Status.PausedAt != nil {
+			status.Phase = WorkspaceFailedToResume
+		} else if workspace.Status.Phase == WorkspacePausing {
+			status.Phase = WorkspaceFailedToPause
+		} else if workspace.Status.Phase == WorkspaceTerminating {
+			status.Phase = WorkspaceFailedToTerminate
+		} else if workspace.Status.Phase == WorkspaceUpdating {
+			status.Phase = WorkspaceFailedToUpdate
+		}
+	}
+
 	result, err := updateWorkspaceStatusBuilder(namespace, uid, status).
 		RunWith(c.DB).
 		Exec()
