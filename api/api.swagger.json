@@ -875,6 +875,12 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "phase",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
