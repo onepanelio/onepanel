@@ -14,8 +14,8 @@ import (
 	"github.com/onepanelio/core/pkg/util/ptr"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strconv"
+	v1 "k8s.io/api/core/v1"
+	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
 	"time"
 )
@@ -201,6 +201,14 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 			if !ok {
 				return nil, errors.New("unable to type check statefulset manifest")
 			}
+			templateMetadata, ok := template["metadata"].(map[string]interface{})
+			if !ok {
+				return nil, errors.New("unable to type check statefulset manifest")
+			}
+			templateMetadataLabels, ok := templateMetadata["labels"].(map[string]interface{})
+			if !ok {
+				return nil, errors.New("unable to type check statefulset manifest")
+			}
 			templateSpec, ok := template["spec"].(map[string]interface{})
 			if !ok {
 				return nil, errors.New("unable to type check statefulset manifest")
@@ -222,78 +230,18 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 					nodePoolVal = *parameter.Value
 				}
 			}
-
-			runningNodes, err := c.Interface.CoreV1().Nodes().List(v1.ListOptions{})
-			if err != nil {
-				return nil, err
-			}
-			var cpu string
-			var memory string
-			var gpu int64
-			gpuManufacturer := ""
-			for _, node := range runningNodes.Items {
-				if node.Labels[labelKeyVal] == nodePoolVal {
-					cpuInt := node.Status.Allocatable.Cpu().MilliValue()
-					cpu = strconv.FormatFloat(float64(cpuInt)*.9, 'f', 0, 64) + "m"
-					//12932380Ki
-					memoryInt := node.Status.Allocatable.Memory().MilliValue()
-					kiBase := 1024.0
-					ninetyPerc := float64(memoryInt) * .9
-					toKi := ninetyPerc / kiBase / kiBase
-					memory = strconv.FormatFloat(toKi, 'f', 0, 64) + "Ki"
-					//Check for Nvidia
-					gpuQuantity := node.Status.Allocatable["nvidia.com/gpu"]
-					if gpuQuantity.IsZero() == false {
-						gpu = gpuQuantity.Value()
-						gpuManufacturer = "nvidia.com/gpu"
-					}
-
-					//Check for AMD
-					//Source: https://github.com/RadeonOpenCompute/k8s-device-plugin/blob/master/example/pod/alexnet-gpu.yaml
-					gpuQuantity = node.Status.Allocatable["amd.com/gpu"]
-					if gpuQuantity.IsZero() == false {
-						gpu = gpuQuantity.Value()
-						gpuManufacturer = "amd.com/gpu"
-					}
-				}
-			}
-			extraContainer := map[string]interface{}{
-				"image":   "alpine:latest",
-				"name":    "resource-requester",
-				"command": []interface{}{"/bin/sh"},
-				"args":    []interface{}{"-c", "while :; do sleep 2073600; done"},
-				"resources": map[string]interface{}{
-					"requests": map[string]interface{}{
-						"cpu":    cpu,
-						"memory": memory,
-					},
-					"limits": map[string]interface{}{},
-				},
+			podAntiAffinity := v1.Affinity{
+				PodAntiAffinity: &v1.PodAntiAffinity{RequiredDuringSchedulingIgnoredDuringExecution: []v1.PodAffinityTerm{
+					{LabelSelector: &v12.LabelSelector{
+						MatchExpressions: []v12.LabelSelectorRequirement{
+							{Key: labelKeyVal, Operator: "In", Values: []string{nodePoolVal}},
+						},
+					}, TopologyKey: "kubernetes.io/hostname"},
+				}},
 			}
 
-			if gpu > 0 {
-				res, ok := extraContainer["resources"].(map[string]interface{})
-				if !ok {
-					return nil, errors.New("unable to type check extraContainer")
-				}
-				reqs, ok := res["requests"].(map[string]interface{})
-				if !ok {
-					return nil, errors.New("unable to type check extraContainer")
-				}
-				reqs[gpuManufacturer] = gpu
-
-				limits, ok := res["limits"].(map[string]interface{})
-				if !ok {
-					return nil, errors.New("unable to type check extraContainer")
-				}
-				limits[gpuManufacturer] = gpu
-			}
-
-			containers, ok := templateSpec["containers"].([]interface{})
-			if !ok {
-				return nil, errors.New("unable to type check statefulset manifest")
-			}
-			templateSpec["containers"] = append([]interface{}{extraContainer}, containers...)
+			templateMetadataLabels[labelKeyVal] = nodePoolVal
+			templateSpec["affinity"] = podAntiAffinity
 			resultManifest, err := yaml.Marshal(statefulSet)
 			if err != nil {
 				return nil, err
