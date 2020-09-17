@@ -65,8 +65,8 @@ Production scale, Kubernetes-native vision AI platform, with fully integrated co
 See [quick start guide](https://docs.onepanel.ai/docs/getting-started/quickstart) to get started with the platform of your choice.
 
 ### Quick start videos
-[Getting started with Microsoft Azure](https://youtu.be/CQBIYfBk3Zk)
-[Getting started with Amazon EKS](https://youtu.be/Ipdd8f6D6IM)
+[Getting started with Microsoft Azure](https://youtu.be/CQBIYfBk3Zk)\
+[Getting started with Amazon EKS](https://youtu.be/Ipdd8f6D6IM)\
 [Getting started with Google GKE](https://youtu.be/pZRO63SnQ8A)
 
 ## Community
