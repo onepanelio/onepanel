@@ -65,24 +65,70 @@ func typeWorkflow(wf *wfv1.Workflow) (workflow *WorkflowExecution) {
 // WorkflowExecutionFilter represents the available ways we can filter WorkflowExecutions
 type WorkflowExecutionFilter struct {
 	Labels []*Label
+	Phase  string //empty string means none
 }
 
 // applyWorkflowExecutionLabelSelectQuery returns a query builder that adds where statements to filter by labels in the request,
 // if there are any
-func applyWorkflowExecutionLabelSelectQuery(sb sq.SelectBuilder, request *request.Request) sq.SelectBuilder {
-	if request.Filter != nil {
-		filter, ok := request.Filter.(WorkflowExecutionFilter)
-		if ok {
-			labelsJSON, err := LabelsToJSONString(filter.Labels)
-			if err != nil {
-				log.Printf("[error] %v", err)
-			} else {
-				sb = sb.Where("we.labels @> ?", labelsJSON)
-			}
-		}
+func applyWorkflowExecutionLabelSelectQuery(sb sq.SelectBuilder, filter *WorkflowExecutionFilter) (sq.SelectBuilder, error) {
+	if len(filter.Labels) == 0 {
+		return sb, nil
 	}
 
-	return sb
+	labelsJSON, err := LabelsToJSONString(filter.Labels)
+	if err != nil {
+		return sb, err
+	}
+
+	sb = sb.Where("we.labels @> ?", labelsJSON)
+
+	return sb, nil
+}
+
+func applyWorkflowExecutionFilter(sb sq.SelectBuilder, request *request.Request) (sq.SelectBuilder, error) {
+	if request.Filter == nil {
+		return sb, nil
+	}
+
+	filter, ok := request.Filter.(WorkflowExecutionFilter)
+	if !ok {
+		return sb, nil
+	}
+
+	sb, err := applyWorkflowExecutionLabelSelectQuery(sb, &filter)
+	if err != nil {
+		return sb, err
+	}
+
+	switch filter.Phase {
+	case "":
+		return sb, nil
+	case "running":
+		sb = sb.Where(sq.Eq{
+			"we.finished_at": nil,
+			"we.phase":       []string{"Running", "Pending"},
+		})
+	case "completed":
+		sb = sb.Where(sq.NotEq{
+			"we.finished_at": nil,
+		}).Where(sq.Eq{
+			"we.phase": "Succeeded",
+		})
+	case "failed":
+		sb = sb.Where(sq.NotEq{
+			"we.finished_at": nil,
+		}).Where(sq.Eq{
+			"we.phase": []string{"Failed", "Error"},
+		})
+	case "stopped":
+		sb = sb.Where(sq.Eq{
+			"we.phase": "Terminated",
+		})
+	default:
+		return sb, fmt.Errorf("unknown workflow execution phase filter '%v'", filter.Phase)
+	}
+
+	return sb, nil
 }
 
 func UnmarshalWorkflows(wfBytes []byte, strict bool) (wfs []wfv1.Workflow, err error) {
@@ -725,7 +771,11 @@ func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflow
 		sb = sb.OrderBy("we.created_at DESC")
 	}
 
-	sb = applyWorkflowExecutionLabelSelectQuery(sb, request)
+	sb, err = applyWorkflowExecutionFilter(sb, request)
+	if err != nil {
+		return nil, err
+	}
+
 	sb = *request.Pagination.ApplyToSelect(&sb)
 
 	if err := c.DB.Selectx(&workflows, sb); err != nil {
@@ -740,7 +790,10 @@ func (c *Client) CountWorkflowExecutions(namespace, workflowTemplateUID, workflo
 	sb := workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, workflowTemplateVersion).
 		Columns("COUNT(*)")
 
-	sb = applyWorkflowExecutionLabelSelectQuery(sb, request)
+	sb, err = applyWorkflowExecutionFilter(sb, request)
+	if err != nil {
+		return
+	}
 
 	err = sb.RunWith(c.DB).
 		QueryRow().
@@ -1532,8 +1585,11 @@ func (c *Client) GetWorkflowExecutionStatisticsForNamespace(namespace string) (r
 
 	query := sb.Select(statsSelect).
 		From("workflow_executions we").
+		LeftJoin("workflow_template_versions wtv ON we.workflow_template_version_id = wtv.id").
+		LeftJoin("workflow_templates wt ON wtv.workflow_template_id = wt.id").
 		Where(sq.Eq{
 			"we.namespace": namespace,
+			"wt.is_system": false,
 		})
 
 	report = &WorkflowExecutionStatisticReport{}
@@ -1755,6 +1811,7 @@ func workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, wo
 	whereMap := sq.Eq{
 		"wt.namespace":   namespace,
 		"we.is_archived": false,
+		"wt.is_system":   false,
 	}
 	if workflowTemplateUID != "" {
 		whereMap["wt.uid"] = workflowTemplateUID

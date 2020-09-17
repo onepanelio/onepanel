@@ -177,6 +177,7 @@ message ListWorkflowExecutionsRequest {
     int32 page = 5;
     string order = 6;
     string labels = 7;
+    string phase = 8;
 }
 
 message ListWorkflowExecutionsResponse {

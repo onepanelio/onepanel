@@ -302,6 +302,7 @@ func (s *WorkflowServer) ListWorkflowExecutions(ctx context.Context, req *api.Li
 		Pagination: pagination.New(req.Page, req.PageSize),
 		Filter: v1.WorkflowExecutionFilter{
 			Labels: labelFilter,
+			Phase:  req.Phase,
 		},
 		Sort: reqSort,
 	}
