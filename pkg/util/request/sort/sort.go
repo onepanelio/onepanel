@@ -5,15 +5,15 @@ import (
 	"strings"
 )
 
-// SortOrder represents a sorting order such as created_at, desc
-type SortOrder struct {
+// Order represents a sorting order such as created_at, desc
+type Order struct {
 	Property  string
 	Direction string
 }
 
 // Criteria represents the sorting criteria for a list of resources
 type Criteria struct {
-	Properties []SortOrder
+	Properties []Order
 }
 
 // New parses the properties, represented as comma delimited fields, into a Criteria struct
@@ -32,7 +32,7 @@ func New(parts ...string) (*Criteria, error) {
 	}
 
 	criteria := &Criteria{
-		Properties: make([]SortOrder, 0),
+		Properties: make([]Order, 0),
 	}
 
 	if parts[0] == "" {
@@ -53,7 +53,7 @@ func New(parts ...string) (*Criteria, error) {
 			return nil, fmt.Errorf("unknown sort '%v'", parts[1])
 		}
 
-		newSort := SortOrder{
+		newSort := Order{
 			Property:  parts[0],
 			Direction: direction,
 		}
