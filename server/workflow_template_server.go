@@ -5,10 +5,10 @@ import (
 	"errors"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
-	"github.com/onepanelio/core/pkg/util/pagination"
+	"github.com/onepanelio/core/pkg/util/request"
+	"github.com/onepanelio/core/pkg/util/request/pagination"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/onepanelio/core/server/converter"
-	"time"
 )
 
 type WorkflowTemplateServer struct{}
@@ -31,17 +31,7 @@ func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 		IsArchived: wft.IsArchived,
 		Labels:     converter.MappingToKeyValue(wft.Labels),
 		Parameters: converter.ParametersToAPI(wft.Parameters),
-	}
-
-	if wft.WorkflowExecutionStatisticReport != nil {
-		res.Stats = &api.WorkflowExecutionStatisticReport{
-			Total:        wft.WorkflowExecutionStatisticReport.Total,
-			LastExecuted: wft.WorkflowExecutionStatisticReport.LastExecuted.Format(time.RFC3339),
-			Running:      wft.WorkflowExecutionStatisticReport.Running,
-			Completed:    wft.WorkflowExecutionStatisticReport.Completed,
-			Failed:       wft.WorkflowExecutionStatisticReport.Failed,
-			Terminated:   wft.WorkflowExecutionStatisticReport.Terminated,
-		}
+		Stats:      converter.WorkflowExecutionStatisticsReportToAPI(wft.WorkflowExecutionStatisticReport),
 	}
 
 	if wft.CronWorkflowsStatisticsReport != nil {
@@ -192,12 +182,15 @@ func (s *WorkflowTemplateServer) ListWorkflowTemplates(ctx context.Context, req 
 	if err != nil {
 		return nil, err
 	}
-	filter := v1.WorkflowTemplateFilter{
-		Labels: labelFilter,
+
+	resourceRequest := &request.Request{
+		Pagination: pagination.New(req.Page, req.PageSize),
+		Filter: v1.WorkflowTemplateFilter{
+			Labels: labelFilter,
+		},
 	}
 
-	paginator := pagination.NewRequest(req.Page, req.PageSize)
-	workflowTemplates, err := client.ListWorkflowTemplates(req.Namespace, &paginator, &filter)
+	workflowTemplates, err := client.ListWorkflowTemplates(req.Namespace, resourceRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -207,11 +200,12 @@ func (s *WorkflowTemplateServer) ListWorkflowTemplates(ctx context.Context, req 
 		apiWorkflowTemplates = append(apiWorkflowTemplates, apiWorkflowTemplate(wtv))
 	}
 
-	count, err := client.CountWorkflowTemplates(req.Namespace, &filter)
+	count, err := client.CountWorkflowTemplates(req.Namespace, resourceRequest)
 	if err != nil {
 		return nil, err
 	}
 
+	paginator := resourceRequest.Pagination
 	return &api.ListWorkflowTemplatesResponse{
 		Count:             int32(len(apiWorkflowTemplates)),
 		WorkflowTemplates: apiWorkflowTemplates,

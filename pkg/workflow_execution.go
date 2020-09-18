@@ -10,8 +10,8 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/onepanelio/core/pkg/util/gcs"
 	"github.com/onepanelio/core/pkg/util/label"
-	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
+	"github.com/onepanelio/core/pkg/util/request"
 	"github.com/onepanelio/core/pkg/util/types"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"golang.org/x/net/context"
@@ -60,6 +60,75 @@ func typeWorkflow(wf *wfv1.Workflow) (workflow *WorkflowExecution) {
 	}
 
 	return
+}
+
+// WorkflowExecutionFilter represents the available ways we can filter WorkflowExecutions
+type WorkflowExecutionFilter struct {
+	Labels []*Label
+	Phase  string //empty string means none
+}
+
+// applyWorkflowExecutionLabelSelectQuery returns a query builder that adds where statements to filter by labels in the request,
+// if there are any
+func applyWorkflowExecutionLabelSelectQuery(sb sq.SelectBuilder, filter *WorkflowExecutionFilter) (sq.SelectBuilder, error) {
+	if len(filter.Labels) == 0 {
+		return sb, nil
+	}
+
+	labelsJSON, err := LabelsToJSONString(filter.Labels)
+	if err != nil {
+		return sb, err
+	}
+
+	sb = sb.Where("we.labels @> ?", labelsJSON)
+
+	return sb, nil
+}
+
+func applyWorkflowExecutionFilter(sb sq.SelectBuilder, request *request.Request) (sq.SelectBuilder, error) {
+	if request.Filter == nil {
+		return sb, nil
+	}
+
+	filter, ok := request.Filter.(WorkflowExecutionFilter)
+	if !ok {
+		return sb, nil
+	}
+
+	sb, err := applyWorkflowExecutionLabelSelectQuery(sb, &filter)
+	if err != nil {
+		return sb, err
+	}
+
+	switch filter.Phase {
+	case "":
+		return sb, nil
+	case "running":
+		sb = sb.Where(sq.Eq{
+			"we.finished_at": nil,
+			"we.phase":       []string{"Running", "Pending"},
+		})
+	case "completed":
+		sb = sb.Where(sq.NotEq{
+			"we.finished_at": nil,
+		}).Where(sq.Eq{
+			"we.phase": "Succeeded",
+		})
+	case "failed":
+		sb = sb.Where(sq.NotEq{
+			"we.finished_at": nil,
+		}).Where(sq.Eq{
+			"we.phase": []string{"Failed", "Error"},
+		})
+	case "stopped":
+		sb = sb.Where(sq.Eq{
+			"we.phase": "Terminated",
+		})
+	default:
+		return sb, fmt.Errorf("unknown workflow execution phase filter '%v'", filter.Phase)
+	}
+
+	return sb, nil
 }
 
 func UnmarshalWorkflows(wfBytes []byte, strict bool) (wfs []wfv1.Workflow, err error) {
@@ -688,10 +757,26 @@ func (c *Client) GetWorkflowExecution(namespace, uid string) (workflow *Workflow
 }
 
 // ListWorkflowExecutions gets a list of WorkflowExecutions ordered by most recently created first.
-func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflowTemplateVersion string, paginator *pagination.PaginationRequest) (workflows []*WorkflowExecution, err error) {
-	sb := workflowExecutionsSelectBuilder(namespace, workflowTemplateUID, workflowTemplateVersion).
-		OrderBy("we.created_at DESC")
-	sb = *paginator.ApplyToSelect(&sb)
+func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflowTemplateVersion string, request *request.Request) (workflows []*WorkflowExecution, err error) {
+	sb := workflowExecutionsSelectBuilder(namespace, workflowTemplateUID, workflowTemplateVersion)
+
+	if request.HasSorting() {
+		properties := getWorkflowExecutionColumnsMap(true)
+		for _, order := range request.Sort.Properties {
+			if columnName, ok := properties[order.Property]; ok {
+				sb = sb.OrderBy(fmt.Sprintf("we.%v %v", columnName, order.Direction))
+			}
+		}
+	} else {
+		sb = sb.OrderBy("we.created_at DESC")
+	}
+
+	sb, err = applyWorkflowExecutionFilter(sb, request)
+	if err != nil {
+		return nil, err
+	}
+
+	sb = *request.Pagination.ApplyToSelect(&sb)
 
 	if err := c.DB.Selectx(&workflows, sb); err != nil {
 		return nil, err
@@ -701,10 +786,16 @@ func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflow
 }
 
 // CountWorkflowExecutions returns the number of workflow executions
-func (c *Client) CountWorkflowExecutions(namespace, workflowTemplateUID, workflowTemplateVersion string) (count int, err error) {
-	err = workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, workflowTemplateVersion).
-		Columns("COUNT(*)").
-		RunWith(c.DB).
+func (c *Client) CountWorkflowExecutions(namespace, workflowTemplateUID, workflowTemplateVersion string, request *request.Request) (count int, err error) {
+	sb := workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, workflowTemplateVersion).
+		Columns("COUNT(*)")
+
+	sb, err = applyWorkflowExecutionFilter(sb, request)
+	if err != nil {
+		return
+	}
+
+	err = sb.RunWith(c.DB).
 		QueryRow().
 		Scan(&count)
 
@@ -1482,6 +1573,33 @@ func (c *Client) SetWorkflowTemplateLabels(namespace, uid, prefix string, keyVal
 	return filteredMap, nil
 }
 
+// GetWorkflowExecutionStatisticsForNamespace loads statistics on workflow executions for the provided namespace
+func (c *Client) GetWorkflowExecutionStatisticsForNamespace(namespace string) (report *WorkflowExecutionStatisticReport, err error) {
+	statsSelect := `
+		MAX(we.created_at) last_executed,
+		COUNT(*) FILTER (WHERE finished_at IS NULL AND (phase = 'Running' OR phase = 'Pending')) running,
+		COUNT(*) FILTER (WHERE finished_at IS NOT NULL AND phase = 'Succeeded') completed,
+		COUNT(*) FILTER (WHERE finished_at IS NOT NULL AND (phase = 'Failed' OR phase = 'Error')) failed,
+		COUNT(*) FILTER (WHERE phase = 'Terminated') terminated,
+		COUNT(*) total`
+
+	query := sb.Select(statsSelect).
+		From("workflow_executions we").
+		LeftJoin("workflow_template_versions wtv ON we.workflow_template_version_id = wtv.id").
+		LeftJoin("workflow_templates wt ON wtv.workflow_template_id = wt.id").
+		Where(sq.Eq{
+			"we.namespace": namespace,
+			"wt.is_system": false,
+		})
+
+	report = &WorkflowExecutionStatisticReport{}
+	err = c.DB.Getx(report, query)
+
+	return
+}
+
+// GetWorkflowExecutionStatisticsForTemplates loads statistics on workflow executions for the provided
+// workflowTemplates and sets it as the WorkflowExecutionStatisticReport property
 func (c *Client) GetWorkflowExecutionStatisticsForTemplates(workflowTemplates ...*WorkflowTemplate) (err error) {
 	if len(workflowTemplates) == 0 {
 		return nil
@@ -1491,16 +1609,6 @@ func (c *Client) GetWorkflowExecutionStatisticsForTemplates(workflowTemplates ..
 	if err != nil {
 		return err
 	}
-
-	whereIn := "wtv.workflow_template_id IN (?"
-	for i := range workflowTemplates {
-		if i == 0 {
-			continue
-		}
-
-		whereIn += ",?"
-	}
-	whereIn += ")"
 
 	ids := make([]interface{}, len(workflowTemplates))
 	for i, workflowTemplate := range workflowTemplates {
@@ -1521,7 +1629,9 @@ func (c *Client) GetWorkflowExecutionStatisticsForTemplates(workflowTemplates ..
 	query, args, err := sb.Select(statsSelect).
 		From("workflow_executions we").
 		Join("workflow_template_versions wtv ON wtv.id = we.workflow_template_version_id").
-		Where(whereIn, ids...).
+		Where(sq.Eq{
+			"wtv.workflow_template_id": ids,
+		}).
 		GroupBy("wtv.workflow_template_id").
 		ToSql()
 
@@ -1700,11 +1810,15 @@ func injectWorkflowExecutionStatusCaller(wf *wfv1.Workflow, phase wfv1.NodePhase
 func workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, workflowTemplateVersion string) sq.SelectBuilder {
 	whereMap := sq.Eq{
 		"wt.namespace":   namespace,
-		"wt.uid":         workflowTemplateUID,
 		"we.is_archived": false,
+		"wt.is_system":   false,
 	}
-	if workflowTemplateVersion != "" {
-		whereMap["wtv.version"] = workflowTemplateVersion
+	if workflowTemplateUID != "" {
+		whereMap["wt.uid"] = workflowTemplateUID
+
+		if workflowTemplateVersion != "" {
+			whereMap["wtv.version"] = workflowTemplateVersion
+		}
 	}
 
 	sb := sb.Select().

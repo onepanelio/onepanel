@@ -863,6 +863,24 @@
             "required": false,
             "type": "integer",
             "format": "int32"
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "labels",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "phase",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -899,6 +917,36 @@
             "schema": {
               "$ref": "#/definitions/CreateWorkflowExecutionBody"
             }
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/workflow_executions/statistics": {
+      "get": {
+        "operationId": "GetWorkflowExecutionStatisticsForNamespace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetWorkflowExecutionStatisticsForNamespaceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "tags": [
@@ -2112,6 +2160,18 @@
             "required": false,
             "type": "integer",
             "format": "int32"
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "labels",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -2798,6 +2858,14 @@
           "items": {
             "$ref": "#/definitions/Metric"
           }
+        }
+      }
+    },
+    "GetWorkflowExecutionStatisticsForNamespaceResponse": {
+      "type": "object",
+      "properties": {
+        "stats": {
+          "$ref": "#/definitions/WorkflowExecutionStatisticReport"
         }
       }
     },

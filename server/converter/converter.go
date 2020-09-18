@@ -147,3 +147,21 @@ func TimestampToAPIString(ts *time.Time) string {
 
 	return ts.UTC().Format(time.RFC3339)
 }
+
+// WorkflowExecutionStatisticsReportToAPI converts v1.WorkflowExecutionStatisticReport to api.WorkflowExecutionStatisticReport
+func WorkflowExecutionStatisticsReportToAPI(report *v1.WorkflowExecutionStatisticReport) *api.WorkflowExecutionStatisticReport {
+	if report == nil {
+		return nil
+	}
+
+	stats := &api.WorkflowExecutionStatisticReport{
+		Total:        report.Total,
+		Running:      report.Running,
+		Completed:    report.Completed,
+		Failed:       report.Failed,
+		Terminated:   report.Terminated,
+		LastExecuted: TimestampToAPIString(report.LastExecuted),
+	}
+
+	return stats
+}

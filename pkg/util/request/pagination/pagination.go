@@ -10,6 +10,14 @@ type PaginationRequest struct {
 	PageSize uint64
 }
 
+// New creates a new pagination request from the page and page size.
+func New(page, pageSize int32) *PaginationRequest {
+	pr := NewRequest(page, pageSize)
+
+	return &pr
+}
+
+// NewRequest creates a new pagination request (not pointer) from the page and page size
 func NewRequest(page, pageSize int32) PaginationRequest {
 	if page == 0 {
 		page = 1

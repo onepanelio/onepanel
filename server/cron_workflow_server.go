@@ -5,8 +5,8 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
-	"github.com/onepanelio/core/pkg/util/pagination"
 	"github.com/onepanelio/core/pkg/util/ptr"
+	"github.com/onepanelio/core/pkg/util/request/pagination"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/onepanelio/core/server/converter"
 )
