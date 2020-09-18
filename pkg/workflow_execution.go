@@ -363,23 +363,49 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 
 func ensureWorkflowRunsOnDedicatedNode(wf *wfv1.Workflow, config SystemConfig) (*wfv1.Workflow, error) {
 	antiAffinityLabelKey := "onepanel.io/reserves-instance-type"
-	nodeSelectorVal := "singular-workflow"
+	nodeSelectorVal := ""
+
 	for i := range wf.Spec.Templates {
-		wf.Spec.Templates[i].Metadata.Labels = map[string]string{antiAffinityLabelKey: nodeSelectorVal}
-	}
-	wf.Spec.Affinity = &corev1.Affinity{
-		PodAntiAffinity: &corev1.PodAntiAffinity{
-			RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
-				{LabelSelector: &metav1.LabelSelector{
-					MatchExpressions: []metav1.LabelSelectorRequirement{
-						{Key: antiAffinityLabelKey, Operator: "In", Values: []string{nodeSelectorVal}},
+		template := &wf.Spec.Templates[i]
+		if template.NodeSelector == nil {
+			continue
+		}
+
+		var value string
+		for k, v := range template.NodeSelector {
+			if k == *config.NodePoolLabel() {
+				value = v
+				break
+			}
+		}
+		if value == "" {
+			continue
+		}
+		if strings.Contains(value, "{{workflow.") {
+			parts := strings.Split(strings.Replace(value, "}}", "", -1), ".")
+			paramName := parts[len(parts)-1]
+			for _, param := range wf.Spec.Arguments.Parameters {
+				if param.Name == paramName && param.Value != nil {
+					nodeSelectorVal = *param.Value
+					break
+				}
+			}
+		}
+		template.Metadata.Labels = map[string]string{antiAffinityLabelKey: nodeSelectorVal}
+		wf.Spec.Affinity = &corev1.Affinity{
+			PodAntiAffinity: &corev1.PodAntiAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+					{LabelSelector: &metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{Key: antiAffinityLabelKey, Operator: "In", Values: []string{nodeSelectorVal}},
+						},
 					},
+						TopologyKey: "kubernetes.io/hostname"},
 				},
-					TopologyKey: "kubernetes.io/hostname"},
 			},
-		},
+		}
 	}
-	return wf
+	return wf, nil
 }
 
 func (c *Client) ValidateWorkflowExecution(namespace string, manifest []byte) (err error) {
