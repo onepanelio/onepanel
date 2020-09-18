@@ -371,25 +371,18 @@ func ensureWorkflowRunsOnDedicatedNode(wf *wfv1.Workflow, config SystemConfig) (
 			continue
 		}
 
-		var value string
-		for k, v := range template.NodeSelector {
-			if k == *config.NodePoolLabel() {
-				value = v
-				break
-			}
-		}
-		if value == "" {
-			continue
-		}
-		if strings.Contains(value, "{{workflow.") {
-			parts := strings.Split(strings.Replace(value, "}}", "", -1), ".")
-			paramName := parts[len(parts)-1]
-			for _, param := range wf.Spec.Arguments.Parameters {
-				if param.Name == paramName && param.Value != nil {
-					nodeSelectorVal = *param.Value
-					break
+		for _, v := range template.NodeSelector {
+			if strings.Contains(v, "{{workflow.") {
+				parts := strings.Split(strings.Replace(v, "}}", "", -1), ".")
+				paramName := parts[len(parts)-1]
+				for _, param := range wf.Spec.Arguments.Parameters {
+					if param.Name == paramName && param.Value != nil {
+						nodeSelectorVal = *param.Value
+						break
+					}
 				}
 			}
+			break
 		}
 		template.Metadata.Labels = map[string]string{antiAffinityLabelKey: nodeSelectorVal}
 		addPodAffinity = true
