@@ -429,11 +429,11 @@ func (c *Client) updateCronWorkflow(namespace string, uid string, workflowTempla
 }
 
 func (c *Client) createCronWorkflow(namespace string, workflowTemplateId *uint64, wf *wfv1.Workflow, cwf *wfv1.CronWorkflow, opts *WorkflowExecutionOptions) (createdCronWorkflow *wfv1.CronWorkflow, err error) {
+	wf = ensureWorkflowRunsOnDedicatedNode(wf)
 	cwf, err = c.buildCronWorkflowDefinition(namespace, workflowTemplateId, wf, cwf, opts)
 	if err != nil {
 		return
 	}
-
 	createdCronWorkflow, err = c.ArgoprojV1alpha1().CronWorkflows(namespace).Create(cwf)
 	if err != nil {
 		return nil, err
