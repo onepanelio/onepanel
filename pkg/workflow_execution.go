@@ -372,6 +372,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 		return nil, err
 	}
 
+	ensureWorkflowRunsOnDedicatedNode(wf)
 	createdArgoWorkflow, err := c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
 	if err != nil {
 		return nil, err
@@ -399,6 +400,26 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 	}
 
 	return
+}
+
+func ensureWorkflowRunsOnDedicatedNode(wf *wfv1.Workflow) {
+	antiAffinityLabelKey := "onepanel.io/reserves-instance-type"
+	nodeSelectorVal := "singular-workflow"
+	for i := range wf.Spec.Templates {
+		wf.Spec.Templates[i].Metadata.Labels = map[string]string{antiAffinityLabelKey: nodeSelectorVal}
+	}
+	wf.Spec.Affinity = &corev1.Affinity{
+		PodAntiAffinity: &corev1.PodAntiAffinity{
+			RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+				{LabelSelector: &metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{
+						{Key: antiAffinityLabelKey, Operator: "In", Values: []string{nodeSelectorVal}},
+					},
+				},
+					TopologyKey: "kubernetes.io/hostname"},
+			},
+		},
+	}
 }
 
 func (c *Client) ValidateWorkflowExecution(namespace string, manifest []byte) (err error) {
