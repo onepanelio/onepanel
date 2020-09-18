@@ -139,49 +139,6 @@ func injectArtifactRepositoryConfig(artifact *wfv1.Artifact, namespaceConfig *Na
 	}
 }
 
-// injectContainerResourceQuotas adds resource requests and limits if they exist
-func injectContainerResourceQuotas(wf *wfv1.Workflow, template *wfv1.Template, systemConfig SystemConfig) {
-	if template.NodeSelector == nil {
-		return
-	}
-
-	var value string
-	for k, v := range template.NodeSelector {
-		if k == *systemConfig.NodePoolLabel() {
-			value = v
-			break
-		}
-	}
-	if value == "" {
-		return
-	}
-	if strings.Contains(value, "{{workflow.") {
-		parts := strings.Split(strings.Replace(value, "}}", "", -1), ".")
-		paramName := parts[len(parts)-1]
-		for _, param := range wf.Spec.Arguments.Parameters {
-			if param.Name == paramName && param.Value != nil {
-				value = *param.Value
-				break
-			}
-		}
-	}
-
-	option, err := systemConfig.NodePoolOptionByValue(value)
-	if err != nil {
-		return
-	}
-	if option != nil && option.Resources.Limits != nil {
-		// If a node is selected specifically, match the resources request to limits
-		option.Resources.Requests = option.Resources.Limits
-		if template.Container != nil {
-			template.Container.Resources = option.Resources
-		}
-		if template.Script != nil {
-			template.Script.Container.Resources = option.Resources
-		}
-	}
-}
-
 func injectEnvironmentVariables(container *corev1.Container, systemConfig SystemConfig) {
 	//Generate ENV vars from secret, if there is a container present in the workflow
 	//Get template ENV vars, avoid over-writing them with secret values
@@ -250,14 +207,10 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 				MountPath: "/dev/shm",
 			})
 
-			injectContainerResourceQuotas(wf, template, systemConfig)
-
 			injectEnvironmentVariables(template.Container, systemConfig)
 		}
 
 		if template.Script != nil {
-			injectContainerResourceQuotas(wf, template, systemConfig)
-
 			injectEnvironmentVariables(&template.Script.Container, systemConfig)
 		}
 
