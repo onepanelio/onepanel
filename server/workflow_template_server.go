@@ -9,7 +9,6 @@ import (
 	"github.com/onepanelio/core/pkg/util/request/pagination"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/onepanelio/core/server/converter"
-	"time"
 )
 
 type WorkflowTemplateServer struct{}
@@ -32,17 +31,7 @@ func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 		IsArchived: wft.IsArchived,
 		Labels:     converter.MappingToKeyValue(wft.Labels),
 		Parameters: converter.ParametersToAPI(wft.Parameters),
-	}
-
-	if wft.WorkflowExecutionStatisticReport != nil {
-		res.Stats = &api.WorkflowExecutionStatisticReport{
-			Total:        wft.WorkflowExecutionStatisticReport.Total,
-			LastExecuted: wft.WorkflowExecutionStatisticReport.LastExecuted.Format(time.RFC3339),
-			Running:      wft.WorkflowExecutionStatisticReport.Running,
-			Completed:    wft.WorkflowExecutionStatisticReport.Completed,
-			Failed:       wft.WorkflowExecutionStatisticReport.Failed,
-			Terminated:   wft.WorkflowExecutionStatisticReport.Terminated,
-		}
+		Stats:      converter.WorkflowExecutionStatisticsReportToAPI(wft.WorkflowExecutionStatisticReport),
 	}
 
 	if wft.CronWorkflowsStatisticsReport != nil {

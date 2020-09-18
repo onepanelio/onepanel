@@ -465,13 +465,6 @@ func (s *WorkflowServer) GetWorkflowExecutionStatisticsForNamespace(ctx context.
 	}
 
 	return &api.GetWorkflowExecutionStatisticsForNamespaceResponse{
-		Stats: &api.WorkflowExecutionStatisticReport{
-			Total:        report.Total,
-			LastExecuted: report.LastExecuted.Format(time.RFC3339),
-			Running:      report.Running,
-			Completed:    report.Completed,
-			Failed:       report.Failed,
-			Terminated:   report.Terminated,
-		},
+		Stats: converter.WorkflowExecutionStatisticsReportToAPI(report),
 	}, nil
 }

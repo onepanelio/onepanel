@@ -67,7 +67,7 @@ type Metric struct {
 type WorkflowExecutionStatisticReport struct {
 	WorkflowTemplateId uint64 `db:"workflow_template_id"`
 	Total              int32
-	LastExecuted       time.Time `db:"last_executed"`
+	LastExecuted       *time.Time `db:"last_executed"`
 	Running            int32
 	Completed          int32
 	Failed             int32
