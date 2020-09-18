@@ -364,7 +364,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 func ensureWorkflowRunsOnDedicatedNode(wf *wfv1.Workflow, config SystemConfig) (*wfv1.Workflow, error) {
 	antiAffinityLabelKey := "onepanel.io/reserves-instance-type"
 	nodeSelectorVal := ""
-
+	addPodAffinity := false
 	for i := range wf.Spec.Templates {
 		template := &wf.Spec.Templates[i]
 		if template.NodeSelector == nil {
@@ -392,6 +392,9 @@ func ensureWorkflowRunsOnDedicatedNode(wf *wfv1.Workflow, config SystemConfig) (
 			}
 		}
 		template.Metadata.Labels = map[string]string{antiAffinityLabelKey: nodeSelectorVal}
+		addPodAffinity = true
+	}
+	if addPodAffinity {
 		wf.Spec.Affinity = &corev1.Affinity{
 			PodAntiAffinity: &corev1.PodAntiAffinity{
 				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
