@@ -325,7 +325,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 		return nil, err
 	}
 
-	ensureWorkflowRunsOnDedicatedNode(wf)
+	wf = ensureWorkflowRunsOnDedicatedNode(wf)
 	createdArgoWorkflow, err := c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
 	if err != nil {
 		return nil, err
