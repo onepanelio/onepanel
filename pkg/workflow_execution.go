@@ -355,7 +355,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 	return
 }
 
-func ensureWorkflowRunsOnDedicatedNode(wf *wfv1.Workflow) {
+func ensureWorkflowRunsOnDedicatedNode(wf *wfv1.Workflow) *wfv1.Workflow {
 	antiAffinityLabelKey := "onepanel.io/reserves-instance-type"
 	nodeSelectorVal := "singular-workflow"
 	for i := range wf.Spec.Templates {
@@ -373,6 +373,7 @@ func ensureWorkflowRunsOnDedicatedNode(wf *wfv1.Workflow) {
 			},
 		},
 	}
+	return wf
 }
 
 func (c *Client) ValidateWorkflowExecution(namespace string, manifest []byte) (err error) {
