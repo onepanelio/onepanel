@@ -324,8 +324,14 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
 		return nil, err
 	}
-
-	wf = ensureWorkflowRunsOnDedicatedNode(wf)
+	systemConfig, err := c.GetSystemConfig()
+	if err != nil {
+		return nil, err
+	}
+	wf, err = ensureWorkflowRunsOnDedicatedNode(wf, systemConfig)
+	if err != nil {
+		return nil, err
+	}
 	createdArgoWorkflow, err := c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
 	if err != nil {
 		return nil, err
@@ -355,7 +361,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 	return
 }
 
-func ensureWorkflowRunsOnDedicatedNode(wf *wfv1.Workflow) *wfv1.Workflow {
+func ensureWorkflowRunsOnDedicatedNode(wf *wfv1.Workflow, config SystemConfig) (*wfv1.Workflow, error) {
 	antiAffinityLabelKey := "onepanel.io/reserves-instance-type"
 	nodeSelectorVal := "singular-workflow"
 	for i := range wf.Spec.Templates {
