@@ -391,12 +391,14 @@ func ensureWorkflowRunsOnDedicatedNode(wf *wfv1.Workflow, config SystemConfig) (
 		wf.Spec.Affinity = &corev1.Affinity{
 			PodAntiAffinity: &corev1.PodAntiAffinity{
 				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
-					{LabelSelector: &metav1.LabelSelector{
-						MatchExpressions: []metav1.LabelSelectorRequirement{
-							{Key: antiAffinityLabelKey, Operator: "In", Values: []string{nodeSelectorVal}},
+					{
+						LabelSelector: &metav1.LabelSelector{
+							MatchExpressions: []metav1.LabelSelectorRequirement{
+								{Key: antiAffinityLabelKey, Operator: "In", Values: []string{nodeSelectorVal}},
+							},
 						},
+						TopologyKey: "kubernetes.io/hostname",
 					},
-						TopologyKey: "kubernetes.io/hostname"},
 				},
 			},
 		}
