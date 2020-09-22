@@ -16,7 +16,6 @@ func initialize20200922103448() {
 // Up20200922103448 adds a description to the jupyterlab workspace template
 func Up20200922103448(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
-	// This code is executed when the migration is applied.
 	client, err := getClient()
 	if err != nil {
 		return err
