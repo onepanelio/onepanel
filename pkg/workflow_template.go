@@ -171,19 +171,13 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 	workflowTemplateVersion := &WorkflowTemplateVersion{
 		WorkflowTemplate: workflowTemplate,
 		Manifest:         workflowTemplate.Manifest,
+		Labels: workflowTemplate.Labels,
 	}
 	err = createWorkflowTemplateVersionDB(tx, workflowTemplateVersion, params)
 	if err != nil {
 		return nil, nil, err
 	}
 	workflowTemplate.WorkflowTemplateVersionID = workflowTemplateVersion.ID
-
-	// TODO remove this labels or update it to a generic version so we can update the labels table with recent data
-	//_, err = c.InsertLabelsRunner(tx, TypeWorkflowTemplateVersion, workflowTemplateVersion.ID, workflowTemplate.Labels)
-	//if err != nil {
-	//	return nil, nil, err
-	//}
-	//
 
 	argoWft, err := createArgoWorkflowTemplate(workflowTemplate, workflowTemplateVersion.Version)
 	if err != nil {
