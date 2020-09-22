@@ -13,6 +13,7 @@ func initialize20200922103448() {
 	}
 }
 
+// Up20200922103448 adds a description to the jupyterlab workspace template
 func Up20200922103448(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	// This code is executed when the migration is applied.
@@ -57,6 +58,7 @@ func Up20200922103448(tx *sql.Tx) error {
 	return nil
 }
 
+// Down20200922103448 does nothing
 func Down20200922103448(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return nil
