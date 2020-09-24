@@ -393,14 +393,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 	if err = c.injectAutomatedFields(namespace, wf, opts); err != nil {
 		return nil, err
 	}
-	systemConfig, err := c.GetSystemConfig()
-	if err != nil {
-		return nil, err
-	}
-	wf, err = ensureWorkflowRunsOnDedicatedNode(wf, systemConfig)
-	if err != nil {
-		return nil, err
-	}
+
 	createdArgoWorkflow, err := c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
 	if err != nil {
 		return nil, err
