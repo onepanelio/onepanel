@@ -769,7 +769,11 @@ func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflow
 		properties := getWorkflowExecutionColumnsMap(true)
 		for _, order := range request.Sort.Properties {
 			if columnName, ok := properties[order.Property]; ok {
-				sb = sb.OrderBy(fmt.Sprintf("we.%v %v", columnName, order.Direction))
+				nullSort := "NULLS FIRST"
+				if order.Direction == "desc" {
+					nullSort = "NULLS LAST" // default in postgres, but let's be explicit
+				}
+				sb = sb.OrderBy(fmt.Sprintf("we.%v %v %v", columnName, order.Direction, nullSort))
 			}
 		}
 	} else {
