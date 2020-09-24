@@ -762,8 +762,8 @@ func (c *Client) GetWorkflowExecution(namespace, uid string) (workflow *Workflow
 }
 
 // ListWorkflowExecutions gets a list of WorkflowExecutions ordered by most recently created first.
-func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflowTemplateVersion string, request *request.Request) (workflows []*WorkflowExecution, err error) {
-	sb := workflowExecutionsSelectBuilder(namespace, workflowTemplateUID, workflowTemplateVersion)
+func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflowTemplateVersion string, includeSystem bool, request *request.Request) (workflows []*WorkflowExecution, err error) {
+	sb := workflowExecutionsSelectBuilder(namespace, workflowTemplateUID, workflowTemplateVersion, includeSystem)
 
 	if request.HasSorting() {
 		properties := getWorkflowExecutionColumnsMap(true)
@@ -795,8 +795,8 @@ func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflow
 }
 
 // CountWorkflowExecutions returns the number of workflow executions
-func (c *Client) CountWorkflowExecutions(namespace, workflowTemplateUID, workflowTemplateVersion string, request *request.Request) (count int, err error) {
-	sb := workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, workflowTemplateVersion).
+func (c *Client) CountWorkflowExecutions(namespace, workflowTemplateUID, workflowTemplateVersion string, includeSystem bool, request *request.Request) (count int, err error) {
+	sb := workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, workflowTemplateVersion, includeSystem).
 		Columns("COUNT(*)")
 
 	sb, err = applyWorkflowExecutionFilter(sb, request)
@@ -1816,12 +1816,16 @@ func injectWorkflowExecutionStatusCaller(wf *wfv1.Workflow, phase wfv1.NodePhase
 	return nil
 }
 
-func workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, workflowTemplateVersion string) sq.SelectBuilder {
+func workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, workflowTemplateVersion string, includeSystem bool) sq.SelectBuilder {
 	whereMap := sq.Eq{
 		"wt.namespace":   namespace,
 		"we.is_archived": false,
-		"wt.is_system":   false,
 	}
+
+	if !includeSystem {
+		whereMap["wt.is_system"] = false
+	}
+
 	if workflowTemplateUID != "" {
 		whereMap["wt.uid"] = workflowTemplateUID
 
@@ -1839,8 +1843,8 @@ func workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, wo
 	return sb
 }
 
-func workflowExecutionsSelectBuilder(namespace, workflowTemplateUID, workflowTemplateVersion string) sq.SelectBuilder {
-	sb := workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, workflowTemplateVersion)
+func workflowExecutionsSelectBuilder(namespace, workflowTemplateUID, workflowTemplateVersion string, includeSystem bool) sq.SelectBuilder {
+	sb := workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, workflowTemplateVersion, includeSystem)
 	sb = sb.Columns(getWorkflowExecutionColumns("we", "")...).
 		Columns(`wtv.version "workflow_template.version"`, `wtv.created_at "workflow_template.created_at"`, `wt.name "workflow_template.name"`, `wt.uid "workflow_template.uid"`)
 
