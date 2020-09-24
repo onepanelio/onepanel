@@ -217,70 +217,9 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 					nodePoolVal = *parameter.Value
 				}
 			}
-			runningNodes, err := c.Interface.CoreV1().Nodes().List(ListOptions{})
+			err, extraContainer := addResourceRequestsToWorkspace(c, labelKeyVal, nodePoolVal)
 			if err != nil {
 				return nil, err
-			}
-			var cpu string
-			var memory string
-			var gpu int64
-			gpuManufacturer := ""
-			for _, node := range runningNodes.Items {
-				if node.Labels[labelKeyVal] == nodePoolVal {
-					cpuInt := node.Status.Allocatable.Cpu().MilliValue()
-					cpu = strconv.FormatFloat(float64(cpuInt)*.9, 'f', 0, 64) + "m"
-					memoryInt := node.Status.Allocatable.Memory().MilliValue()
-					kiBase := 1024.0
-					ninetyPerc := float64(memoryInt) * .9
-					toKi := ninetyPerc / kiBase / kiBase
-					memory = strconv.FormatFloat(toKi, 'f', 0, 64) + "Ki"
-					//Check for Nvidia
-					gpuQuantity := node.Status.Allocatable["nvidia.com/gpu"]
-					if gpuQuantity.IsZero() == false {
-						gpu = gpuQuantity.Value()
-						gpuManufacturer = "nvidia.com/gpu"
-					}
-
-					//Check for AMD
-					//Source: https://github.com/RadeonOpenCompute/k8s-device-plugin/blob/master/example/pod/alexnet-gpu.yaml
-					gpuQuantity = node.Status.Allocatable["amd.com/gpu"]
-					if gpuQuantity.IsZero() == false {
-						gpu = gpuQuantity.Value()
-						gpuManufacturer = "amd.com/gpu"
-					}
-				}
-			}
-			extraContainer := map[string]interface{}{
-				"image":   "alpine:latest",
-				"name":    "resource-requester",
-				"command": []interface{}{"/bin/sh"},
-				"args":    []interface{}{"-c", "while :; do sleep 2073600; done"},
-				"resources": map[string]interface{}{
-					"requests": map[string]interface{}{
-						"cpu":    cpu,
-						"memory": memory,
-					},
-					"limits": map[string]interface{}{},
-				},
-			}
-
-			if gpu > 0 {
-				res, ok := extraContainer["resources"].(map[string]interface{})
-				if !ok {
-					return nil, errors.New("unable to type check extraContainer")
-				}
-				reqs, ok := res["requests"].(map[string]interface{})
-				if !ok {
-					return nil, errors.New("unable to type check extraContainer")
-				}
-				reqs[gpuManufacturer] = gpu
-
-				limits, ok := res["limits"].(map[string]interface{})
-				if !ok {
-					return nil, errors.New("unable to type check extraContainer")
-				}
-				limits[gpuManufacturer] = gpu
-
 			}
 			containers, ok := templateSpec["containers"].([]interface{})
 			if !ok {
@@ -328,6 +267,80 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 	}
 
 	return workspace, nil
+}
+
+// addResourceRequestsToWorkspace will add an extra container to a workspace.
+// The extra container will have the calculated resource request for the node selected by the workspace.
+// The container will sleep once started, and generally consume negligible resources.
+//
+// The node that was selected has to be already running, in order to get the resource request correct.
+func addResourceRequestsToWorkspace(c *Client, labelKeyVal string, nodePoolVal string) (error, map[string]interface{}) {
+	runningNodes, err := c.Interface.CoreV1().Nodes().List(ListOptions{})
+	if err != nil {
+		return err, nil
+	}
+	var cpu string
+	var memory string
+	var gpu int64
+	gpuManufacturer := ""
+	for _, node := range runningNodes.Items {
+		if node.Labels[labelKeyVal] == nodePoolVal {
+			cpuInt := node.Status.Allocatable.Cpu().MilliValue()
+			cpu = strconv.FormatFloat(float64(cpuInt)*.9, 'f', 0, 64) + "m"
+			memoryInt := node.Status.Allocatable.Memory().MilliValue()
+			kiBase := 1024.0
+			ninetyPerc := float64(memoryInt) * .9
+			toKi := ninetyPerc / kiBase / kiBase
+			memory = strconv.FormatFloat(toKi, 'f', 0, 64) + "Ki"
+			//Check for Nvidia
+			gpuQuantity := node.Status.Allocatable["nvidia.com/gpu"]
+			if gpuQuantity.IsZero() == false {
+				gpu = gpuQuantity.Value()
+				gpuManufacturer = "nvidia.com/gpu"
+			}
+
+			//Check for AMD
+			//Source: https://github.com/RadeonOpenCompute/k8s-device-plugin/blob/master/example/pod/alexnet-gpu.yaml
+			gpuQuantity = node.Status.Allocatable["amd.com/gpu"]
+			if gpuQuantity.IsZero() == false {
+				gpu = gpuQuantity.Value()
+				gpuManufacturer = "amd.com/gpu"
+			}
+		}
+	}
+	extraContainer := map[string]interface{}{
+		"image":   "alpine:latest",
+		"name":    "resource-requester",
+		"command": []interface{}{"/bin/sh"},
+		"args":    []interface{}{"-c", "while :; do sleep 2073600; done"},
+		"resources": map[string]interface{}{
+			"requests": map[string]interface{}{
+				"cpu":    cpu,
+				"memory": memory,
+			},
+			"limits": map[string]interface{}{},
+		},
+	}
+
+	if gpu > 0 {
+		res, ok := extraContainer["resources"].(map[string]interface{})
+		if !ok {
+			return errors.New("unable to type check extraContainer"), nil
+		}
+		reqs, ok := res["requests"].(map[string]interface{})
+		if !ok {
+			return errors.New("unable to type check extraContainer"), nil
+		}
+		reqs[gpuManufacturer] = gpu
+
+		limits, ok := res["limits"].(map[string]interface{})
+		if !ok {
+			return errors.New("unable to type check extraContainer"), nil
+		}
+		limits[gpuManufacturer] = gpu
+
+	}
+	return err, extraContainer
 }
 
 // startWorkspace starts a workspace and related resources. It assumes a DB record already exists
