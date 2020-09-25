@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
+	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/asaskevich/govalidator"
 	"github.com/ghodss/yaml"
 	"github.com/lib/pq"
@@ -14,8 +15,7 @@ import (
 	"github.com/onepanelio/core/pkg/util/request/pagination"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -185,53 +185,7 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 	templates := argoTemplate.Spec.Templates
 	for i, t := range templates {
 		if t.Name == WorkspaceStatefulSetResource {
-			//due to placeholders, we can't unmarshal into a k8s statefulset
-			statefulSet := map[string]interface{}{}
-			if err := yaml.Unmarshal([]byte(t.Resource.Manifest), &statefulSet); err != nil {
-				return nil, err
-			}
-			spec, ok := statefulSet["spec"].(map[string]interface{})
-			if !ok {
-				return nil, errors.New("unable to type check statefulset manifest")
-			}
-			template, ok := spec["template"].(map[string]interface{})
-			if !ok {
-				return nil, errors.New("unable to type check statefulset manifest")
-			}
-			templateMetadata, ok := template["metadata"].(map[string]interface{})
-			if !ok {
-				return nil, errors.New("unable to type check statefulset manifest")
-			}
-			templateMetadataLabels, ok := templateMetadata["labels"].(map[string]interface{})
-			if !ok {
-				return nil, errors.New("unable to type check statefulset manifest")
-			}
-			templateSpec, ok := template["spec"].(map[string]interface{})
-			if !ok {
-				return nil, errors.New("unable to type check statefulset manifest")
-			}
-
-			nodePoolKey := "sys-node-pool"
-			nodePoolVal := ""
-			for _, parameter := range workspace.Parameters {
-				if parameter.Name == nodePoolKey {
-					nodePoolVal = *parameter.Value
-				}
-			}
-			antiAffinityLabelKey := "onepanel.io/reserves-instance-type"
-			podAntiAffinity := v1.Affinity{
-				PodAntiAffinity: &v1.PodAntiAffinity{RequiredDuringSchedulingIgnoredDuringExecution: []v1.PodAffinityTerm{
-					{LabelSelector: &metav1.LabelSelector{
-						MatchExpressions: []metav1.LabelSelectorRequirement{
-							{Key: antiAffinityLabelKey, Operator: "In", Values: []string{nodePoolVal}},
-						},
-					}, TopologyKey: "kubernetes.io/hostname"},
-				}},
-			}
-
-			templateMetadataLabels[antiAffinityLabelKey] = nodePoolVal
-			templateSpec["affinity"] = podAntiAffinity
-			resultManifest, err := yaml.Marshal(statefulSet)
+			resultManifest, err := c.addResourceRequestsAndLimitsToWorkspaceTemplate(t, argoTemplate, workspace)
 			if err != nil {
 				return nil, err
 			}
@@ -271,6 +225,133 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 	}
 
 	return workspace, nil
+}
+
+// addResourceRequestsAndLimitsToWorkspaceTemplate will take the workspace statefulset resource
+// and attempt to figure out the resources it requests, based on the Node selected.
+func (c *Client) addResourceRequestsAndLimitsToWorkspaceTemplate(t wfv1.Template, argoTemplate *wfv1.WorkflowTemplate, workspace *Workspace) ([]byte, error) {
+	//due to placeholders, we can't unmarshal into a k8s statefulset
+	statefulSet := map[string]interface{}{}
+	if err := yaml.Unmarshal([]byte(t.Resource.Manifest), &statefulSet); err != nil {
+		return nil, err
+	}
+	spec, ok := statefulSet["spec"].(map[string]interface{})
+	if !ok {
+		return nil, errors.New("unable to type check statefulset manifest")
+	}
+	template, ok := spec["template"].(map[string]interface{})
+	if !ok {
+		return nil, errors.New("unable to type check statefulset manifest")
+	}
+	templateSpec, ok := template["spec"].(map[string]interface{})
+	if !ok {
+		return nil, errors.New("unable to type check statefulset manifest")
+	}
+	//Get node selected
+	labelKey := "sys-node-pool-label"
+	labelKeyVal := ""
+	for _, parameter := range argoTemplate.Spec.Arguments.Parameters {
+		if parameter.Name == labelKey {
+			labelKeyVal = *parameter.Value
+		}
+	}
+
+	nodePoolKey := "sys-node-pool"
+	nodePoolVal := ""
+	for _, parameter := range workspace.Parameters {
+		if parameter.Name == nodePoolKey {
+			nodePoolVal = *parameter.Value
+		}
+	}
+	extraContainer, err := generateExtraContainerWithResources(c, labelKeyVal, nodePoolVal)
+	if err != nil {
+		return nil, err
+	}
+	containers, ok := templateSpec["containers"].([]interface{})
+	if !ok {
+		return nil, errors.New("unable to type check statefulset manifest")
+	}
+
+	templateSpec["containers"] = append([]interface{}{extraContainer}, containers...)
+	resultManifest, err := yaml.Marshal(statefulSet)
+	if err != nil {
+		return nil, err
+	}
+	return resultManifest, nil
+}
+
+// generateExtraContainerWithResources will add an extra container to a workspace.
+// The extra container will have the calculated resource request for the node selected by the workspace.
+// The container will sleep once started, and generally consume negligible resources.
+//
+// The node that was selected has to be already running, in order to get the resource request correct.
+func generateExtraContainerWithResources(c *Client, labelKeyVal string, nodePoolVal string) (map[string]interface{}, error) {
+	runningNodes, err := c.Interface.CoreV1().Nodes().List(ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	var cpu string
+	var memory string
+	var gpu int64
+	gpuManufacturer := ""
+	for _, node := range runningNodes.Items {
+		if node.Labels[labelKeyVal] == nodePoolVal {
+			cpuInt := node.Status.Allocatable.Cpu().MilliValue()
+			cpu = strconv.FormatFloat(float64(cpuInt)*.9, 'f', 0, 64) + "m"
+			memoryInt := node.Status.Allocatable.Memory().MilliValue()
+			kiBase := 1024.0
+			ninetyPerc := float64(memoryInt) * .9
+			toKi := ninetyPerc / kiBase / kiBase
+			memory = strconv.FormatFloat(toKi, 'f', 0, 64) + "Ki"
+			//Check for Nvidia
+			gpuQuantity := node.Status.Allocatable["nvidia.com/gpu"]
+			if gpuQuantity.IsZero() == false {
+				gpu = gpuQuantity.Value()
+				gpuManufacturer = "nvidia.com/gpu"
+			}
+
+			//Check for AMD
+			//Source: https://github.com/RadeonOpenCompute/k8s-device-plugin/blob/master/example/pod/alexnet-gpu.yaml
+			gpuQuantity = node.Status.Allocatable["amd.com/gpu"]
+			if gpuQuantity.IsZero() == false {
+				gpu = gpuQuantity.Value()
+				gpuManufacturer = "amd.com/gpu"
+			}
+		}
+	}
+	extraContainer := map[string]interface{}{
+		"image":   "alpine:latest",
+		"name":    "resource-requester",
+		"command": []interface{}{"/bin/sh"},
+		"args":    []interface{}{"-c", "while :; do sleep 2073600; done"},
+		"resources": map[string]interface{}{
+			"requests": map[string]interface{}{
+				"cpu":    cpu,
+				"memory": memory,
+			},
+			"limits": map[string]interface{}{},
+		},
+	}
+
+	if gpu > 0 {
+		res, ok := extraContainer["resources"].(map[string]interface{})
+		if !ok {
+			return nil, errors.New("unable to type check extraContainer")
+		}
+		reqs, ok := res["requests"].(map[string]interface{})
+		if !ok {
+			return nil, errors.New("unable to type check extraContainer")
+		}
+		reqs[gpuManufacturer] = gpu
+
+		limits, ok := res["limits"].(map[string]interface{})
+		if !ok {
+			return nil, errors.New("unable to type check extraContainer")
+		}
+		limits[gpuManufacturer] = gpu
+
+	}
+	return extraContainer, err
 }
 
 // startWorkspace starts a workspace and related resources. It assumes a DB record already exists
@@ -652,6 +733,18 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 	}
 	workspaceTemplate.WorkflowTemplate = workflowTemplate
 	workspace.WorkspaceTemplate = workspaceTemplate
+
+	templates := workspace.WorkspaceTemplate.WorkflowTemplate.ArgoWorkflowTemplate.Spec.Templates
+	argoTemplate := workspace.WorkspaceTemplate.WorkflowTemplate.ArgoWorkflowTemplate
+	for i, t := range templates {
+		if t.Name == WorkspaceStatefulSetResource {
+			resultManifest, err := c.addResourceRequestsAndLimitsToWorkspaceTemplate(t, argoTemplate, workspace)
+			if err != nil {
+				return err
+			}
+			templates[i].Resource.Manifest = string(resultManifest)
+		}
+	}
 
 	_, err = c.CreateWorkflowExecution(namespace, &WorkflowExecution{
 		Parameters: workspace.Parameters,
