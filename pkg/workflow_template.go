@@ -855,7 +855,7 @@ func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, 
 
 		for {
 			req := &request.Request{Pagination: &paginator}
-			wfs, err := c.ListWorkflowExecutions(namespace, uid, wfTempVer, req)
+			wfs, err := c.ListWorkflowExecutions(namespace, uid, wfTempVer, true, req)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"Namespace": namespace,

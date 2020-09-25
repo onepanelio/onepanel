@@ -178,6 +178,7 @@ message ListWorkflowExecutionsRequest {
     string order = 6;
     string labels = 7;
     string phase = 8;
+    bool includeSystem = 9;
 }
 
 message ListWorkflowExecutionsResponse {
