@@ -723,6 +723,61 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 	workspaceTemplate.WorkflowTemplate = workflowTemplate
 	workspace.WorkspaceTemplate = workspaceTemplate
 
+	templates := workspace.WorkspaceTemplate.WorkflowTemplate.ArgoWorkflowTemplate.Spec.Templates
+	argoTemplate := workspace.WorkspaceTemplate.WorkflowTemplate.ArgoWorkflowTemplate
+	for i, t := range templates {
+		if t.Name == WorkspaceStatefulSetResource {
+			//due to placeholders, we can't unmarshal into a k8s statefulset
+			statefulSet := map[string]interface{}{}
+			if err := yaml.Unmarshal([]byte(t.Resource.Manifest), &statefulSet); err != nil {
+				return err
+			}
+			spec, ok := statefulSet["spec"].(map[string]interface{})
+			if !ok {
+				return errors.New("unable to type check statefulset manifest")
+			}
+			template, ok := spec["template"].(map[string]interface{})
+			if !ok {
+				return errors.New("unable to type check statefulset manifest")
+			}
+			templateSpec, ok := template["spec"].(map[string]interface{})
+			if !ok {
+				return errors.New("unable to type check statefulset manifest")
+			}
+			//Get node selected
+			labelKey := "sys-node-pool-label"
+			labelKeyVal := ""
+			for _, parameter := range argoTemplate.Spec.Arguments.Parameters {
+				if parameter.Name == labelKey {
+					labelKeyVal = *parameter.Value
+				}
+			}
+
+			nodePoolKey := "sys-node-pool"
+			nodePoolVal := ""
+			for _, parameter := range workspace.Parameters {
+				if parameter.Name == nodePoolKey {
+					nodePoolVal = *parameter.Value
+				}
+			}
+			err, extraContainer := addResourceRequestsToWorkspace(c, labelKeyVal, nodePoolVal)
+			if err != nil {
+				return err
+			}
+			containers, ok := templateSpec["containers"].([]interface{})
+			if !ok {
+				return errors.New("unable to type check statefulset manifest")
+			}
+
+			templateSpec["containers"] = append([]interface{}{extraContainer}, containers...)
+			resultManifest, err := yaml.Marshal(statefulSet)
+			if err != nil {
+				return err
+			}
+			templates[i].Resource.Manifest = string(resultManifest)
+		}
+	}
+
 	_, err = c.CreateWorkflowExecution(namespace, &WorkflowExecution{
 		Parameters: workspace.Parameters,
 	}, workspaceTemplate.WorkflowTemplate)
