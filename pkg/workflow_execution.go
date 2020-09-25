@@ -286,20 +286,9 @@ func (c *Client) injectContainerResourceQuotas(wf *wfv1.Workflow, template *wfv1
 			},
 		}
 		if gpu > 0 {
-			//todo disable this, not working with gpu nodes
-			resourceLimitsRaw := map[string]interface{}{}
-			resourceLimitsRaw[gpuManufacturer] = gpu
-
-			var resourceListGpu corev1.ResourceList
-			marshal, err := yaml.Marshal(resourceLimitsRaw)
-			if err != nil {
-				return err
-			}
-			err = yaml.Unmarshal(marshal, &resourceListGpu)
-			if err != nil {
-				return err
-			}
-			resourceList.Limits = resourceListGpu
+			stringGpu := strconv.FormatInt(gpu, 10)
+			resourceList.Limits = make(map[corev1.ResourceName]resource.Quantity)
+			resourceList.Limits[corev1.ResourceName(gpuManufacturer)] = resource.MustParse(stringGpu)
 		}
 		if template.Container != nil {
 			template.Container.Resources = resourceList
