@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
+	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/asaskevich/govalidator"
 	"github.com/ghodss/yaml"
 	"github.com/lib/pq"
@@ -184,50 +185,7 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 	templates := argoTemplate.Spec.Templates
 	for i, t := range templates {
 		if t.Name == WorkspaceStatefulSetResource {
-			//due to placeholders, we can't unmarshal into a k8s statefulset
-			statefulSet := map[string]interface{}{}
-			if err := yaml.Unmarshal([]byte(t.Resource.Manifest), &statefulSet); err != nil {
-				return nil, err
-			}
-			spec, ok := statefulSet["spec"].(map[string]interface{})
-			if !ok {
-				return nil, errors.New("unable to type check statefulset manifest")
-			}
-			template, ok := spec["template"].(map[string]interface{})
-			if !ok {
-				return nil, errors.New("unable to type check statefulset manifest")
-			}
-			templateSpec, ok := template["spec"].(map[string]interface{})
-			if !ok {
-				return nil, errors.New("unable to type check statefulset manifest")
-			}
-			//Get node selected
-			labelKey := "sys-node-pool-label"
-			labelKeyVal := ""
-			for _, parameter := range argoTemplate.Spec.Arguments.Parameters {
-				if parameter.Name == labelKey {
-					labelKeyVal = *parameter.Value
-				}
-			}
-
-			nodePoolKey := "sys-node-pool"
-			nodePoolVal := ""
-			for _, parameter := range workspace.Parameters {
-				if parameter.Name == nodePoolKey {
-					nodePoolVal = *parameter.Value
-				}
-			}
-			err, extraContainer := addResourceRequestsToWorkspace(c, labelKeyVal, nodePoolVal)
-			if err != nil {
-				return nil, err
-			}
-			containers, ok := templateSpec["containers"].([]interface{})
-			if !ok {
-				return nil, errors.New("unable to type check statefulset manifest")
-			}
-
-			templateSpec["containers"] = append([]interface{}{extraContainer}, containers...)
-			resultManifest, err := yaml.Marshal(statefulSet)
+			resultManifest, err := c.addResourceRequestsAndLimitsToWorkspaceTemplate(t, argoTemplate, workspace)
 			if err != nil {
 				return nil, err
 			}
@@ -269,12 +227,65 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 	return workspace, nil
 }
 
-// addResourceRequestsToWorkspace will add an extra container to a workspace.
+// addResourceRequestsAndLimitsToWorkspaceTemplate will take the workspace statefulset resource
+// and attempt to figure out the resources it requests, based on the Node selected.
+func (c *Client) addResourceRequestsAndLimitsToWorkspaceTemplate(t wfv1.Template, argoTemplate *wfv1.WorkflowTemplate, workspace *Workspace) ([]byte, error) {
+	//due to placeholders, we can't unmarshal into a k8s statefulset
+	statefulSet := map[string]interface{}{}
+	if err := yaml.Unmarshal([]byte(t.Resource.Manifest), &statefulSet); err != nil {
+		return nil, err
+	}
+	spec, ok := statefulSet["spec"].(map[string]interface{})
+	if !ok {
+		return nil, errors.New("unable to type check statefulset manifest")
+	}
+	template, ok := spec["template"].(map[string]interface{})
+	if !ok {
+		return nil, errors.New("unable to type check statefulset manifest")
+	}
+	templateSpec, ok := template["spec"].(map[string]interface{})
+	if !ok {
+		return nil, errors.New("unable to type check statefulset manifest")
+	}
+	//Get node selected
+	labelKey := "sys-node-pool-label"
+	labelKeyVal := ""
+	for _, parameter := range argoTemplate.Spec.Arguments.Parameters {
+		if parameter.Name == labelKey {
+			labelKeyVal = *parameter.Value
+		}
+	}
+
+	nodePoolKey := "sys-node-pool"
+	nodePoolVal := ""
+	for _, parameter := range workspace.Parameters {
+		if parameter.Name == nodePoolKey {
+			nodePoolVal = *parameter.Value
+		}
+	}
+	err, extraContainer := generateExtraContainerWithResources(c, labelKeyVal, nodePoolVal)
+	if err != nil {
+		return nil, err
+	}
+	containers, ok := templateSpec["containers"].([]interface{})
+	if !ok {
+		return nil, errors.New("unable to type check statefulset manifest")
+	}
+
+	templateSpec["containers"] = append([]interface{}{extraContainer}, containers...)
+	resultManifest, err := yaml.Marshal(statefulSet)
+	if err != nil {
+		return nil, err
+	}
+	return resultManifest, nil
+}
+
+// generateExtraContainerWithResources will add an extra container to a workspace.
 // The extra container will have the calculated resource request for the node selected by the workspace.
 // The container will sleep once started, and generally consume negligible resources.
 //
 // The node that was selected has to be already running, in order to get the resource request correct.
-func addResourceRequestsToWorkspace(c *Client, labelKeyVal string, nodePoolVal string) (error, map[string]interface{}) {
+func generateExtraContainerWithResources(c *Client, labelKeyVal string, nodePoolVal string) (error, map[string]interface{}) {
 	runningNodes, err := c.Interface.CoreV1().Nodes().List(ListOptions{})
 	if err != nil {
 		return err, nil
@@ -727,50 +738,7 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 	argoTemplate := workspace.WorkspaceTemplate.WorkflowTemplate.ArgoWorkflowTemplate
 	for i, t := range templates {
 		if t.Name == WorkspaceStatefulSetResource {
-			//due to placeholders, we can't unmarshal into a k8s statefulset
-			statefulSet := map[string]interface{}{}
-			if err := yaml.Unmarshal([]byte(t.Resource.Manifest), &statefulSet); err != nil {
-				return err
-			}
-			spec, ok := statefulSet["spec"].(map[string]interface{})
-			if !ok {
-				return errors.New("unable to type check statefulset manifest")
-			}
-			template, ok := spec["template"].(map[string]interface{})
-			if !ok {
-				return errors.New("unable to type check statefulset manifest")
-			}
-			templateSpec, ok := template["spec"].(map[string]interface{})
-			if !ok {
-				return errors.New("unable to type check statefulset manifest")
-			}
-			//Get node selected
-			labelKey := "sys-node-pool-label"
-			labelKeyVal := ""
-			for _, parameter := range argoTemplate.Spec.Arguments.Parameters {
-				if parameter.Name == labelKey {
-					labelKeyVal = *parameter.Value
-				}
-			}
-
-			nodePoolKey := "sys-node-pool"
-			nodePoolVal := ""
-			for _, parameter := range workspace.Parameters {
-				if parameter.Name == nodePoolKey {
-					nodePoolVal = *parameter.Value
-				}
-			}
-			err, extraContainer := addResourceRequestsToWorkspace(c, labelKeyVal, nodePoolVal)
-			if err != nil {
-				return err
-			}
-			containers, ok := templateSpec["containers"].([]interface{})
-			if !ok {
-				return errors.New("unable to type check statefulset manifest")
-			}
-
-			templateSpec["containers"] = append([]interface{}{extraContainer}, containers...)
-			resultManifest, err := yaml.Marshal(statefulSet)
+			resultManifest, err := c.addResourceRequestsAndLimitsToWorkspaceTemplate(t, argoTemplate, workspace)
 			if err != nil {
 				return err
 			}
