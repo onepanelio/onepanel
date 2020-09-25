@@ -263,7 +263,7 @@ func (c *Client) addResourceRequestsAndLimitsToWorkspaceTemplate(t wfv1.Template
 			nodePoolVal = *parameter.Value
 		}
 	}
-	err, extraContainer := generateExtraContainerWithResources(c, labelKeyVal, nodePoolVal)
+	extraContainer, err := generateExtraContainerWithResources(c, labelKeyVal, nodePoolVal)
 	if err != nil {
 		return nil, err
 	}
@@ -285,10 +285,10 @@ func (c *Client) addResourceRequestsAndLimitsToWorkspaceTemplate(t wfv1.Template
 // The container will sleep once started, and generally consume negligible resources.
 //
 // The node that was selected has to be already running, in order to get the resource request correct.
-func generateExtraContainerWithResources(c *Client, labelKeyVal string, nodePoolVal string) (error, map[string]interface{}) {
+func generateExtraContainerWithResources(c *Client, labelKeyVal string, nodePoolVal string) (map[string]interface{}, error) {
 	runningNodes, err := c.Interface.CoreV1().Nodes().List(ListOptions{})
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 	var cpu string
 	var memory string
@@ -336,22 +336,22 @@ func generateExtraContainerWithResources(c *Client, labelKeyVal string, nodePool
 	if gpu > 0 {
 		res, ok := extraContainer["resources"].(map[string]interface{})
 		if !ok {
-			return errors.New("unable to type check extraContainer"), nil
+			return nil, errors.New("unable to type check extraContainer")
 		}
 		reqs, ok := res["requests"].(map[string]interface{})
 		if !ok {
-			return errors.New("unable to type check extraContainer"), nil
+			return nil, errors.New("unable to type check extraContainer")
 		}
 		reqs[gpuManufacturer] = gpu
 
 		limits, ok := res["limits"].(map[string]interface{})
 		if !ok {
-			return errors.New("unable to type check extraContainer"), nil
+			return nil, errors.New("unable to type check extraContainer")
 		}
 		limits[gpuManufacturer] = gpu
 
 	}
-	return err, extraContainer
+	return extraContainer, err
 }
 
 // startWorkspace starts a workspace and related resources. It assumes a DB record already exists
