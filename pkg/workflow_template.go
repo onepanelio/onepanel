@@ -32,7 +32,7 @@ type WorkflowTemplateFilter struct {
 func applyLabelSelectQuery(sb sq.SelectBuilder, request *request.Request) sq.SelectBuilder {
 	if request.Filter != nil {
 		filter, ok := request.Filter.(WorkflowTemplateFilter)
-		if ok {
+		if ok && len(filter.Labels) > 0 {
 			labelsJSON, err := LabelsToJSONString(filter.Labels)
 			if err != nil {
 				log.Printf("[error] %v", err)
