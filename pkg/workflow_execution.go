@@ -65,24 +65,11 @@ func typeWorkflow(wf *wfv1.Workflow) (workflow *WorkflowExecution) {
 // WorkflowExecutionFilter represents the available ways we can filter WorkflowExecutions
 type WorkflowExecutionFilter struct {
 	Labels []*Label
-	Phase  string //empty string means none
+	Phase  string // empty string means none
 }
 
-// applyWorkflowExecutionLabelSelectQuery returns a query builder that adds where statements to filter by labels in the request,
-// if there are any
-func applyWorkflowExecutionLabelSelectQuery(sb sq.SelectBuilder, filter *WorkflowExecutionFilter) (sq.SelectBuilder, error) {
-	if len(filter.Labels) == 0 {
-		return sb, nil
-	}
-
-	labelsJSON, err := LabelsToJSONString(filter.Labels)
-	if err != nil {
-		return sb, err
-	}
-
-	sb = sb.Where("we.labels @> ?", labelsJSON)
-
-	return sb, nil
+func (wf *WorkflowExecutionFilter) GetLabels() []*Label {
+	return wf.Labels
 }
 
 func applyWorkflowExecutionFilter(sb sq.SelectBuilder, request *request.Request) (sq.SelectBuilder, error) {
@@ -95,7 +82,7 @@ func applyWorkflowExecutionFilter(sb sq.SelectBuilder, request *request.Request)
 		return sb, nil
 	}
 
-	sb, err := applyWorkflowExecutionLabelSelectQuery(sb, &filter)
+	sb, err := ApplyLabelSelectQuery("we.labels", sb, &filter)
 	if err != nil {
 		return sb, err
 	}

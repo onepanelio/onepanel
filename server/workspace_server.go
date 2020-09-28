@@ -7,7 +7,9 @@ import (
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/ptr"
+	"github.com/onepanelio/core/pkg/util/request"
 	"github.com/onepanelio/core/pkg/util/request/pagination"
+	requestSort "github.com/onepanelio/core/pkg/util/request/sort"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/onepanelio/core/server/converter"
 	log "github.com/sirupsen/logrus"
@@ -213,8 +215,24 @@ func (s *WorkspaceServer) ListWorkspaces(ctx context.Context, req *api.ListWorks
 		return nil, err
 	}
 
-	paginator := pagination.NewRequest(req.Page, req.PageSize)
-	workspaces, err := client.ListWorkspaces(req.Namespace, &paginator)
+	labelFilter, err := v1.LabelsFromString(req.Labels)
+	if err != nil {
+		return nil, err
+	}
+	reqSort, err := requestSort.New(req.Order)
+	if err != nil {
+		return nil, err
+	}
+
+	resourceRequest := &request.Request{
+		Pagination: pagination.New(req.Page, req.PageSize),
+		Filter: v1.WorkspaceFilter{
+			Labels: labelFilter,
+		},
+		Sort: reqSort,
+	}
+
+	workspaces, err := client.ListWorkspaces(req.Namespace, resourceRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -228,11 +246,12 @@ func (s *WorkspaceServer) ListWorkspaces(ctx context.Context, req *api.ListWorks
 		apiWorkspaces = append(apiWorkspaces, apiWorkspace(w, sysConfig))
 	}
 
-	count, err := client.CountWorkspaces(req.Namespace)
+	count, err := client.CountWorkspaces(req.Namespace, resourceRequest)
 	if err != nil {
 		return nil, err
 	}
 
+	paginator := resourceRequest.Pagination
 	return &api.ListWorkspaceResponse{
 		Count:      int32(len(apiWorkspaces)),
 		Workspaces: apiWorkspaces,
