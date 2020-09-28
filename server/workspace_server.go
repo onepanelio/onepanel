@@ -228,6 +228,7 @@ func (s *WorkspaceServer) ListWorkspaces(ctx context.Context, req *api.ListWorks
 		Pagination: pagination.New(req.Page, req.PageSize),
 		Filter: v1.WorkspaceFilter{
 			Labels: labelFilter,
+			Phase:  req.Phase,
 		},
 		Sort: reqSort,
 	}
@@ -356,4 +357,23 @@ func (s *WorkspaceServer) RetryLastWorkspaceAction(ctx context.Context, req *api
 	}
 
 	return &empty.Empty{}, err
+}
+
+// GetWorkspaceStatisticsForNamespace returns statistics on workflow executions for a given namespace
+func (s *WorkspaceServer) GetWorkspaceStatisticsForNamespace(ctx context.Context, req *api.GetWorkspaceStatisticsForNamespaceRequest) (*api.GetWorkspaceStatisticsForNamespaceResponse, error) {
+	client := getClient(ctx)
+
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "workspaces", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	report, err := client.GetWorkspaceStatisticsForNamespace(req.Namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.GetWorkspaceStatisticsForNamespaceResponse{
+		Stats: converter.WorkspaceStatisticsReportToAPI(report),
+	}, nil
 }

@@ -41,6 +41,16 @@ func applyWorkspaceFilter(sb sq.SelectBuilder, request *request.Request) (sq.Sel
 		return sb, nil
 	}
 
+	if filter.Phase != "" {
+		sb = sb.Where(sq.Eq{
+			"phase": filter.Phase,
+		})
+	} else {
+		sb = sb.Where(sq.NotEq{
+			"phase": WorkspaceTerminated,
+		})
+	}
+
 	sb, err := ApplyLabelSelectQuery("w.labels", sb, &filter)
 	if err != nil {
 		return sb, err
@@ -597,14 +607,7 @@ func (c *Client) ListWorkspaces(namespace string, request *request.Request) (wor
 		Columns(getWorkspaceTemplateColumns("wt", "workspace_template")...).
 		From("workspaces w").
 		Join("workspace_templates wt ON wt.id = w.workspace_template_id").
-		Where(sq.And{
-			sq.Eq{
-				"w.namespace": namespace,
-			},
-			sq.NotEq{
-				"phase": WorkspaceTerminated,
-			},
-		})
+		Where(sq.Eq{"w.namespace": namespace})
 
 	if request.HasSorting() {
 		properties := getWorkspaceColumnsMap(true)
@@ -748,4 +751,35 @@ func (c *Client) DeleteWorkspace(namespace, uid string) (err error) {
 // Kicks off DB archiving and k8s cleaning.
 func (c *Client) ArchiveWorkspace(namespace, uid string, parameters ...Parameter) (err error) {
 	return c.updateWorkspace(namespace, uid, "delete", "delete", &WorkspaceStatus{Phase: WorkspaceTerminating}, parameters...)
+}
+
+// GetWorkspaceStatisticsForNamespace loads statistics for workspaces for the provided namespace
+func (c *Client) GetWorkspaceStatisticsForNamespace(namespace string) (report *WorkspaceStatisticReport, err error) {
+	statsSelect := `
+		MAX(w.created_at) last_created,
+		COUNT(*) FILTER (WHERE phase = 'Launching') launching,
+		COUNT(*) FILTER (WHERE phase = 'Running') running,
+		COUNT(*) FILTER (WHERE phase = 'Updating') updating,
+		COUNT(*) FILTER (WHERE phase = 'Pausing') pausing,
+		COUNT(*) FILTER (WHERE phase = 'Paused') paused,
+		COUNT(*) FILTER (WHERE phase = 'Terminating') terminating,
+		COUNT(*) FILTER (WHERE phase = 'Terminated') terminated,
+		COUNT(*) FILTER (WHERE phase = 'Failed to pause') failed_to_pause,
+		COUNT(*) FILTER (WHERE phase = 'Failed to resume') failed_to_resume,
+		COUNT(*) FILTER (WHERE phase = 'Failed to terminate') failed_to_terminate,
+		COUNT(*) FILTER (WHERE phase = 'Failed to launch') failed_to_launch,
+		COUNT(*) FILTER (WHERE phase = 'Failed to update') failed_to_update,
+		COUNT(*) FILTER (WHERE phase LIKE 'Failed%') failed,
+		COUNT(*) total`
+
+	query := sb.Select(statsSelect).
+		From("workspaces w").
+		Where(sq.Eq{
+			"w.namespace": namespace,
+		})
+
+	report = &WorkspaceStatisticReport{}
+	err = c.DB.Getx(report, query)
+
+	return
 }
