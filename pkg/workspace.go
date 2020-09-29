@@ -601,6 +601,7 @@ func (c *Client) ListWorkspacesByTemplateID(namespace string, templateID uint64)
 	return
 }
 
+// ListWorkspaces returns a list of workspaces that satisfy the conditions in the request
 func (c *Client) ListWorkspaces(namespace string, request *request.Request) (workspaces []*Workspace, err error) {
 	sb := sb.Select(getWorkspaceColumns("w")...).
 		Columns(getWorkspaceStatusColumns("w", "status")...).

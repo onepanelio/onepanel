@@ -68,6 +68,7 @@ type WorkflowExecutionFilter struct {
 	Phase  string // empty string means none
 }
 
+// GetLabels returns the labels in the filter
 func (wf *WorkflowExecutionFilter) GetLabels() []*Label {
 	return wf.Labels
 }
