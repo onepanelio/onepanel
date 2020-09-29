@@ -17,6 +17,11 @@ Fixes onepanelio/core#
 
 **Checklist**
 
+Please check if applies
+
 - [ ] I have added/updated relevant unit tests
 - [ ] I have added/updated relevant documentation
+
+Required 
+
 - [ ] I accept to release these changes under the Apache 2.0 License   
