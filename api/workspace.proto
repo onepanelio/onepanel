@@ -16,6 +16,12 @@ service WorkspaceService {
         };
 	}
 
+	rpc GetWorkspaceStatisticsForNamespace (GetWorkspaceStatisticsForNamespaceRequest) returns (GetWorkspaceStatisticsForNamespaceResponse) {
+		option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workspace/statistics"
+        };
+	}
+
 	rpc GetWorkspace (GetWorkspaceRequest) returns (Workspace) {
 		option (google.api.http) = {
             get: "/apis/v1beta1/{namespace}/workspaces/{uid}"
@@ -129,6 +135,7 @@ message ListWorkspaceRequest {
 	int32 page = 3;
 	string order = 4;
 	string labels = 5;
+	string phase = 6;
 }
 
 message ListWorkspaceResponse {
@@ -157,4 +164,30 @@ message DeleteWorkspaceRequest {
 message RetryActionWorkspaceRequest {
 	string namespace = 1;
 	string uid = 2;
+}
+
+message WorkspaceStatisticReport {
+	int32 total = 1;
+	string lastCreated = 2;
+	int32 launching = 3;
+	int32 running = 4;
+	int32 updating = 5;
+	int32 pausing = 6;
+	int32 paused = 7;
+	int32 terminating = 8;
+	int32 terminated = 9;
+	int32 failedToPause = 10;
+	int32 failedToResume = 11;
+	int32 failedToTerminate = 12;
+	int32 failedToLaunch = 13;
+	int32 failedToUpdate = 14;
+	int32 failed = 15;
+}
+
+message GetWorkspaceStatisticsForNamespaceRequest {
+	string namespace = 1;
+}
+
+message GetWorkspaceStatisticsForNamespaceResponse {
+	WorkspaceStatisticReport stats = 1;
 }

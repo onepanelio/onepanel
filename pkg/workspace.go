@@ -12,13 +12,52 @@ import (
 	"github.com/lib/pq"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/ptr"
-	"github.com/onepanelio/core/pkg/util/request/pagination"
+	"github.com/onepanelio/core/pkg/util/request"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"strconv"
 	"strings"
 	"time"
 )
+
+// WorkspaceFilter represents the available ways we can filter Workspaces
+type WorkspaceFilter struct {
+	Labels []*Label
+	Phase  string // empty string means none
+}
+
+// GetLabels gets the labels of the filter
+func (wf *WorkspaceFilter) GetLabels() []*Label {
+	return wf.Labels
+}
+
+func applyWorkspaceFilter(sb sq.SelectBuilder, request *request.Request) (sq.SelectBuilder, error) {
+	if request.Filter == nil {
+		return sb, nil
+	}
+
+	filter, ok := request.Filter.(WorkspaceFilter)
+	if !ok {
+		return sb, nil
+	}
+
+	if filter.Phase != "" {
+		sb = sb.Where(sq.Eq{
+			"phase": filter.Phase,
+		})
+	} else {
+		sb = sb.Where(sq.NotEq{
+			"phase": WorkspaceTerminated,
+		})
+	}
+
+	sb, err := ApplyLabelSelectQuery("w.labels", sb, &filter)
+	if err != nil {
+		return sb, err
+	}
+
+	return sb, nil
+}
 
 func (c *Client) workspacesSelectBuilder(namespace string) sq.SelectBuilder {
 	sb := sb.Select(getWorkspaceColumns("w")...).
@@ -643,22 +682,36 @@ func (c *Client) ListWorkspacesByTemplateID(namespace string, templateID uint64)
 	return
 }
 
-func (c *Client) ListWorkspaces(namespace string, paginator *pagination.PaginationRequest) (workspaces []*Workspace, err error) {
+// ListWorkspaces returns a list of workspaces that satisfy the conditions in the request
+func (c *Client) ListWorkspaces(namespace string, request *request.Request) (workspaces []*Workspace, err error) {
 	sb := sb.Select(getWorkspaceColumns("w")...).
 		Columns(getWorkspaceStatusColumns("w", "status")...).
 		Columns(getWorkspaceTemplateColumns("wt", "workspace_template")...).
 		From("workspaces w").
 		Join("workspace_templates wt ON wt.id = w.workspace_template_id").
-		OrderBy("w.created_at DESC").
-		Where(sq.And{
-			sq.Eq{
-				"w.namespace": namespace,
-			},
-			sq.NotEq{
-				"phase": WorkspaceTerminated,
-			},
-		})
-	sb = *paginator.ApplyToSelect(&sb)
+		Where(sq.Eq{"w.namespace": namespace})
+
+	if request.HasSorting() {
+		properties := getWorkspaceColumnsMap(true)
+		for _, order := range request.Sort.Properties {
+			if columnName, ok := properties[order.Property]; ok {
+				nullSort := "NULLS FIRST"
+				if order.Direction == "desc" {
+					nullSort = "NULLS LAST" // default in postgres, but let's be explicit
+				}
+				sb = sb.OrderBy(fmt.Sprintf("w.%v %v %v", columnName, order.Direction, nullSort))
+			}
+		}
+	} else {
+		sb = sb.OrderBy("w.created_at DESC")
+	}
+
+	sb, err = applyWorkspaceFilter(sb, request)
+	if err != nil {
+		return nil, err
+	}
+
+	sb = *request.Pagination.ApplyToSelect(&sb)
 
 	if err := c.DB.Selectx(&workspaces, sb); err != nil {
 		return nil, err
@@ -668,8 +721,8 @@ func (c *Client) ListWorkspaces(namespace string, paginator *pagination.Paginati
 }
 
 // CountWorkspaces returns the total number of workspaces in the given namespace that are not terminated
-func (c *Client) CountWorkspaces(namespace string) (count int, err error) {
-	err = sb.Select("COUNT( DISTINCT( w.id ))").
+func (c *Client) CountWorkspaces(namespace string, request *request.Request) (count int, err error) {
+	query := sb.Select("COUNT( DISTINCT( w.id ))").
 		From("workspaces w").
 		Join("workspace_templates wt ON w.workspace_template_id = wt.id").
 		Where(sq.And{
@@ -679,8 +732,14 @@ func (c *Client) CountWorkspaces(namespace string) (count int, err error) {
 			sq.NotEq{
 				"phase": WorkspaceTerminated,
 			},
-		}).
-		RunWith(c.DB).
+		})
+
+	query, err = applyWorkspaceFilter(query, request)
+	if err != nil {
+		return 0, err
+	}
+
+	err = query.RunWith(c.DB).
 		QueryRow().
 		Scan(&count)
 
@@ -786,4 +845,35 @@ func (c *Client) DeleteWorkspace(namespace, uid string) (err error) {
 // Kicks off DB archiving and k8s cleaning.
 func (c *Client) ArchiveWorkspace(namespace, uid string, parameters ...Parameter) (err error) {
 	return c.updateWorkspace(namespace, uid, "delete", "delete", &WorkspaceStatus{Phase: WorkspaceTerminating}, parameters...)
+}
+
+// GetWorkspaceStatisticsForNamespace loads statistics for workspaces for the provided namespace
+func (c *Client) GetWorkspaceStatisticsForNamespace(namespace string) (report *WorkspaceStatisticReport, err error) {
+	statsSelect := `
+		MAX(w.created_at) last_created,
+		COUNT(*) FILTER (WHERE phase = 'Launching') launching,
+		COUNT(*) FILTER (WHERE phase = 'Running') running,
+		COUNT(*) FILTER (WHERE phase = 'Updating') updating,
+		COUNT(*) FILTER (WHERE phase = 'Pausing') pausing,
+		COUNT(*) FILTER (WHERE phase = 'Paused') paused,
+		COUNT(*) FILTER (WHERE phase = 'Terminating') terminating,
+		COUNT(*) FILTER (WHERE phase = 'Terminated') terminated,
+		COUNT(*) FILTER (WHERE phase = 'Failed to pause') failed_to_pause,
+		COUNT(*) FILTER (WHERE phase = 'Failed to resume') failed_to_resume,
+		COUNT(*) FILTER (WHERE phase = 'Failed to terminate') failed_to_terminate,
+		COUNT(*) FILTER (WHERE phase = 'Failed to launch') failed_to_launch,
+		COUNT(*) FILTER (WHERE phase = 'Failed to update') failed_to_update,
+		COUNT(*) FILTER (WHERE phase LIKE 'Failed%') failed,
+		COUNT(*) total`
+
+	query := sb.Select(statsSelect).
+		From("workspaces w").
+		Where(sq.Eq{
+			"w.namespace": namespace,
+		})
+
+	report = &WorkspaceStatisticReport{}
+	err = c.DB.Getx(report, query)
+
+	return
 }

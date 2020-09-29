@@ -165,3 +165,30 @@ func WorkflowExecutionStatisticsReportToAPI(report *v1.WorkflowExecutionStatisti
 
 	return stats
 }
+
+// WorkspaceStatisticsReportToAPI converts v1.WorkspaceStatisticReport to api.WorkspaceStatisticReport
+func WorkspaceStatisticsReportToAPI(report *v1.WorkspaceStatisticReport) *api.WorkspaceStatisticReport {
+	if report == nil {
+		return nil
+	}
+
+	stats := &api.WorkspaceStatisticReport{
+		LastCreated:       TimestampToAPIString(report.LastCreated),
+		Launching:         report.Launching,
+		Running:           report.Running,
+		Updating:          report.Updating,
+		Pausing:           report.Pausing,
+		Paused:            report.Paused,
+		Terminating:       report.Terminating,
+		Terminated:        report.Terminated,
+		FailedToPause:     report.FailedToPause,
+		FailedToResume:    report.FailedToResume,
+		FailedToTerminate: report.FailedToTerminate,
+		FailedToLaunch:    report.FailedToLaunch,
+		FailedToUpdate:    report.FailedToUpdate,
+		Failed:            report.Failed,
+		Total:             report.Total,
+	}
+
+	return stats
+}

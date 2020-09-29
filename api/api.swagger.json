@@ -1849,6 +1849,36 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/workspace/statistics": {
+      "get": {
+        "operationId": "GetWorkspaceStatisticsForNamespace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetWorkspaceStatisticsForNamespaceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workspace_templates": {
       "get": {
         "operationId": "ListWorkspaceTemplates",
@@ -2176,6 +2206,12 @@
           },
           {
             "name": "labels",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "phase",
             "in": "query",
             "required": false,
             "type": "string"
@@ -2876,6 +2912,14 @@
         }
       }
     },
+    "GetWorkspaceStatisticsForNamespaceResponse": {
+      "type": "object",
+      "properties": {
+        "stats": {
+          "$ref": "#/definitions/WorkspaceStatisticReport"
+        }
+      }
+    },
     "IsAuthorized": {
       "type": "object",
       "properties": {
@@ -3550,6 +3594,70 @@
           "items": {
             "$ref": "#/definitions/Parameter"
           }
+        }
+      }
+    },
+    "WorkspaceStatisticReport": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "lastCreated": {
+          "type": "string"
+        },
+        "launching": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "running": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "updating": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pausing": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "paused": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "terminating": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "terminated": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "failedToPause": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "failedToResume": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "failedToTerminate": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "failedToLaunch": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "failedToUpdate": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "failed": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },

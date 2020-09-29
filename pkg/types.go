@@ -74,6 +74,25 @@ type WorkflowExecutionStatisticReport struct {
 	Terminated         int32
 }
 
+// WorkspaceStatisticReport contains stats on the phases the workspaces in the system are in
+type WorkspaceStatisticReport struct {
+	LastCreated       *time.Time `db:"last_created"`
+	Launching         int32
+	Running           int32
+	Updating          int32
+	Pausing           int32
+	Paused            int32
+	Terminating       int32
+	Terminated        int32
+	FailedToPause     int32 `db:"failed_to_pause" json:"failedToPause"`
+	FailedToResume    int32 `db:"failed_to_resume" json:"failedToResume"`
+	FailedToTerminate int32 `db:"failed_to_terminate" json:"failedToTerminate"`
+	FailedToLaunch    int32 `db:"failed_to_launch" json:"failedToLaunch"`
+	FailedToUpdate    int32 `db:"failed_to_update" json:"failedToUpdate"`
+	Failed            int32
+	Total             int32
+}
+
 type CronWorkflowStatisticReport struct {
 	WorkflowTemplateId uint64 `db:"workflow_template_id"`
 	Total              int32

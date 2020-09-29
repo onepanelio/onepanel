@@ -122,3 +122,27 @@ func WorkspacesToIDs(resources []*Workspace) (ids []uint64) {
 
 	return
 }
+
+// getWorkspaceColumnsMap returns a map where the keys are the columns of the workspaces table
+// the value is the raw column name as it is in the database
+func getWorkspaceColumnsMap(camelCase bool) map[string]string {
+	result := map[string]string{
+		"id":         "id",
+		"labels":     "labels",
+		"name":       "name",
+		"uid":        "uid",
+		"namespace": "namespace",
+		"phase":      "phase",
+		"parameters": "parameters",
+	}
+
+	if camelCase {
+		result["createdAt"] = "created_at"
+		result["modifiedAt"] = "modified_at"
+	} else {
+		result["created_at"] = "created_at"
+		result["modified_at"] = "modified_at"
+	}
+
+	return result
+}
