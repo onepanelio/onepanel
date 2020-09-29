@@ -746,7 +746,7 @@ metadata:
 			Dependencies: []string{WorkspaceDAGTemplateSysSetPhaseRunning, WorkspaceDAGTemplateSysSetPhasePaused, WorkspaceDAGTemplateSysSetPhaseTerminated},
 		}
 
-		templates[0].DAG.Tasks = append(templates[0].DAG.Tasks, dag)
+		templates[1].DAG.Tasks = append(templates[1].DAG.Tasks, dag)
 
 		templates = append(templates, spec.PostExecutionWorkflow.Templates...)
 	}

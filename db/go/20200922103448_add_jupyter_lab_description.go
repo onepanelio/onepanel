@@ -46,6 +46,10 @@ func Up20200922103448(tx *sql.Tx) error {
 		if err != nil {
 			return err
 		}
+		if workspaceTemplate == nil {
+			continue
+		}
+
 		// Adding description
 		workspaceTemplate.Description = "Interactive development environment for notebooks"
 
