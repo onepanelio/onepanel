@@ -14,3 +14,9 @@ Usage: `Fixes onepanelio/core#<issue-number>`
 Fixes onepanelio/core#
 
 **Special notes for your reviewer**:
+
+**Checklist**
+
+- [ ] I have added/updated relevant unit tests
+- [ ] I have added/updated relevant documentation
+- [ ] I accept to release these changes under the Apache 2.0 License   
