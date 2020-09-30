@@ -5,7 +5,9 @@ import (
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util"
+	"github.com/onepanelio/core/pkg/util/request"
 	"github.com/onepanelio/core/pkg/util/request/pagination"
+	requestSort "github.com/onepanelio/core/pkg/util/request/sort"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/onepanelio/core/server/converter"
 	"google.golang.org/grpc/codes"
@@ -135,8 +137,25 @@ func (s *WorkspaceTemplateServer) ListWorkspaceTemplates(ctx context.Context, re
 		return nil, err
 	}
 
-	paginator := pagination.NewRequest(req.Page, req.PageSize)
-	workspaceTemplates, err := client.ListWorkspaceTemplates(req.Namespace, &paginator)
+	labelFilter, err := v1.LabelsFromString(req.Labels)
+	if err != nil {
+		return nil, err
+	}
+	reqSort, err := requestSort.New(req.Order)
+	if err != nil {
+		return nil, err
+	}
+
+	resourceRequest := &request.Request{
+		Pagination: pagination.New(req.Page, req.PageSize),
+		Filter: v1.WorkspaceTemplateFilter{
+			Labels: labelFilter,
+			UID:    req.Uid,
+		},
+		Sort: reqSort,
+	}
+
+	workspaceTemplates, err := client.ListWorkspaceTemplates(req.Namespace, resourceRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -151,6 +170,7 @@ func (s *WorkspaceTemplateServer) ListWorkspaceTemplates(ctx context.Context, re
 		return nil, err
 	}
 
+	paginator := resourceRequest.Pagination
 	return &api.ListWorkspaceTemplatesResponse{
 		Count:              int32(len(apiWorkspaceTemplates)),
 		WorkspaceTemplates: apiWorkspaceTemplates,

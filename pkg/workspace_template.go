@@ -11,7 +11,7 @@ import (
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/env"
 	"github.com/onepanelio/core/pkg/util/ptr"
-	"github.com/onepanelio/core/pkg/util/request/pagination"
+	"github.com/onepanelio/core/pkg/util/request"
 	"github.com/onepanelio/core/pkg/util/router"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
@@ -25,41 +25,92 @@ import (
 
 // WorkspaceDAGTemplateCreateStatefulSet is used inside the DAG creation for the workspace.
 const WorkspaceDAGTemplateCreateStatefulSet = "create-stateful-set"
+
 // WorkspaceDAGTemplateGetStatefulSet is used inside the DAG creation for the workspace.
 const WorkspaceDAGTemplateGetStatefulSet = "get-stateful-set"
+
 // WorkspaceDAGTemplateService is used inside the DAG creation for the workspace.
 const WorkspaceDAGTemplateService = "service"
+
 // WorkspaceDAGTemplateVirtualService is used inside the DAG creation for the workspace.
 const WorkspaceDAGTemplateVirtualService = "virtual-service"
+
 // WorkspaceDAGTemplateCreateWorkspace is used inside the DAG creation for the workspace.
 const WorkspaceDAGTemplateCreateWorkspace = "create-workspace"
+
 // WorkspaceDAGTemplateDeleteStatefulSet is used inside the DAG creation for the workspace.
 const WorkspaceDAGTemplateDeleteStatefulSet = "delete-stateful-set"
+
 // WorkspaceDAGTemplateDeleteWorkspace is used inside the DAG creation for the workspace.
 const WorkspaceDAGTemplateDeleteWorkspace = "delete-workspace"
+
 // WorkspaceDAGTemplateDeletePVC is used inside the DAG creation for the workspace.
 const WorkspaceDAGTemplateDeletePVC = "delete-pvc"
+
 // WorkspaceDAGTemplateSysSetPhaseRunning is used inside the DAG creation for the workspace.
 const WorkspaceDAGTemplateSysSetPhaseRunning = "sys-set-phase-running"
+
 // WorkspaceDAGTemplateSysSetPhasePaused is used inside the DAG creation for the workspace.
 const WorkspaceDAGTemplateSysSetPhasePaused = "sys-set-phase-paused"
+
 // WorkspaceDAGTemplateSysSetPhaseTerminated is used inside the DAG creation for the workspace.
 const WorkspaceDAGTemplateSysSetPhaseTerminated = "sys-set-phase-terminated"
 
 // WorkspaceServiceResource is resource used in workspace template creation.
 const WorkspaceServiceResource = "service-resource"
+
 // WorkspaceVirtualServiceResource is resource used in workspace template creation.
 const WorkspaceVirtualServiceResource = "virtual-service-resource"
+
 // WorkspaceStatefulSetResource is resource used in workspace template creation.
 const WorkspaceStatefulSetResource = "stateful-set-resource"
+
 // WorkspaceGetStatefulSetResource is resource used in workspace template creation.
 const WorkspaceGetStatefulSetResource = "get-stateful-set-resource"
+
 // WorkspaceDeleteStatefulSetResource is resource used in workspace template creation.
 const WorkspaceDeleteStatefulSetResource = "delete-stateful-set-resource"
+
 // WorkspaceResource is resource used in workspace template creation.
 const WorkspaceResource = "workspace-resource"
+
 // WorkspaceDeletePVCResource is resource used in workspace template creation.
 const WorkspaceDeletePVCResource = "delete-pvc-resource"
+
+// WorkspaceTemplateFilter represents the available ways we can filter WorkspaceTemplates
+type WorkspaceTemplateFilter struct {
+	Labels []*Label
+	UID    string // empty string means none
+}
+
+// GetLabels gets the labels of the filter
+func (wt *WorkspaceTemplateFilter) GetLabels() []*Label {
+	return wt.Labels
+}
+
+func applyWorkspaceTemplateFilter(sb sq.SelectBuilder, request *request.Request) (sq.SelectBuilder, error) {
+	if request.Filter == nil {
+		return sb, nil
+	}
+
+	filter, ok := request.Filter.(WorkspaceTemplateFilter)
+	if !ok {
+		return sb, nil
+	}
+
+	if filter.UID != "" {
+		sb = sb.Where(sq.Eq{
+			"uid": filter.UID,
+		})
+	}
+
+	sb, err := ApplyLabelSelectQuery("wt.labels", sb, &filter)
+	if err != nil {
+		return sb, err
+	}
+
+	return sb, nil
+}
 
 // createWorkspaceTemplateVersionDB creates a workspace template version in the database.
 func createWorkspaceTemplateVersionDB(tx sq.BaseRunner, template *WorkspaceTemplate) (err error) {
@@ -1108,14 +1159,33 @@ func (c *Client) UpdateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 }
 
 // ListWorkspaceTemplates returns a list of workspace templates that are not archived, sorted by most recent created first
-func (c *Client) ListWorkspaceTemplates(namespace string, paginator *pagination.PaginationRequest) (workspaceTemplates []*WorkspaceTemplate, err error) {
+func (c *Client) ListWorkspaceTemplates(namespace string, request *request.Request) (workspaceTemplates []*WorkspaceTemplate, err error) {
 	sb := c.workspaceTemplatesSelectBuilder(namespace).
 		Where(sq.Eq{
 			"wt.is_archived": false,
-		}).
-		OrderBy("wt.created_at DESC")
+		})
 
-	sb = *paginator.ApplyToSelect(&sb)
+	if request.HasSorting() {
+		properties := getWorkspaceTemplateColumnsMap(true)
+		for _, order := range request.Sort.Properties {
+			if columnName, ok := properties[order.Property]; ok {
+				nullSort := "NULLS FIRST"
+				if order.Direction == "desc" {
+					nullSort = "NULLS LAST" // default in postgres, but let's be explicit
+				}
+				sb = sb.OrderBy(fmt.Sprintf("wt.%v %v %v", columnName, order.Direction, nullSort))
+			}
+		}
+	} else {
+		sb = sb.OrderBy("wt.created_at DESC")
+	}
+
+	sb, err = applyWorkspaceTemplateFilter(sb, request)
+	if err != nil {
+		return nil, err
+	}
+
+	sb = *request.Pagination.ApplyToSelect(&sb)
 
 	err = c.DB.Selectx(&workspaceTemplates, sb)
 
