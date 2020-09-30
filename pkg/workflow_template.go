@@ -171,7 +171,7 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 	workflowTemplateVersion := &WorkflowTemplateVersion{
 		WorkflowTemplate: workflowTemplate,
 		Manifest:         workflowTemplate.Manifest,
-		Labels: workflowTemplate.Labels,
+		Labels:           workflowTemplate.Labels,
 	}
 	err = createWorkflowTemplateVersionDB(tx, workflowTemplateVersion, params)
 	if err != nil {
@@ -422,7 +422,7 @@ func (c *Client) selectWorkflowTemplatesQuery(namespace string, request *request
 		OrderBy("wt.created_at DESC")
 
 	sb = applyLabelSelectQuery(sb, request)
-	sb = *request.Pagination.ApplyToSelect(&sb)
+	sb = *request.ApplyPaginationToSelect(&sb)
 
 	return
 }

@@ -89,7 +89,7 @@ func (wt *WorkspaceTemplateFilter) GetLabels() []*Label {
 }
 
 func applyWorkspaceTemplateFilter(sb sq.SelectBuilder, request *request.Request) (sq.SelectBuilder, error) {
-	if request.Filter == nil {
+	if !request.HasFilter() {
 		return sb, nil
 	}
 
@@ -1185,7 +1185,7 @@ func (c *Client) ListWorkspaceTemplates(namespace string, request *request.Reque
 		return nil, err
 	}
 
-	sb = *request.Pagination.ApplyToSelect(&sb)
+	sb = *request.ApplyPaginationToSelect(&sb)
 
 	err = c.DB.Selectx(&workspaceTemplates, sb)
 

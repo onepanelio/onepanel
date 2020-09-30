@@ -75,7 +75,7 @@ func (wf *WorkflowExecutionFilter) GetLabels() []*Label {
 }
 
 func applyWorkflowExecutionFilter(sb sq.SelectBuilder, request *request.Request) (sq.SelectBuilder, error) {
-	if request.Filter == nil {
+	if !request.HasFilter() {
 		return sb, nil
 	}
 
@@ -865,8 +865,7 @@ func (c *Client) ListWorkflowExecutions(namespace, workflowTemplateUID, workflow
 		return nil, err
 	}
 
-	sb = *request.Pagination.ApplyToSelect(&sb)
-
+	sb = *request.ApplyPaginationToSelect(&sb)
 	if err := c.DB.Selectx(&workflows, sb); err != nil {
 		return nil, err
 	}
