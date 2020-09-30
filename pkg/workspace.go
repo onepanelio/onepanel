@@ -32,7 +32,7 @@ func (wf *WorkspaceFilter) GetLabels() []*Label {
 }
 
 func applyWorkspaceFilter(sb sq.SelectBuilder, request *request.Request) (sq.SelectBuilder, error) {
-	if request.Filter == nil {
+	if !request.HasFilter() {
 		return sb, nil
 	}
 
@@ -711,7 +711,7 @@ func (c *Client) ListWorkspaces(namespace string, request *request.Request) (wor
 		return nil, err
 	}
 
-	sb = *request.Pagination.ApplyToSelect(&sb)
+	sb = *request.ApplyPaginationToSelect(&sb)
 
 	if err := c.DB.Selectx(&workspaces, sb); err != nil {
 		return nil, err
