@@ -110,3 +110,28 @@ func getWorkspaceTemplateColumnsWithoutLabels(aliasAndDestination ...string) []s
 	columns := []string{"id", "uid", "created_at", "modified_at", "name", "description", "namespace", "is_archived", "workflow_template_id"}
 	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }
+
+// getWorkspaceTemplateColumnsMap returns a map where the keys are the columns of the workspace_templates table
+// the value is the raw column name as it is in the database
+func getWorkspaceTemplateColumnsMap(camelCase bool) map[string]string {
+	result := map[string]string{
+		"id":          "id",
+		"labels":      "labels",
+		"name":        "name",
+		"uid":         "uid",
+		"namespace":   "namespace",
+		"description": "description",
+	}
+
+	if camelCase {
+		result["createdAt"] = "created_at"
+		result["modifiedAt"] = "modified_at"
+		result["isArchived"] = "is_archived"
+	} else {
+		result["created_at"] = "created_at"
+		result["modified_at"] = "modified_at"
+		result["is_archived"] = "is_archived"
+	}
+
+	return result
+}
