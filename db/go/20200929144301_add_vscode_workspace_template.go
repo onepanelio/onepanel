@@ -51,7 +51,7 @@ routes:
 #       - -c
 `
 
-const vscodeWorkspaceTemplateName = "VisualStudioCode"
+const vscodeWorkspaceTemplateName = "Visual Studio Code"
 
 func initialize20200929144301() {
 	if _, ok := initializedMigrations[20200929144301]; !ok {
@@ -88,7 +88,7 @@ func Up20200929144301(tx *sql.Tx) error {
 	}
 
 	// Adding description
-	workspaceTemplate.Description = "Interactive development environment for code, notebooks, and everything in between."
+	workspaceTemplate.Description = "Open source code editor"
 
 	for _, namespace := range namespaces {
 		if _, err := client.CreateWorkspaceTemplate(namespace.Name, workspaceTemplate); err != nil {
