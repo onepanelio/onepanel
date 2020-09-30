@@ -5,7 +5,6 @@ import (
 	v1 "github.com/onepanelio/core/pkg"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"github.com/pressly/goose"
-	"log"
 )
 
 const vscodeWorkspaceTemplate = `
@@ -117,7 +116,7 @@ func Down20200929144301(tx *sql.Tx) error {
 	}
 	for _, namespace := range namespaces {
 		if _, err := client.ArchiveWorkspaceTemplate(namespace.Name, uid); err != nil {
-			log.Fatalf("error %v", err.Error())
+			return err
 		}
 	}
 	return nil
