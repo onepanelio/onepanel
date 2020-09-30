@@ -80,7 +80,7 @@ const WorkspaceDeletePVCResource = "delete-pvc-resource"
 // WorkspaceTemplateFilter represents the available ways we can filter WorkspaceTemplates
 type WorkspaceTemplateFilter struct {
 	Labels []*Label
-	Uid    string // empty string means none
+	UID    string // empty string means none
 }
 
 // GetLabels gets the labels of the filter
@@ -98,9 +98,9 @@ func applyWorkspaceTemplateFilter(sb sq.SelectBuilder, request *request.Request)
 		return sb, nil
 	}
 
-	if filter.Uid != "" {
+	if filter.UID != "" {
 		sb = sb.Where(sq.Eq{
-			"uid": filter.Uid,
+			"uid": filter.UID,
 		})
 	}
 

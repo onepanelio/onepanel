@@ -150,7 +150,7 @@ func (s *WorkspaceTemplateServer) ListWorkspaceTemplates(ctx context.Context, re
 		Pagination: pagination.New(req.Page, req.PageSize),
 		Filter: v1.WorkspaceTemplateFilter{
 			Labels: labelFilter,
-			Uid:    req.Uid,
+			UID:    req.Uid,
 		},
 		Sort: reqSort,
 	}
