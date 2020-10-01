@@ -105,13 +105,14 @@ func Up20200821162630(tx *sql.Tx) error {
 	if err != nil {
 		return err
 	}
-	workspaceTemplate := &v1.WorkspaceTemplate{
-		UID:      uid,
-		Name:     jupyterLabTemplateName,
-		Manifest: jupyterWorkspaceTemplate2,
-	}
 
 	for _, namespace := range namespaces {
+		workspaceTemplate := &v1.WorkspaceTemplate{
+			UID:      uid,
+			Name:     jupyterLabTemplateName,
+			Manifest: jupyterWorkspaceTemplate2,
+		}
+
 		if _, err := client.UpdateWorkspaceTemplate(namespace.Name, workspaceTemplate); err != nil {
 			return err
 		}
