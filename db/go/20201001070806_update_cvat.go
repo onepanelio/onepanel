@@ -162,6 +162,7 @@ func initialize20201001070806() {
 	}
 }
 
+// Up20201001070806 updates the cvat workspace
 func Up20201001070806(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	client, err := getClient()
@@ -208,6 +209,7 @@ func Up20201001070806(tx *sql.Tx) error {
 	return nil
 }
 
+// Down20201001070806 does nothing
 func Down20201001070806(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return nil
