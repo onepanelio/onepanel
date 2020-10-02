@@ -235,54 +235,31 @@ func (c *Client) injectContainerResourceQuotas(wf *wfv1.Workflow, template *wfv1
 	if err != nil {
 		return err
 	}
-	var cpu string
-	var memory string
-	var gpu int64
-	gpuManufacturer := ""
 	for _, node := range runningNodes.Items {
 		if node.Labels[nodePoolLabel] == value {
-			cpuInt := node.Status.Allocatable.Cpu().MilliValue()
-			cpu = strconv.FormatFloat(float64(cpuInt)*.9, 'f', 0, 64) + "m"
-			memoryInt := node.Status.Allocatable.Memory().MilliValue()
-			kiBase := 1024.0
-			ninetyPerc := float64(memoryInt) * .9
-			toKi := ninetyPerc / kiBase / kiBase
-			memory = strconv.FormatFloat(toKi, 'f', 0, 64) + "Ki"
-			//Check for Nvidia
-			gpuQuantity := node.Status.Allocatable["nvidia.com/gpu"]
-			if gpuQuantity.IsZero() == false {
-				gpu = gpuQuantity.Value()
-				gpuManufacturer = "nvidia.com/gpu"
+			cpu, memory, gpu, gpuManufacturer := CalculateResourceRequirements(node, nodePoolLabel, value)
+			if cpu != "" && memory != "" {
+				resourceList := corev1.ResourceRequirements{
+					Limits: nil,
+					Requests: map[corev1.ResourceName]resource.Quantity{
+						corev1.ResourceCPU:    resource.MustParse(cpu),
+						corev1.ResourceMemory: resource.MustParse(memory),
+					},
+				}
+				if gpu > 0 {
+					stringGpu := strconv.FormatInt(gpu, 10)
+					resourceList.Limits = make(map[corev1.ResourceName]resource.Quantity)
+					resourceList.Limits[corev1.ResourceName(gpuManufacturer)] = resource.MustParse(stringGpu)
+				}
+				if template.Container != nil {
+					template.Container.Resources = resourceList
+				}
+				if template.Script != nil {
+					template.Script.Container.Resources = resourceList
+				}
+				//process only one node
+				return nil
 			}
-
-			//Check for AMD
-			//Source: https://github.com/RadeonOpenCompute/k8s-device-plugin/blob/master/example/pod/alexnet-gpu.yaml
-			gpuQuantity = node.Status.Allocatable["amd.com/gpu"]
-			if gpuQuantity.IsZero() == false {
-				gpu = gpuQuantity.Value()
-				gpuManufacturer = "amd.com/gpu"
-			}
-		}
-	}
-
-	if cpu != "" && memory != "" {
-		resourceList := corev1.ResourceRequirements{
-			Limits: nil,
-			Requests: map[corev1.ResourceName]resource.Quantity{
-				corev1.ResourceCPU:    resource.MustParse(cpu),
-				corev1.ResourceMemory: resource.MustParse(memory),
-			},
-		}
-		if gpu > 0 {
-			stringGpu := strconv.FormatInt(gpu, 10)
-			resourceList.Limits = make(map[corev1.ResourceName]resource.Quantity)
-			resourceList.Limits[corev1.ResourceName(gpuManufacturer)] = resource.MustParse(stringGpu)
-		}
-		if template.Container != nil {
-			template.Container.Resources = resourceList
-		}
-		if template.Script != nil {
-			template.Script.Container.Resources = resourceList
 		}
 	}
 	return nil
