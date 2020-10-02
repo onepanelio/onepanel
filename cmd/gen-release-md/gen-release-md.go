@@ -155,6 +155,10 @@ func printMarkDown(issues []*issue, version *string) {
 	fmt.Println("# Contributors")
 	contributors := make([]user, 0)
 	for _, contributor := range contributorsMap {
+		// Sorry, no bots.
+		if contributor.Login == "dependabot[bot]" {
+			continue
+		}
 		contributors = append(contributors, contributor)
 	}
 	sort.Slice(contributors, func(i, j int) bool { return contributors[i].ContributionsCount > contributors[j].ContributionsCount })
