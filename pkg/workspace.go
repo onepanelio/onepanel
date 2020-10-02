@@ -441,6 +441,17 @@ func (c *Client) startWorkspace(namespace string, parameters []byte, workspace *
 		}
 	}
 
+	templates := argoTemplate.Spec.Templates
+	for i, t := range templates {
+		if t.Name == WorkspaceStatefulSetResource {
+			resultManifest, err := c.addResourceRequestsAndLimitsToWorkspaceTemplate(t, argoTemplate, workspace)
+			if err != nil {
+				return nil, err
+			}
+			templates[i].Resource.Manifest = string(resultManifest)
+		}
+	}
+
 	_, err = c.CreateWorkflowExecution(namespace, &WorkflowExecution{
 		Parameters: workspace.Parameters,
 	}, workflowTemplate)
