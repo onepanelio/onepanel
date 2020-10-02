@@ -374,12 +374,18 @@ func generateExtraContainerWithResources(c *Client, labelKeyVal string, nodePool
 	return nil, nil
 }
 
-func CalculateResourceRequirements(node corev1.Node, labelKeyVal string, nodePoolVal string) (string, string, int64, string) {
+// CalculateResourceRequirements will take the passed in Node and try to figure out the
+// allocatable capacity. Once the capacity is discovered, function figures out how to request 90%.
+// - We use 90% because manual calculation is error prone and not necessarily reliable.
+// Params:
+//  k8sInstanceTypeLabel - Such as 'beta.kubernetes.io/instance-type'
+//  nodeSelectorValue - Server/VM Type Name, Such as "Standard_NC6", on Azure.
+func CalculateResourceRequirements(node corev1.Node, k8sInstanceTypeLabel string, nodeSelectorValue string) (string, string, int64, string) {
 	var cpu string
 	var memory string
 	var gpu int64
 	gpuManufacturer := ""
-	if node.Labels[labelKeyVal] == nodePoolVal {
+	if node.Labels[k8sInstanceTypeLabel] == nodeSelectorValue {
 		cpuInt := node.Status.Allocatable.Cpu().MilliValue()
 		cpu = strconv.FormatFloat(float64(cpuInt)*.9, 'f', 0, 64) + "m"
 		memoryInt := node.Status.Allocatable.Memory().MilliValue()
