@@ -237,7 +237,7 @@ func (c *Client) injectContainerResourceQuotas(wf *wfv1.Workflow, template *wfv1
 	for _, node := range runningNodes.Items {
 		if node.Labels[nodePoolLabel] == value {
 			ports := []corev1.ContainerPort{
-				{Name: "node-holder", HostPort: 80, ContainerPort: 80},
+				{Name: "node-capturer", HostPort: 80, ContainerPort: 80},
 			}
 			if template.Container != nil {
 				template.Container.Ports = ports

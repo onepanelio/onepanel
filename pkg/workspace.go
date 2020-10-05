@@ -334,12 +334,12 @@ func generateExtraContainerWithResources(c *Client, k8sInstanceTypeLabel string,
 		if node.Labels[k8sInstanceTypeLabel] == nodeSelectorValue {
 			extraContainer := map[string]interface{}{
 				"image":   "alpine:latest",
-				"name":    "resource-requester",
+				"name":    "node-capturer",
 				"command": []interface{}{"/bin/sh"},
 				"args":    []interface{}{"-c", "while :; do sleep 2073600; done"},
 				"ports": []interface{}{
 					map[string]interface{}{
-						"name":          "node-holder",
+						"name":          "node-capturer",
 						"hostPort":      80,
 						"containerPort": 80,
 					},
