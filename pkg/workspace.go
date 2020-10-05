@@ -15,8 +15,6 @@ import (
 	"github.com/onepanelio/core/pkg/util/request"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
-	corev1 "k8s.io/api/core/v1"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -352,43 +350,6 @@ func generateExtraContainerWithResources(c *Client, k8sInstanceTypeLabel string,
 		}
 	}
 	return nil, nil
-}
-
-// CalculateResourceRequirements will take the passed in Node and try to figure out the
-// allocatable capacity. Once the capacity is discovered, function figures out how to request 90%.
-// - We use 90% because manual calculation is error prone and not necessarily reliable.
-// Params:
-//  k8sInstanceTypeLabel - Such as 'beta.kubernetes.io/instance-type'
-//  nodeSelectorValue - Server/VM Type Name, Such as "Standard_NC6", on Azure.
-func CalculateResourceRequirements(node corev1.Node, k8sInstanceTypeLabel string, nodeSelectorValue string) (string, string, int64, string) {
-	var cpu string
-	var memory string
-	var gpu int64
-	gpuManufacturer := ""
-	if node.Labels[k8sInstanceTypeLabel] == nodeSelectorValue {
-		cpuInt := node.Status.Allocatable.Cpu().MilliValue()
-		cpu = strconv.FormatFloat(float64(cpuInt)*.9, 'f', 0, 64) + "m"
-		memoryInt := node.Status.Allocatable.Memory().MilliValue()
-		kiBase := 1024.0
-		ninetyPerc := float64(memoryInt) * .9
-		toKi := ninetyPerc / kiBase / kiBase
-		memory = strconv.FormatFloat(toKi, 'f', 0, 64) + "Ki"
-		//Check for Nvidia
-		gpuQuantity := node.Status.Allocatable["nvidia.com/gpu"]
-		if gpuQuantity.IsZero() == false {
-			gpu = gpuQuantity.Value()
-			gpuManufacturer = "nvidia.com/gpu"
-		}
-
-		//Check for AMD
-		//Source: https://github.com/RadeonOpenCompute/k8s-device-plugin/blob/master/example/pod/alexnet-gpu.yaml
-		gpuQuantity = node.Status.Allocatable["amd.com/gpu"]
-		if gpuQuantity.IsZero() == false {
-			gpu = gpuQuantity.Value()
-			gpuManufacturer = "amd.com/gpu"
-		}
-	}
-	return cpu, memory, gpu, gpuManufacturer
 }
 
 // startWorkspace starts a workspace and related resources. It assumes a DB record already exists
