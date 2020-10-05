@@ -204,50 +204,14 @@ func (c *Client) injectContainerResourceQuotas(wf *wfv1.Workflow, template *wfv1
 		return nil
 	}
 
-	supportedNodePoolLabels := []string{"beta.kubernetes.io/instance-type", "node.kubernetes.io/instance-type"}
-	nodePoolLabel := ""
-	var value string
-	for k, v := range template.NodeSelector {
-		for _, supportedNodePoolLabel := range supportedNodePoolLabels {
-			if k == supportedNodePoolLabel {
-				nodePoolLabel = k
-				value = v
-				break
-			}
-		}
+	ports := []corev1.ContainerPort{
+		{Name: "node-capturer", HostPort: 80, ContainerPort: 80},
 	}
-	if value == "" {
-		return nil
+	if template.Container != nil {
+		template.Container.Ports = ports
 	}
-	if strings.Contains(value, "{{workflow.") {
-		parts := strings.Split(strings.Replace(value, "}}", "", -1), ".")
-		paramName := parts[len(parts)-1]
-		for _, param := range wf.Spec.Arguments.Parameters {
-			if param.Name == paramName && param.Value != nil {
-				value = *param.Value
-				break
-			}
-		}
-	}
-
-	runningNodes, err := c.Interface.CoreV1().Nodes().List(ListOptions{})
-	if err != nil {
-		return err
-	}
-	for _, node := range runningNodes.Items {
-		if node.Labels[nodePoolLabel] == value {
-			ports := []corev1.ContainerPort{
-				{Name: "node-capturer", HostPort: 80, ContainerPort: 80},
-			}
-			if template.Container != nil {
-				template.Container.Ports = ports
-			}
-			if template.Script != nil {
-				template.Script.Container.Ports = ports
-			}
-			//process only one node
-			return nil
-		}
+	if template.Script != nil {
+		template.Script.Container.Ports = ports
 	}
 	return nil
 }
