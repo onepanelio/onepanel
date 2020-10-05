@@ -18,7 +18,6 @@ import (
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/watch"
 	"net/http"
 	"strconv"
@@ -237,29 +236,17 @@ func (c *Client) injectContainerResourceQuotas(wf *wfv1.Workflow, template *wfv1
 	}
 	for _, node := range runningNodes.Items {
 		if node.Labels[nodePoolLabel] == value {
-			cpu, memory, gpu, gpuManufacturer := CalculateResourceRequirements(node, nodePoolLabel, value)
-			if cpu != "" && memory != "" {
-				resourceList := corev1.ResourceRequirements{
-					Limits: nil,
-					Requests: map[corev1.ResourceName]resource.Quantity{
-						corev1.ResourceCPU:    resource.MustParse(cpu),
-						corev1.ResourceMemory: resource.MustParse(memory),
-					},
-				}
-				if gpu > 0 {
-					stringGpu := strconv.FormatInt(gpu, 10)
-					resourceList.Limits = make(map[corev1.ResourceName]resource.Quantity)
-					resourceList.Limits[corev1.ResourceName(gpuManufacturer)] = resource.MustParse(stringGpu)
-				}
-				if template.Container != nil {
-					template.Container.Resources = resourceList
-				}
-				if template.Script != nil {
-					template.Script.Container.Resources = resourceList
-				}
-				//process only one node
-				return nil
+			ports := []corev1.ContainerPort{
+				{Name: "node-holder", HostPort: 80, ContainerPort: 80},
 			}
+			if template.Container != nil {
+				template.Container.Ports = ports
+			}
+			if template.Script != nil {
+				template.Script.Container.Ports = ports
+			}
+			//process only one node
+			return nil
 		}
 	}
 	return nil

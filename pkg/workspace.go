@@ -327,45 +327,25 @@ func (c *Client) addResourceRequestsAndLimitsToWorkspaceTemplate(t wfv1.Template
 // The container will sleep once started, and generally consume negligible resources.
 //
 // The node that was selected has to be already running, in order to get the resource request correct.
-func generateExtraContainerWithResources(c *Client, labelKeyVal string, nodePoolVal string) (map[string]interface{}, error) {
+func generateExtraContainerWithResources(c *Client, k8sInstanceTypeLabel string, nodeSelectorValue string) (map[string]interface{}, error) {
 	runningNodes, err := c.Interface.CoreV1().Nodes().List(ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 	for _, node := range runningNodes.Items {
-		cpu, memory, gpu, gpuManufacturer := CalculateResourceRequirements(node, labelKeyVal, nodePoolVal)
-		if cpu != "" && memory != "" {
+		if node.Labels[k8sInstanceTypeLabel] == nodeSelectorValue {
 			extraContainer := map[string]interface{}{
 				"image":   "alpine:latest",
 				"name":    "resource-requester",
 				"command": []interface{}{"/bin/sh"},
 				"args":    []interface{}{"-c", "while :; do sleep 2073600; done"},
-				"resources": map[string]interface{}{
-					"requests": map[string]interface{}{
-						"cpu":    cpu,
-						"memory": memory,
+				"ports": []interface{}{
+					map[string]interface{}{
+						"name":          "node-holder",
+						"hostPort":      80,
+						"containerPort": 80,
 					},
-					"limits": map[string]interface{}{},
 				},
-			}
-
-			if gpu > 0 {
-				res, ok := extraContainer["resources"].(map[string]interface{})
-				if !ok {
-					return nil, errors.New("unable to type check extraContainer")
-				}
-				reqs, ok := res["requests"].(map[string]interface{})
-				if !ok {
-					return nil, errors.New("unable to type check extraContainer")
-				}
-				reqs[gpuManufacturer] = gpu
-
-				limits, ok := res["limits"].(map[string]interface{})
-				if !ok {
-					return nil, errors.New("unable to type check extraContainer")
-				}
-				limits[gpuManufacturer] = gpu
-
 			}
 			//process only one node
 			return extraContainer, err
