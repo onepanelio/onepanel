@@ -196,10 +196,9 @@ func injectArtifactRepositoryConfig(artifact *wfv1.Artifact, namespaceConfig *Na
 	}
 }
 
-// injectContainerResourceQuotas adds resource requests and limits if they exist
-// Code grabs the resource request information from the nodeSelector, compared against running nodes.
-// If the running node is not present, no resource information is retrieved.
-func (c *Client) injectContainerResourceQuotas(wf *wfv1.Workflow, template *wfv1.Template, systemConfig SystemConfig) error {
+// injectHostPortToContainer adds a hostPort to the template container, if a nodeSelector is present.
+// Kubernetes will ensure that multiple containers with the same hostPort do not share the same node.
+func (c *Client) injectHostPortToContainer(template *wfv1.Template) error {
 	if template.NodeSelector == nil {
 		return nil
 	}
@@ -283,7 +282,7 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 				Name:      "sys-dshm",
 				MountPath: "/dev/shm",
 			})
-			err = c.injectContainerResourceQuotas(wf, template, systemConfig)
+			err = c.injectHostPortToContainer(template)
 			if err != nil {
 				return err
 			}
@@ -291,7 +290,7 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		}
 
 		if template.Script != nil {
-			err = c.injectContainerResourceQuotas(wf, template, systemConfig)
+			err = c.injectHostPortToContainer(template)
 			if err != nil {
 				return err
 			}
