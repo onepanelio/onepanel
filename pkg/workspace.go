@@ -15,8 +15,6 @@ import (
 	"github.com/onepanelio/core/pkg/util/request"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
-	corev1 "k8s.io/api/core/v1"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -327,88 +325,31 @@ func (c *Client) addResourceRequestsAndLimitsToWorkspaceTemplate(t wfv1.Template
 // The container will sleep once started, and generally consume negligible resources.
 //
 // The node that was selected has to be already running, in order to get the resource request correct.
-func generateExtraContainerWithResources(c *Client, labelKeyVal string, nodePoolVal string) (map[string]interface{}, error) {
+func generateExtraContainerWithResources(c *Client, k8sInstanceTypeLabel string, nodeSelectorValue string) (map[string]interface{}, error) {
 	runningNodes, err := c.Interface.CoreV1().Nodes().List(ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 	for _, node := range runningNodes.Items {
-		cpu, memory, gpu, gpuManufacturer := CalculateResourceRequirements(node, labelKeyVal, nodePoolVal)
-		if cpu != "" && memory != "" {
+		if node.Labels[k8sInstanceTypeLabel] == nodeSelectorValue {
 			extraContainer := map[string]interface{}{
 				"image":   "alpine:latest",
-				"name":    "resource-requester",
+				"name":    "node-capturer",
 				"command": []interface{}{"/bin/sh"},
 				"args":    []interface{}{"-c", "while :; do sleep 2073600; done"},
-				"resources": map[string]interface{}{
-					"requests": map[string]interface{}{
-						"cpu":    cpu,
-						"memory": memory,
+				"ports": []interface{}{
+					map[string]interface{}{
+						"name":          "node-capturer",
+						"hostPort":      80,
+						"containerPort": 80,
 					},
-					"limits": map[string]interface{}{},
 				},
-			}
-
-			if gpu > 0 {
-				res, ok := extraContainer["resources"].(map[string]interface{})
-				if !ok {
-					return nil, errors.New("unable to type check extraContainer")
-				}
-				reqs, ok := res["requests"].(map[string]interface{})
-				if !ok {
-					return nil, errors.New("unable to type check extraContainer")
-				}
-				reqs[gpuManufacturer] = gpu
-
-				limits, ok := res["limits"].(map[string]interface{})
-				if !ok {
-					return nil, errors.New("unable to type check extraContainer")
-				}
-				limits[gpuManufacturer] = gpu
-
 			}
 			//process only one node
 			return extraContainer, err
 		}
 	}
 	return nil, nil
-}
-
-// CalculateResourceRequirements will take the passed in Node and try to figure out the
-// allocatable capacity. Once the capacity is discovered, function figures out how to request 90%.
-// - We use 90% because manual calculation is error prone and not necessarily reliable.
-// Params:
-//  k8sInstanceTypeLabel - Such as 'beta.kubernetes.io/instance-type'
-//  nodeSelectorValue - Server/VM Type Name, Such as "Standard_NC6", on Azure.
-func CalculateResourceRequirements(node corev1.Node, k8sInstanceTypeLabel string, nodeSelectorValue string) (string, string, int64, string) {
-	var cpu string
-	var memory string
-	var gpu int64
-	gpuManufacturer := ""
-	if node.Labels[k8sInstanceTypeLabel] == nodeSelectorValue {
-		cpuInt := node.Status.Allocatable.Cpu().MilliValue()
-		cpu = strconv.FormatFloat(float64(cpuInt)*.9, 'f', 0, 64) + "m"
-		memoryInt := node.Status.Allocatable.Memory().MilliValue()
-		kiBase := 1024.0
-		ninetyPerc := float64(memoryInt) * .9
-		toKi := ninetyPerc / kiBase / kiBase
-		memory = strconv.FormatFloat(toKi, 'f', 0, 64) + "Ki"
-		//Check for Nvidia
-		gpuQuantity := node.Status.Allocatable["nvidia.com/gpu"]
-		if gpuQuantity.IsZero() == false {
-			gpu = gpuQuantity.Value()
-			gpuManufacturer = "nvidia.com/gpu"
-		}
-
-		//Check for AMD
-		//Source: https://github.com/RadeonOpenCompute/k8s-device-plugin/blob/master/example/pod/alexnet-gpu.yaml
-		gpuQuantity = node.Status.Allocatable["amd.com/gpu"]
-		if gpuQuantity.IsZero() == false {
-			gpu = gpuQuantity.Value()
-			gpuManufacturer = "amd.com/gpu"
-		}
-	}
-	return cpu, memory, gpu, gpuManufacturer
 }
 
 // startWorkspace starts a workspace and related resources. It assumes a DB record already exists
