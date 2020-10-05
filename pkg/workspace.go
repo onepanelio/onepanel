@@ -285,26 +285,7 @@ func (c *Client) addResourceRequestsAndLimitsToWorkspaceTemplate(t wfv1.Template
 	if !ok {
 		return nil, errors.New("unable to type check statefulset manifest")
 	}
-	//Get node selected
-	labelKey := "sys-node-pool-label"
-	labelKeyVal := ""
-	for _, parameter := range argoTemplate.Spec.Arguments.Parameters {
-		if parameter.Name == labelKey {
-			labelKeyVal = *parameter.Value
-		}
-	}
-
-	nodePoolKey := "sys-node-pool"
-	nodePoolVal := ""
-	for _, parameter := range workspace.Parameters {
-		if parameter.Name == nodePoolKey {
-			nodePoolVal = *parameter.Value
-		}
-	}
-	extraContainer, err := generateExtraContainerWithResources(c, labelKeyVal, nodePoolVal)
-	if err != nil {
-		return nil, err
-	}
+	extraContainer := generateExtraContainerWithHostPortToSequesterNode()
 	if extraContainer != nil {
 		containers, ok := templateSpec["containers"].([]interface{})
 		if !ok {
@@ -320,36 +301,25 @@ func (c *Client) addResourceRequestsAndLimitsToWorkspaceTemplate(t wfv1.Template
 	return resultManifest, nil
 }
 
-// generateExtraContainerWithResources will add an extra container to a workspace.
-// The extra container will have the calculated resource request for the node selected by the workspace.
+// generateExtraContainerWithHostPortToSequesterNode will add an extra container to a workspace.
+// The extra container have a hostPort set. Kubernetes will ensure the hostPort does not get conflict
+// between containers, scheduling a new node as needed.
 // The container will sleep once started, and generally consume negligible resources.
-//
-// The node that was selected has to be already running, in order to get the resource request correct.
-func generateExtraContainerWithResources(c *Client, k8sInstanceTypeLabel string, nodeSelectorValue string) (map[string]interface{}, error) {
-	runningNodes, err := c.Interface.CoreV1().Nodes().List(ListOptions{})
-	if err != nil {
-		return nil, err
+func generateExtraContainerWithHostPortToSequesterNode() map[string]interface{} {
+	extraContainer := map[string]interface{}{
+		"image":   "alpine:latest",
+		"name":    "node-capturer",
+		"command": []interface{}{"/bin/sh"},
+		"args":    []interface{}{"-c", "while :; do sleep 2073600; done"},
+		"ports": []interface{}{
+			map[string]interface{}{
+				"name":          "node-capturer",
+				"hostPort":      80,
+				"containerPort": 80,
+			},
+		},
 	}
-	for _, node := range runningNodes.Items {
-		if node.Labels[k8sInstanceTypeLabel] == nodeSelectorValue {
-			extraContainer := map[string]interface{}{
-				"image":   "alpine:latest",
-				"name":    "node-capturer",
-				"command": []interface{}{"/bin/sh"},
-				"args":    []interface{}{"-c", "while :; do sleep 2073600; done"},
-				"ports": []interface{}{
-					map[string]interface{}{
-						"name":          "node-capturer",
-						"hostPort":      80,
-						"containerPort": 80,
-					},
-				},
-			}
-			//process only one node
-			return extraContainer, err
-		}
-	}
-	return nil, nil
+	return extraContainer
 }
 
 // startWorkspace starts a workspace and related resources. It assumes a DB record already exists
