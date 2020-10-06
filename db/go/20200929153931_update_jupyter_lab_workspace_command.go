@@ -2,7 +2,6 @@ package migration
 
 import (
 	"database/sql"
-	v1 "github.com/onepanelio/core/pkg"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"github.com/pressly/goose"
 )
@@ -103,13 +102,7 @@ func Up20200929153931(tx *sql.Tx) error {
 		return err
 	}
 	for _, namespace := range namespaces {
-		workspaceTemplate := &v1.WorkspaceTemplate{
-			UID:      uid,
-			Name:     jupyterLabTemplateName,
-			Manifest: jupyterWorkspaceTemplate3,
-		}
-
-		if _, err := client.UpdateWorkspaceTemplate(namespace.Name, workspaceTemplate); err != nil {
+		if _, err := client.UpdateWorkspaceTemplateManifest(namespace.Name, uid, jupyterWorkspaceTemplate3); err != nil {
 			return err
 		}
 	}
@@ -144,14 +137,9 @@ func Down20200929153931(tx *sql.Tx) error {
 	if err != nil {
 		return err
 	}
-	workspaceTemplate := &v1.WorkspaceTemplate{
-		UID:      uid,
-		Name:     jupyterLabTemplateName,
-		Manifest: jupyterWorkspaceTemplate2,
-	}
 
 	for _, namespace := range namespaces {
-		if _, err := client.UpdateWorkspaceTemplate(namespace.Name, workspaceTemplate); err != nil {
+		if _, err := client.UpdateWorkspaceTemplateManifest(namespace.Name, uid, jupyterWorkspaceTemplate2); err != nil {
 			return err
 		}
 	}

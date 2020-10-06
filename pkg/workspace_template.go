@@ -1158,6 +1158,19 @@ func (c *Client) UpdateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	return workspaceTemplate, nil
 }
 
+// UpdateWorkspaceTemplateManifest updates a workspace template by creating a new version where the only difference is the manifest
+func (c *Client) UpdateWorkspaceTemplateManifest(namespace, uid string, manifest string) (*WorkspaceTemplate, error) {
+	existingTemplate, err := c.GetWorkspaceTemplate(namespace, uid, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	existingTemplate.UID = uid
+	existingTemplate.Manifest = manifest
+
+	return c.UpdateWorkspaceTemplate(namespace, existingTemplate)
+}
+
 // ListWorkspaceTemplates returns a list of workspace templates that are not archived, sorted by most recent created first
 func (c *Client) ListWorkspaceTemplates(namespace string, request *request.Request) (workspaceTemplates []*WorkspaceTemplate, err error) {
 	sb := c.workspaceTemplatesSelectBuilder(namespace).
