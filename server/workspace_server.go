@@ -363,7 +363,7 @@ func (s *WorkspaceServer) RetryLastWorkspaceAction(ctx context.Context, req *api
 func (s *WorkspaceServer) GetWorkspaceStatisticsForNamespace(ctx context.Context, req *api.GetWorkspaceStatisticsForNamespaceRequest) (*api.GetWorkspaceStatisticsForNamespaceResponse, error) {
 	client := getClient(ctx)
 
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "workspaces", "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "onepanel.io", "workspaces", "")
 	if err != nil || !allowed {
 		return nil, err
 	}
