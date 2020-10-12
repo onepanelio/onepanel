@@ -4,6 +4,7 @@ import (
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	argoprojv1alpha1 "github.com/argoproj/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
+	"github.com/jmoiron/sqlx"
 	"github.com/onepanelio/core/pkg/util/gcs"
 	"github.com/onepanelio/core/pkg/util/router"
 	"github.com/onepanelio/core/pkg/util/s3"
@@ -36,6 +37,24 @@ func NewConfig() (config *Config) {
 	}
 
 	return
+}
+
+// GetDefaultClient loads a default k8s client
+func GetDefaultClient() (*Client, error) {
+	kubeConfig := NewConfig()
+	client, err := NewClient(kubeConfig, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	config, err := client.GetSystemConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	dbDriverName, dbDataSourceName := config.DatabaseConnection()
+	client.DB = NewDB(sqlx.MustConnect(dbDriverName, dbDataSourceName))
+
+	return client, nil
 }
 
 // NewClient creates a client to interact with the Onepanel system.
