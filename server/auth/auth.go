@@ -140,7 +140,7 @@ func verifyLogin(client *v1.Client, tokenRequest *api.IsValidTokenRequest) (rawT
 	currentTokenString := hex.EncodeToString(currentTokenBytes[:])
 
 	if tokenRequest.Token != fmt.Sprintf("%s", currentTokenString) {
-		return "", fmt.Errorf("tokens doesn't match what's on record.")
+		return "", fmt.Errorf("tokens doesn't match what's on record")
 	}
 
 	return string(secret.Data["token"]), nil
@@ -181,7 +181,7 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfi
 
 			hmac := sysConfig.HMACKey()
 			if len(hmac) == 0 {
-				return nil, errors.New("HMAC key not found in secrets. This value is required.")
+				return nil, errors.New("HMAC key not found in secrets - this value is required")
 			}
 
 			jwtToken, err := tokens.CreateJWTToken(tokenRequest.Username, rawToken, hmac)
