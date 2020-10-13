@@ -41,6 +41,9 @@ func getBearerToken(ctx context.Context) (*string, bool) {
 			return nil, false
 		}
 		t = strings.ReplaceAll(t, prefix, "")
+		if t == "null" {
+			return nil, false
+		}
 		return &t, true
 	}
 
