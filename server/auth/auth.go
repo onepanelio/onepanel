@@ -143,7 +143,7 @@ func verifyLogin(client *v1.Client, tokenRequest *api.IsValidTokenRequest) (rawT
 	currentTokenString := hex.EncodeToString(currentTokenBytes[:])
 
 	if tokenRequest.Token != fmt.Sprintf("%s", currentTokenString) {
-		return "", fmt.Errorf("tokens doesn't match what's on record")
+		return "", util.NewUserError(codes.InvalidArgument, "token doesn't match what's on record")
 	}
 
 	return string(secret.Data["token"]), nil
