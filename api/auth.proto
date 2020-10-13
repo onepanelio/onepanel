@@ -9,7 +9,7 @@ service AuthService {
     rpc IsValidToken(IsValidTokenRequest) returns (IsValidTokenResponse) {
         option (google.api.http) = {
             post: "/apis/v1beta1/auth/token"
-            body: "token"
+            body: "*"
         };
     }
 
@@ -37,14 +37,13 @@ message IsAuthorizedResponse {
     bool authorized = 1;
 }
 
-message TokenWrapper {
-    string token = 1;
-}
-
 message IsValidTokenRequest {
-    TokenWrapper token = 1;
+    string username = 1;
+    string token = 2;
 }
 
 message IsValidTokenResponse {
     string domain = 1;
+    string jwtToken = 2;
+    string username = 3;
 }

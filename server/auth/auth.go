@@ -2,9 +2,14 @@ package auth
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"github.com/onepanelio/core/api"
+	"github.com/onepanelio/core/pkg/util"
+	"github.com/onepanelio/core/pkg/util/tokens"
+	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"strings"
 
@@ -64,7 +69,16 @@ func getClient(ctx context.Context, kubeConfig *v1.Config, db *v1.DB, sysConfig 
 		return nil, status.Error(codes.Unauthenticated, `Missing or invalid "authorization" header.`)
 	}
 
-	kubeConfig.BearerToken = *bearerToken
+	tokenContent, err := tokens.ParseJWTToken(*bearerToken, sysConfig.HMACKey())
+	if err != nil {
+		return nil, err
+	}
+
+	sysConfig["jwtToken"] = *bearerToken
+	sysConfig["jwtUsername"] = tokenContent.Username
+
+	kubeConfig.BearerToken = tokenContent.Token
+
 	client, err := v1.NewClient(kubeConfig, db, sysConfig)
 	if err != nil {
 		return nil, err
@@ -98,6 +112,43 @@ func IsAuthorized(c *v1.Client, namespace, verb, group, resource, name string) (
 	return
 }
 
+func verifyLogin(client *v1.Client, tokenRequest *api.IsValidTokenRequest) (rawToken string, err error) {
+	accountsList, err := client.CoreV1().ServiceAccounts("onepanel").List(v1.ListOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	authTokenSecretName := ""
+	for _, serviceAccount := range accountsList.Items {
+		if serviceAccount.Name != tokenRequest.Username {
+			continue
+		}
+		for _, secret := range serviceAccount.Secrets {
+			if strings.Contains(secret.Name, "-token-") {
+				authTokenSecretName = secret.Name
+				break
+			}
+		}
+	}
+	if authTokenSecretName == "" {
+		return "", util.NewUserError(codes.InvalidArgument, fmt.Sprintf("unknown service account '%v'", tokenRequest.Username))
+	}
+
+	secret, err := client.CoreV1().Secrets("onepanel").Get(authTokenSecretName, v12.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	currentTokenBytes := md5.Sum(secret.Data["token"])
+	currentTokenString := hex.EncodeToString(currentTokenBytes[:])
+
+	if tokenRequest.Token != fmt.Sprintf("%s", currentTokenString) {
+		return "", util.NewUserError(codes.InvalidArgument, "token doesn't match what's on record")
+	}
+
+	return string(secret.Data["token"]), nil
+}
+
 // UnaryInterceptor performs authentication checks.
 // The two main cases are:
 //   1. Is the token valid? This is used for logging in.
@@ -113,10 +164,35 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfi
 
 			tokenRequest, ok := req.(*api.IsValidTokenRequest)
 			if !ok {
-				return resp, errors.New("IsValidToken does not have correct request type")
+				return resp, errors.New("LogInRequest does not have correct request type")
 			}
 
-			md.Set("authorization", tokenRequest.Token.Token)
+			defaultClient, err := v1.GetDefaultClient()
+			if err != nil {
+				return nil, err
+			}
+
+			rawToken, err := verifyLogin(defaultClient, tokenRequest)
+			if err != nil {
+				return nil, err
+			}
+
+			sysConfig, err := defaultClient.GetSystemConfig()
+			if err != nil {
+				return nil, err
+			}
+
+			hmac := sysConfig.HMACKey()
+			if len(hmac) == 0 {
+				return nil, errors.New("HMAC key not found in secrets - this value is required")
+			}
+
+			jwtToken, err := tokens.CreateJWTToken(tokenRequest.Username, rawToken, hmac)
+			if err != nil {
+				return nil, err
+			}
+
+			md.Set("onepanel-auth-token", jwtToken)
 
 			ctx, err = getClient(ctx, kubeConfig, db, sysConfig)
 			if err != nil {

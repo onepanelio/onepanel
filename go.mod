@@ -43,4 +43,5 @@ require (
 	k8s.io/apimachinery v0.16.7-beta.0
 	k8s.io/client-go v0.16.4
 	sigs.k8s.io/yaml v1.2.0
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 )
