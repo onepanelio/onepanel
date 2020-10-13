@@ -26,24 +26,24 @@ containers:
     mountPath: /data
   lifecycle:
     postStart:
-	  exec:
-	    command: 
-	     - /bin/sh
-	     - -c
-	     - >
-		  condayml="/data/.environment.yml";
-		  jupytertxt="/data/.jupexported.txt";
-		  if [ -f "$condayml" ]; then conda env update -f $condayml; fi;
-		  if [ -f "$jupytertxt" ]; then cat $jupytertxt | xargs -n 1 jupyter labextension install; fi;
+      exec:
+        command: 
+        - /bin/sh
+        - -c
+        - >
+          condayml="/data/.environment.yml";
+          jupytertxt="/data/.jupexported.txt";
+          if [ -f "$condayml" ]; then conda env update -f $condayml; fi;
+          if [ -f "$jupytertxt" ]; then cat $jupytertxt | xargs -n 1 jupyter labextension install; fi;
     preStop:
-	  exec:
-	    command: 
-	    - /bin/sh
-	    - -c
-	    - >
-		conda env export > /data/.environment.yml -n base;
-		jupyter labextension list 1>/dev/null 2> /data/.jup.txt;
-		cat /data/.jup.txt | sed -n '2,$p' | awk 'sub(/v/,"@", $2){print $1$2}' > /data/.jupexported.txt;
+      exec:
+        command: 
+        - /bin/sh
+        - -c
+        - >
+          conda env export > /data/.environment.yml -n base;
+          jupyter labextension list 1>/dev/null 2> /data/.jup.txt;
+          cat /data/.jup.txt | sed -n '2,$p' | awk 'sub(/v/,"@", $2){print $1$2}' > /data/.jupexported.txt;
 ports:
 - name: jupyterlab
   port: 80
