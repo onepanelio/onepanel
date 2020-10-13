@@ -3,7 +3,7 @@
   "info": {
     "title": "Onepanel",
     "description": "Onepanel API",
-    "version": "v0.14.0",
+    "version": "0.14.0",
     "contact": {
       "name": "Onepanel project",
       "url": "https://github.com/onepanelio/core"
@@ -2985,6 +2985,9 @@
           "type": "string"
         },
         "jwtToken": {
+          "type": "string"
+        },
+        "username": {
           "type": "string"
         }
       }

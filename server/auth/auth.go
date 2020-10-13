@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/onepanelio/core/api"
+	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/tokens"
 	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
@@ -74,6 +75,8 @@ func getClient(ctx context.Context, kubeConfig *v1.Config, db *v1.DB, sysConfig 
 	}
 
 	sysConfig["jwtToken"] = *bearerToken
+	sysConfig["jwtUsername"] = tokenContent.Username
+
 	kubeConfig.BearerToken = tokenContent.Token
 
 	client, err := v1.NewClient(kubeConfig, db, sysConfig)
@@ -128,7 +131,7 @@ func verifyLogin(client *v1.Client, tokenRequest *api.IsValidTokenRequest) (rawT
 		}
 	}
 	if authTokenSecretName == "" {
-		return "", fmt.Errorf("Unknown service account '%v'", tokenRequest.Username)
+		return "", util.NewUserError(codes.InvalidArgument, fmt.Sprintf("unknown service account '%v'", tokenRequest.Username))
 	}
 
 	secret, err := client.CoreV1().Secrets("onepanel").Get(authTokenSecretName, v12.GetOptions{})

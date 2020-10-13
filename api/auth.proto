@@ -45,4 +45,5 @@ message IsValidTokenRequest {
 message IsValidTokenResponse {
     string domain = 1;
     string jwtToken = 2;
+    string username = 3;
 }
