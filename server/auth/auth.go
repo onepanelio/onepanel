@@ -77,8 +77,10 @@ func getClient(ctx context.Context, kubeConfig *v1.Config, db *v1.DB, sysConfig 
 		return nil, err
 	}
 
-	sysConfig["jwtToken"] = *bearerToken
-	sysConfig["jwtUsername"] = tokenContent.Username
+	if sysConfig["jwtToken"] != *bearerToken {
+		sysConfig["jwtToken"] = *bearerToken
+		sysConfig["jwtUsername"] = tokenContent.Username
+	}
 
 	kubeConfig.BearerToken = tokenContent.Token
 
