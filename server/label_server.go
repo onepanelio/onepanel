@@ -18,7 +18,7 @@ func resourceIdentifierToArgoResource(identifier string) string {
 	case v1.TypeCronWorkflow:
 		return "cronworkflows"
 	case v1.TypeWorkspace:
-		return "statefulset"
+		return "workspaces"
 	}
 
 	return ""
