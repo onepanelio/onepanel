@@ -1851,14 +1851,14 @@ func workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, wo
 
 func workflowExecutionsSelectBuilder(namespace, workflowTemplateUID, workflowTemplateVersion string, includeSystem bool) sq.SelectBuilder {
 	sb := workflowExecutionsSelectBuilderNoColumns(namespace, workflowTemplateUID, workflowTemplateVersion, includeSystem)
-	sb = sb.Columns(getWorkflowExecutionColumns("we", "")...).
+	sb = sb.Columns(getWorkflowExecutionColumns("we")...).
 		Columns(`wtv.version "workflow_template.version"`, `wtv.created_at "workflow_template.created_at"`, `wt.name "workflow_template.name"`, `wt.uid "workflow_template.uid"`)
 
 	return sb
 }
 
 func (c *Client) getWorkflowExecutionAndTemplate(namespace string, uid string) (workflow *WorkflowExecution, err error) {
-	sb := sb.Select(getWorkflowExecutionColumns("we", "")...).
+	sb := sb.Select(getWorkflowExecutionColumns("we")...).
 		Columns(getWorkflowTemplateColumns("wt", "workflow_template")...).
 		Columns(`wtv.manifest "workflow_template.manifest"`, `wtv.version "workflow_template.version"`).
 		From("workflow_executions we").
