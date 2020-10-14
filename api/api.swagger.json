@@ -2984,7 +2984,7 @@
         "domain": {
           "type": "string"
         },
-        "jwtToken": {
+        "token": {
           "type": "string"
         },
         "username": {

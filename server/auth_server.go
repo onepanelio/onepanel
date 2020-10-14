@@ -67,9 +67,8 @@ func (a *AuthServer) IsValidToken(ctx context.Context, req *api.IsValidTokenRequ
 		return
 	}
 	res = &api.IsValidTokenResponse{
-		Domain:   config["ONEPANEL_DOMAIN"],
-		JwtToken: config["jwtToken"],
-		Username: config["jwtUsername"],
+		Domain: config["ONEPANEL_DOMAIN"],
+		Token:  config["token"],
 	}
 
 	return res, nil

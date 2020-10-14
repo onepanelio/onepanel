@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/onepanelio/core/api"
 	"github.com/onepanelio/core/pkg/util"
-	"github.com/onepanelio/core/pkg/util/tokens"
 	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"strings"
@@ -72,17 +71,11 @@ func getClient(ctx context.Context, kubeConfig *v1.Config, db *v1.DB, sysConfig 
 		return nil, status.Error(codes.Unauthenticated, `Missing or invalid "authorization" header.`)
 	}
 
-	tokenContent, err := tokens.ParseJWTToken(*bearerToken, sysConfig.HMACKey())
-	if err != nil {
-		return nil, err
+	if sysConfig["token"] != *bearerToken {
+		sysConfig["token"] = *bearerToken
 	}
 
-	if sysConfig["jwtToken"] != *bearerToken {
-		sysConfig["jwtToken"] = *bearerToken
-		sysConfig["jwtUsername"] = tokenContent.Username
-	}
-
-	kubeConfig.BearerToken = tokenContent.Token
+	kubeConfig.BearerToken = *bearerToken
 
 	client, err := v1.NewClient(kubeConfig, db, sysConfig)
 	if err != nil {
@@ -187,17 +180,7 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfi
 				return nil, err
 			}
 
-			hmac := sysConfig.HMACKey()
-			if len(hmac) == 0 {
-				return nil, errors.New("HMAC key not found in secrets - this value is required")
-			}
-
-			jwtToken, err := tokens.CreateJWTToken(tokenRequest.Username, rawToken, hmac)
-			if err != nil {
-				return nil, err
-			}
-
-			md.Set("onepanel-auth-token", jwtToken)
+			md.Set("onepanel-auth-token", rawToken)
 
 			ctx, err = getClient(ctx, kubeConfig, db, sysConfig)
 			if err != nil {
