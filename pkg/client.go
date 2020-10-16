@@ -57,6 +57,19 @@ func GetDefaultClient() (*Client, error) {
 	return client, nil
 }
 
+// GetDefaultClientWithDB loads a default k8s client with an existing DB
+func GetDefaultClientWithDB(db *DB) (*Client, error) {
+	kubeConfig := NewConfig()
+	client, err := NewClient(kubeConfig, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	client.DB = db
+
+	return client, nil
+}
+
 // NewClient creates a client to interact with the Onepanel system.
 // It includes access to the database, kubernetes, argo, and configuration.
 func NewClient(config *Config, db *DB, systemConfig SystemConfig) (client *Client, err error) {
