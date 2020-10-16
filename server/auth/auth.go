@@ -165,7 +165,7 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfi
 				return resp, errors.New("LogInRequest does not have correct request type")
 			}
 
-			defaultClient, err := v1.GetDefaultClient()
+			defaultClient, err := v1.GetDefaultClientWithDB(db)
 			if err != nil {
 				return nil, err
 			}
@@ -177,10 +177,6 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfi
 
 			sysConfig, err := defaultClient.GetSystemConfig()
 			if err != nil {
-				return nil, err
-			}
-
-			if err := defaultClient.DB.Close(); err != nil {
 				return nil, err
 			}
 
