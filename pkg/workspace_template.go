@@ -401,7 +401,7 @@ func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string, se
 		env.PrependEnvVarToContainer(container, "ONEPANEL_DOMAIN", config["ONEPANEL_DOMAIN"])
 		env.PrependEnvVarToContainer(container, "ONEPANEL_PROVIDER", config["ONEPANEL_PROVIDER"])
 		env.PrependEnvVarToContainer(container, "ONEPANEL_RESOURCE_NAMESPACE", "{{workflow.namespace}}")
-		env.PrependEnvVarToContainer(container, "ONEPANEL_RESOURCE_UID", "{{workflow.parameters.sys-name}}")
+		env.PrependEnvVarToContainer(container, "ONEPANEL_RESOURCE_UID", "{{workflow.parameters.sys-uid}}")
 
 		for _, service := range services {
 			envName := fmt.Sprintf("ONEPANEL_SERVICES_%v_API_URL", strings.ToUpper(service.Name))
