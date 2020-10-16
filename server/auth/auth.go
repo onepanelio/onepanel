@@ -180,6 +180,10 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfi
 				return nil, err
 			}
 
+			if err := defaultClient.DB.Close(); err != nil {
+				return nil, err
+			}
+
 			md.Set("onepanel-auth-token", rawToken)
 
 			ctx, err = getClient(ctx, kubeConfig, db, sysConfig)
