@@ -1340,7 +1340,7 @@ func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
 
 			doneCh := make(chan struct{})
 			defer close(doneCh)
-			for objInfo := range s3Client.ListObjectsV2(config.ArtifactRepository.S3.Bucket, key, false, doneCh) {
+			for objInfo := range s3Client.ListObjects(config.ArtifactRepository.S3.Bucket, key, false, doneCh) {
 				if objInfo.Key == key {
 					continue
 				}
