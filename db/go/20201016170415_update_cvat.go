@@ -15,7 +15,7 @@ func initialize20201016170415() {
 // Up20201016170415 updates cvat to a new version
 func Up20201016170415(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
-	return updateWorkspaceTemplateManifest("cvat9.yaml", cvatTemplateName)
+	return updateWorkspaceTemplateManifest("cvat_20201016170415.yaml", cvatTemplateName)
 }
 
 // Down20201016170415 does nothing
