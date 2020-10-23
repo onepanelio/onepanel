@@ -6,7 +6,7 @@
 [![sdk](https://img.shields.io/pypi/v/onepanel-sdk?color=01579b&label=sdk)](https://pypi.org/project/onepanel-sdk/)
 [![docs](https://img.shields.io/github/v/release/onepanelio/core?color=01579b&label=docs)](https://docs.onepanel.io)
 [![issues](https://img.shields.io/github/issues-raw/onepanelio/core?color=01579b&label=issues)](https://github.com/onepanelio/core/issues)
-[![chat](https://img.shields.io/badge/support-slack-01579b)](https://onepanel-ce.slack.com/join/shared_invite/zt-eyjnwec0-nLaHhjif9Y~gA05KuX6AUg#/)
+[![chat](https://img.shields.io/badge/support-dicussions-01579b)](https://github.com/onepanelio/core/discussions)
 [![license](https://img.shields.io/github/license/onepanelio/core?color=01579b)](https://opensource.org/licenses/Apache-2.0)
 
 Production scale, vision AI platform, with fully integrated components for model building, automated labeling, data processing and model training pipelines.
