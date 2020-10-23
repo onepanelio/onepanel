@@ -21,7 +21,12 @@ func (l *JSONLabels) Unmarshal(v interface{}) error {
 
 // Value returns j as a value.  This does a validating unmarshal into another
 // RawMessage.  If j is invalid json, it returns an error.
+// Note that nil values will return "{}" - empty JSON.
 func (l JSONLabels) Value() (driver.Value, error) {
+	if l == nil {
+		return json.Marshal(make(map[string]string))
+	}
+
 	return json.Marshal(l)
 }
 
