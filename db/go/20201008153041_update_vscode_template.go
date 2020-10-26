@@ -21,7 +21,7 @@ containers:
     lifecycle:
       postStart:
         exec:
-          command: 
+          command:
            - /bin/sh
            - -c
            - >
@@ -31,7 +31,7 @@ containers:
             if [ -f "$vscodetxt" ]; then cat $vscodetxt | xargs -n 1 code-server --install-extension; fi;
       preStop:
         exec:
-          command: 
+          command:
           - /bin/sh
           - -c
           - >
@@ -50,7 +50,7 @@ routes:
       - destination:
           port:
             number: 8080
-# DAG Workflow to be executed once a Workspace action completes (optional)        
+# DAG Workflow to be executed once a Workspace action completes (optional)
 #postExecutionWorkflow:
 #  entrypoint: main
 #  templates:

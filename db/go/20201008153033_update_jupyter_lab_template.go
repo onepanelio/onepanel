@@ -26,7 +26,7 @@ containers:
   lifecycle:
     postStart:
       exec:
-        command: 
+        command:
         - /bin/sh
         - -c
         - >
@@ -36,7 +36,7 @@ containers:
           if [ -f "$jupytertxt" ]; then cat $jupytertxt | xargs -n 1 jupyter labextension install --no-build; fi;
     preStop:
       exec:
-        command: 
+        command:
         - /bin/sh
         - -c
         - >
@@ -67,7 +67,7 @@ routes:
   - destination:
       port:
         number: 80
-# DAG Workflow to be executed once a Workspace action completes (optional)        
+# DAG Workflow to be executed once a Workspace action completes (optional)
 #postExecutionWorkflow:
 #  entrypoint: main
 #  templates:

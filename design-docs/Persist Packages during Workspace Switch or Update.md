@@ -1,8 +1,8 @@
 # Background
-A user may install pip packages, conda packages, jupyterlab extensions, 
+A user may install pip packages, conda packages, jupyterlab extensions,
 or vscode extensions.
 
-To improve the user experience, we should save these packages 
+To improve the user experience, we should save these packages
 when the user pauses and resumes the workspace.
 - And when the user changes the workspace machine.
 
