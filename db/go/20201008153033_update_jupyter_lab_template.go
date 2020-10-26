@@ -15,7 +15,6 @@ containers:
   env:
     - name: tornado
       value: "'{'headers':{'Content-Security-Policy':\"frame-ancestors\ *\ \'self'\"}}'"
-  args:
   ports:
   - containerPort: 8888
     name: jupyterlab
