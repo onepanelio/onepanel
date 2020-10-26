@@ -3,7 +3,7 @@
   "info": {
     "title": "Onepanel",
     "description": "Onepanel API",
-    "version": "0.13.0",
+    "version": "0.14.0",
     "contact": {
       "name": "Onepanel project",
       "url": "https://github.com/onepanelio/core"
@@ -77,7 +77,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/TokenWrapper"
+              "$ref": "#/definitions/IsValidTokenRequest"
             }
           }
         ],
@@ -2967,10 +2967,27 @@
         }
       }
     },
+    "IsValidTokenRequest": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "token": {
+          "type": "string"
+        }
+      }
+    },
     "IsValidTokenResponse": {
       "type": "object",
       "properties": {
         "domain": {
+          "type": "string"
+        },
+        "token": {
+          "type": "string"
+        },
+        "username": {
           "type": "string"
         }
       }
@@ -3391,14 +3408,6 @@
         "workflowTemplateId": {
           "type": "string",
           "format": "int64"
-        }
-      }
-    },
-    "TokenWrapper": {
-      "type": "object",
-      "properties": {
-        "token": {
-          "type": "string"
         }
       }
     },

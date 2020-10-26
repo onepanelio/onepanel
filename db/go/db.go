@@ -5,7 +5,10 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	v1 "github.com/onepanelio/core/pkg"
+	"io/ioutil"
 	"log"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -62,6 +65,7 @@ func Initialize() {
 	initialize20201001070806()
 	initialize20201008153033()
 	initialize20201008153041()
+	initialize20201016170415()
 
 	if err := client.DB.Close(); err != nil {
 		log.Printf("[error] closing db %v", err)
@@ -129,4 +133,18 @@ func ReplaceArtifactRepositoryType(client *v1.Client, namespace *v1.Namespace, w
 	}
 
 	return nil
+}
+
+// readDataFile returns the contents of a file in the db/data/{name} directory
+func readDataFile(name string) (string, error) {
+	curDir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	data, err := ioutil.ReadFile(filepath.Join(curDir, "db", "data", name))
+	if err != nil {
+		return "", err
+	}
+
+	return string(data), nil
 }

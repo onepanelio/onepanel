@@ -38,6 +38,12 @@ func NewSystemConfig(configMap *ConfigMap, secret *Secret) (config SystemConfig,
 	}
 	config["databasePassword"] = string(databasePassword)
 
+	hmac, err := base64.StdEncoding.DecodeString(secret.Data["hmac"])
+	if err != nil {
+		return
+	}
+	config["hmac"] = string(hmac)
+
 	return
 }
 
@@ -181,6 +187,16 @@ func (s SystemConfig) UpdateNodePoolOptions(parameters []Parameter) ([]Parameter
 	result = append(result, *nodePoolParameter)
 
 	return result, nil
+}
+
+// HMACKey gets the HMAC value, or nil.
+func (s SystemConfig) HMACKey() []byte {
+	hmac := s.GetValue("hmac")
+	if hmac == nil {
+		return []byte{}
+	}
+
+	return []byte(*hmac)
 }
 
 // ArtifactRepositoryS3Provider is meant to be used

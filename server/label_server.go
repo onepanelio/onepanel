@@ -7,21 +7,22 @@ import (
 	"github.com/onepanelio/core/server/auth"
 )
 
-func resourceIdentifierToArgoResource(identifier string) string {
+func getGroupAndResourceByIdentifier(identifier string) (group, resource string) {
+	group = "argoproj.io"
 	switch identifier {
 	case v1.TypeWorkflowTemplate:
-		return "workflowtemplates"
+		return group, "workflowtemplates"
 	case v1.TypeWorkflowTemplateVersion:
-		return "workflowtemplates"
+		return group, "workflowtemplates"
 	case v1.TypeWorkflowExecution:
-		return "workflows"
+		return group, "workflows"
 	case v1.TypeCronWorkflow:
-		return "cronworkflows"
+		return group, "cronworkflows"
 	case v1.TypeWorkspace:
-		return "statefulset"
+		return "onepanel.io", "workspaces"
 	}
 
-	return ""
+	return "", ""
 }
 
 func mapLabelsToKeyValue(labels []*v1.Label) []*api.KeyValue {
@@ -54,10 +55,10 @@ func NewLabelServer() *LabelServer {
 }
 
 func (s *LabelServer) GetLabels(ctx context.Context, req *api.GetLabelsRequest) (*api.GetLabelsResponse, error) {
-	argoResource := resourceIdentifierToArgoResource(req.Resource)
+	group, resource := getGroupAndResourceByIdentifier(req.Resource)
 
 	client := getClient(ctx)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", argoResource, "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", group, resource, "")
 	if err != nil || !allowed {
 		return nil, err
 	}
@@ -73,10 +74,10 @@ func (s *LabelServer) GetLabels(ctx context.Context, req *api.GetLabelsRequest) 
 }
 
 func (s *LabelServer) AddLabels(ctx context.Context, req *api.AddLabelsRequest) (*api.GetLabelsResponse, error) {
-	argoResource := resourceIdentifierToArgoResource(req.Resource)
+	group, resource := getGroupAndResourceByIdentifier(req.Resource)
 
 	client := getClient(ctx)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", argoResource, "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", group, resource, "")
 	if err != nil || !allowed {
 		return nil, err
 	}
@@ -97,10 +98,10 @@ func (s *LabelServer) AddLabels(ctx context.Context, req *api.AddLabelsRequest) 
 }
 
 func (s *LabelServer) ReplaceLabels(ctx context.Context, req *api.ReplaceLabelsRequest) (*api.GetLabelsResponse, error) {
-	argoResource := resourceIdentifierToArgoResource(req.Resource)
+	group, resource := getGroupAndResourceByIdentifier(req.Resource)
 
 	client := getClient(ctx)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", argoResource, "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", group, resource, "")
 	if err != nil || !allowed {
 		return nil, err
 	}
@@ -121,11 +122,11 @@ func (s *LabelServer) ReplaceLabels(ctx context.Context, req *api.ReplaceLabelsR
 }
 
 func (s *LabelServer) DeleteLabel(ctx context.Context, req *api.DeleteLabelRequest) (*api.GetLabelsResponse, error) {
-	argoResource := resourceIdentifierToArgoResource(req.Resource)
+	group, resource := getGroupAndResourceByIdentifier(req.Resource)
 
 	client := getClient(ctx)
 	// update verb here since we are not deleting the resource, but labels
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", argoResource, "")
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", group, resource, "")
 	if err != nil || !allowed {
 		return nil, err
 	}

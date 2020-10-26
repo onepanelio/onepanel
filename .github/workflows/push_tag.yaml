@@ -22,7 +22,7 @@ jobs:
       - name: Notify Slack Channels
         uses: rtCamp/action-slack-notify@v2.0.0
         env:
-          SLACK_CHANNEL: dev
+          SLACK_CHANNEL: org
           SLACK_ICON: https://avatars1.githubusercontent.com/u/30390575?s=48&v=4
           SLACK_TITLE: New Core Version
           SLACK_USERNAME: opBot
