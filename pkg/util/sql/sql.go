@@ -1,6 +1,8 @@
 package sql
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // FormatColumnSelect returns a list of column names to be used in a SQL Select modified with optional alias and destination.
 //

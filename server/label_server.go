@@ -5,6 +5,7 @@ import (
 	"github.com/onepanelio/core/api"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/server/auth"
+	"github.com/onepanelio/core/server/converter"
 )
 
 func getGroupAndResourceByIdentifier(identifier string) (group, resource string) {
@@ -145,5 +146,31 @@ func (s *LabelServer) DeleteLabel(ctx context.Context, req *api.DeleteLabelReque
 
 	return &api.GetLabelsResponse{
 		Labels: mapLabelsToKeyValue(labels),
+	}, nil
+}
+
+// GetAvailableLabels returns the labels available for a resource specified by the GetAvailableLabelsRequest
+func (s *LabelServer) GetAvailableLabels(ctx context.Context, req *api.GetAvailableLabelsRequest) (*api.GetLabelsResponse, error) {
+	group, resource := getGroupAndResourceByIdentifier(req.Resource)
+
+	client := getClient(ctx)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", group, resource, "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	labels, err := client.ListAvailableLabels(&v1.SelectLabelsQuery{
+		Table:     v1.TypeToTableName(req.Resource),
+		Alias:     "l",
+		Namespace: req.Namespace,
+		KeyLike:   req.KeyLike + "%",
+		Skip:      v1.SkipKeysFromString(req.SkipKeys),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.GetLabelsResponse{
+		Labels: converter.LabelsToKeyValues(labels),
 	}, nil
 }

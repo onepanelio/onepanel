@@ -37,6 +37,29 @@ func MappingToKeyValue(mapping map[string]string) []*api.KeyValue {
 	return keyValues
 }
 
+// LabelsToKeyValues converts []*v1.Label to []*api.Label
+func LabelsToKeyValues(labels []*v1.Label) []*api.KeyValue {
+	keyValues := make([]*api.KeyValue, 0)
+
+	for _, label := range labels {
+		keyValues = append(keyValues, LabelToKeyValue(label))
+	}
+
+	sort.Slice(keyValues, func(i, j int) bool {
+		return keyValues[i].Key < keyValues[j].Key
+	})
+
+	return keyValues
+}
+
+// LabelToKeyValue converts a *v1.Label to *api.Label
+func LabelToKeyValue(label *v1.Label) *api.KeyValue {
+	return &api.KeyValue{
+		Key:   label.Key,
+		Value: label.Value,
+	}
+}
+
 func ParameterOptionToAPI(option *v1.ParameterOption) *api.ParameterOption {
 	apiOption := &api.ParameterOption{
 		Name:  option.Name,
