@@ -88,15 +88,6 @@ func Up20201008153041(tx *sql.Tx) error {
 	}
 	defer client.DB.Close()
 
-	migrationsRan, err := getRanSQLMigrations(client)
-	if err != nil {
-		return err
-	}
-
-	if _, ok := migrationsRan[20201008153041]; ok {
-		return nil
-	}
-
 	namespaces, err := client.ListOnepanelEnabledNamespaces()
 	if err != nil {
 		return err
@@ -124,15 +115,6 @@ func Down20201008153041(tx *sql.Tx) error {
 		return err
 	}
 	defer client.DB.Close()
-
-	migrationsRan, err := getRanSQLMigrations(client)
-	if err != nil {
-		return err
-	}
-
-	if _, ok := migrationsRan[20201008153041]; ok {
-		return nil
-	}
 
 	namespaces, err := client.ListOnepanelEnabledNamespaces()
 	if err != nil {
