@@ -34,6 +34,7 @@ containers:
           jupytertxt="/data/.jupexported.txt";
           if [ -f "$condayml" ]; then conda env update -f $condayml; fi;
           if [ -f "$jupytertxt" ]; then cat $jupytertxt | xargs -n 1 jupyter labextension install --no-build; fi;
+          if [ -f "$jupytertxt" ]; then jupyter lab build; fi;
     preStop:
       exec:
         command:
