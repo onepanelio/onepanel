@@ -8,7 +8,64 @@ import (
 	"github.com/onepanelio/core/pkg/util/mapping"
 	"github.com/onepanelio/core/pkg/util/types"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strings"
 )
+
+// SelectLabelsQuery represents the options available to filter a select labels query
+type SelectLabelsQuery struct {
+	Table     string
+	Alias     string
+	Namespace string
+	KeyLike   string
+	Skip      []string
+}
+
+// SkipKeysFromString parses keys encoded in a string and returns an array of keys
+// The separator is ";"
+func SkipKeysFromString(keys string) []string {
+	results := make([]string, 0)
+	for _, key := range strings.Split(keys, ";") {
+		if key == "" {
+			continue
+		}
+
+		results = append(results, key)
+	}
+
+	return results
+}
+
+// SelectLabels returns a SelectBuilder that selects key, value columns from the criteria specified in query
+func SelectLabels(query *SelectLabelsQuery) sq.SelectBuilder {
+	// Sample query
+	// SELECT DISTINCT labels.*
+	//	FROM workflow_executions w,
+	//	jsonb_each_text(w.labels) labels
+	// WHERE labels.key LIKE 'ca%'
+	// AND labels.key NOT IN ('catdog')
+	// AND namespace = 'onepanel'
+	// AND labels != 'null'::jsonb
+
+	fromTable := fmt.Sprintf("%s %s", query.Table, query.Alias)
+	fromJsonb := fmt.Sprintf("jsonb_each_text(%s.labels) labels", query.Alias)
+
+	bld := sb.Select("key", "value").
+		Distinct().
+		From(fromTable + ", " + fromJsonb).
+		Where("labels != 'null'::jsonb")
+
+	if query.Namespace != "" {
+		bld = bld.Where(sq.Eq{query.Alias + ".namespace": query.Namespace})
+	}
+	if query.KeyLike != "" {
+		bld = bld.Where(sq.Like{"labels.key": query.KeyLike})
+	}
+	if len(query.Skip) != 0 {
+		bld = bld.Where(sq.NotEq{"labels.key": query.Skip})
+	}
+
+	return bld
+}
 
 func (c *Client) ListLabels(resource string, uid string) (labels []*Label, err error) {
 	sb := sb.Select("labels").
@@ -45,6 +102,15 @@ func (c *Client) ListLabels(resource string, uid string) (labels []*Label, err e
 
 		labels = append(labels, newLabel)
 	}
+
+	return
+}
+
+// ListAvailableLabels lists the labels available for the resource specified by the query
+func (c *Client) ListAvailableLabels(query *SelectLabelsQuery) (result []*Label, err error) {
+	selectLabelsBuilder := SelectLabels(query)
+
+	err = c.Selectx(&result, selectLabelsBuilder)
 
 	return
 }

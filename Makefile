@@ -33,6 +33,11 @@ docker-build:
 docker-push:
 	docker push onepanel/core:$(COMMIT_HASH)
 
+docker-custom:
+	docker build -t onepanel-core .
+	docker tag onepanel-core:latest onepanel/core:$(TAG)
+	docker push onepanel/core:$(TAG)
+
 docker: docker-build docker-push
 
 run-tests:

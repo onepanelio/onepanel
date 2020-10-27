@@ -3,7 +3,7 @@
   "info": {
     "title": "Onepanel",
     "description": "Onepanel API",
-    "version": "0.14.0",
+    "version": "0.15.0",
     "contact": {
       "name": "Onepanel project",
       "url": "https://github.com/onepanelio/core"
@@ -105,6 +105,54 @@
         },
         "tags": [
           "ConfigService"
+        ]
+      }
+    },
+    "/apis/v1beta1/labels/{namespace}/{resource}/labels": {
+      "get": {
+        "operationId": "GetAvailableLabels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetLabelsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "resource",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "keyLike",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "skipKeys",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "LabelService"
         ]
       }
     },

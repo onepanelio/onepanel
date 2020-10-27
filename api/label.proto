@@ -5,6 +5,12 @@ package api;
 import "google/api/annotations.proto";
 
 service LabelService {
+    rpc GetAvailableLabels (GetAvailableLabelsRequest) returns (GetLabelsResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/labels/{namespace}/{resource}/labels"
+        };
+    }
+
     rpc GetLabels (GetLabelsRequest) returns (GetLabelsResponse) {
         option (google.api.http) = {
             get: "/apis/v1beta1/{namespace}/{resource}/{uid}/labels"
@@ -59,6 +65,13 @@ message GetLabelsRequest {
     string namespace = 1;
     string resource = 2;
     string uid = 3;
+}
+
+message GetAvailableLabelsRequest {
+    string namespace = 1;
+    string resource = 2;
+    string keyLike = 3;
+    string skipKeys = 4;
 }
 
 message GetLabelsResponse {

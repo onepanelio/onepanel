@@ -22,7 +22,7 @@ func ApplyLabelSelectQuery(labelSelector string, sb sq.SelectBuilder, filter Lab
 		return sb, err
 	}
 
-	sb = sb.Where("%v @> ?", labelSelector, labelsJSON)
+	sb = sb.Where(labelSelector+" @> ?", labelsJSON)
 
 	return sb, nil
 }
