@@ -44,13 +44,15 @@ func SelectLabels(query *SelectLabelsQuery) sq.SelectBuilder {
 	// WHERE labels.key LIKE 'ca%'
 	// AND labels.key NOT IN ('catdog')
 	// AND namespace = 'onepanel'
+	// AND labels != 'null'::jsonb
 
 	fromTable := fmt.Sprintf("%s %s", query.Table, query.Alias)
 	fromJsonb := fmt.Sprintf("jsonb_each_text(%s.labels) labels", query.Alias)
 
 	bld := sb.Select("key", "value").
 		Distinct().
-		From(fromTable + ", " + fromJsonb)
+		From(fromTable + ", " + fromJsonb).
+		Where("labels != 'null'::jsonb")
 
 	if query.Namespace != "" {
 		bld = bld.Where(sq.Eq{query.Alias + ".namespace": query.Namespace})
