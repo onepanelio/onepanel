@@ -3682,6 +3682,10 @@
           "items": {
             "$ref": "#/definitions/Parameter"
           }
+        },
+        "isSystem": {
+          "type": "boolean",
+          "format": "boolean"
         }
       }
     },
