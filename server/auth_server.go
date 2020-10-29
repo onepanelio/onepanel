@@ -74,6 +74,26 @@ func (a *AuthServer) IsValidToken(ctx context.Context, req *api.IsValidTokenRequ
 	return res, nil
 }
 
+// LogIn is an alias for IsValidToken. It returns a token given a username and hashed token.
+func (a *AuthServer) LogIn(ctx context.Context, req *api.LogInRequest) (res *api.LogInResponse, err error) {
+	resp, err := a.IsValidToken(ctx, &api.IsValidTokenRequest{
+		Username: req.Username,
+		Token:    req.TokenHash,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	res = &api.LogInResponse{
+		Domain:   "",
+		Token:    resp.Token,
+		Username: resp.Username,
+	}
+
+	return
+}
+
 func (a *AuthServer) isValidToken(err error, client *v1.Client) error {
 	namespaces, err := client.ListOnepanelEnabledNamespaces()
 	if err != nil {

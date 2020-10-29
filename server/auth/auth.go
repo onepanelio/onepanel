@@ -169,10 +169,18 @@ func verifyLogin(client *v1.Client, tokenRequest *api.IsValidTokenRequest) (rawT
 func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfig) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		// Check if the provided token is valid. This does not require a token in the header.
-		if info.FullMethod == "/api.AuthService/IsValidToken" {
+		if info.FullMethod == "/api.AuthService/IsValidToken" || info.FullMethod == "/api.AuthService/LogIn" {
 			md, ok := metadata.FromIncomingContext(ctx)
 			if !ok {
 				return resp, errors.New("unable to get metadata from incoming context")
+			}
+
+			logInRequest, ok := req.(*api.LogInRequest)
+			if ok {
+				req = &api.IsValidTokenRequest{
+					Username: logInRequest.Username,
+					Token:    logInRequest.TokenHash,
+				}
 			}
 
 			tokenRequest, ok := req.(*api.IsValidTokenRequest)
@@ -195,11 +203,15 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfi
 				return nil, err
 			}
 
-			md.Set("onepanel-auth-token", rawToken)
+			md.Set("authorization", "Bearer "+rawToken)
 
 			ctx, err = getClient(ctx, kubeConfig, db, sysConfig)
 			if err != nil {
 				ctx = nil
+			}
+
+			if info.FullMethod == "/api.AuthService/LogIn" {
+				return handler(ctx, logInRequest)
 			}
 
 			return handler(ctx, req)
