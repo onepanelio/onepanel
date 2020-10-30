@@ -513,7 +513,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 							"spec": networking.VirtualService{
 								Http:     routes,
 								Gateways: []string{"istio-system/ingressgateway"},
-								Hosts:    []string{"{{workflow.parameters.sys-host}}"},
+								Hosts:    []string{"{{workflow.uid}}"},
 							},
 						}
 
