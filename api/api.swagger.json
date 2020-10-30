@@ -54,6 +54,39 @@
         ]
       }
     },
+    "/apis/v1beta1/auth/login": {
+      "post": {
+        "operationId": "LogIn",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/LogInResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/LogInRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AuthService"
+        ],
+        "security": []
+      }
+    },
     "/apis/v1beta1/auth/token": {
       "post": {
         "operationId": "IsValidToken",
@@ -3321,6 +3354,31 @@
         }
       }
     },
+    "LogInRequest": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "tokenHash": {
+          "type": "string"
+        }
+      }
+    },
+    "LogInResponse": {
+      "type": "object",
+      "properties": {
+        "domain": {
+          "type": "string"
+        },
+        "token": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        }
+      }
+    },
     "Metric": {
       "type": "object",
       "properties": {
@@ -3624,6 +3682,10 @@
           "items": {
             "$ref": "#/definitions/Parameter"
           }
+        },
+        "isSystem": {
+          "type": "boolean",
+          "format": "boolean"
         }
       }
     },

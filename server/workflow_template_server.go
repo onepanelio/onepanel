@@ -43,6 +43,7 @@ func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 	return res
 }
 
+// CreateWorkflowTemplate creates a workflow template and the initial version
 func (s *WorkflowTemplateServer) CreateWorkflowTemplate(ctx context.Context, req *api.CreateWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
 	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "argoproj.io", "workflowtemplates", "")
@@ -53,6 +54,7 @@ func (s *WorkflowTemplateServer) CreateWorkflowTemplate(ctx context.Context, req
 		Name:     req.WorkflowTemplate.Name,
 		Manifest: req.WorkflowTemplate.Manifest,
 		Labels:   converter.APIKeyValueToLabel(req.WorkflowTemplate.Labels),
+		IsSystem: req.WorkflowTemplate.IsSystem,
 	}
 	workflowTemplate, err = client.CreateWorkflowTemplate(req.Namespace, workflowTemplate)
 	if err != nil {
