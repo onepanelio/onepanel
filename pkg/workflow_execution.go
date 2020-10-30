@@ -415,7 +415,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 	for tIdx, t := range wf.Spec.Templates {
 		if t.Metadata.Labels != nil {
 			if sidecar, ok := t.Metadata.Labels["sidecar"]; ok {
-				if sidecar == "sys-tensorboard-like" {
+				if sidecar == "sys-visualization-sidecar" {
 					//Inject services, virtual routes
 					for sIdx, s := range t.Sidecars {
 						if len(s.Ports) == 0 {
