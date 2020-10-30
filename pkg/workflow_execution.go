@@ -18,6 +18,8 @@ import (
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
+	networking "istio.io/api/networking/v1alpha3"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/watch"
 	"net/http"
 	"strconv"
@@ -408,6 +410,140 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 		return nil, err
 	}
 
+	newTemplateOrder := []wfv1.Template{}
+	for tIdx, t := range wf.Spec.Templates {
+		if t.Metadata.Labels != nil {
+			if sidecar, ok := t.Metadata.Labels["sidecar"]; ok {
+				if sidecar == "sys-tensorboard-like" {
+					//Inject services, virtual routes
+					for sIdx, s := range t.Sidecars {
+						if len(s.Ports) == 0 {
+							msg := fmt.Sprintf("sidecar %s must have at least one port.", s.Name)
+							return nil, util.NewUserError(codes.InvalidArgument, msg)
+						}
+						servicePorts := []corev1.ServicePort{}
+						routes := []*networking.HTTPRoute{}
+						for _, port := range s.Ports {
+							servicePort := corev1.ServicePort{
+								Name:       port.Name,
+								Protocol:   port.Protocol,
+								Port:       port.ContainerPort,
+								TargetPort: intstr.FromInt(int(port.HostPort)),
+							}
+							servicePorts = append(servicePorts, servicePort)
+							route := networking.HTTPRoute{
+								Match: []*networking.HTTPMatchRequest{
+									{
+										Uri: &networking.StringMatch{
+											MatchType: &networking.StringMatch_Prefix{
+												Prefix: "/sys/" + strconv.Itoa(sIdx) + "/" + s.Name},
+										},
+									},
+								},
+								Route: []*networking.HTTPRouteDestination{
+									{
+										Destination: &networking.Destination{
+											Host: "{{workflow.uid}}",
+											Port: &networking.PortSelector{
+												Number: uint32(port.ContainerPort),
+											},
+										},
+									},
+								},
+							}
+							routes = append(routes, &route)
+						}
+						service := corev1.Service{
+							TypeMeta: metav1.TypeMeta{
+								APIVersion: "v1",
+								Kind:       "Service",
+							},
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "{{workflow.uid}}",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion:         "argoproj.io/v1alpha1",
+										Kind:               "Workflow",
+										Name:               "{{workflow.name}}",
+										UID:                "{{workflow.uid}}",
+										BlockOwnerDeletion: ptr.Bool(true),
+									},
+								},
+							},
+							Spec: corev1.ServiceSpec{
+								Ports: servicePorts,
+								Selector: map[string]string{
+									"app": "{{workflow.uid}}",
+								},
+							},
+						}
+						serviceManifestBytes, err := yaml.Marshal(service)
+						if err != nil {
+							return nil, err
+						}
+						serviceManifest := string(serviceManifestBytes)
+						templateServiceResource := wfv1.Template{
+							Name: "k8s-services-resource",
+							Resource: &wfv1.ResourceTemplate{
+								Action:           "create",
+								SuccessCondition: "status.succeeded > 0",
+								FailureCondition: "status.failed > 3",
+								Manifest:         serviceManifest,
+							},
+						}
+						newTemplateOrder = append(newTemplateOrder, templateServiceResource)
+
+						//routes
+						virtualService := map[string]interface{}{
+							"apiVersion": "networking.istio.io/v1alpha3",
+							"kind":       "VirtualService",
+							"metadata": metav1.ObjectMeta{
+								Name: "{{workflow.uid}}",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion:         "argoproj.io/v1alpha1",
+										Kind:               "Workflow",
+										Name:               "{{workflow.name}}",
+										UID:                "{{workflow.uid}}",
+										BlockOwnerDeletion: ptr.Bool(true),
+									},
+								},
+							},
+							"spec": networking.VirtualService{
+								Http:     routes,
+								Gateways: []string{"istio-system/ingressgateway"},
+								Hosts:    []string{"{{workflow.parameters.sys-host}}"},
+							},
+						}
+
+						virtualServiceManifestBytes, err := yaml.Marshal(virtualService)
+						if err != nil {
+							return nil, err
+						}
+						virtualServiceManifest := string(virtualServiceManifestBytes)
+
+						templateRouteResource := wfv1.Template{
+							Name: "k8s-routes-resource",
+							Resource: &wfv1.ResourceTemplate{
+								Action:           "create",
+								SuccessCondition: "status.succeeded > 0",
+								FailureCondition: "status.failed > 3",
+								Manifest:         virtualServiceManifest,
+							},
+						}
+						newTemplateOrder = append(newTemplateOrder, templateRouteResource)
+					}
+					newTemplateOrder = append(newTemplateOrder, wf.Spec.Templates[tIdx])
+					//Inject clean-up
+				}
+			} else {
+				newTemplateOrder = append(newTemplateOrder, wf.Spec.Templates[tIdx])
+			}
+		} else {
+			newTemplateOrder = append(newTemplateOrder, wf.Spec.Templates[tIdx])
+		}
+	}
+	wf.Spec.Templates = newTemplateOrder
 	createdArgoWorkflow, err := c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
 	if err != nil {
 		return nil, err
