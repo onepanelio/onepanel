@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/watch"
 	"net/http"
+	yaml2 "sigs.k8s.io/yaml"
 	"strconv"
 	"strings"
 	"time"
@@ -477,7 +478,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 								},
 							},
 						}
-						serviceManifestBytes, err := yaml.Marshal(service)
+						serviceManifestBytes, err := yaml2.Marshal(service)
 						if err != nil {
 							return nil, err
 						}
@@ -516,7 +517,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 							},
 						}
 
-						virtualServiceManifestBytes, err := yaml.Marshal(virtualService)
+						virtualServiceManifestBytes, err := yaml2.Marshal(virtualService)
 						if err != nil {
 							return nil, err
 						}
