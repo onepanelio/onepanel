@@ -411,7 +411,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 		return nil, err
 	}
 
-	newTemplateOrder := []wfv1.Template{}
+	var newTemplateOrder []wfv1.Template
 	for tIdx, t := range wf.Spec.Templates {
 		if t.Metadata.Labels != nil {
 			if sidecar, ok := t.Metadata.Labels["sidecar"]; ok {
@@ -422,8 +422,8 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 							msg := fmt.Sprintf("sidecar %s must have at least one port.", s.Name)
 							return nil, util.NewUserError(codes.InvalidArgument, msg)
 						}
-						servicePorts := []corev1.ServicePort{}
-						routes := []*networking.HTTPRoute{}
+						var servicePorts []corev1.ServicePort
+						var routes []*networking.HTTPRoute
 						for _, port := range s.Ports {
 							servicePort := corev1.ServicePort{
 								Name:       port.Name,
