@@ -54,7 +54,6 @@ func (s *WorkflowTemplateServer) CreateWorkflowTemplate(ctx context.Context, req
 		Name:     req.WorkflowTemplate.Name,
 		Manifest: req.WorkflowTemplate.Manifest,
 		Labels:   converter.APIKeyValueToLabel(req.WorkflowTemplate.Labels),
-		IsSystem: req.WorkflowTemplate.IsSystem,
 	}
 	workflowTemplate, err = client.CreateWorkflowTemplate(req.Namespace, workflowTemplate)
 	if err != nil {
