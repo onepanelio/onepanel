@@ -85,9 +85,8 @@ func getClient(ctx context.Context, kubeConfig *v1.Config, db *v1.DB, sysConfig 
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, `Missing or invalid "authorization" header.`)
 	}
-
-	if sysConfig["token"] != *bearerToken {
-		sysConfig["token"] = *bearerToken
+	if bearerToken == nil {
+		return nil, status.Error(codes.Unauthenticated, "Bearer token is nil")
 	}
 
 	kubeConfig.BearerToken = *bearerToken
@@ -96,6 +95,7 @@ func getClient(ctx context.Context, kubeConfig *v1.Config, db *v1.DB, sysConfig 
 	if err != nil {
 		return nil, err
 	}
+	client.Token = kubeConfig.BearerToken
 
 	return context.WithValue(ctx, ContextClientKey, client), nil
 }

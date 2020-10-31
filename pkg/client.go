@@ -19,6 +19,7 @@ type Config = rest.Config
 var sb = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
 type Client struct {
+	Token string
 	kubernetes.Interface
 	argoprojV1alpha1 argoprojv1alpha1.ArgoprojV1alpha1Interface
 	*DB
