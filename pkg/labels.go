@@ -110,6 +110,13 @@ func (c *Client) ListLabels(resource string, uid string) (labels []*Label, err e
 func (c *Client) ListAvailableLabels(query *SelectLabelsQuery) (result []*Label, err error) {
 	selectLabelsBuilder := SelectLabels(query)
 
+	// Don't select labels from Terminated workspaces.
+	if query.Table == "workspaces" {
+		selectLabelsBuilder = selectLabelsBuilder.Where(sq.NotEq{
+			"workspaces.phase": "Terminated",
+		})
+	}
+
 	err = c.Selectx(&result, selectLabelsBuilder)
 
 	return
