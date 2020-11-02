@@ -22,5 +22,5 @@ func Up20201031165106(tx *sql.Tx) error {
 // Down20201031165106 removes the lifecycle hooks from the template.
 func Down20201031165106(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
-	return updateWorkspaceTemplateManifest("20201031165106_jupyterlab.yaml", jupyterLabTemplateName)
+	return updateWorkspaceTemplateManifest("20201028145442_jupyterlab.yaml", jupyterLabTemplateName)
 }
