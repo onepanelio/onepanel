@@ -169,17 +169,17 @@ func verifyLogin(client *v1.Client, tokenRequest *api.IsValidTokenRequest) (rawT
 func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfig) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		// Check if the provided token is valid. This does not require a token in the header.
-		if info.FullMethod == "/api.AuthService/IsValidToken" || info.FullMethod == "/api.AuthService/LogIn" {
+		if info.FullMethod == "/api.AuthService/IsValidToken" || info.FullMethod == "/api.AuthService/GetAccessToken" {
 			md, ok := metadata.FromIncomingContext(ctx)
 			if !ok {
 				return resp, errors.New("unable to get metadata from incoming context")
 			}
 
-			logInRequest, ok := req.(*api.LogInRequest)
+			getAccessTokenRequest, ok := req.(*api.GetAccessTokenRequest)
 			if ok {
 				req = &api.IsValidTokenRequest{
-					Username: logInRequest.Username,
-					Token:    logInRequest.TokenHash,
+					Username: getAccessTokenRequest.Username,
+					Token:    getAccessTokenRequest.TokenHash,
 				}
 			}
 
@@ -210,8 +210,8 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfi
 				ctx = nil
 			}
 
-			if info.FullMethod == "/api.AuthService/LogIn" {
-				return handler(ctx, logInRequest)
+			if info.FullMethod == "/api.AuthService/GetAccessToken" {
+				return handler(ctx, getAccessTokenRequest)
 			}
 
 			return handler(ctx, req)

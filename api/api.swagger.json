@@ -54,14 +54,14 @@
         ]
       }
     },
-    "/apis/v1beta1/auth/login": {
+    "/apis/v1beta1/auth/get_access_token": {
       "post": {
-        "operationId": "LogIn",
+        "operationId": "GetAccessToken",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/LogInResponse"
+              "$ref": "#/definitions/GetAccessTokenResponse"
             }
           },
           "default": {
@@ -77,7 +77,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/LogInRequest"
+              "$ref": "#/definitions/GetAccessTokenRequest"
             }
           }
         ],
@@ -2964,6 +2964,31 @@
         }
       }
     },
+    "GetAccessTokenRequest": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "tokenHash": {
+          "type": "string"
+        }
+      }
+    },
+    "GetAccessTokenResponse": {
+      "type": "object",
+      "properties": {
+        "domain": {
+          "type": "string"
+        },
+        "token": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        }
+      }
+    },
     "GetConfigResponse": {
       "type": "object",
       "properties": {
@@ -3350,31 +3375,6 @@
           "type": "string"
         },
         "content": {
-          "type": "string"
-        }
-      }
-    },
-    "LogInRequest": {
-      "type": "object",
-      "properties": {
-        "username": {
-          "type": "string"
-        },
-        "tokenHash": {
-          "type": "string"
-        }
-      }
-    },
-    "LogInResponse": {
-      "type": "object",
-      "properties": {
-        "domain": {
-          "type": "string"
-        },
-        "token": {
-          "type": "string"
-        },
-        "username": {
           "type": "string"
         }
       }
