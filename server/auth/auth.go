@@ -125,7 +125,7 @@ func IsAuthorized(c *v1.Client, namespace, verb, group, resource, name string) (
 	return
 }
 
-func verifyLogin(client *v1.Client, tokenRequest *api.IsValidTokenRequest) (rawToken string, err error) {
+func verifyLogin(client *v1.Client, tokenRequest *api.GetAccessTokenRequest) (rawToken string, err error) {
 	accountsList, err := client.CoreV1().ServiceAccounts("onepanel").List(v1.ListOptions{})
 	if err != nil {
 		return "", err
@@ -169,23 +169,15 @@ func verifyLogin(client *v1.Client, tokenRequest *api.IsValidTokenRequest) (rawT
 func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfig) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		// Check if the provided token is valid. This does not require a token in the header.
-		if info.FullMethod == "/api.AuthService/IsValidToken" || info.FullMethod == "/api.AuthService/GetAccessToken" {
+		if info.FullMethod == "/api.AuthService/GetAccessToken" {
 			md, ok := metadata.FromIncomingContext(ctx)
 			if !ok {
 				return resp, errors.New("unable to get metadata from incoming context")
 			}
 
 			getAccessTokenRequest, ok := req.(*api.GetAccessTokenRequest)
-			if ok {
-				req = &api.IsValidTokenRequest{
-					Username: getAccessTokenRequest.Username,
-					Token:    getAccessTokenRequest.TokenHash,
-				}
-			}
-
-			tokenRequest, ok := req.(*api.IsValidTokenRequest)
 			if !ok {
-				return resp, errors.New("LogInRequest does not have correct request type")
+				return resp, errors.New("invalid request object for GetAccessTokenRequest")
 			}
 
 			defaultClient, err := v1.GetDefaultClientWithDB(db)
@@ -193,7 +185,7 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfi
 				return nil, err
 			}
 
-			rawToken, err := verifyLogin(defaultClient, tokenRequest)
+			rawToken, err := verifyLogin(defaultClient, getAccessTokenRequest)
 			if err != nil {
 				return nil, err
 			}
@@ -208,10 +200,6 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfi
 			ctx, err = getClient(ctx, kubeConfig, db, sysConfig)
 			if err != nil {
 				ctx = nil
-			}
-
-			if info.FullMethod == "/api.AuthService/GetAccessToken" {
-				return handler(ctx, getAccessTokenRequest)
 			}
 
 			return handler(ctx, req)
