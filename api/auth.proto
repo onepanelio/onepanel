@@ -5,16 +5,9 @@ package api;
 import "google/api/annotations.proto";
 import "protoc-gen-swagger/options/annotations.proto";
 service AuthService {
-    rpc IsValidToken(IsValidTokenRequest) returns (IsValidTokenResponse) {
+    rpc GetAccessToken(GetAccessTokenRequest) returns (GetAccessTokenResponse) {
         option (google.api.http) = {
-            post: "/apis/v1beta1/auth/token"
-            body: "*"
-        };
-    }
-
-    rpc LogIn(LogInRequest) returns (LogInResponse) {
-        option (google.api.http) = {
-            post: "/apis/v1beta1/auth/login"
+            post: "/apis/v1beta1/auth/get_access_token"
             body: "*"
         };
         option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
@@ -47,24 +40,13 @@ message IsAuthorizedResponse {
     bool authorized = 1;
 }
 
-message IsValidTokenRequest {
+message GetAccessTokenRequest {
     string username = 1;
     string token = 2;
 }
 
-message LogInRequest {
-    string username = 1;
-    string tokenHash = 2;
-}
-
-message LogInResponse {
+message GetAccessTokenResponse {
     string domain = 1;
-    string token = 2;
-    string username = 3;
-}
-
-message IsValidTokenResponse {
-    string domain = 1;
-    string token = 2;
+    string accessToken = 2;
     string username = 3;
 }

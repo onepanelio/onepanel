@@ -50,13 +50,13 @@ func (a *AuthServer) IsAuthorized(ctx context.Context, request *api.IsAuthorized
 	return res, nil
 }
 
-func (a *AuthServer) IsValidToken(ctx context.Context, req *api.IsValidTokenRequest) (res *api.IsValidTokenResponse, err error) {
+// GetAccessToken is an alias for IsValidToken. It returns a token given a username and hashed token.
+func (a *AuthServer) GetAccessToken(ctx context.Context, req *api.GetAccessTokenRequest) (res *api.GetAccessTokenResponse, err error) {
 	if ctx == nil {
-		return nil, status.Error(codes.Unauthenticated, "Unauthenticated.")
+		return nil, status.Error(codes.Unauthenticated, "unauthenticated")
 	}
 
 	client := getClient(ctx)
-
 	err = a.isValidToken(err, client)
 	if err != nil {
 		return nil, err
@@ -66,29 +66,16 @@ func (a *AuthServer) IsValidToken(ctx context.Context, req *api.IsValidTokenRequ
 	if err != nil {
 		return
 	}
-	res = &api.IsValidTokenResponse{
-		Domain: config["ONEPANEL_DOMAIN"],
-		Token:  client.Token,
+
+	domain := config.Domain()
+	if domain == nil {
+		return nil, fmt.Errorf("domain is not set")
 	}
 
-	return res, nil
-}
-
-// LogIn is an alias for IsValidToken. It returns a token given a username and hashed token.
-func (a *AuthServer) LogIn(ctx context.Context, req *api.LogInRequest) (res *api.LogInResponse, err error) {
-	resp, err := a.IsValidToken(ctx, &api.IsValidTokenRequest{
-		Username: req.Username,
-		Token:    req.TokenHash,
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	res = &api.LogInResponse{
-		Domain:   "",
-		Token:    resp.Token,
-		Username: resp.Username,
+	res = &api.GetAccessTokenResponse{
+		Domain:      *domain,
+		AccessToken: client.Token,
+		Username:    req.Username,
 	}
 
 	return
