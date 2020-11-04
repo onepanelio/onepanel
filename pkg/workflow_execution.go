@@ -534,6 +534,32 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 						}
 						newTemplateOrder = append(newTemplateOrder, templateRouteResource)
 					}
+
+					for i2, t2 := range wf.Spec.Templates {
+						if t2.Name == wf.Spec.Entrypoint {
+							if t2.DAG != nil {
+								tasks := wf.Spec.Templates[i2].DAG.Tasks
+								for it, t := range tasks {
+									for _, d := range t.Dependencies {
+										if d == "sys-send-status" {
+											wf.Spec.Templates[i2].DAG.Tasks[it].Dependencies = []string{d, "k8s-service-resource", "k8s-routes-resource"}
+										}
+									}
+								}
+								wf.Spec.Templates[i2].DAG.Tasks = append(tasks, []wfv1.DAGTask{
+									{
+										Name:     "k8s-services-resource",
+										Template: "k8s-services-resource",
+									},
+									{
+										Name:     "k8s-routes-resource",
+										Template: "k8s-routes-resource",
+									},
+								}...)
+							}
+						}
+					}
+
 					newTemplateOrder = append(newTemplateOrder, wf.Spec.Templates[tIdx])
 					//Inject clean-up
 				}
