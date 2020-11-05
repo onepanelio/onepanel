@@ -418,7 +418,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 			if sidecar, ok := t.Metadata.Labels["sidecar"]; ok {
 				if sidecar == "sys-visualization-sidecar" {
 					//Inject services, virtual routes
-					for sIdx, s := range t.Sidecars {
+					for _, s := range t.Sidecars {
 						if len(s.Ports) == 0 {
 							msg := fmt.Sprintf("sidecar %s must have at least one port.", s.Name)
 							return nil, util.NewUserError(codes.InvalidArgument, msg)
@@ -473,16 +473,6 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 								Kind:       "Service",
 							},
 							ObjectMeta: metav1.ObjectMeta{
-								Name: "{{workflow.uid}}",
-								OwnerReferences: []metav1.OwnerReference{
-									{
-										APIVersion:         "argoproj.io/v1alpha1",
-										Kind:               "Workflow",
-										Name:               "{{workflow.name}}",
-										UID:                "{{workflow.uid}}",
-										BlockOwnerDeletion: ptr.Bool(true),
-									},
-								},
 								Name: serviceNameUidDNSCompliant,
 							},
 							Spec: corev1.ServiceSpec{
@@ -505,9 +495,8 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 								},
 							},
 							Resource: &wfv1.ResourceTemplate{
-								Action:            "create",
-								SetOwnerReference: true,
-								Manifest:          serviceManifest,
+								Action:   "create",
+								Manifest: serviceManifest,
 							},
 						}
 						newTemplateOrder = append(newTemplateOrder, templateServiceResource)
@@ -518,16 +507,6 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 							"apiVersion": "networking.istio.io/v1alpha3",
 							"kind":       "VirtualService",
 							"metadata": metav1.ObjectMeta{
-								Name: "{{workflow.uid}}",
-								OwnerReferences: []metav1.OwnerReference{
-									{
-										APIVersion:         "argoproj.io/v1alpha1",
-										Kind:               "Workflow",
-										Name:               "{{workflow.name}}",
-										UID:                "{{workflow.uid}}",
-										BlockOwnerDeletion: ptr.Bool(true),
-									},
-								},
 								Name: virtualServiceNameUUID,
 							},
 							"spec": networking.VirtualService{
@@ -551,9 +530,8 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 								},
 							},
 							Resource: &wfv1.ResourceTemplate{
-								Action:            "create",
-								Manifest:          virtualServiceManifest,
-								SetOwnerReference: true,
+								Action:   "create",
+								Manifest: virtualServiceManifest,
 							},
 						}
 						newTemplateOrder = append(newTemplateOrder, templateRouteResource)
