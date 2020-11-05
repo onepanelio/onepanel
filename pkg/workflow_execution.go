@@ -485,6 +485,11 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 						serviceManifest := string(serviceManifestBytes)
 						templateServiceResource := wfv1.Template{
 							Name: "k8s-services-resource",
+							Metadata: wfv1.Metadata{
+								Annotations: map[string]string{
+									"sidecar.istio.io/inject": "false",
+								},
+							},
 							Resource: &wfv1.ResourceTemplate{
 								Action:           "create",
 								SuccessCondition: "status.succeeded > 0",
@@ -525,6 +530,11 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 
 						templateRouteResource := wfv1.Template{
 							Name: "k8s-routes-resource",
+							Metadata: wfv1.Metadata{
+								Annotations: map[string]string{
+									"sidecar.istio.io/inject": "false",
+								},
+							},
 							Resource: &wfv1.ResourceTemplate{
 								Action:           "create",
 								SuccessCondition: "status.succeeded > 0",
