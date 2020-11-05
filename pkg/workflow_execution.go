@@ -423,6 +423,18 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 							msg := fmt.Sprintf("sidecar %s must have at least one port.", s.Name)
 							return nil, util.NewUserError(codes.InvalidArgument, msg)
 						}
+
+						serviceNameUid := "s" + uuid.New().String() + "-" + namespace
+						serviceNameUidDNSCompliant, err := uid2.GenerateUID(serviceNameUid, 63)
+						if err != nil {
+							return nil, util.NewUserError(codes.InvalidArgument, err.Error())
+						}
+						serviceName := serviceNameUidDNSCompliant + ".alex001.onepanel.io" //todo grab domain
+
+						serviceTemplateName := "k8s-service-template-" + uuid.New().String()
+						serviceTaskName := "add-service-" + uuid.New().String()
+						virtualServiceTemplateName := "k8s-virtual-service-template-" + uuid.New().String()
+						virtualServiceTaskName := "add-virtual-service-" + uuid.New().String()
 						var servicePorts []corev1.ServicePort
 						var routes []*networking.HTTPRoute
 						for _, port := range s.Ports {
@@ -445,7 +457,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 								Route: []*networking.HTTPRouteDestination{
 									{
 										Destination: &networking.Destination{
-											Host: "{{workflow.uid}}",
+											Host: serviceNameUidDNSCompliant,
 											Port: &networking.PortSelector{
 												Number: uint32(port.ContainerPort),
 											},
@@ -471,11 +483,12 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 										BlockOwnerDeletion: ptr.Bool(true),
 									},
 								},
+								Name: serviceNameUidDNSCompliant,
 							},
 							Spec: corev1.ServiceSpec{
 								Ports: servicePorts,
 								Selector: map[string]string{
-									"app": "{{workflow.uid}}",
+									"app": serviceNameUidDNSCompliant,
 								},
 							},
 						}
@@ -485,7 +498,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 						}
 						serviceManifest := string(serviceManifestBytes)
 						templateServiceResource := wfv1.Template{
-							Name: "k8s-services-resource",
+							Name: serviceTemplateName,
 							Metadata: wfv1.Metadata{
 								Annotations: map[string]string{
 									"sidecar.istio.io/inject": "false",
@@ -498,8 +511,9 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 							},
 						}
 						newTemplateOrder = append(newTemplateOrder, templateServiceResource)
-
 						//routes
+						virtualServiceNameUUID := "{{workflow.uid}}-" + uuid.New().String()
+						hosts := []string{serviceName}
 						virtualService := map[string]interface{}{
 							"apiVersion": "networking.istio.io/v1alpha3",
 							"kind":       "VirtualService",
@@ -514,11 +528,12 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 										BlockOwnerDeletion: ptr.Bool(true),
 									},
 								},
+								Name: virtualServiceNameUUID,
 							},
 							"spec": networking.VirtualService{
 								Http:     routes,
 								Gateways: []string{"istio-system/ingressgateway"},
-								Hosts:    []string{"{{workflow.uid}}"},
+								Hosts:    hosts,
 							},
 						}
 
@@ -529,7 +544,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 						virtualServiceManifest := string(virtualServiceManifestBytes)
 
 						templateRouteResource := wfv1.Template{
-							Name: "k8s-routes-resource",
+							Name: virtualServiceTemplateName,
 							Metadata: wfv1.Metadata{
 								Annotations: map[string]string{
 									"sidecar.istio.io/inject": "false",
@@ -542,33 +557,33 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 							},
 						}
 						newTemplateOrder = append(newTemplateOrder, templateRouteResource)
-					}
 
-					for i2, t2 := range wf.Spec.Templates {
-						if t2.Name == wf.Spec.Entrypoint {
-							if t2.DAG != nil {
-								tasks := wf.Spec.Templates[i2].DAG.Tasks
-								for it, t := range tasks {
-									for _, d := range t.Dependencies {
-										if d == "sys-send-status" {
-											wf.Spec.Templates[i2].DAG.Tasks[it].Dependencies = []string{d, "k8s-services-resource", "k8s-routes-resource"}
+						for i2, t2 := range wf.Spec.Templates {
+							if t2.Name == wf.Spec.Entrypoint {
+								if t2.DAG != nil {
+									tasks := wf.Spec.Templates[i2].DAG.Tasks
+									for it, t := range tasks {
+										for _, d := range t.Dependencies {
+											if d == "sys-send-status" {
+												wf.Spec.Templates[i2].DAG.Tasks[it].Dependencies =
+													[]string{d, serviceTaskName, virtualServiceTaskName}
+											}
 										}
 									}
+									wf.Spec.Templates[i2].DAG.Tasks = append(tasks, []wfv1.DAGTask{
+										{
+											Name:     serviceTaskName,
+											Template: serviceTemplateName,
+										},
+										{
+											Name:     virtualServiceTaskName,
+											Template: virtualServiceTemplateName,
+										},
+									}...)
 								}
-								wf.Spec.Templates[i2].DAG.Tasks = append(tasks, []wfv1.DAGTask{
-									{
-										Name:     "k8s-services-resource",
-										Template: "k8s-services-resource",
-									},
-									{
-										Name:     "k8s-routes-resource",
-										Template: "k8s-routes-resource",
-									},
-								}...)
 							}
 						}
 					}
-
 					newTemplateOrder = append(newTemplateOrder, wf.Spec.Templates[tIdx])
 					//Inject clean-up
 				}
