@@ -491,10 +491,9 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 								},
 							},
 							Resource: &wfv1.ResourceTemplate{
-								Action:           "create",
-								SuccessCondition: "status.succeeded > 0",
-								FailureCondition: "status.failed > 3",
-								Manifest:         serviceManifest,
+								Action:            "create",
+								SetOwnerReference: true,
+								Manifest:          serviceManifest,
 							},
 						}
 						newTemplateOrder = append(newTemplateOrder, templateServiceResource)
@@ -536,10 +535,9 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 								},
 							},
 							Resource: &wfv1.ResourceTemplate{
-								Action:           "create",
-								SuccessCondition: "status.succeeded > 0",
-								FailureCondition: "status.failed > 3",
-								Manifest:         virtualServiceManifest,
+								Action:            "create",
+								Manifest:          virtualServiceManifest,
+								SetOwnerReference: true,
 							},
 						}
 						newTemplateOrder = append(newTemplateOrder, templateRouteResource)
