@@ -437,7 +437,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 									{
 										Uri: &networking.StringMatch{
 											MatchType: &networking.StringMatch_Prefix{
-												Prefix: "/sys/" + strconv.Itoa(sIdx) + "/" + s.Name},
+												Prefix: "/"},
 										},
 									},
 								},
