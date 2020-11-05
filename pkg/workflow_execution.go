@@ -552,7 +552,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 								for it, t := range tasks {
 									for _, d := range t.Dependencies {
 										if d == "sys-send-status" {
-											wf.Spec.Templates[i2].DAG.Tasks[it].Dependencies = []string{d, "k8s-service-resource", "k8s-routes-resource"}
+											wf.Spec.Templates[i2].DAG.Tasks[it].Dependencies = []string{d, "k8s-services-resource", "k8s-routes-resource"}
 										}
 									}
 								}
