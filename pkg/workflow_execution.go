@@ -429,7 +429,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 								Name:       port.Name,
 								Protocol:   port.Protocol,
 								Port:       port.ContainerPort,
-								TargetPort: intstr.FromInt(int(port.HostPort)),
+								TargetPort: intstr.FromInt(int(port.ContainerPort)),
 							}
 							servicePorts = append(servicePorts, servicePort)
 							route := networking.HTTPRoute{
