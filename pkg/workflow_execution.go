@@ -279,6 +279,14 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 			template.Metadata.Annotations = make(map[string]string)
 		}
 		template.Metadata.Annotations["sidecar.istio.io/inject"] = "false"
+		//todo not sure if we need istio yet
+		if template.Metadata.Labels != nil {
+			if sidecar, ok := template.Metadata.Labels["sidecar"]; ok {
+				if sidecar == "sys-visualization-sidecar" {
+					template.Metadata.Annotations["sidecar.istio.io/inject"] = "true"
+				}
+			}
+		}
 
 		if template.Container != nil {
 			// Mount dev/shm
