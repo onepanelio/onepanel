@@ -5,7 +5,7 @@ import (
 	"github.com/pressly/goose"
 )
 
-func init() {
+func initialize20201102104048() {
 	if _, ok := initializedMigrations[20201102104048]; !ok {
 		goose.AddMigration(Up20201102104048, Down20201102104048)
 		initializedMigrations[20201102104048] = true

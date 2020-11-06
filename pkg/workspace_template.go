@@ -541,7 +541,6 @@ func unmarshalWorkflowTemplate(spec *WorkspaceSpec, serviceManifest, virtualServ
 				continue
 			}
 
-			// TODO make sure this works
 			item, err := wfv1.ParseItem(`"` + v.Name + `"`)
 			if err != nil {
 				return "", err

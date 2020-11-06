@@ -9,7 +9,7 @@
 [![chat](https://img.shields.io/badge/support-dicussions-01579b)](https://github.com/onepanelio/core/discussions)
 [![license](https://img.shields.io/github/license/onepanelio/core?color=01579b)](https://opensource.org/licenses/Apache-2.0)
 
-Production scale, vision AI platform, with fully integrated components for model building, automated labeling, data processing and model training pipelines.
+Production scale vision AI platform with fully integrated components for model building, automated labeling, data processing and model training pipelines.
 
 <img width="100%" src="img/onepanel.gif">
 

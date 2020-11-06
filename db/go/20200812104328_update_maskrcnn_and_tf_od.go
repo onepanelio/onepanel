@@ -37,7 +37,7 @@ const maskRCNNWorkflowTemplate = `arguments:
   - name: sys-num-classes
     displayName: Number of classes
     hint: Number of classes (i.e in CVAT taks) + 1 for background
-    value: 81
+    value: '81'
     visibility: private
     
   - name: extras
@@ -265,7 +265,7 @@ const tensorflowObjectDetectionWorkflowTemplate = `arguments:
     visibility: public
     
   - name: sys-num-classes
-    value: 81
+    value: '81'
     hint: Number of classes
     displayName: Number of classes
     visibility: private

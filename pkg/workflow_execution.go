@@ -1192,7 +1192,6 @@ func (c *Client) RetryWorkflowExecution(namespace, uid string) (workflow *Workfl
 		return
 	}
 
-	// TODO review
 	h := hydrator.New(sqldb.ExplosiveOffloadNodeStatusRepo)
 	wf, err = argoutil.RetryWorkflow(c, h, c.ArgoprojV1alpha1().Workflows(namespace), wf, true, "")
 
