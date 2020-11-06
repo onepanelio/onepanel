@@ -35,7 +35,7 @@ const maskRCNNTemplate2 = `arguments:
   - name: cvat-num-classes
     displayName: Number of classes
     hint: Number of classes (i.e in CVAT taks) + 1 for background
-    value: 81
+    value: '81'
     visibility: private
     
   - name: hyperparameters
