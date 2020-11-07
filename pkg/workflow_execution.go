@@ -423,163 +423,164 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 
 	var newTemplateOrder []wfv1.Template
 	for tIdx, t := range wf.Spec.Templates {
-		if t.Metadata.Labels != nil {
-			if sidecar, ok := t.Metadata.Labels["sidecar"]; ok {
-				if sidecar == "sys-visualization-sidecar" {
-					//Inject services, virtual routes
-					for _, s := range t.Sidecars {
-						if len(s.Ports) == 0 {
-							msg := fmt.Sprintf("sidecar %s must have at least one port.", s.Name)
-							return nil, util.NewUserError(codes.InvalidArgument, msg)
-						}
+		//Inject services, virtual routes
+		for _, s := range t.Sidecars {
+			//If TTY is true, sidecar needs to be accessible by HTTP
+			//Otherwise, we skip the sidecar
+			if s.TTY != true {
+				continue
+			}
+			if len(s.Ports) == 0 {
+				msg := fmt.Sprintf("sidecar %s must have at least one port.", s.Name)
+				return nil, util.NewUserError(codes.InvalidArgument, msg)
+			}
 
-						serviceNameUid := "s" + uuid.New().String() + "-" + namespace
-						serviceNameUidDNSCompliant, err := uid2.GenerateUID(serviceNameUid, 63)
-						if err != nil {
-							return nil, util.NewUserError(codes.InvalidArgument, err.Error())
-						}
-						serviceName := serviceNameUidDNSCompliant + ".alex001.onepanel.io" //todo grab domain
+			serviceNameUid := "s" + uuid.New().String() + "-" + namespace
+			serviceNameUidDNSCompliant, err := uid2.GenerateUID(serviceNameUid, 63)
+			if err != nil {
+				return nil, util.NewUserError(codes.InvalidArgument, err.Error())
+			}
 
-						serviceTemplateName := "k8s-service-template-" + uuid.New().String()
-						serviceTaskName := "add-service-" + uuid.New().String()
-						virtualServiceTemplateName := "k8s-virtual-service-template-" + uuid.New().String()
-						virtualServiceTaskName := "add-virtual-service-" + uuid.New().String()
-						var servicePorts []corev1.ServicePort
-						var routes []*networking.HTTPRoute
-						for _, port := range s.Ports {
-							servicePort := corev1.ServicePort{
-								Name:       port.Name,
-								Protocol:   port.Protocol,
-								Port:       port.ContainerPort,
-								TargetPort: intstr.FromInt(int(port.ContainerPort)),
-							}
-							servicePorts = append(servicePorts, servicePort)
-							route := networking.HTTPRoute{
-								Match: []*networking.HTTPMatchRequest{
-									{
-										Uri: &networking.StringMatch{
-											MatchType: &networking.StringMatch_Prefix{
-												Prefix: "/"},
-										},
-									},
-								},
-								Route: []*networking.HTTPRouteDestination{
-									{
-										Destination: &networking.Destination{
-											Host: serviceNameUidDNSCompliant,
-											Port: &networking.PortSelector{
-												Number: uint32(port.ContainerPort),
-											},
-										},
-									},
-								},
-							}
-							routes = append(routes, &route)
-						}
-						service := corev1.Service{
-							TypeMeta: metav1.TypeMeta{
-								APIVersion: "v1",
-								Kind:       "Service",
+			serviceName := serviceNameUidDNSCompliant + "." + *c.systemConfig.Domain()
+
+			serviceTemplateName := "k8s-service-template-" + uuid.New().String()
+			serviceTaskName := "add-service-" + uuid.New().String()
+			virtualServiceTemplateName := "k8s-virtual-service-template-" + uuid.New().String()
+			virtualServiceTaskName := "add-virtual-service-" + uuid.New().String()
+			var servicePorts []corev1.ServicePort
+			var routes []*networking.HTTPRoute
+			for _, port := range s.Ports {
+				servicePort := corev1.ServicePort{
+					Name:       port.Name,
+					Protocol:   port.Protocol,
+					Port:       port.ContainerPort,
+					TargetPort: intstr.FromInt(int(port.ContainerPort)),
+				}
+				servicePorts = append(servicePorts, servicePort)
+				route := networking.HTTPRoute{
+					Match: []*networking.HTTPMatchRequest{
+						{
+							Uri: &networking.StringMatch{
+								MatchType: &networking.StringMatch_Prefix{
+									Prefix: "/"},
 							},
-							ObjectMeta: metav1.ObjectMeta{
-								Name: serviceNameUidDNSCompliant,
-							},
-							Spec: corev1.ServiceSpec{
-								Ports: servicePorts,
-								Selector: map[string]string{
-									"app": serviceNameUidDNSCompliant,
+						},
+					},
+					Route: []*networking.HTTPRouteDestination{
+						{
+							Destination: &networking.Destination{
+								Host: serviceNameUidDNSCompliant,
+								Port: &networking.PortSelector{
+									Number: uint32(port.ContainerPort),
 								},
 							},
-						}
-						serviceManifestBytes, err := yaml2.Marshal(service)
-						if err != nil {
-							return nil, err
-						}
-						serviceManifest := string(serviceManifestBytes)
-						templateServiceResource := wfv1.Template{
-							Name: serviceTemplateName,
-							Metadata: wfv1.Metadata{
-								Annotations: map[string]string{
-									"sidecar.istio.io/inject": "false",
-								},
-							},
-							Resource: &wfv1.ResourceTemplate{
-								Action:   "create",
-								Manifest: serviceManifest,
-							},
-						}
-						newTemplateOrder = append(newTemplateOrder, templateServiceResource)
-						//routes
-						virtualServiceNameUUID := "{{workflow.uid}}-" + uuid.New().String()
-						hosts := []string{serviceName}
-						virtualService := map[string]interface{}{
-							"apiVersion": "networking.istio.io/v1alpha3",
-							"kind":       "VirtualService",
-							"metadata": metav1.ObjectMeta{
-								Name: virtualServiceNameUUID,
-							},
-							"spec": networking.VirtualService{
-								Http:     routes,
-								Gateways: []string{"istio-system/ingressgateway"},
-								Hosts:    hosts,
-							},
-						}
+						},
+					},
+				}
+				routes = append(routes, &route)
+			}
+			service := corev1.Service{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "Service",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: serviceNameUidDNSCompliant,
+				},
+				Spec: corev1.ServiceSpec{
+					Ports: servicePorts,
+					Selector: map[string]string{
+						"app": serviceNameUidDNSCompliant,
+					},
+				},
+			}
+			//Istio needs to know which pod to setup the route to
+			if wf.Spec.Templates[tIdx].Metadata.Labels == nil {
+				wf.Spec.Templates[tIdx].Metadata.Labels = make(map[string]string)
+			}
+			wf.Spec.Templates[tIdx].Metadata.Labels["app"] = serviceNameUidDNSCompliant
+			serviceManifestBytes, err := yaml2.Marshal(service)
+			if err != nil {
+				return nil, err
+			}
+			serviceManifest := string(serviceManifestBytes)
+			templateServiceResource := wfv1.Template{
+				Name: serviceTemplateName,
+				Metadata: wfv1.Metadata{
+					Annotations: map[string]string{
+						"sidecar.istio.io/inject": "false",
+					},
+				},
+				Resource: &wfv1.ResourceTemplate{
+					Action:   "create",
+					Manifest: serviceManifest,
+				},
+			}
+			newTemplateOrder = append(newTemplateOrder, templateServiceResource)
+			//routes
+			virtualServiceNameUUID := "{{workflow.uid}}-" + uuid.New().String()
+			hosts := []string{serviceName}
+			virtualService := map[string]interface{}{
+				"apiVersion": "networking.istio.io/v1alpha3",
+				"kind":       "VirtualService",
+				"metadata": metav1.ObjectMeta{
+					Name: virtualServiceNameUUID,
+				},
+				"spec": networking.VirtualService{
+					Http:     routes,
+					Gateways: []string{"istio-system/ingressgateway"},
+					Hosts:    hosts,
+				},
+			}
 
-						virtualServiceManifestBytes, err := yaml2.Marshal(virtualService)
-						if err != nil {
-							return nil, err
-						}
-						virtualServiceManifest := string(virtualServiceManifestBytes)
+			virtualServiceManifestBytes, err := yaml2.Marshal(virtualService)
+			if err != nil {
+				return nil, err
+			}
+			virtualServiceManifest := string(virtualServiceManifestBytes)
 
-						templateRouteResource := wfv1.Template{
-							Name: virtualServiceTemplateName,
-							Metadata: wfv1.Metadata{
-								Annotations: map[string]string{
-									"sidecar.istio.io/inject": "false",
-								},
-							},
-							Resource: &wfv1.ResourceTemplate{
-								Action:   "create",
-								Manifest: virtualServiceManifest,
-							},
-						}
-						newTemplateOrder = append(newTemplateOrder, templateRouteResource)
+			templateRouteResource := wfv1.Template{
+				Name: virtualServiceTemplateName,
+				Metadata: wfv1.Metadata{
+					Annotations: map[string]string{
+						"sidecar.istio.io/inject": "false",
+					},
+				},
+				Resource: &wfv1.ResourceTemplate{
+					Action:   "create",
+					Manifest: virtualServiceManifest,
+				},
+			}
+			newTemplateOrder = append(newTemplateOrder, templateRouteResource)
 
-						for i2, t2 := range wf.Spec.Templates {
-							if t2.Name == wf.Spec.Entrypoint {
-								if t2.DAG != nil {
-									tasks := wf.Spec.Templates[i2].DAG.Tasks
-									for it, t := range tasks {
-										for _, d := range t.Dependencies {
-											if d == "sys-send-status" {
-												wf.Spec.Templates[i2].DAG.Tasks[it].Dependencies =
-													[]string{d, serviceTaskName, virtualServiceTaskName}
-											}
-										}
-									}
-									wf.Spec.Templates[i2].DAG.Tasks = append(tasks, []wfv1.DAGTask{
-										{
-											Name:     serviceTaskName,
-											Template: serviceTemplateName,
-										},
-										{
-											Name:     virtualServiceTaskName,
-											Template: virtualServiceTemplateName,
-										},
-									}...)
+			for i2, t2 := range wf.Spec.Templates {
+				if t2.Name == wf.Spec.Entrypoint {
+					if t2.DAG != nil {
+						tasks := wf.Spec.Templates[i2].DAG.Tasks
+						for it, t := range tasks {
+							for _, d := range t.Dependencies {
+								if d == "sys-send-status" {
+									wf.Spec.Templates[i2].DAG.Tasks[it].Dependencies =
+										[]string{d, serviceTaskName, virtualServiceTaskName}
 								}
 							}
 						}
+						wf.Spec.Templates[i2].DAG.Tasks = append(tasks, []wfv1.DAGTask{
+							{
+								Name:     serviceTaskName,
+								Template: serviceTemplateName,
+							},
+							{
+								Name:     virtualServiceTaskName,
+								Template: virtualServiceTemplateName,
+							},
+						}...)
 					}
-					newTemplateOrder = append(newTemplateOrder, wf.Spec.Templates[tIdx])
-					//Inject clean-up
 				}
-			} else {
-				newTemplateOrder = append(newTemplateOrder, wf.Spec.Templates[tIdx])
 			}
-		} else {
-			newTemplateOrder = append(newTemplateOrder, wf.Spec.Templates[tIdx])
 		}
+		newTemplateOrder = append(newTemplateOrder, wf.Spec.Templates[tIdx])
+		//Inject clean-up
 	}
 	wf.Spec.Templates = newTemplateOrder
 	createdArgoWorkflow, err := c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
