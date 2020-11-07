@@ -435,13 +435,13 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 				return nil, util.NewUserError(codes.InvalidArgument, msg)
 			}
 
-			serviceNameUid := "s" + uuid.New().String() + "-" + namespace
-			serviceNameUidDNSCompliant, err := uid2.GenerateUID(serviceNameUid, 63)
+			serviceNameUID := "s" + uuid.New().String() + "-" + namespace
+			serviceNameUIDDNSCompliant, err := uid2.GenerateUID(serviceNameUID, 63)
 			if err != nil {
 				return nil, util.NewUserError(codes.InvalidArgument, err.Error())
 			}
 
-			serviceName := serviceNameUidDNSCompliant + "." + *c.systemConfig.Domain()
+			serviceName := serviceNameUIDDNSCompliant + "." + *c.systemConfig.Domain()
 
 			serviceTemplateName := "k8s-service-template-" + uuid.New().String()
 			serviceTaskName := "add-service-" + uuid.New().String()
@@ -469,7 +469,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 					Route: []*networking.HTTPRouteDestination{
 						{
 							Destination: &networking.Destination{
-								Host: serviceNameUidDNSCompliant,
+								Host: serviceNameUIDDNSCompliant,
 								Port: &networking.PortSelector{
 									Number: uint32(port.ContainerPort),
 								},
@@ -485,12 +485,12 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 					Kind:       "Service",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name: serviceNameUidDNSCompliant,
+					Name: serviceNameUIDDNSCompliant,
 				},
 				Spec: corev1.ServiceSpec{
 					Ports: servicePorts,
 					Selector: map[string]string{
-						"app": serviceNameUidDNSCompliant,
+						"app": serviceNameUIDDNSCompliant,
 					},
 				},
 			}
@@ -498,7 +498,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 			if wf.Spec.Templates[tIdx].Metadata.Labels == nil {
 				wf.Spec.Templates[tIdx].Metadata.Labels = make(map[string]string)
 			}
-			wf.Spec.Templates[tIdx].Metadata.Labels["app"] = serviceNameUidDNSCompliant
+			wf.Spec.Templates[tIdx].Metadata.Labels["app"] = serviceNameUIDDNSCompliant
 			serviceManifestBytes, err := yaml2.Marshal(service)
 			if err != nil {
 				return nil, err
