@@ -279,12 +279,13 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 			template.Metadata.Annotations = make(map[string]string)
 		}
 		template.Metadata.Annotations["sidecar.istio.io/inject"] = "false"
-		//todo not sure if we need istio yet
-		if template.Metadata.Labels != nil {
-			if sidecar, ok := template.Metadata.Labels["sidecar"]; ok {
-				if sidecar == "sys-visualization-sidecar" {
-					template.Metadata.Annotations["sidecar.istio.io/inject"] = "true"
-				}
+		//For workflows with accessible sidecars, we need istio
+		//Istio does not prevent the main container from stopping
+		for _, s := range template.Sidecars {
+			if s.TTY == true {
+				template.Metadata.Annotations["sidecar.istio.io/inject"] = "true"
+				//Only need one instance to require istio injection
+				break
 			}
 		}
 
