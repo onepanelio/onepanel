@@ -435,7 +435,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 				return nil, util.NewUserError(codes.InvalidArgument, msg)
 			}
 
-			serviceNameUID := "s" + uuid.New().String() + "-" + namespace
+			serviceNameUID := "s" + uuid.New().String() + "--" + namespace
 			serviceNameUIDDNSCompliant, err := uid2.GenerateUID(serviceNameUID, 63)
 			if err != nil {
 				return nil, util.NewUserError(codes.InvalidArgument, err.Error())
