@@ -498,7 +498,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 				Spec: corev1.ServiceSpec{
 					Ports: servicePorts,
 					Selector: map[string]string{
-						"app": serviceNameUIDDNSCompliant,
+						serviceTaskName: serviceNameUIDDNSCompliant,
 					},
 				},
 			}
@@ -506,7 +506,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 			if wf.Spec.Templates[tIdx].Metadata.Labels == nil {
 				wf.Spec.Templates[tIdx].Metadata.Labels = make(map[string]string)
 			}
-			wf.Spec.Templates[tIdx].Metadata.Labels["app"] = serviceNameUIDDNSCompliant
+			wf.Spec.Templates[tIdx].Metadata.Labels[serviceTaskName] = serviceNameUIDDNSCompliant
 			serviceManifestBytes, err := yaml2.Marshal(service)
 			if err != nil {
 				return nil, err
