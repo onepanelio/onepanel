@@ -1808,13 +1808,13 @@ func injectWorkflowExecutionStatusCaller(wf *wfv1.Workflow, phase wfv1.NodePhase
 				for j, task := range t.DAG.Tasks {
 					if task.Dependencies == nil {
 						wf.Spec.Templates[i].DAG.Tasks[j].Dependencies = []string{containerTemplate.Name}
-						wf.Spec.Templates[i].DAG.Tasks = append(t.DAG.Tasks, wfv1.DAGTask{
-							Name:     containerTemplate.Name,
-							Template: containerTemplate.Name,
-						})
 					}
 				}
 			}
+			wf.Spec.Templates[i].DAG.Tasks = append(t.DAG.Tasks, wfv1.DAGTask{
+				Name:     containerTemplate.Name,
+				Template: containerTemplate.Name,
+			})
 			break
 		}
 	}
