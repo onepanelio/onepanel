@@ -443,10 +443,18 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 
 			serviceName := serviceNameUIDDNSCompliant + "." + *c.systemConfig.Domain()
 
-			serviceTemplateName := "k8s-service-template-" + uuid.New().String()
-			serviceTaskName := "add-service-" + uuid.New().String()
-			virtualServiceTemplateName := "k8s-virtual-service-template-" + uuid.New().String()
-			virtualServiceTaskName := "add-virtual-service-" + uuid.New().String()
+			serviceTemplateName := uuid.New().String()
+			serviceTemplateNameAdd := "k8s-service-template-add-" + serviceTemplateName
+			serviceTemplateNameDelete := "k8s-service-template-delete-" + serviceTemplateName
+			serviceTaskName := "service-" + uuid.New().String()
+			serviceAddTaskName := "add-" + serviceTaskName
+			serviceDeleteTaskName := "delete-" + serviceTaskName
+			virtualServiceTemplateName := uuid.New().String()
+			virtualServiceTemplateNameAdd := "k8s-virtual-service-template-add-" + virtualServiceTemplateName
+			virtualServiceTemplateNameDelete := "k8s-virtual-service-template-delete-" + virtualServiceTemplateName
+			virtualServiceTaskName := "virtual-service-" + uuid.New().String()
+			virtualServiceAddTaskName := "add-" + virtualServiceTaskName
+			virtualServiceDeleteTaskName := "delete-" + virtualServiceTaskName
 			var servicePorts []corev1.ServicePort
 			var routes []*networking.HTTPRoute
 			for _, port := range s.Ports {
@@ -505,7 +513,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 			}
 			serviceManifest := string(serviceManifestBytes)
 			templateServiceResource := wfv1.Template{
-				Name: serviceTemplateName,
+				Name: serviceTemplateNameAdd,
 				Metadata: wfv1.Metadata{
 					Annotations: map[string]string{
 						"sidecar.istio.io/inject": "false",
@@ -540,7 +548,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 			virtualServiceManifest := string(virtualServiceManifestBytes)
 
 			templateRouteResource := wfv1.Template{
-				Name: virtualServiceTemplateName,
+				Name: virtualServiceTemplateNameAdd,
 				Metadata: wfv1.Metadata{
 					Annotations: map[string]string{
 						"sidecar.istio.io/inject": "false",
@@ -561,26 +569,81 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 							for _, d := range t.Dependencies {
 								if d == "sys-send-status" {
 									wf.Spec.Templates[i2].DAG.Tasks[it].Dependencies =
-										[]string{d, serviceTaskName, virtualServiceTaskName}
+										[]string{d, serviceAddTaskName, virtualServiceAddTaskName}
 								}
 							}
 						}
 						wf.Spec.Templates[i2].DAG.Tasks = append(tasks, []wfv1.DAGTask{
 							{
-								Name:     serviceTaskName,
-								Template: serviceTemplateName,
+								Name:     serviceAddTaskName,
+								Template: serviceTemplateNameAdd,
 							},
 							{
-								Name:     virtualServiceTaskName,
-								Template: virtualServiceTemplateName,
+								Name:     virtualServiceAddTaskName,
+								Template: virtualServiceTemplateNameAdd,
 							},
 						}...)
 					}
 				}
 			}
+			//Inject clean-up for service and virtualservice
+			templateServiceDeleteResource := wfv1.Template{
+				Name: serviceTemplateNameDelete,
+				Metadata: wfv1.Metadata{
+					Annotations: map[string]string{
+						"sidecar.istio.io/inject": "false",
+					},
+				},
+				Resource: &wfv1.ResourceTemplate{
+					Action:   "delete",
+					Manifest: serviceManifest,
+				},
+			}
+			newTemplateOrder = append(newTemplateOrder, templateServiceDeleteResource)
+
+			templateRouteDeleteResource := wfv1.Template{
+				Name: virtualServiceTemplateNameDelete,
+				Metadata: wfv1.Metadata{
+					Annotations: map[string]string{
+						"sidecar.istio.io/inject": "false",
+					},
+				},
+				Resource: &wfv1.ResourceTemplate{
+					Action:   "delete",
+					Manifest: virtualServiceManifest,
+				},
+			}
+
+			newTemplateOrder = append(newTemplateOrder, templateRouteDeleteResource)
+
+			dagTasks := []wfv1.DAGTask{{
+				Name:     serviceDeleteTaskName,
+				Template: serviceTemplateNameDelete,
+			},
+				{Name: virtualServiceDeleteTaskName,
+					Template: virtualServiceTemplateNameDelete,
+				},
+			}
+			if wf.Spec.OnExit != "" {
+				for _, t := range wf.Spec.Templates {
+					if t.Name == wf.Spec.OnExit {
+						t.DAG.Tasks = append(t.DAG.Tasks, dagTasks...)
+						break
+					}
+				}
+			} else {
+				exitHandlerDAG := wfv1.Template{
+					Name: "exit-handler",
+					DAG: &wfv1.DAGTemplate{
+						Tasks: dagTasks,
+					},
+				}
+				wf.Spec.OnExit = "exit-handler"
+				wf.Spec.Templates = append(wf.Spec.Templates, exitHandlerDAG)
+			}
 		}
 		newTemplateOrder = append(newTemplateOrder, wf.Spec.Templates[tIdx])
-		//Inject clean-up
+
 	}
 	wf.Spec.Templates = newTemplateOrder
 	createdArgoWorkflow, err := c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
