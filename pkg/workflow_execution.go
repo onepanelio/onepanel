@@ -421,6 +421,41 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 		return nil, err
 	}
 
+	newTemplateOrder, err := c.injectAccessForSidecars(namespace, wf)
+	if err != nil {
+		return nil, err
+	}
+	wf.Spec.Templates = newTemplateOrder
+	createdArgoWorkflow, err := c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
+	if err != nil {
+		return nil, err
+	}
+
+	createdWorkflow = &WorkflowExecution{
+		Name:         createdArgoWorkflow.Name,
+		CreatedAt:    createdArgoWorkflow.CreationTimestamp.UTC(),
+		ArgoWorkflow: createdArgoWorkflow,
+		WorkflowTemplate: &WorkflowTemplate{
+			WorkflowTemplateVersionID: workflowTemplateVersionID,
+		},
+		Parameters: opts.Parameters,
+		Labels:     labels,
+	}
+
+	if err = createdWorkflow.GenerateUID(createdArgoWorkflow.Name); err != nil {
+		return nil, err
+	}
+
+	//Create an entry for workflow_executions statistic
+	//CURL code will hit the API endpoint that will update the db row
+	if err := c.createWorkflowExecutionDB(namespace, createdWorkflow); err != nil {
+		return nil, err
+	}
+
+	return
+}
+
+func (c *Client) injectAccessForSidecars(namespace string, wf *wfv1.Workflow) ([]wfv1.Template, error) {
 	var newTemplateOrder []wfv1.Template
 	for tIdx, t := range wf.Spec.Templates {
 		//Inject services, virtual routes
@@ -645,34 +680,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 		newTemplateOrder = append(newTemplateOrder, wf.Spec.Templates[tIdx])
 
 	}
-	wf.Spec.Templates = newTemplateOrder
-	createdArgoWorkflow, err := c.ArgoprojV1alpha1().Workflows(namespace).Create(wf)
-	if err != nil {
-		return nil, err
-	}
-
-	createdWorkflow = &WorkflowExecution{
-		Name:         createdArgoWorkflow.Name,
-		CreatedAt:    createdArgoWorkflow.CreationTimestamp.UTC(),
-		ArgoWorkflow: createdArgoWorkflow,
-		WorkflowTemplate: &WorkflowTemplate{
-			WorkflowTemplateVersionID: workflowTemplateVersionID,
-		},
-		Parameters: opts.Parameters,
-		Labels:     labels,
-	}
-
-	if err = createdWorkflow.GenerateUID(createdArgoWorkflow.Name); err != nil {
-		return nil, err
-	}
-
-	//Create an entry for workflow_executions statistic
-	//CURL code will hit the API endpoint that will update the db row
-	if err := c.createWorkflowExecutionDB(namespace, createdWorkflow); err != nil {
-		return nil, err
-	}
-
-	return
+	return newTemplateOrder, nil
 }
 
 func ensureWorkflowRunsOnDedicatedNode(wf *wfv1.Workflow, config SystemConfig) (*wfv1.Workflow, error) {
