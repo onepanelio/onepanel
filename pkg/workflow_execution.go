@@ -457,6 +457,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 
 func (c *Client) injectAccessForSidecars(namespace string, wf *wfv1.Workflow) ([]wfv1.Template, error) {
 	var newTemplateOrder []wfv1.Template
+	taskSysSendStatusName := "sys-send-status"
 	for tIdx, t := range wf.Spec.Templates {
 		//Inject services, virtual routes
 		for _, s := range t.Sidecars {
@@ -600,22 +601,29 @@ func (c *Client) injectAccessForSidecars(namespace string, wf *wfv1.Workflow) ([
 				if t2.Name == wf.Spec.Entrypoint {
 					if t2.DAG != nil {
 						tasks := wf.Spec.Templates[i2].DAG.Tasks
-						for it, t := range tasks {
-							for _, d := range t.Dependencies {
-								if d == "sys-send-status" {
-									wf.Spec.Templates[i2].DAG.Tasks[it].Dependencies =
-										[]string{d, serviceAddTaskName, virtualServiceAddTaskName}
-								}
+						t := tasks[0]
+						sysDepFound := false
+						for _, d := range t.Dependencies {
+							if d == taskSysSendStatusName {
+								sysDepFound = true
+								wf.Spec.Templates[i2].DAG.Tasks[0].Dependencies =
+									[]string{virtualServiceAddTaskName}
 							}
 						}
+						if sysDepFound == false {
+							wf.Spec.Templates[i2].DAG.Tasks[0].Dependencies = append(wf.Spec.Templates[i2].DAG.Tasks[0].Dependencies, virtualServiceAddTaskName)
+						}
+
 						wf.Spec.Templates[i2].DAG.Tasks = append(tasks, []wfv1.DAGTask{
 							{
-								Name:     serviceAddTaskName,
-								Template: serviceTemplateNameAdd,
+								Name:         serviceAddTaskName,
+								Template:     serviceTemplateNameAdd,
+								Dependencies: []string{taskSysSendStatusName},
 							},
 							{
-								Name:     virtualServiceAddTaskName,
-								Template: virtualServiceTemplateNameAdd,
+								Name:         virtualServiceAddTaskName,
+								Template:     virtualServiceTemplateNameAdd,
+								Dependencies: []string{serviceAddTaskName},
 							},
 						}...)
 					}
