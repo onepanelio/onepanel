@@ -458,6 +458,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 func (c *Client) injectAccessForSidecars(namespace string, wf *wfv1.Workflow) ([]wfv1.Template, error) {
 	var newTemplateOrder []wfv1.Template
 	taskSysSendStatusName := "sys-send-status"
+	taskSysSendExitStats := "sys-send-exit-stats"
 	for tIdx, t := range wf.Spec.Templates {
 		//Inject services, virtual routes
 		for _, s := range t.Sidecars {
@@ -659,12 +660,16 @@ func (c *Client) injectAccessForSidecars(namespace string, wf *wfv1.Workflow) ([
 
 			newTemplateOrder = append(newTemplateOrder, templateRouteDeleteResource)
 
-			dagTasks := []wfv1.DAGTask{{
-				Name:     serviceDeleteTaskName,
-				Template: serviceTemplateNameDelete,
-			},
-				{Name: virtualServiceDeleteTaskName,
-					Template: virtualServiceTemplateNameDelete,
+			dagTasks := []wfv1.DAGTask{
+				{
+					Name:         serviceDeleteTaskName,
+					Template:     serviceTemplateNameDelete,
+					Dependencies: []string{taskSysSendExitStats},
+				},
+				{
+					Name:         virtualServiceDeleteTaskName,
+					Template:     virtualServiceTemplateNameDelete,
+					Dependencies: []string{serviceDeleteTaskName},
 				},
 			}
 			if wf.Spec.OnExit != "" {
