@@ -665,9 +665,8 @@ func (c *Client) injectAccessForSidecars(namespace string, wf *wfv1.Workflow) ([
 
 			dagTasks := []wfv1.DAGTask{
 				{
-					Name:         serviceDeleteTaskName,
-					Template:     serviceTemplateNameDelete,
-					Dependencies: []string{taskSysSendExitStats},
+					Name:     serviceDeleteTaskName,
+					Template: serviceTemplateNameDelete,
 				},
 				{
 					Name:         virtualServiceDeleteTaskName,
@@ -679,6 +678,16 @@ func (c *Client) injectAccessForSidecars(namespace string, wf *wfv1.Workflow) ([
 				for _, t := range wf.Spec.Templates {
 					if t.Name == wf.Spec.OnExit {
 						t.DAG.Tasks = append(t.DAG.Tasks, dagTasks...)
+						sysExitDepFound := false
+						for dti, dt := range t.DAG.Tasks {
+							if dt.Name == taskSysSendExitStats {
+								sysExitDepFound = true
+								t.DAG.Tasks[dti].Dependencies = []string{virtualServiceDeleteTaskName}
+							}
+						}
+						if sysExitDepFound == false {
+							t.DAG.Tasks[0].Dependencies = append(t.DAG.Tasks[0].Dependencies, virtualServiceDeleteTaskName)
+						}
 						break
 					}
 				}
