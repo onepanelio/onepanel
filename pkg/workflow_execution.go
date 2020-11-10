@@ -682,7 +682,7 @@ func (c *Client) injectAccessForSidecars(namespace string, wf *wfv1.Workflow) ([
 						for dti, dt := range t.DAG.Tasks {
 							if dt.Name == taskSysSendExitStats {
 								sysExitDepFound = true
-								t.DAG.Tasks[dti].Dependencies = []string{virtualServiceDeleteTaskName}
+								t.DAG.Tasks[dti].Dependencies = append(t.DAG.Tasks[dti].Dependencies, virtualServiceDeleteTaskName)
 							}
 						}
 						if sysExitDepFound == false {
