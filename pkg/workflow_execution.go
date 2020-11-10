@@ -565,6 +565,9 @@ func (c *Client) injectAccessForSidecars(namespace string, wf *wfv1.Workflow) ([
 			//routes
 			virtualServiceNameUUID := "vs-" + uuid.New().String()
 			hosts := []string{serviceName}
+			wf.Spec.Templates[tIdx].Outputs.Parameters = append(wf.Spec.Templates[tIdx].Outputs.Parameters,
+				wfv1.Parameter{Name: "sys-sidecar-url--" + s.Name, Value: &serviceName},
+			)
 			virtualService := map[string]interface{}{
 				"apiVersion": "networking.istio.io/v1alpha3",
 				"kind":       "VirtualService",
