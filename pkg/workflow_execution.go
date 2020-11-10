@@ -561,7 +561,7 @@ func (c *Client) injectAccessForSidecars(namespace string, wf *wfv1.Workflow) ([
 			}
 			newTemplateOrder = append(newTemplateOrder, templateServiceResource)
 			//routes
-			virtualServiceNameUUID := "{{workflow.uid}}-" + uuid.New().String()
+			virtualServiceNameUUID := "vs-" + uuid.New().String()
 			hosts := []string{serviceName}
 			virtualService := map[string]interface{}{
 				"apiVersion": "networking.istio.io/v1alpha3",
