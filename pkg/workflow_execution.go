@@ -479,17 +479,17 @@ func (c *Client) injectAccessForSidecars(namespace string, wf *wfv1.Workflow) ([
 			serviceName := serviceNameUIDDNSCompliant + "." + *c.systemConfig.Domain()
 
 			serviceTemplateName := uuid.New().String()
-			serviceTemplateNameAdd := "k8s-service-template-add-" + serviceTemplateName
-			serviceTemplateNameDelete := "k8s-service-template-delete-" + serviceTemplateName
+			serviceTemplateNameAdd := "sys-k8s-service-template-add-" + serviceTemplateName
+			serviceTemplateNameDelete := "sys-k8s-service-template-delete-" + serviceTemplateName
 			serviceTaskName := "service-" + uuid.New().String()
-			serviceAddTaskName := "add-" + serviceTaskName
-			serviceDeleteTaskName := "delete-" + serviceTaskName
+			serviceAddTaskName := "sys-add-" + serviceTaskName
+			serviceDeleteTaskName := "sys-delete-" + serviceTaskName
 			virtualServiceTemplateName := uuid.New().String()
-			virtualServiceTemplateNameAdd := "k8s-virtual-service-template-add-" + virtualServiceTemplateName
-			virtualServiceTemplateNameDelete := "k8s-virtual-service-template-delete-" + virtualServiceTemplateName
+			virtualServiceTemplateNameAdd := "sys-k8s-virtual-service-template-add-" + virtualServiceTemplateName
+			virtualServiceTemplateNameDelete := "sys-k8s-virtual-service-template-delete-" + virtualServiceTemplateName
 			virtualServiceTaskName := "virtual-service-" + uuid.New().String()
-			virtualServiceAddTaskName := "add-" + virtualServiceTaskName
-			virtualServiceDeleteTaskName := "delete-" + virtualServiceTaskName
+			virtualServiceAddTaskName := "sys-add-" + virtualServiceTaskName
+			virtualServiceDeleteTaskName := "sys-delete-" + virtualServiceTaskName
 			var servicePorts []corev1.ServicePort
 			var routes []*networking.HTTPRoute
 			for _, port := range s.Ports {
