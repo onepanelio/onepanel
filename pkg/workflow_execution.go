@@ -461,7 +461,7 @@ func (c *Client) injectAccessForSidecars(namespace string, wf *wfv1.Workflow) ([
 	taskSysSendExitStats := "sys-send-exit-stats"
 	for tIdx, t := range wf.Spec.Templates {
 		//Inject services, virtual routes
-		for _, s := range t.Sidecars {
+		for si, s := range t.Sidecars {
 			//If TTY is true, sidecar needs to be accessible by HTTP
 			//Otherwise, we skip the sidecar
 			if s.TTY != true {
@@ -472,6 +472,7 @@ func (c *Client) injectAccessForSidecars(namespace string, wf *wfv1.Workflow) ([
 				return nil, util.NewUserError(codes.InvalidArgument, msg)
 			}
 
+			t.Sidecars[si].MirrorVolumeMounts = ptr.Bool(true)
 			serviceNameUID := "s" + uuid.New().String() + "--" + namespace
 			serviceNameUIDDNSCompliant, err := uid2.GenerateUID(serviceNameUID, 63)
 			if err != nil {
