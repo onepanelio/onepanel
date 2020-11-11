@@ -143,8 +143,7 @@ func (s *WorkflowServer) AddWorkflowExecutionStatistics(ctx context.Context, req
 		return &empty.Empty{}, err
 	}
 
-	err = client.FinishWorkflowExecutionStatisticViaExitHandler(req.Namespace, req.Uid,
-		req.Statistics.WorkflowTemplateId, phase, workflow.Status.StartedAt.UTC())
+	err = client.FinishWorkflowExecutionStatisticViaExitHandler(req.Namespace, req.Uid, phase, workflow.Status.StartedAt.UTC())
 
 	if err != nil {
 		return &empty.Empty{}, err

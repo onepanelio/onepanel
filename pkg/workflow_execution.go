@@ -905,7 +905,7 @@ func (c *Client) createWorkflowExecutionDB(namespace string, workflowExecution *
 	return
 }
 
-func (c *Client) FinishWorkflowExecutionStatisticViaExitHandler(namespace, name string, workflowTemplateID int64, phase wfv1.NodePhase, startedAt time.Time) (err error) {
+func (c *Client) FinishWorkflowExecutionStatisticViaExitHandler(namespace, name string, phase wfv1.NodePhase, startedAt time.Time) (err error) {
 	_, err = sb.Update("workflow_executions").
 		SetMap(sq.Eq{
 			"started_at":  startedAt.UTC(),
@@ -914,7 +914,7 @@ func (c *Client) FinishWorkflowExecutionStatisticViaExitHandler(namespace, name 
 			"finished_at": time.Now().UTC(),
 			"phase":       phase,
 		}).
-		Where(sq.Eq{"name": name}).
+		Where(sq.Eq{"name": name}, sq.NotEq{"phase": "Terminated"}).
 		RunWith(c.DB).
 		Exec()
 
