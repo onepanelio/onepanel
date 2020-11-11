@@ -504,6 +504,10 @@ func (c *Client) injectAccessForSidecars(namespace string, wf *wfv1.Workflow) ([
 				}
 				servicePorts = append(servicePorts, servicePort)
 				route := networking.HTTPRoute{
+					CorsPolicy: &networking.CorsPolicy{
+						AllowOrigin:  []string{"*." + *c.systemConfig.Domain()},
+						AllowMethods: []string{"OPTIONS", "GET"},
+					},
 					Match: []*networking.HTTPMatchRequest{
 						{
 							Uri: &networking.StringMatch{
