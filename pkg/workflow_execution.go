@@ -1524,7 +1524,7 @@ func (c *Client) TerminateWorkflowExecution(namespace, uid string) (err error) {
 		return err
 	}
 
-	err = argoutil.TerminateWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), uid)
+	err = argoutil.StopWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), uid, "", "")
 
 	return
 }
