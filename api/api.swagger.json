@@ -3,7 +3,7 @@
   "info": {
     "title": "Onepanel",
     "description": "Onepanel API",
-    "version": "0.15.0",
+    "version": "0.16.0",
     "contact": {
       "name": "Onepanel project",
       "url": "https://github.com/onepanelio/core"
@@ -85,38 +85,6 @@
           "AuthService"
         ],
         "security": []
-      }
-    },
-    "/apis/v1beta1/auth/token": {
-      "post": {
-        "operationId": "IsValidToken",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/IsValidTokenResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response",
-            "schema": {
-              "$ref": "#/definitions/grpc.gateway.runtime.Error"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/IsValidTokenRequest"
-            }
-          }
-        ],
-        "tags": [
-          "AuthService"
-        ]
       }
     },
     "/apis/v1beta1/config": {
@@ -3070,31 +3038,6 @@
         "authorized": {
           "type": "boolean",
           "format": "boolean"
-        }
-      }
-    },
-    "IsValidTokenRequest": {
-      "type": "object",
-      "properties": {
-        "username": {
-          "type": "string"
-        },
-        "token": {
-          "type": "string"
-        }
-      }
-    },
-    "IsValidTokenResponse": {
-      "type": "object",
-      "properties": {
-        "domain": {
-          "type": "string"
-        },
-        "token": {
-          "type": "string"
-        },
-        "username": {
-          "type": "string"
         }
       }
     },
