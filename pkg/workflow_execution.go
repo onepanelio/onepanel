@@ -914,7 +914,10 @@ func (c *Client) FinishWorkflowExecutionStatisticViaExitHandler(namespace, name 
 			"finished_at": time.Now().UTC(),
 			"phase":       phase,
 		}).
-		Where(sq.Eq{"name": name}, sq.NotEq{"phase": "Terminated"}).
+		Where(sq.And{
+			sq.Eq{"name": name},
+			sq.NotEq{"phase": "Terminated"},
+		}).
 		RunWith(c.DB).
 		Exec()
 
