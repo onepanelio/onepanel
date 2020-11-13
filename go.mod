@@ -15,6 +15,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/golang/protobuf v1.4.1
+	github.com/google/uuid v1.1.2
 	github.com/gorilla/handlers v1.4.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway v1.14.4
@@ -43,5 +44,4 @@ require (
 	k8s.io/apimachinery v0.16.7-beta.0
 	k8s.io/client-go v0.16.4
 	sigs.k8s.io/yaml v1.2.0
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 )
