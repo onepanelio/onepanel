@@ -73,7 +73,7 @@ const tensorflowObjectDetectionTraining2 = `arguments:
     visibility: public
     
   - name: cvat-num-classes
-    value: 81
+    value: '81'
     hint: Number of classes
     displayName: Number of classes
     visibility: private

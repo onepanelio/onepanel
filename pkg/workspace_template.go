@@ -541,7 +541,12 @@ func unmarshalWorkflowTemplate(spec *WorkspaceSpec, serviceManifest, virtualServ
 				continue
 			}
 
-			volumeClaimItems = append(volumeClaimItems, wfv1.Item{Type: wfv1.String, StrVal: v.Name})
+			// We wrap the name in quotes as it has to be JSON friendly
+			item, err := wfv1.ParseItem(`"` + v.Name + `"`)
+			if err != nil {
+				return "", err
+			}
+			volumeClaimItems = append(volumeClaimItems, item)
 
 			volumeClaimsMapped[v.Name] = true
 		}
