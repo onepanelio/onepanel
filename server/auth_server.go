@@ -81,37 +81,6 @@ func (a *AuthServer) GetAccessToken(ctx context.Context, req *api.GetAccessToken
 	return
 }
 
-// IsValidToken returns the appropriate token information given an md5 version of the token
-func (a *AuthServer) IsValidToken(ctx context.Context, req *api.IsValidTokenRequest) (res *api.IsValidTokenResponse, err error) {
-	if ctx == nil {
-		return nil, status.Error(codes.Unauthenticated, "unauthenticated")
-	}
-
-	client := getClient(ctx)
-	err = a.isValidToken(err, client)
-	if err != nil {
-		return nil, err
-	}
-
-	config, err := client.GetSystemConfig()
-	if err != nil {
-		return
-	}
-
-	domain := config.Domain()
-	if domain == nil {
-		return nil, fmt.Errorf("domain is not set")
-	}
-
-	res = &api.IsValidTokenResponse{
-		Domain:   *domain,
-		Token:    client.Token,
-		Username: req.Username,
-	}
-
-	return
-}
-
 func (a *AuthServer) isValidToken(err error, client *v1.Client) error {
 	namespaces, err := client.ListOnepanelEnabledNamespaces()
 	if err != nil {
