@@ -1488,7 +1488,8 @@ func (c *Client) TerminateWorkflowExecution(namespace, uid string) (err error) {
 		return err
 	}
 
-	err = argoutil.StopWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), uid, "", "")
+	h := hydrator.New(sqldb.ExplosiveOffloadNodeStatusRepo)
+	err = argoutil.StopWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), h, uid, "", "")
 
 	return
 }
