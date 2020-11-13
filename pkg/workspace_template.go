@@ -541,6 +541,7 @@ func unmarshalWorkflowTemplate(spec *WorkspaceSpec, serviceManifest, virtualServ
 				continue
 			}
 
+			// We wrap the name in quotes as it has to be JSON friendly
 			item, err := wfv1.ParseItem(`"` + v.Name + `"`)
 			if err != nil {
 				return "", err
