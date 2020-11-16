@@ -25,6 +25,7 @@ type WorkflowExecution struct {
 	FinishedAt       *time.Time        `db:"finished_at"`
 	WorkflowTemplate *WorkflowTemplate `db:"workflow_template"`
 	Labels           types.JSONLabels
+	Metrics          types.JSONLabels
 	ArgoWorkflow     *wfv1.Workflow
 }
 
@@ -105,7 +106,18 @@ func (we *WorkflowExecution) GetParameterValue(name string) *string {
 // getWorkflowExecutionColumns returns all of the columns for workflowExecution modified by alias, destination.
 // see formatColumnSelect
 func getWorkflowExecutionColumns(aliasAndDestination ...string) []string {
-	columns := []string{"id", "created_at", "uid", "name", "parameters", "phase", "started_at", "finished_at", "labels"}
+	columns := []string{
+		"id",
+		"created_at",
+		"uid",
+		"name",
+		"parameters",
+		"phase",
+		"started_at",
+		"finished_at",
+		"labels",
+		"metrics",
+	}
 	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }
 
@@ -119,6 +131,7 @@ func getWorkflowExecutionColumnsMap(camelCase bool) map[string]string {
 		"parameters": "parameters",
 		"phase":      "phase",
 		"labels":     "labels",
+		"metrics":    "metrics",
 	}
 
 	if camelCase {
