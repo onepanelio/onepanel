@@ -113,7 +113,7 @@ func (c *Client) ListAvailableLabels(query *SelectLabelsQuery) (result []*Label,
 	// Don't select labels from Terminated workspaces.
 	if query.Table == "workspaces" {
 		selectLabelsBuilder = selectLabelsBuilder.Where(sq.NotEq{
-			"workspaces.phase": "Terminated",
+			"l.phase": "Terminated",
 		})
 	}
 
