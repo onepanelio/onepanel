@@ -204,7 +204,45 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfi
 
 			return handler(ctx, req)
 		}
+		if info.FullMethod == "/api.AuthService/IsValidToken" {
+			md, ok := metadata.FromIncomingContext(ctx)
+			if !ok {
+				return resp, errors.New("unable to get metadata from incoming context")
+			}
 
+			tokenRequest, ok := req.(*api.IsValidTokenRequest)
+			if !ok {
+				return resp, errors.New("invalid request object for GetAccessTokenRequest")
+			}
+			getAccessTokenRequest := &api.GetAccessTokenRequest{
+				Username: tokenRequest.Username,
+				Token:    tokenRequest.Token,
+			}
+
+			defaultClient, err := v1.GetDefaultClientWithDB(db)
+			if err != nil {
+				return nil, err
+			}
+
+			rawToken, err := verifyLogin(defaultClient, getAccessTokenRequest)
+			if err != nil {
+				return nil, err
+			}
+
+			sysConfig, err := defaultClient.GetSystemConfig()
+			if err != nil {
+				return nil, err
+			}
+
+			md.Set("authorization", "Bearer "+rawToken)
+
+			ctx, err = getClient(ctx, kubeConfig, db, sysConfig)
+			if err != nil {
+				ctx = nil
+			}
+
+			return handler(ctx, req)
+		}
 		if info.FullMethod == "/api.AuthService/IsAuthorized" {
 			md, ok := metadata.FromIncomingContext(ctx)
 			if !ok {
