@@ -21,6 +21,8 @@ Production scale vision AI platform with fully integrated components for model b
 -  Customizable, reproducible and version controlled tooling and pipeline templates
 -  Scalability, flexibility and resiliency of Kubernetes without the deployment and configuration complexities
 
+Onepanel can be found on [LF AI Landscape](http://landscape.lfai.foundation/selected=onepanel)
+
 ## Features
 -  Annotate images and video with automatic annotation of bounding boxes and polygon masks, integrated with training pipelines to iteratively improve models for pre-annotation and inference.
 -  JupyterLab configured with extensions for debugging, Git/GitHub, notebook diffing and TensorBoard and support for Conda, OpenCV, Tensorflow and PyTorch with GPU and <a href="https://github.com/onepanelio/templates/tree/master/workspaces/jupyterlab">much more</a>.
