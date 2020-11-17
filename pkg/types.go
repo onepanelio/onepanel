@@ -140,6 +140,35 @@ func WorkflowTemplatesToVersionIDs(workflowTemplates []*WorkflowTemplate) (ids [
 // Metrics is a convenience type to work with multiple Metric(s)
 type Metrics []*Metric
 
+// Add adds the new metric to the metrics.
+// If there is already metrics with the same name, and override is true
+// the existing metrics will all be updated to the input value. Otherwise, they will be left unchanged.
+func (m *Metrics) Add(input *Metric, override bool) {
+	foundExisting := false
+
+	for _, metric := range *m {
+		if metric.Name == input.Name && override {
+			foundExisting = true
+
+			metric.Value = input.Value
+			metric.Format = input.Format
+		}
+	}
+
+	if !foundExisting {
+		*m = append(*m, input)
+	}
+}
+
+// Merge merges the metrics with other metrics
+// If there is already metrics with the same name and override is true
+// the existing metrics will all be updated to the input value. Otherwise they will be left unchanged.
+func (m *Metrics) Merge(input Metrics, override bool) {
+	for _, item := range input {
+		m.Add(item, override)
+	}
+}
+
 // Unmarshal unmarshal's the json in m to v, as in json.Unmarshal.
 // This is to support Metrics working with JSONB column types in sql
 func (m *Metrics) Unmarshal(v interface{}) error {
