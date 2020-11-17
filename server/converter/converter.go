@@ -37,6 +37,23 @@ func MappingToKeyValue(mapping map[string]string) []*api.KeyValue {
 	return keyValues
 }
 
+// MetricsToAPI converts Metrics to the API version
+func MetricsToAPI(metrics v1.Metrics) []*api.Metric {
+	result := make([]*api.Metric, 0)
+
+	for _, metric := range metrics {
+		newItem := &api.Metric{
+			Name:   metric.Name,
+			Value:  metric.Value,
+			Format: metric.Format,
+		}
+
+		result = append(result, newItem)
+	}
+
+	return result
+}
+
 // LabelsToKeyValues converts []*v1.Label to []*api.Label
 func LabelsToKeyValues(labels []*v1.Label) []*api.KeyValue {
 	keyValues := make([]*api.KeyValue, 0)

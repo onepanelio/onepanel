@@ -854,6 +854,7 @@ func (c *Client) createWorkflowExecutionDB(namespace string, workflowExecution *
 			"parameters":                   string(parametersJSON),
 			"is_archived":                  false,
 			"labels":                       workflowExecution.Labels,
+			"metrics":                      workflowExecution.Metrics,
 		}).
 		Suffix("RETURNING id").
 		RunWith(c.DB).
@@ -917,6 +918,7 @@ func (c *Client) CronStartWorkflowExecutionStatisticInsert(namespace, uid string
 			"cron_workflow_id":             cronWorkflow.ID,
 			"parameters":                   string(parametersJSON),
 			"labels":                       cronWorkflow.Labels,
+			"metrics":                      Metrics{},
 		}).
 		Suffix("RETURNING id").
 		RunWith(c.DB).
