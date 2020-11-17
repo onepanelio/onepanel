@@ -468,3 +468,20 @@ func (s *WorkflowServer) GetWorkflowExecutionStatisticsForNamespace(ctx context.
 		Stats: converter.WorkflowExecutionStatisticsReportToAPI(report),
 	}, nil
 }
+
+// MergeWorkflowExecutionMetrics merges the input metrics for the workflow execution identified by (namespace,uid)
+func (s *WorkflowServer) MergeWorkflowExecutionMetrics(ctx context.Context, req *api.MergeWorkflowExecutionsMetricsRequest) (*api.MergeWorkflowExecutionsMetricsResponse, error) {
+	client := getClient(ctx)
+
+	metrics := converter.APIMetricsToCore(req.Metrics)
+	workflowExecution, err := client.MergeWorkflowExecutionMetrics(req.Namespace, req.Uid, metrics, req.Override)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &api.MergeWorkflowExecutionsMetricsResponse{
+		Metrics: converter.MetricsToAPI(workflowExecution.Metrics),
+	}
+
+	return resp, nil
+}

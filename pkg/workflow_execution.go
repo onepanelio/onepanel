@@ -2150,6 +2150,32 @@ func (c *Client) UpdateWorkflowExecutionStatus(namespace, uid string, status *Wo
 	return
 }
 
+func (c *Client) MergeWorkflowExecutionMetrics(namespace, uid string, metrics Metrics, override bool) (workflowExecution *WorkflowExecution, err error) {
+	workflowExecution, err = c.GetWorkflowExecution(namespace, uid)
+	if err != nil {
+		return nil, err
+	}
+	if workflowExecution == nil {
+		return nil, util.NewUserError(codes.NotFound, "Workflow execution not found")
+	}
+
+	workflowExecution.Metrics.Merge(metrics, override)
+
+	_, err = sb.Update("workflow_executions").
+		Set("metrics", workflowExecution.Metrics).
+		Where(sq.Eq{
+			"namespace": namespace,
+			"uid":       uid,
+		}).
+		RunWith(c.DB).
+		Exec()
+	if err != nil {
+		return nil, util.NewUserError(codes.Internal, "Error updating metrics.")
+	}
+
+	return
+}
+
 func convertMapToStringKeys(input map[interface{}]interface{}) (output map[string]interface{}, err error) {
 	output = make(map[string]interface{})
 	for key, value := range input {

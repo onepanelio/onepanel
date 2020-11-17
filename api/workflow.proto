@@ -105,6 +105,13 @@ service WorkflowService {
             body: "status"
         };
     }
+
+    rpc MergeWorkflowExecutionMetrics (MergeWorkflowExecutionsMetricsRequest) returns (MergeWorkflowExecutionsMetricsResponse) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/metric"
+            body: "*"
+        };
+    }
 }
 
 message CreateWorkflowExecutionBody {
@@ -276,4 +283,21 @@ message GetWorkflowExecutionStatisticsForNamespaceRequest {
 
 message GetWorkflowExecutionStatisticsForNamespaceResponse {
     WorkflowExecutionStatisticReport stats = 1;
+}
+
+message AddWorkflowExecutionMetricRequest {
+    string namespace = 1;
+    string uid = 2;
+    Metric metric = 3;
+}
+
+message MergeWorkflowExecutionsMetricsRequest {
+    string namespace = 1;
+    string uid = 2;
+    bool override = 3;
+    repeated Metric metrics = 4;
+}
+
+message MergeWorkflowExecutionsMetricsResponse {
+    repeated Metric metrics = 4;
 }

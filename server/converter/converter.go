@@ -54,6 +54,25 @@ func MetricsToAPI(metrics v1.Metrics) []*api.Metric {
 	return result
 }
 
+// APIMetricsToCore converts []*api.Metric to v1.Metrics
+func APIMetricsToCore(metrics []*api.Metric) v1.Metrics {
+	result := v1.Metrics{}
+
+	for _, metric := range metrics {
+		m := v1.Metric{
+			Name:   metric.Name,
+			Value:  metric.Value,
+			Format: metric.Format,
+		}
+
+		// We don't override anything because we want the input to match how the user entered it
+		// So if there are entries with the same name, that's fine.
+		result.Add(&m, false)
+	}
+
+	return result
+}
+
 // LabelsToKeyValues converts []*v1.Label to []*api.Label
 func LabelsToKeyValues(labels []*v1.Label) []*api.KeyValue {
 	keyValues := make([]*api.KeyValue, 0)
