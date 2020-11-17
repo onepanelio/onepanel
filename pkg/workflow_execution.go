@@ -2150,6 +2150,7 @@ func (c *Client) UpdateWorkflowExecutionStatus(namespace, uid string, status *Wo
 	return
 }
 
+// AddWorkflowExecutionMetrics merges the metrics provided with the ones present in the workflow execution identified by (namespace, uid)
 func (c *Client) AddWorkflowExecutionMetrics(namespace, uid string, metrics Metrics, override bool) (workflowExecution *WorkflowExecution, err error) {
 	workflowExecution, err = c.GetWorkflowExecution(namespace, uid)
 	if err != nil {
@@ -2176,6 +2177,7 @@ func (c *Client) AddWorkflowExecutionMetrics(namespace, uid string, metrics Metr
 	return
 }
 
+// UpdateWorkflowExecutionMetrics replaces the metrics of a workflow execution identified by (namespace, uid) with the input metrics.
 func (c *Client) UpdateWorkflowExecutionMetrics(namespace, uid string, metrics Metrics) (workflowExecution *WorkflowExecution, err error) {
 	workflowExecution, err = c.GetWorkflowExecution(namespace, uid)
 	if err != nil {
