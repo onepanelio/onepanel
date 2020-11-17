@@ -1242,12 +1242,12 @@
     },
     "/apis/v1beta1/{namespace}/workflow_executions/{uid}/metric": {
       "post": {
-        "operationId": "MergeWorkflowExecutionMetrics",
+        "operationId": "AddWorkflowExecutionMetrics",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/MergeWorkflowExecutionsMetricsResponse"
+              "$ref": "#/definitions/WorkflowExecutionsMetricsResponse"
             }
           },
           "default": {
@@ -1275,7 +1275,49 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/MergeWorkflowExecutionsMetricsRequest"
+              "$ref": "#/definitions/AddWorkflowExecutionsMetricsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      },
+      "put": {
+        "operationId": "UpdateWorkflowExecutionMetrics",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/WorkflowExecutionsMetricsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UpdateWorkflowExecutionsMetricsRequest"
             }
           }
         ],
@@ -2862,6 +2904,27 @@
         }
       }
     },
+    "AddWorkflowExecutionsMetricsRequest": {
+      "type": "object",
+      "properties": {
+        "namespace": {
+          "type": "string"
+        },
+        "uid": {
+          "type": "string"
+        },
+        "override": {
+          "type": "boolean",
+          "format": "boolean"
+        },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Metric"
+          }
+        }
+      }
+    },
     "ArchiveWorkflowTemplateResponse": {
       "type": "object",
       "properties": {
@@ -3423,38 +3486,6 @@
         }
       }
     },
-    "MergeWorkflowExecutionsMetricsRequest": {
-      "type": "object",
-      "properties": {
-        "namespace": {
-          "type": "string"
-        },
-        "uid": {
-          "type": "string"
-        },
-        "override": {
-          "type": "boolean",
-          "format": "boolean"
-        },
-        "metrics": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Metric"
-          }
-        }
-      }
-    },
-    "MergeWorkflowExecutionsMetricsResponse": {
-      "type": "object",
-      "properties": {
-        "metrics": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Metric"
-          }
-        }
-      }
-    },
     "Metric": {
       "type": "object",
       "properties": {
@@ -3602,6 +3633,23 @@
         }
       }
     },
+    "UpdateWorkflowExecutionsMetricsRequest": {
+      "type": "object",
+      "properties": {
+        "namespace": {
+          "type": "string"
+        },
+        "uid": {
+          "type": "string"
+        },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Metric"
+          }
+        }
+      }
+    },
     "UpdateWorkspaceBody": {
       "type": "object",
       "properties": {
@@ -3710,6 +3758,17 @@
       "properties": {
         "phase": {
           "type": "string"
+        }
+      }
+    },
+    "WorkflowExecutionsMetricsResponse": {
+      "type": "object",
+      "properties": {
+        "metrics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Metric"
+          }
         }
       }
     },

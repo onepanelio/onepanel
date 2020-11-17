@@ -469,17 +469,34 @@ func (s *WorkflowServer) GetWorkflowExecutionStatisticsForNamespace(ctx context.
 	}, nil
 }
 
-// MergeWorkflowExecutionMetrics merges the input metrics for the workflow execution identified by (namespace,uid)
-func (s *WorkflowServer) MergeWorkflowExecutionMetrics(ctx context.Context, req *api.MergeWorkflowExecutionsMetricsRequest) (*api.MergeWorkflowExecutionsMetricsResponse, error) {
+// AddWorkflowExecutionMetrics merges the input metrics for the workflow execution identified by (namespace,uid)
+func (s *WorkflowServer) AddWorkflowExecutionMetrics(ctx context.Context, req *api.AddWorkflowExecutionsMetricsRequest) (*api.WorkflowExecutionsMetricsResponse, error) {
 	client := getClient(ctx)
 
 	metrics := converter.APIMetricsToCore(req.Metrics)
-	workflowExecution, err := client.MergeWorkflowExecutionMetrics(req.Namespace, req.Uid, metrics, req.Override)
+	workflowExecution, err := client.AddWorkflowExecutionMetrics(req.Namespace, req.Uid, metrics, req.Override)
 	if err != nil {
 		return nil, err
 	}
 
-	resp := &api.MergeWorkflowExecutionsMetricsResponse{
+	resp := &api.WorkflowExecutionsMetricsResponse{
+		Metrics: converter.MetricsToAPI(workflowExecution.Metrics),
+	}
+
+	return resp, nil
+}
+
+// UpdateWorkflowExecutionMetrics replaces the metrics with the input metrics for the workflow identified by (namespace, uid)
+func (s *WorkflowServer) UpdateWorkflowExecutionMetrics(ctx context.Context, req *api.UpdateWorkflowExecutionsMetricsRequest) (*api.WorkflowExecutionsMetricsResponse, error) {
+	client := getClient(ctx)
+
+	metrics := converter.APIMetricsToCore(req.Metrics)
+	workflowExecution, err := client.UpdateWorkflowExecutionMetrics(req.Namespace, req.Uid, metrics)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &api.WorkflowExecutionsMetricsResponse{
 		Metrics: converter.MetricsToAPI(workflowExecution.Metrics),
 	}
 

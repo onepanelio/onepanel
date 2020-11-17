@@ -106,9 +106,16 @@ service WorkflowService {
         };
     }
 
-    rpc MergeWorkflowExecutionMetrics (MergeWorkflowExecutionsMetricsRequest) returns (MergeWorkflowExecutionsMetricsResponse) {
+    rpc AddWorkflowExecutionMetrics (AddWorkflowExecutionsMetricsRequest) returns (WorkflowExecutionsMetricsResponse) {
         option (google.api.http) = {
             post: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/metric"
+            body: "*"
+        };
+    }
+
+    rpc UpdateWorkflowExecutionMetrics (UpdateWorkflowExecutionsMetricsRequest) returns (WorkflowExecutionsMetricsResponse) {
+        option (google.api.http) = {
+            put: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/metric"
             body: "*"
         };
     }
@@ -291,13 +298,19 @@ message AddWorkflowExecutionMetricRequest {
     Metric metric = 3;
 }
 
-message MergeWorkflowExecutionsMetricsRequest {
+message AddWorkflowExecutionsMetricsRequest {
     string namespace = 1;
     string uid = 2;
     bool override = 3;
     repeated Metric metrics = 4;
 }
 
-message MergeWorkflowExecutionsMetricsResponse {
+message UpdateWorkflowExecutionsMetricsRequest {
+    string namespace = 1;
+    string uid = 2;
+    repeated Metric metrics = 4;
+}
+
+message WorkflowExecutionsMetricsResponse {
     repeated Metric metrics = 4;
 }
