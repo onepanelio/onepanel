@@ -25,7 +25,7 @@ type WorkflowExecution struct {
 	FinishedAt       *time.Time        `db:"finished_at"`
 	WorkflowTemplate *WorkflowTemplate `db:"workflow_template"`
 	Labels           types.JSONLabels
-	Metrics          types.JSONLabels
+	Metrics          Metrics
 	ArgoWorkflow     *wfv1.Workflow
 }
 

@@ -3584,6 +3584,12 @@
         },
         "metadata": {
           "$ref": "#/definitions/WorkflowExecutionMetadata"
+        },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Metric"
+          }
         }
       }
     },

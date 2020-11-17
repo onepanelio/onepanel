@@ -918,7 +918,7 @@ func (c *Client) CronStartWorkflowExecutionStatisticInsert(namespace, uid string
 			"cron_workflow_id":             cronWorkflow.ID,
 			"parameters":                   string(parametersJSON),
 			"labels":                       cronWorkflow.Labels,
-			"metrics":                      types.JSONLabels{},
+			"metrics":                      Metrics{},
 		}).
 		Suffix("RETURNING id").
 		RunWith(c.DB).

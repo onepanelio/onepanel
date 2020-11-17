@@ -40,6 +40,7 @@ func apiWorkflowExecution(wf *v1.WorkflowExecution, router router.Web) (workflow
 		Phase:     string(wf.Phase),
 		Manifest:  wf.Manifest,
 		Labels:    converter.MappingToKeyValue(wf.Labels),
+		Metrics:   converter.MetricsToAPI(wf.Metrics),
 	}
 
 	if wf.StartedAt != nil && !wf.StartedAt.IsZero() {

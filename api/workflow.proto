@@ -214,6 +214,8 @@ message WorkflowExecution {
     repeated KeyValue labels = 10;
 
     WorkflowExecutionMetadata metadata = 11;
+
+    repeated Metric metrics = 12;
 }
 
 message ArtifactResponse {
