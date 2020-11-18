@@ -6,7 +6,7 @@
 [![sdk](https://img.shields.io/pypi/v/onepanel-sdk?color=01579b&label=sdk)](https://pypi.org/project/onepanel-sdk/)
 [![docs](https://img.shields.io/github/v/release/onepanelio/core?color=01579b&label=docs)](https://docs.onepanel.io)
 [![issues](https://img.shields.io/github/issues-raw/onepanelio/core?color=01579b&label=issues)](https://github.com/onepanelio/core/issues)
-[![chat](https://img.shields.io/badge/support-dicussions-01579b)](https://github.com/onepanelio/core/discussions)
+[![chat](https://img.shields.io/badge/support-slack-01579b)](https://join.slack.com/t/onepanel-ce/shared_invite/zt-eyjnwec0-nLaHhjif9Y~gA05KuX6AUg)
 [![license](https://img.shields.io/github/license/onepanelio/core?color=01579b)](https://opensource.org/licenses/Apache-2.0)
 
 Production scale vision AI platform with fully integrated components for model building, automated labeling, data processing and model training pipelines.
@@ -22,8 +22,8 @@ Production scale vision AI platform with fully integrated components for model b
 -  Scalability, flexibility and resiliency of Kubernetes without the deployment and configuration complexities
 
 ## Features
--  Annotate images and video with automatic annotation of bounding boxes and polygon masks, integrated with training pipelines to iteratively improve models for pre-annotation and inference.
--  JupyterLab configured with extensions for debugging, Git/GitHub, notebook diffing and TensorBoard and support for Conda, OpenCV, Tensorflow and PyTorch with GPU and <a href="https://github.com/onepanelio/templates/tree/master/workspaces/jupyterlab">much more</a>.
+-  Annotate images and video with automatic annotation of bounding boxes and polygon masks, fully integrated with data processing and training pipelines.
+-  JupyterLab configured with extensions for TensorBoard, Git/GitHub, debugging, notebook diffing and support for Conda, OpenCV, Tensorflow and PyTorch with GPU.
 -  Build fully reproducible, distributed and parallel data processing and training pipelines with real-time logs and output snapshots.
 -  Bring your own IDEs, annotation tools and pipelines with a version controlled YAML and Docker based template engine.
 -  Track and visualize model metrics and experiments with TensorBoard or bring your own experiment tracking tools.
@@ -51,7 +51,7 @@ See [documentation](https://docs.onepanel.ai) to get started or for more detaile
 
 To submit a feature request, report a bug or documentation issue, please open a GitHub [pull request](https://github.com/onepanelio/core/pulls) or [issue](https://github.com/onepanelio/core/issues).
 
-For help, questions, release announcements and contribution discussions, join us on [GitHub discussions](https://github.com/onepanelio/core/discussions).
+For help, questions, release announcements and contribution discussions, join us on [Slack](https://join.slack.com/t/onepanel-ce/shared_invite/zt-eyjnwec0-nLaHhjif9Y~gA05KuX6AUg) or [GitHub discussions](https://github.com/onepanelio/core/discussions).
 
 ## Contributing
 
@@ -74,8 +74,8 @@ Onepanel seamlessly integrates the following excellent open source projects. We 
 
 [Argo](https://github.com/argoproj/argo)\
 [CVAT](https://github.com/opencv/cvat)\
-[JupyterLab](https://github.com/jupyterlab/jupyterlab)
-
+[JupyterLab](https://github.com/jupyterlab/jupyterlab)\
+[NNI](https://github.com/microsoft/nni)
 
 ## License
 Onepanel is licensed under [Apache 2.0](https://github.com/onepanelio/core/blob/master/LICENSE).
