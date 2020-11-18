@@ -27,7 +27,7 @@ func TestMetrics_Add(t *testing.T) {
 		Format: "%",
 	}, false)
 
-	assert.Len(t, initial, 2)
+	assert.Len(t, initial, 3)
 
 	initial.Add(&Metric{
 		Name:   "accuracy",
@@ -35,7 +35,7 @@ func TestMetrics_Add(t *testing.T) {
 		Format: "%",
 	}, true)
 
-	assert.Len(t, initial, 2)
+	assert.Len(t, initial, 3)
 	assert.True(t, initial[0].Value == 0.99)
 }
 
