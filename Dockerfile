@@ -1,4 +1,4 @@
-FROM golang:1.13.10 AS builder
+FROM golang:1.15.5 AS builder
 
 WORKDIR /go/src
 COPY . .
@@ -8,7 +8,7 @@ RUN go install -v ./...
 RUN go get -u github.com/pressly/goose/cmd/goose
 RUN go build -o /go/bin/goose ./cmd/goose/goose.go
 
-FROM golang:1.13.10
+FROM golang:1.15.5
 COPY --from=builder /go/bin/core .
 COPY --from=builder /go/src/db ./db
 COPY --from=builder /go/bin/goose .
