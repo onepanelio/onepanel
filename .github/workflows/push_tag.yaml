@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
-      - uses: olegtarasov/get-tag@v2
+      - uses: little-core-labs/get-git-tag@v3.0.1
         id: tagName
       - name: Publish to Registry
         uses: elgohr/Publish-Docker-Github-Action@master
