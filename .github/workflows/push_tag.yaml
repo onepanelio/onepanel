@@ -17,13 +17,13 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
           tags: "${{ env.GIT_TAG_NAME }}"
-      - name: Set Slack Message
-        run: echo "::set-env name=SLACK_MESSAGE::Tag $GIT_TAG_NAME. Docker Tag onepanel/core:$GIT_TAG_NAME"
       - name: Notify Slack Channels
-        uses: rtCamp/action-slack-notify@v2.0.0
+        uses: rtCamp/action-slack-notify@v2.1.1
         env:
           SLACK_CHANNEL: org
           SLACK_ICON: https://avatars1.githubusercontent.com/u/30390575?s=48&v=4
           SLACK_TITLE: New Core Version
           SLACK_USERNAME: opBot
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          MSG_MINIMAL: true
+          SLACK_MESSAGE: "$GIT_TAG_NAME\nDocker Tag: onepanel/core:$GIT_TAG_NAME"
