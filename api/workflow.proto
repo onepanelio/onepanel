@@ -201,6 +201,7 @@ message ListWorkflowExecutionsResponse {
     int32 page = 3;
     int32 pages = 4;
     int32 totalCount = 5;
+    int32 totalAvailableCount = 6;
 }
 
 message LogEntry {

@@ -27,22 +27,27 @@ type WorkflowTemplateFilter struct {
 	Labels []*Label
 }
 
-// applyLabelSelectQuery returns a query builder that adds where statements to filter by labels in the request,
-// if there are any
-func applyLabelSelectQuery(sb sq.SelectBuilder, request *request.Request) sq.SelectBuilder {
-	if request.Filter != nil {
-		filter, ok := request.Filter.(WorkflowTemplateFilter)
-		if ok && len(filter.Labels) > 0 {
-			labelsJSON, err := LabelsToJSONString(filter.Labels)
-			if err != nil {
-				log.Printf("[error] %v", err)
-			} else {
-				sb = sb.Where("wt.labels @> ?", labelsJSON)
-			}
-		}
+// GetLabels returns the labels in the filter
+func (wt *WorkflowTemplateFilter) GetLabels() []*Label {
+	return wt.Labels
+}
+
+func applyWorkflowTemplateFilter(sb sq.SelectBuilder, request *request.Request) (sq.SelectBuilder, error) {
+	if !request.HasFilter() {
+		return sb, nil
 	}
 
-	return sb
+	filter, ok := request.Filter.(WorkflowTemplateFilter)
+	if !ok {
+		return sb, nil
+	}
+
+	sb, err := ApplyLabelSelectQuery("wt.labels", sb, &filter)
+	if err != nil {
+		return sb, err
+	}
+
+	return sb, nil
 }
 
 // createWorkflowTemplateVersionDB inserts a record into workflow_template_versions using the current time accurate to nanoseconds
@@ -414,14 +419,18 @@ func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTe
 	return
 }
 
-func (c *Client) selectWorkflowTemplatesQuery(namespace string, request *request.Request) (sb sq.SelectBuilder) {
+func (c *Client) selectWorkflowTemplatesQuery(namespace string, request *request.Request) (sb sq.SelectBuilder, err error) {
 	sb = c.workflowTemplatesSelectBuilder(namespace).
 		Column("COUNT(wtv.*) versions, MAX(wtv.id) workflow_template_version_id").
 		Join("workflow_template_versions wtv ON wtv.workflow_template_id = wt.id").
 		GroupBy("wt.id", "wt.created_at", "wt.uid", "wt.name", "wt.is_archived").
 		OrderBy("wt.created_at DESC")
 
-	sb = applyLabelSelectQuery(sb, request)
+	sb, err = applyWorkflowTemplateFilter(sb, request)
+	if err != nil {
+		return
+	}
+
 	sb = *request.ApplyPaginationToSelect(&sb)
 
 	return
@@ -432,11 +441,15 @@ func (c *Client) selectWorkflowTemplatesQuery(namespace string, request *request
 func (c *Client) selectWorkflowTemplatesDB(namespace string, request *request.Request) (workflowTemplates []*WorkflowTemplate, err error) {
 	workflowTemplates = make([]*WorkflowTemplate, 0)
 
-	sb := c.selectWorkflowTemplatesQuery(namespace, request).
-		Where(sq.Eq{
-			"wt.is_archived": false,
-			"wt.is_system":   false,
-		})
+	sb, err := c.selectWorkflowTemplatesQuery(namespace, request)
+	if err != nil {
+		return nil, err
+	}
+
+	sb = sb.Where(sq.Eq{
+		"wt.is_archived": false,
+		"wt.is_system":   false,
+	})
 
 	err = c.DB.Selectx(&workflowTemplates, sb)
 
@@ -448,7 +461,11 @@ func (c *Client) selectWorkflowTemplatesDB(namespace string, request *request.Re
 func (c *Client) selectAllWorkflowTemplatesDB(namespace string, request *request.Request) (workflowTemplates []*WorkflowTemplate, err error) {
 	workflowTemplates = make([]*WorkflowTemplate, 0)
 
-	sb := c.selectWorkflowTemplatesQuery(namespace, request)
+	sb, err := c.selectWorkflowTemplatesQuery(namespace, request)
+	if err != nil {
+		return nil, err
+	}
+
 	err = c.DB.Selectx(&workflowTemplates, sb)
 
 	return
@@ -465,7 +482,10 @@ func (c *Client) CountWorkflowTemplates(namespace string, request *request.Reque
 			"wt.is_system":   false,
 		})
 
-	sb = applyLabelSelectQuery(sb, request)
+	sb, err = applyWorkflowTemplateFilter(sb, request)
+	if err != nil {
+		return 0, err
+	}
 
 	err = sb.RunWith(c.DB).
 		QueryRow().

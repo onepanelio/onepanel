@@ -252,13 +252,19 @@ func (s *WorkspaceServer) ListWorkspaces(ctx context.Context, req *api.ListWorks
 		return nil, err
 	}
 
+	totalCount, err := client.CountWorkspaces(req.Namespace, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	paginator := resourceRequest.Pagination
 	return &api.ListWorkspaceResponse{
-		Count:      int32(len(apiWorkspaces)),
-		Workspaces: apiWorkspaces,
-		Page:       int32(paginator.Page),
-		Pages:      paginator.CalculatePages(count),
-		TotalCount: int32(count),
+		Count:               int32(len(apiWorkspaces)),
+		Workspaces:          apiWorkspaces,
+		Page:                int32(paginator.Page),
+		Pages:               paginator.CalculatePages(count),
+		TotalCount:          int32(count),
+		TotalAvailableCount: int32(totalCount),
 	}, nil
 }
 

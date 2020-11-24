@@ -3361,6 +3361,10 @@
         "totalCount": {
           "type": "integer",
           "format": "int32"
+        },
+        "totalAvailableCount": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -3403,6 +3407,10 @@
         "totalCount": {
           "type": "integer",
           "format": "int32"
+        },
+        "totalAvailableCount": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -3428,6 +3436,10 @@
           "format": "int32"
         },
         "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalAvailableCount": {
           "type": "integer",
           "format": "int32"
         }
