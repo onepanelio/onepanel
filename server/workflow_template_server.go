@@ -50,6 +50,11 @@ func (s *WorkflowTemplateServer) CreateWorkflowTemplate(ctx context.Context, req
 	if err != nil || !allowed {
 		return nil, err
 	}
+
+	if IsNameReservedForSystem(req.WorkflowTemplate.Name) {
+		return nil, v1.NameReservedForSystemError()
+	}
+
 	workflowTemplate := &v1.WorkflowTemplate{
 		Name:     req.WorkflowTemplate.Name,
 		Manifest: req.WorkflowTemplate.Manifest,
@@ -59,6 +64,7 @@ func (s *WorkflowTemplateServer) CreateWorkflowTemplate(ctx context.Context, req
 	if err != nil {
 		return nil, err
 	}
+
 	req.WorkflowTemplate.Uid = workflowTemplate.UID
 	req.WorkflowTemplate.Version = workflowTemplate.Version
 

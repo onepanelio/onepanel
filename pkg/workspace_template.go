@@ -1000,8 +1000,10 @@ func (c *Client) generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *Wo
 	workflowTemplateManifest = strings.NewReplacer(
 		"{{workspace.parameters.", "{{workflow.parameters.").Replace(workflowTemplateManifest)
 
+	// a workspace template's associated workflow template name should have a sys- prefix
+	// as it is system generated
 	workflowTemplate = &WorkflowTemplate{
-		Name:     workspaceTemplate.Name,
+		Name:     ConvertToSystemName(workspaceTemplate.Name),
 		Manifest: workflowTemplateManifest,
 	}
 
