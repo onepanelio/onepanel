@@ -16,7 +16,7 @@ func initialize20201130130433() {
 func Up20201130130433(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkflowTemplateManifest(
-		"20201130130433_tfod.yaml",
+		"20201115134934_tfod.yaml",
 		tfodWorkflowTemplateName,
 		map[string]string{
 			"used-by": "cvat",
@@ -27,5 +27,11 @@ func Up20201130130433(tx *sql.Tx) error {
 //Down20201130130433 do nothing
 func Down20201130130433(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
-	return nil
+	return updateWorkflowTemplateManifest(
+		"20201115134934_tfod.yaml",
+		tfodWorkflowTemplateName,
+		map[string]string{
+			"used-by": "cvat",
+		},
+	)
 }
