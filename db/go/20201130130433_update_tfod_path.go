@@ -1,4 +1,4 @@
-package migrations
+package migration
 
 import (
 	"database/sql"
@@ -17,7 +17,7 @@ func Up20201130130433(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkflowTemplateManifest(
 		"20201130130433_tfod.yaml",
-		tfodWorkflowTemplateName,
+		tensorflowObjectDetectionWorkflowTemplateName,
 		map[string]string{
 			"used-by": "cvat",
 		},
@@ -29,7 +29,7 @@ func Down20201130130433(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return updateWorkflowTemplateManifest(
 		"20201115134934_tfod.yaml",
-		tfodWorkflowTemplateName,
+		tensorflowObjectDetectionWorkflowTemplateName,
 		map[string]string{
 			"used-by": "cvat",
 		},
