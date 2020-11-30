@@ -12,7 +12,7 @@ func initialize20201130130433() {
 	}
 }
 
-
+//Up20201130130433 remove namespace to resolve checkpoint path issue
 func Up20201130130433(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkflowTemplateManifest(
@@ -24,7 +24,7 @@ func Up20201130130433(tx *sql.Tx) error {
 	)
 }
 
-
+//Down20201130130433 do nothing
 func Down20201130130433(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return nil
