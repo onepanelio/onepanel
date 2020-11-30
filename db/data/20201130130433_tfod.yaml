@@ -164,7 +164,7 @@ templates:
           path: /mnt/data/models/
           optional: true
           {{.ArtifactRepositoryType}}:
-            key: '{{workflow.namespace}}/{{workflow.parameters.cvat-finetune-checkpoint}}'
+            key: '{{workflow.parameters.cvat-finetune-checkpoint}}'
         - git:
             repo: '{{workflow.parameters.source}}'
             revision: '{{workflow.parameters.revision}}'
