@@ -9,7 +9,6 @@ import (
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/asaskevich/govalidator"
 	"github.com/onepanelio/core/pkg/util"
-	"github.com/onepanelio/core/pkg/util/env"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/pkg/util/request"
 	"github.com/onepanelio/core/pkg/util/router"
@@ -352,7 +351,7 @@ func createVirtualServiceManifest(spec *WorkspaceSpec) (virtualServiceManifest s
 	return
 }
 
-func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string, services []*Service) (statefulSetManifest string, err error) {
+func createStatefulSetManifest(spec *WorkspaceSpec) (statefulSetManifest string, err error) {
 	var volumeClaims []map[string]interface{}
 	volumeClaimsMapped := make(map[string]bool)
 	// Add volumeClaims that the user has added first
@@ -395,18 +394,6 @@ func createStatefulSetManifest(spec *WorkspaceSpec, config map[string]string, se
 	// Automatically map the remaining ones
 	for i, c := range spec.Containers {
 		container := &spec.Containers[i]
-		env.AddDefaultEnvVarsToContainer(container)
-		env.PrependEnvVarToContainer(container, "ONEPANEL_API_URL", config["ONEPANEL_API_URL"])
-		env.PrependEnvVarToContainer(container, "ONEPANEL_FQDN", config["ONEPANEL_FQDN"])
-		env.PrependEnvVarToContainer(container, "ONEPANEL_DOMAIN", config["ONEPANEL_DOMAIN"])
-		env.PrependEnvVarToContainer(container, "ONEPANEL_PROVIDER", config["ONEPANEL_PROVIDER"])
-		env.PrependEnvVarToContainer(container, "ONEPANEL_RESOURCE_NAMESPACE", "{{workflow.namespace}}")
-		env.PrependEnvVarToContainer(container, "ONEPANEL_RESOURCE_UID", "{{workflow.parameters.sys-uid}}")
-
-		for _, service := range services {
-			envName := fmt.Sprintf("ONEPANEL_SERVICES_%v_API_URL", strings.ToUpper(service.Name))
-			env.PrependEnvVarToContainer(container, envName, service.URL)
-		}
 
 		for _, v := range c.VolumeMounts {
 			if volumeClaimsMapped[v.Name] {
@@ -977,12 +964,7 @@ func (c *Client) generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *Wo
 		return nil, err
 	}
 
-	services, err := c.ListServices(workspaceTemplate.Namespace)
-	if err != nil {
-		return nil, err
-	}
-
-	statefulSetManifest, err := createStatefulSetManifest(workspaceSpec, config, services)
+	statefulSetManifest, err := createStatefulSetManifest(workspaceSpec)
 	if err != nil {
 		return nil, err
 	}
