@@ -16,6 +16,7 @@ func initialize20201202174442() {
 	}
 }
 
+// Up20201202174442 updates the argo template labels
 func Up20201202174442(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	client, err := getClient()
@@ -99,6 +100,7 @@ func Up20201202174442(tx *sql.Tx) error {
 	return err
 }
 
+// Down20201202174442 reverts the argo template label updates
 func Down20201202174442(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	client, err := getClient()
@@ -162,13 +164,14 @@ func Down20201202174442(tx *sql.Tx) error {
 			return errors.New("not found")
 		}
 
+		// Remove sys- prefix
+		workflowTemplate.Name = workflowTemplate.Name[4:]
+		workflowTemplate.Name = v1.ConvertToSystemName(workflowTemplate.Name)
+		if err := workflowTemplate.GenerateUID(workflowTemplate.Name); err != nil {
+			return err
+		}
+
 		for _, argoTemplate := range templates {
-			// Remove sys- prefix
-			workflowTemplate.Name = workflowTemplate.Name[4:]
-			workflowTemplate.Name = v1.ConvertToSystemName(workflowTemplate.Name)
-			if err := workflowTemplate.GenerateUID(workflowTemplate.Name); err != nil {
-				return err
-			}
 			argoTemplate.Labels[label.WorkflowTemplateUid] = workflowTemplate.UID
 
 			if _, err := client.ArgoprojV1alpha1().WorkflowTemplates(workflowTemplate.Namespace).Update(&argoTemplate); err != nil {
