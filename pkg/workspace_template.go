@@ -1088,13 +1088,20 @@ func (c *Client) UpdateWorkspaceTemplate(namespace string, workspaceTemplate *Wo
 	workspaceTemplate.ID = existingWorkspaceTemplate.ID
 	workspaceTemplate.Name = existingWorkspaceTemplate.UID
 	workspaceTemplate.Namespace = existingWorkspaceTemplate.Namespace
+	workspaceTemplate.WorkflowTemplateID = existingWorkspaceTemplate.WorkflowTemplateID
+
+	existingWorkflowTemplate, err := c.getWorkflowTemplateById(workspaceTemplate.WorkflowTemplateID)
+	if err != nil {
+		return nil, err
+	}
 
 	updatedWorkflowTemplate, err := c.generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate)
 	if err != nil {
 		return nil, err
 	}
 	updatedWorkflowTemplate.ID = existingWorkspaceTemplate.WorkflowTemplate.ID
-	updatedWorkflowTemplate.UID = existingWorkspaceTemplate.WorkflowTemplate.UID
+	updatedWorkflowTemplate.UID = existingWorkflowTemplate.UID
+	updatedWorkflowTemplate.Name = existingWorkflowTemplate.Name
 
 	updatedWorkflowTemplate.Labels = workspaceTemplate.Labels
 	workflowTemplateVersion, err := c.CreateWorkflowTemplateVersion(namespace, updatedWorkflowTemplate)
