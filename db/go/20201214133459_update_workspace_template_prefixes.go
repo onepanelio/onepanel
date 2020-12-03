@@ -67,14 +67,15 @@ func Up20201214133459(tx *sql.Tx) error {
 			return fmt.Errorf("argo workflowtemplate not found for label: %v=%v", label.WorkflowTemplateUid, workflowTemplate.UID)
 		}
 
+		workflowTemplate.Name = v1.ConvertToSystemName(workflowTemplate.Name)
+		if len(workflowTemplate.Name) > 30 {
+			workflowTemplate.Name = workflowTemplate.Name[:30]
+		}
+		if err := workflowTemplate.GenerateUID(workflowTemplate.Name); err != nil {
+			return err
+		}
+
 		for _, argoTemplate := range templates {
-			workflowTemplate.Name = v1.ConvertToSystemName(workflowTemplate.Name)
-			if len(workflowTemplate.Name) > 30 {
-				workflowTemplate.Name = workflowTemplate.Name[:30]
-			}
-			if err := workflowTemplate.GenerateUID(workflowTemplate.Name); err != nil {
-				return err
-			}
 			argoTemplate.Labels[label.WorkflowTemplateUid] = workflowTemplate.UID
 
 			if _, err := client.ArgoprojV1alpha1().WorkflowTemplates(workflowTemplate.Namespace).Update(&argoTemplate); err != nil {
