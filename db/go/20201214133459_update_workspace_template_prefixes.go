@@ -166,7 +166,6 @@ func Down20201214133459(tx *sql.Tx) error {
 
 		// Remove sys- prefix
 		workflowTemplate.Name = workflowTemplate.Name[4:]
-		workflowTemplate.Name = v1.ConvertToSystemName(workflowTemplate.Name)
 		if err := workflowTemplate.GenerateUID(workflowTemplate.Name); err != nil {
 			return err
 		}
