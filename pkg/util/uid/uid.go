@@ -7,11 +7,13 @@ import (
 	"strings"
 )
 
+// GenerateUID converts an input string to a uid friendly version where we have all lowercase letters and dashes instead of spaces
+// If the max is exceeded, an error is returned
 func GenerateUID(input string, max int) (string, error) {
 	re, _ := regexp.Compile(`[^a-zA-Z0-9-]{1,}`)
 	cleanUp := strings.ToLower(re.ReplaceAllString(input, `-`))
 	if len(cleanUp) > max {
-		return "", errors.New(fmt.Sprintf("Length of string exceeds %d", max))
+		return "", errors.New(fmt.Sprintf("Length of string '%s' exceeds %d", input, max))
 	}
 	return strings.ToLower(re.ReplaceAllString(input, `-`)), nil
 }
