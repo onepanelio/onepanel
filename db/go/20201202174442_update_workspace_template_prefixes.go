@@ -69,6 +69,9 @@ func Up20201202174442(tx *sql.Tx) error {
 
 		for _, argoTemplate := range templates {
 			workflowTemplate.Name = v1.ConvertToSystemName(workflowTemplate.Name)
+			if len(workflowTemplate.Name) > 30 {
+				workflowTemplate.Name = workflowTemplate.Name[:30]
+			}
 			if err := workflowTemplate.GenerateUID(workflowTemplate.Name); err != nil {
 				return err
 			}
