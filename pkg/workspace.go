@@ -11,10 +11,12 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/lib/pq"
 	"github.com/onepanelio/core/pkg/util"
+	"github.com/onepanelio/core/pkg/util/env"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/pkg/util/request"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
+	corev1 "k8s.io/api/core/v1"
 	"strings"
 	"time"
 )
@@ -223,7 +225,7 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 	templates := argoTemplate.Spec.Templates
 	for i, t := range templates {
 		if t.Name == WorkspaceStatefulSetResource {
-			resultManifest, err := c.addResourceRequestsAndLimitsToWorkspaceTemplate(t, argoTemplate, workspace)
+			resultManifest, err := c.addRuntimeFieldsToWorkspaceTemplate(t, systemConfig)
 			if err != nil {
 				return nil, err
 			}
@@ -265,9 +267,9 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 	return workspace, nil
 }
 
-// addResourceRequestsAndLimitsToWorkspaceTemplate will take the workspace statefulset resource
+// addRuntimeFieldsToWorkspaceTemplate will take the workspace statefulset resource
 // and attempt to figure out the resources it requests, based on the Node selected.
-func (c *Client) addResourceRequestsAndLimitsToWorkspaceTemplate(t wfv1.Template, argoTemplate *wfv1.WorkflowTemplate, workspace *Workspace) ([]byte, error) {
+func (c *Client) addRuntimeFieldsToWorkspaceTemplate(t wfv1.Template, config SystemConfig) ([]byte, error) {
 	//due to placeholders, we can't unmarshal into a k8s statefulset
 	statefulSet := map[string]interface{}{}
 	if err := yaml.Unmarshal([]byte(t.Resource.Manifest), &statefulSet); err != nil {
@@ -294,6 +296,29 @@ func (c *Client) addResourceRequestsAndLimitsToWorkspaceTemplate(t wfv1.Template
 
 		templateSpec["containers"] = append([]interface{}{extraContainer}, containers...)
 	}
+
+	containerJSON, err := json.Marshal(templateSpec["containers"])
+	if err != nil {
+		return nil, fmt.Errorf("unable to marshal containers from json spec")
+	}
+
+	containers := make([]*corev1.Container, 0)
+	if err := json.Unmarshal(containerJSON, &containers); err != nil {
+		return nil, err
+	}
+
+	for i := range containers {
+		container := containers[i]
+		env.AddDefaultEnvVarsToContainer(container)
+		env.PrependEnvVarToContainer(container, "ONEPANEL_API_URL", config["ONEPANEL_API_URL"])
+		env.PrependEnvVarToContainer(container, "ONEPANEL_FQDN", config["ONEPANEL_FQDN"])
+		env.PrependEnvVarToContainer(container, "ONEPANEL_DOMAIN", config["ONEPANEL_DOMAIN"])
+		env.PrependEnvVarToContainer(container, "ONEPANEL_PROVIDER", config["ONEPANEL_PROVIDER"])
+		env.PrependEnvVarToContainer(container, "ONEPANEL_RESOURCE_NAMESPACE", "{{workflow.namespace}}")
+		env.PrependEnvVarToContainer(container, "ONEPANEL_RESOURCE_UID", "{{workflow.parameters.sys-uid}}")
+	}
+	templateSpec["containers"] = containers
+
 	resultManifest, err := yaml.Marshal(statefulSet)
 	if err != nil {
 		return nil, err
@@ -373,7 +398,7 @@ func (c *Client) startWorkspace(namespace string, parameters []byte, workspace *
 	templates := argoTemplate.Spec.Templates
 	for i, t := range templates {
 		if t.Name == WorkspaceStatefulSetResource {
-			resultManifest, err := c.addResourceRequestsAndLimitsToWorkspaceTemplate(t, argoTemplate, workspace)
+			resultManifest, err := c.addRuntimeFieldsToWorkspaceTemplate(t, systemConfig)
 			if err != nil {
 				return nil, err
 			}
@@ -734,10 +759,9 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 	workspace.WorkspaceTemplate = workspaceTemplate
 
 	templates := workspace.WorkspaceTemplate.WorkflowTemplate.ArgoWorkflowTemplate.Spec.Templates
-	argoTemplate := workspace.WorkspaceTemplate.WorkflowTemplate.ArgoWorkflowTemplate
 	for i, t := range templates {
 		if t.Name == WorkspaceStatefulSetResource {
-			resultManifest, err := c.addResourceRequestsAndLimitsToWorkspaceTemplate(t, argoTemplate, workspace)
+			resultManifest, err := c.addRuntimeFieldsToWorkspaceTemplate(t, config)
 			if err != nil {
 				return err
 			}
