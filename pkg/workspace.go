@@ -297,19 +297,27 @@ func (c *Client) addResourceRequestsAndLimitsToWorkspaceTemplate(t wfv1.Template
 		templateSpec["containers"] = append([]interface{}{extraContainer}, containers...)
 	}
 
-	containers, ok := templateSpec["containers"].([]corev1.Container)
-	if !ok {
-		return nil, errors.New("unable to type check statefulset manifest")
+	containerJSON, err := json.Marshal(templateSpec["containers"])
+	if err != nil {
+		return nil, fmt.Errorf("unable to marshal containers from json spec")
 	}
-	for _, container := range containers {
-		env.AddDefaultEnvVarsToContainer(&container)
-		env.PrependEnvVarToContainer(&container, "ONEPANEL_API_URL", config["ONEPANEL_API_URL"])
-		env.PrependEnvVarToContainer(&container, "ONEPANEL_FQDN", config["ONEPANEL_FQDN"])
-		env.PrependEnvVarToContainer(&container, "ONEPANEL_DOMAIN", config["ONEPANEL_DOMAIN"])
-		env.PrependEnvVarToContainer(&container, "ONEPANEL_PROVIDER", config["ONEPANEL_PROVIDER"])
-		env.PrependEnvVarToContainer(&container, "ONEPANEL_RESOURCE_NAMESPACE", "{{workflow.namespace}}")
-		env.PrependEnvVarToContainer(&container, "ONEPANEL_RESOURCE_UID", "{{workflow.parameters.sys-uid}}")
+
+	containers := make([]*corev1.Container, 0)
+	if err := json.Unmarshal(containerJSON, &containers); err != nil {
+		return nil, err
 	}
+
+	for i := range containers {
+		container := containers[i]
+		env.AddDefaultEnvVarsToContainer(container)
+		env.PrependEnvVarToContainer(container, "ONEPANEL_API_URL", config["ONEPANEL_API_URL"])
+		env.PrependEnvVarToContainer(container, "ONEPANEL_FQDN", config["ONEPANEL_FQDN"])
+		env.PrependEnvVarToContainer(container, "ONEPANEL_DOMAIN", config["ONEPANEL_DOMAIN"])
+		env.PrependEnvVarToContainer(container, "ONEPANEL_PROVIDER", config["ONEPANEL_PROVIDER"])
+		env.PrependEnvVarToContainer(container, "ONEPANEL_RESOURCE_NAMESPACE", "{{workflow.namespace}}")
+		env.PrependEnvVarToContainer(container, "ONEPANEL_RESOURCE_UID", "{{workflow.parameters.sys-uid}}")
+	}
+	templateSpec["containers"] = containers
 
 	resultManifest, err := yaml.Marshal(statefulSet)
 	if err != nil {
