@@ -225,7 +225,7 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 	templates := argoTemplate.Spec.Templates
 	for i, t := range templates {
 		if t.Name == WorkspaceStatefulSetResource {
-			resultManifest, err := c.addResourceRequestsAndLimitsToWorkspaceTemplate(t, systemConfig)
+			resultManifest, err := c.addRuntimeFieldsToWorkspaceTemplate(t, systemConfig)
 			if err != nil {
 				return nil, err
 			}
@@ -267,9 +267,9 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 	return workspace, nil
 }
 
-// addResourceRequestsAndLimitsToWorkspaceTemplate will take the workspace statefulset resource
+// addRuntimeFieldsToWorkspaceTemplate will take the workspace statefulset resource
 // and attempt to figure out the resources it requests, based on the Node selected.
-func (c *Client) addResourceRequestsAndLimitsToWorkspaceTemplate(t wfv1.Template, config SystemConfig) ([]byte, error) {
+func (c *Client) addRuntimeFieldsToWorkspaceTemplate(t wfv1.Template, config SystemConfig) ([]byte, error) {
 	//due to placeholders, we can't unmarshal into a k8s statefulset
 	statefulSet := map[string]interface{}{}
 	if err := yaml.Unmarshal([]byte(t.Resource.Manifest), &statefulSet); err != nil {
@@ -398,7 +398,7 @@ func (c *Client) startWorkspace(namespace string, parameters []byte, workspace *
 	templates := argoTemplate.Spec.Templates
 	for i, t := range templates {
 		if t.Name == WorkspaceStatefulSetResource {
-			resultManifest, err := c.addResourceRequestsAndLimitsToWorkspaceTemplate(t, systemConfig)
+			resultManifest, err := c.addRuntimeFieldsToWorkspaceTemplate(t, systemConfig)
 			if err != nil {
 				return nil, err
 			}
@@ -761,7 +761,7 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 	templates := workspace.WorkspaceTemplate.WorkflowTemplate.ArgoWorkflowTemplate.Spec.Templates
 	for i, t := range templates {
 		if t.Name == WorkspaceStatefulSetResource {
-			resultManifest, err := c.addResourceRequestsAndLimitsToWorkspaceTemplate(t, config)
+			resultManifest, err := c.addRuntimeFieldsToWorkspaceTemplate(t, config)
 			if err != nil {
 				return err
 			}
