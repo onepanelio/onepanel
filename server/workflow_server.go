@@ -328,13 +328,19 @@ func (s *WorkflowServer) ListWorkflowExecutions(ctx context.Context, req *api.Li
 		return nil, err
 	}
 
+	totalCount, err := client.CountWorkflowExecutions(req.Namespace, "", "", req.IncludeSystem, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	paginator := resourceRequest.Pagination
 	return &api.ListWorkflowExecutionsResponse{
-		Count:              int32(len(apiWorkflowExecutions)),
-		WorkflowExecutions: apiWorkflowExecutions,
-		Page:               int32(paginator.Page),
-		Pages:              paginator.CalculatePages(count),
-		TotalCount:         int32(count),
+		Count:               int32(len(apiWorkflowExecutions)),
+		WorkflowExecutions:  apiWorkflowExecutions,
+		Page:                int32(paginator.Page),
+		Pages:               paginator.CalculatePages(count),
+		TotalCount:          int32(count),
+		TotalAvailableCount: int32(totalCount),
 	}, nil
 }
 
