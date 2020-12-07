@@ -204,7 +204,7 @@ func injectArtifactRepositoryConfig(artifact *wfv1.Artifact, namespaceConfig *Na
 
 // injectHostPortToContainer adds a hostPort to the template container, if a nodeSelector is present.
 // Kubernetes will ensure that multiple containers with the same hostPort do not share the same node.
-func (c *Client) injectHostPortToContainer(template *wfv1.Template) error {
+func (c *Client) injectHostPortToContainer(template *wfv1.Template, opts *WorkflowExecutionOptions, config SystemConfig) error {
 	if template.NodeSelector == nil {
 		return nil
 	}
@@ -212,11 +212,37 @@ func (c *Client) injectHostPortToContainer(template *wfv1.Template) error {
 	ports := []corev1.ContainerPort{
 		{Name: "node-capturer", HostPort: 80, ContainerPort: 80},
 	}
+
+	// Add resource limits for GPUs
+	nodePoolVal := ""
+	for _, v := range template.NodeSelector {
+		nodePoolVal = v
+		break
+	}
+	if strings.Contains(nodePoolVal, "{{workflow.") {
+		parts := strings.Split(strings.Replace(nodePoolVal, "}}", "", -1), ".")
+		paramName := parts[len(parts)-1]
+		for _, parameter := range opts.Parameters {
+			if parameter.Name == paramName {
+				nodePoolVal = *parameter.Value
+			}
+		}
+	}
+	n, err := config.NodePoolOptionByValue(nodePoolVal)
+	if err != nil {
+		return nil
+	}
 	if template.Container != nil {
 		template.Container.Ports = ports
+		if n != nil && n.Resources.Limits != nil {
+			template.Container.Resources = n.Resources
+		}
 	}
 	if template.Script != nil {
 		template.Script.Container.Ports = ports
+		if n != nil && n.Resources.Limits != nil {
+			template.Container.Resources = n.Resources
+		}
 	}
 	return nil
 }
@@ -297,7 +323,7 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 				Name:      "sys-dshm",
 				MountPath: "/dev/shm",
 			})
-			err = c.injectHostPortToContainer(template)
+			err = c.injectHostPortToContainer(template, opts, systemConfig)
 			if err != nil {
 				return err
 			}
@@ -305,7 +331,7 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		}
 
 		if template.Script != nil {
-			err = c.injectHostPortToContainer(template)
+			err = c.injectHostPortToContainer(template, opts, systemConfig)
 			if err != nil {
 				return err
 			}
