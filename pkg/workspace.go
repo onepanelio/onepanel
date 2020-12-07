@@ -225,7 +225,7 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 	templates := argoTemplate.Spec.Templates
 	for i, t := range templates {
 		if t.Name == WorkspaceStatefulSetResource {
-			resultManifest, err := c.addRuntimeFieldsToWorkspaceTemplate(t, systemConfig)
+			resultManifest, err := c.addRuntimeFieldsToWorkspaceTemplate(t, workspace, systemConfig)
 			if err != nil {
 				return nil, err
 			}
@@ -269,7 +269,7 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 
 // addRuntimeFieldsToWorkspaceTemplate will take the workspace statefulset resource
 // and attempt to figure out the resources it requests, based on the Node selected.
-func (c *Client) addRuntimeFieldsToWorkspaceTemplate(t wfv1.Template, config SystemConfig) ([]byte, error) {
+func (c *Client) addRuntimeFieldsToWorkspaceTemplate(t wfv1.Template, workspace *Workspace, config SystemConfig) ([]byte, error) {
 	//due to placeholders, we can't unmarshal into a k8s statefulset
 	statefulSet := map[string]interface{}{}
 	if err := yaml.Unmarshal([]byte(t.Resource.Manifest), &statefulSet); err != nil {
@@ -287,7 +287,7 @@ func (c *Client) addRuntimeFieldsToWorkspaceTemplate(t wfv1.Template, config Sys
 	if !ok {
 		return nil, errors.New("unable to type check statefulset manifest")
 	}
-	extraContainer := generateExtraContainerWithHostPortToSequesterNode()
+	extraContainer := generateExtraContainerWithHostPortToSequesterNode(workspace, config)
 	if extraContainer != nil {
 		containers, ok := templateSpec["containers"].([]interface{})
 		if !ok {
@@ -330,7 +330,7 @@ func (c *Client) addRuntimeFieldsToWorkspaceTemplate(t wfv1.Template, config Sys
 // The extra container have a hostPort set. Kubernetes will ensure the hostPort does not get conflict
 // between containers, scheduling a new node as needed.
 // The container will sleep once started, and generally consume negligible resources.
-func generateExtraContainerWithHostPortToSequesterNode() map[string]interface{} {
+func generateExtraContainerWithHostPortToSequesterNode(workspace *Workspace, config SystemConfig) map[string]interface{} {
 	extraContainer := map[string]interface{}{
 		"image":   "alpine:latest",
 		"name":    "node-capturer",
@@ -344,6 +344,22 @@ func generateExtraContainerWithHostPortToSequesterNode() map[string]interface{} 
 			},
 		},
 	}
+
+	// Add resource limits for GPUs
+	nodePoolVal := ""
+	for _, parameter := range workspace.Parameters {
+		if parameter.Name == "sys-node-pool" {
+			nodePoolVal = *parameter.Value
+		}
+	}
+	n, err := config.NodePoolOptionByValue(nodePoolVal)
+	if err != nil {
+		return nil
+	}
+	if n != nil && n.Resources.Limits != nil {
+		extraContainer["resources"] = n.Resources
+	}
+
 	return extraContainer
 }
 
@@ -398,7 +414,7 @@ func (c *Client) startWorkspace(namespace string, parameters []byte, workspace *
 	templates := argoTemplate.Spec.Templates
 	for i, t := range templates {
 		if t.Name == WorkspaceStatefulSetResource {
-			resultManifest, err := c.addRuntimeFieldsToWorkspaceTemplate(t, systemConfig)
+			resultManifest, err := c.addRuntimeFieldsToWorkspaceTemplate(t, workspace, systemConfig)
 			if err != nil {
 				return nil, err
 			}
@@ -761,7 +777,7 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 	templates := workspace.WorkspaceTemplate.WorkflowTemplate.ArgoWorkflowTemplate.Spec.Templates
 	for i, t := range templates {
 		if t.Name == WorkspaceStatefulSetResource {
-			resultManifest, err := c.addRuntimeFieldsToWorkspaceTemplate(t, config)
+			resultManifest, err := c.addRuntimeFieldsToWorkspaceTemplate(t, workspace, config)
 			if err != nil {
 				return err
 			}
