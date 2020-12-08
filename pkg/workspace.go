@@ -287,7 +287,7 @@ func (c *Client) addRuntimeFieldsToWorkspaceTemplate(t wfv1.Template, workspace 
 	if !ok {
 		return nil, errors.New("unable to type check statefulset manifest")
 	}
-	extraContainer := generateExtraContainerWithHostPortToSequesterNode(workspace, config)
+	extraContainer := generateNodeCaptureContainer(workspace, config)
 	if extraContainer != nil {
 		containers, ok := templateSpec["containers"].([]interface{})
 		if !ok {
@@ -326,11 +326,11 @@ func (c *Client) addRuntimeFieldsToWorkspaceTemplate(t wfv1.Template, workspace 
 	return resultManifest, nil
 }
 
-// generateExtraContainerWithHostPortToSequesterNode will add an extra container to a workspace.
+// generateNodeCaptureContainer will add an extra container to a workspace.
 // The extra container have a hostPort set. Kubernetes will ensure the hostPort does not get conflict
 // between containers, scheduling a new node as needed.
 // The container will sleep once started, and generally consume negligible resources.
-func generateExtraContainerWithHostPortToSequesterNode(workspace *Workspace, config SystemConfig) map[string]interface{} {
+func generateNodeCaptureContainer(workspace *Workspace, config SystemConfig) map[string]interface{} {
 	extraContainer := map[string]interface{}{
 		"image":   "alpine:latest",
 		"name":    "node-capturer",

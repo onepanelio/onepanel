@@ -202,9 +202,9 @@ func injectArtifactRepositoryConfig(artifact *wfv1.Artifact, namespaceConfig *Na
 	}
 }
 
-// injectHostPortToContainer adds a hostPort to the template container, if a nodeSelector is present.
+// injectHostPortAndResourcesToContainer adds a hostPort to the template container, if a nodeSelector is present.
 // Kubernetes will ensure that multiple containers with the same hostPort do not share the same node.
-func (c *Client) injectHostPortToContainer(template *wfv1.Template, opts *WorkflowExecutionOptions, config SystemConfig) error {
+func (c *Client) injectHostPortAndResourcesToContainer(template *wfv1.Template, opts *WorkflowExecutionOptions, config SystemConfig) error {
 	if template.NodeSelector == nil {
 		return nil
 	}
@@ -323,7 +323,7 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 				Name:      "sys-dshm",
 				MountPath: "/dev/shm",
 			})
-			err = c.injectHostPortToContainer(template, opts, systemConfig)
+			err = c.injectHostPortAndResourcesToContainer(template, opts, systemConfig)
 			if err != nil {
 				return err
 			}
@@ -331,7 +331,7 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		}
 
 		if template.Script != nil {
-			err = c.injectHostPortToContainer(template, opts, systemConfig)
+			err = c.injectHostPortAndResourcesToContainer(template, opts, systemConfig)
 			if err != nil {
 				return err
 			}
