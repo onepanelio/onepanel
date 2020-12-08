@@ -12,6 +12,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"time"
 )
 
 type Config = rest.Config
@@ -81,6 +82,8 @@ func NewClient(config *Config, db *DB, systemConfig SystemConfig) (client *Clien
 		config.CertData = nil
 		config.CertFile = ""
 	}
+
+	config.Timeout = 1 * time.Minute
 
 	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
