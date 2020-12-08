@@ -5,6 +5,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	argoprojv1alpha1 "github.com/argoproj/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
 	"github.com/jmoiron/sqlx"
+	"github.com/onepanelio/core/pkg/util/env"
 	"github.com/onepanelio/core/pkg/util/gcs"
 	"github.com/onepanelio/core/pkg/util/router"
 	"github.com/onepanelio/core/pkg/util/s3"
@@ -12,6 +13,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"strconv"
 	"time"
 )
 
@@ -83,7 +85,7 @@ func NewClient(config *Config, db *DB, systemConfig SystemConfig) (client *Clien
 		config.CertFile = ""
 	}
 
-	config.Timeout = 1 * time.Minute
+	config.Timeout = getKubernetesTimeout()
 
 	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
@@ -148,4 +150,19 @@ func (c *Client) GetWebRouter() (router.Web, error) {
 	webRouter, err := router.NewWebRouter(*protocol, *fqdn)
 
 	return webRouter, err
+}
+
+// getKubernetesTimeout returns the timeout for kubernetes requests.
+// It uses the KUBERNETES_TIMEOUT environment variable and defaults to 60 seconds if not found or an error occurs
+// parsing the set timeout.
+func getKubernetesTimeout() time.Duration {
+	timeoutSeconds := env.Get("KUBERNETES_TIMEOUT", "60")
+
+	timeout, err := strconv.Atoi(timeoutSeconds)
+	if err != nil {
+		log.Warn("Unable to parse KUBERNETES_TIMEOUT environment variable. Defaulting to 60 seconds")
+		return 60 * time.Second
+	}
+
+	return time.Duration(timeout) * time.Second
 }
