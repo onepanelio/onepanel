@@ -283,11 +283,14 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		template.Metadata.Annotations["sidecar.istio.io/inject"] = "false"
 		//For workflows with accessible sidecars, we need istio
 		//Istio does not prevent the main container from stopping
+	sidecarLoop:
 		for _, s := range template.Sidecars {
-			if s.TTY == true {
-				template.Metadata.Annotations["sidecar.istio.io/inject"] = "true"
-				//Only need one instance to require istio injection
-				break
+			for _, e := range s.Env {
+				if e.Name == "inject-istio" && e.Value == "true" {
+					template.Metadata.Annotations["sidecar.istio.io/inject"] = "true"
+					//Only need one instance to require istio injection
+					break sidecarLoop
+				}
 			}
 		}
 
@@ -466,7 +469,16 @@ func (c *Client) injectAccessForSidecars(namespace string, wf *wfv1.Workflow) ([
 		for si, s := range t.Sidecars {
 			//If TTY is true, sidecar needs to be accessible by HTTP
 			//Otherwise, we skip the sidecar
-			if s.TTY != true {
+
+			hasInjectIstio := false
+			for _, e := range s.Env {
+				if e.Name == "inject-istio" && e.Value == "true" {
+					hasInjectIstio = true
+					break
+				}
+			}
+
+			if !hasInjectIstio {
 				continue
 			}
 			if len(s.Ports) == 0 {
