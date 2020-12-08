@@ -10,7 +10,17 @@ const (
 	DefaultEnvironmentVariableSecret = "onepanel-default-env"
 )
 
+// GetEnv gets the environment variable value, or returns fallback if the environment variable does not exist
+// Deprecated: use Get instead
 func GetEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
+
+// Get gets the environment variable value, or returns fallback if the environment variable does not exist
+func Get(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
 		return value
 	}
