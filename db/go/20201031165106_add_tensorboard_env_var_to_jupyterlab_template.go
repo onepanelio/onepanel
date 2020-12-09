@@ -3,6 +3,7 @@ package migration
 import (
 	"database/sql"
 	"github.com/pressly/goose"
+	"path/filepath"
 )
 
 func initialize20201031165106() {
@@ -16,11 +17,15 @@ func initialize20201031165106() {
 // These hooks will attempt to persist conda, pip, and jupyterlab extensions between pause and shut-down.
 func Up20201031165106(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
-	return updateWorkspaceTemplateManifest("20201031165106_jupyterlab.yaml", jupyterLabTemplateName)
+	return updateWorkspaceTemplateManifest(
+		filepath.Join("jupyterlab.yaml", "20201031165106"),
+		jupyterLabTemplateName)
 }
 
 // Down20201031165106 removes the lifecycle hooks from the template.
 func Down20201031165106(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
-	return updateWorkspaceTemplateManifest("20201028145442_jupyterlab.yaml", jupyterLabTemplateName)
+	return updateWorkspaceTemplateManifest(
+		filepath.Join("jupyterlab", "20201028145442.yaml"),
+		jupyterLabTemplateName)
 }

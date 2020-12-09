@@ -72,7 +72,9 @@ func Initialize() {
 	initialize20201115133046()
 	initialize20201115134934()
 	initialize20201115145814()
-	initialize20201130130433()	
+	initialize20201130130433()
+	initialize20201208155115()
+	initialize20201208155805()
 
 	if err := client.DB.Close(); err != nil {
 		log.Printf("[error] closing db %v", err)
@@ -142,13 +144,21 @@ func ReplaceArtifactRepositoryType(client *v1.Client, namespace *v1.Namespace, w
 	return nil
 }
 
-// readDataFile returns the contents of a file in the db/data/{name} directory
-func readDataFile(name string) (string, error) {
+// readDataFile returns the contents of a file in the db/data/{path} directory
+// path can indicate subdirectories like cvat/20201016170415.yaml
+func readDataFile(path string) (string, error) {
 	curDir, err := os.Getwd()
 	if err != nil {
 		return "", err
 	}
-	data, err := ioutil.ReadFile(filepath.Join(curDir, "db", "data", name))
+
+	finalPath := []string{curDir, "db", "yaml"}
+
+	for _, pathPart := range strings.Split(path, string(os.PathSeparator)) {
+		finalPath = append(finalPath, pathPart)
+	}
+
+	data, err := ioutil.ReadFile(filepath.Join(finalPath...))
 	if err != nil {
 		return "", err
 	}

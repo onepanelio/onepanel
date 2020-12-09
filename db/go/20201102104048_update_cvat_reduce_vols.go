@@ -3,6 +3,7 @@ package migration
 import (
 	"database/sql"
 	"github.com/pressly/goose"
+	"path/filepath"
 )
 
 func initialize20201102104048() {
@@ -17,11 +18,15 @@ func initialize20201102104048() {
 // are placed under one path, and that path is on one volume.
 func Up20201102104048(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
-	return updateWorkspaceTemplateManifest("20201102104048_cvat.yaml", cvatTemplateName)
+	return updateWorkspaceTemplateManifest(
+		filepath.Join("cvat", "20201102104048.yaml"),
+		cvatTemplateName)
 }
 
 // Down20201102104048 reverts CVAT back to original amount of volumes.
 func Down20201102104048(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
-	return updateWorkspaceTemplateManifest("20201016170415_cvat.yaml", cvatTemplateName)
+	return updateWorkspaceTemplateManifest(
+		filepath.Join("cvat", "20201016170415.yaml"),
+		cvatTemplateName)
 }

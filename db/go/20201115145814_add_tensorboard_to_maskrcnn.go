@@ -3,6 +3,7 @@ package migration
 import (
 	"database/sql"
 	"github.com/pressly/goose"
+	"path/filepath"
 )
 
 func initialize20201115145814() {
@@ -16,7 +17,7 @@ func initialize20201115145814() {
 func Up20201115145814(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkflowTemplateManifest(
-		"20201115145814_maskrcnn.yaml",
+		filepath.Join("maskrcnn", "20201115145814.yaml"),
 		maskRCNNWorkflowTemplateName,
 		map[string]string{
 			"used-by": "cvat",
