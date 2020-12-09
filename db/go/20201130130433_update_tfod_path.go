@@ -3,6 +3,7 @@ package migration
 import (
 	"database/sql"
 	"github.com/pressly/goose"
+	"path/filepath"
 )
 
 func initialize20201130130433() {
@@ -12,11 +13,11 @@ func initialize20201130130433() {
 	}
 }
 
-//Up20201130130433 remove namespace to resolve checkpoint path issue
+// Up20201130130433 remove namespace to resolve checkpoint path issue
 func Up20201130130433(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkflowTemplateManifest(
-		"20201130130433_tfod.yaml",
+		filepath.Join("tfod", "20201130130433.yaml"),
 		tensorflowObjectDetectionWorkflowTemplateName,
 		map[string]string{
 			"used-by": "cvat",
@@ -24,11 +25,11 @@ func Up20201130130433(tx *sql.Tx) error {
 	)
 }
 
-//Down20201130130433 do nothing
+// Down20201130130433 do nothing
 func Down20201130130433(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return updateWorkflowTemplateManifest(
-		"20201115134934_tfod.yaml",
+		filepath.Join("tfod", "20201115134934.yaml"),
 		tensorflowObjectDetectionWorkflowTemplateName,
 		map[string]string{
 			"used-by": "cvat",

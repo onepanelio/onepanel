@@ -3,6 +3,7 @@ package migration
 import (
 	"database/sql"
 	"github.com/pressly/goose"
+	"path/filepath"
 )
 
 func initialize20201115134934() {
@@ -12,11 +13,11 @@ func initialize20201115134934() {
 	}
 }
 
-//Up20201115134934 add TensorBoard sidecar to TFODs
+// Up20201115134934 add TensorBoard sidecar to TFODs
 func Up20201115134934(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkflowTemplateManifest(
-		"20201115134934_tfod.yaml",
+		filepath.Join("tfod", "20201115134934.yaml"),
 		tensorflowObjectDetectionWorkflowTemplateName,
 		map[string]string{
 			"used-by": "cvat",
@@ -24,7 +25,7 @@ func Up20201115134934(tx *sql.Tx) error {
 	)
 }
 
-//Down20201115134934 do nothing
+// Down20201115134934 do nothing
 func Down20201115134934(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return nil

@@ -3,6 +3,7 @@ package migration
 import (
 	"database/sql"
 	"github.com/pressly/goose"
+	"path/filepath"
 )
 
 func initialize20201113094916() {
@@ -16,11 +17,15 @@ func initialize20201113094916() {
 //Of note, this replaces the authentication request endpoint.
 func Up20201113094916(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
-	return updateWorkspaceTemplateManifest("20201113094916_cvat.yaml", cvatTemplateName)
+	return updateWorkspaceTemplateManifest(
+		filepath.Join("cvat", "20201113094916.yaml"),
+		cvatTemplateName)
 }
 
 //Down20201113094916 updates CVAT back to previous python-sdk version of 0.14.0
 func Down20201113094916(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
-	return updateWorkspaceTemplateManifest("20201102104048_cvat.yaml", cvatTemplateName)
+	return updateWorkspaceTemplateManifest(
+		filepath.Join("cvat", "20201102104048.yaml"),
+		cvatTemplateName)
 }

@@ -53,6 +53,32 @@ var (
 	workflowTemplateVersionLabelKey = "onepanel.io/workflow-template-version"
 )
 
+// envVarValueInSidecars returns true if any of the sidecars contain an environment variable with the input name and value
+// false otherwise
+func envVarValueInSidecars(sidecars []wfv1.UserContainer, name, value string) bool {
+	for _, s := range sidecars {
+		for _, e := range s.Env {
+			if e.Name == name && e.Value == value {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// hasEnvVarValue returns true if any of the env vars have the given name and value
+// false otherwise
+func hasEnvVarValue(envVars []corev1.EnvVar, name, value string) bool {
+	for _, e := range envVars {
+		if e.Name == name && e.Value == value {
+			return true
+		}
+	}
+
+	return false
+}
+
 func typeWorkflow(wf *wfv1.Workflow) (workflow *WorkflowExecution) {
 	manifest, err := json.Marshal(wf)
 	if err != nil {
@@ -306,15 +332,13 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		if template.Metadata.Annotations == nil {
 			template.Metadata.Annotations = make(map[string]string)
 		}
-		template.Metadata.Annotations["sidecar.istio.io/inject"] = "false"
+
 		//For workflows with accessible sidecars, we need istio
 		//Istio does not prevent the main container from stopping
-		for _, s := range template.Sidecars {
-			if s.TTY == true {
-				template.Metadata.Annotations["sidecar.istio.io/inject"] = "true"
-				//Only need one instance to require istio injection
-				break
-			}
+		if envVarValueInSidecars(template.Sidecars, "ONEPANEL_INTERACTIVE_SIDECAR", "true") {
+			template.Metadata.Annotations["sidecar.istio.io/inject"] = "true"
+		} else {
+			template.Metadata.Annotations["sidecar.istio.io/inject"] = "false"
 		}
 
 		if template.Container != nil {
@@ -490,11 +514,13 @@ func (c *Client) injectAccessForSidecars(namespace string, wf *wfv1.Workflow) ([
 	for tIdx, t := range wf.Spec.Templates {
 		//Inject services, virtual routes
 		for si, s := range t.Sidecars {
-			//If TTY is true, sidecar needs to be accessible by HTTP
+			//If ONEPANEL_INTERACTIVE_SIDECAR is true, sidecar needs to be accessible by HTTP
 			//Otherwise, we skip the sidecar
-			if s.TTY != true {
+			hasInjectIstio := hasEnvVarValue(s.Env, "ONEPANEL_INTERACTIVE_SIDECAR", "true")
+			if !hasInjectIstio {
 				continue
 			}
+
 			if len(s.Ports) == 0 {
 				msg := fmt.Sprintf("sidecar %s must have at least one port.", s.Name)
 				return nil, util.NewUserError(codes.InvalidArgument, msg)

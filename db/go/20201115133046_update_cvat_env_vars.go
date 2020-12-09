@@ -3,6 +3,7 @@ package migration
 import (
 	"database/sql"
 	"github.com/pressly/goose"
+	"path/filepath"
 )
 
 func initialize20201115133046() {
@@ -15,11 +16,15 @@ func initialize20201115133046() {
 //Up20201115133046 updates CVAT environment variables
 func Up20201115133046(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
-	return updateWorkspaceTemplateManifest("20201115133046_cvat.yaml", cvatTemplateName)
+	return updateWorkspaceTemplateManifest(
+		filepath.Join("cvat", "20201115133046.yaml"),
+		cvatTemplateName)
 }
 
 //Down20201115133046 reverts latest environment variable updates
 func Down20201115133046(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
-	return updateWorkspaceTemplateManifest("20201113094916_cvat.yaml", cvatTemplateName)
+	return updateWorkspaceTemplateManifest(
+		filepath.Join("cvat", "20201113094916"),
+		cvatTemplateName)
 }

@@ -3,6 +3,7 @@ package migration
 import (
 	"database/sql"
 	"github.com/pressly/goose"
+	"path/filepath"
 )
 
 func initialize20201028145443() {
@@ -18,11 +19,15 @@ func initialize20201028145443() {
 // On workspace resume / start, the code then tries to install these packages.
 func Up20201028145443(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
-	return updateWorkspaceTemplateManifest("vscode_20201028145443.yaml", vscodeWorkspaceTemplateName)
+	return updateWorkspaceTemplateManifest(
+		filepath.Join("vscode", "20201028145443.yaml"),
+		vscodeWorkspaceTemplateName)
 }
 
 // Down20201028145443 removes the lifecycle hooks from VSCode workspace template.
 func Down20201028145443(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
-	return updateWorkspaceTemplateManifest("vscode_20201028145443.yaml", vscodeWorkspaceTemplateName)
+	return updateWorkspaceTemplateManifest(
+		filepath.Join("vscode", "20201028145443.yaml"),
+		vscodeWorkspaceTemplateName)
 }
