@@ -13,7 +13,7 @@ func initialize20201115145814() {
 	}
 }
 
-//Up20201115145814 add TensorBoard sidecar to TFODs
+// Up20201115145814 add TensorBoard sidecar to TFODs
 func Up20201115145814(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkflowTemplateManifest(
@@ -25,7 +25,7 @@ func Up20201115145814(tx *sql.Tx) error {
 	)
 }
 
-//Down20201115145814 do nothing
+// Down20201115145814 do nothing
 func Down20201115145814(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return nil

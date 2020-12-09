@@ -13,6 +13,7 @@ func initialize20201208155115() {
 	}
 }
 
+// Up20201208155115 update the tfod workflow template to replace tty with an environment variable
 func Up20201208155115(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkflowTemplateManifest(
@@ -24,6 +25,7 @@ func Up20201208155115(tx *sql.Tx) error {
 	)
 }
 
+// Down20201208155115 rolls back the environment variable change
 func Down20201208155115(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return updateWorkflowTemplateManifest(
