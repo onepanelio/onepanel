@@ -151,7 +151,7 @@ templates:
         command: [sh, -c]
         env:
           - name: ONEPANEL_INTERACTIVE_SIDECAR
-            value: "true"
+            value: 'true'
         args: ["tensorboard --logdir /mnt/output/"]
         ports:
           - containerPort: 6006
