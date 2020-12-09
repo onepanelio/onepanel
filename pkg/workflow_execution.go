@@ -1975,17 +1975,18 @@ with statistics about the workflow that was just executed.
 func getCURLNodeTemplate(name, curlMethod, curlPath, curlBody string, inputs wfv1.Inputs) (template *wfv1.Template, err error) {
 	host := "onepanel-core.onepanel.svc.cluster.local"
 	endpoint := fmt.Sprintf("http://%s%s", host, curlPath)
+
 	template = &wfv1.Template{
 		Name:   name,
 		Inputs: inputs,
 		Container: &corev1.Container{
 			Name:    "curl",
-			Image:   "curlimages/curl",
+			Image:   "curlimages/curl:7.73.0",
 			Command: []string{"sh", "-c"},
 			Args: []string{
 				"SERVICE_ACCOUNT_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) " +
 					"&& curl -X " + curlMethod + " -s -o /dev/null -w '%{http_code}' " +
-					"--connect-timeout 10 --retry 5 --retry-delay 5 " +
+					"--connect-timeout 10 --retry 10 --retry-delay 5 --retry-all-errors --fail " +
 					"'" + endpoint + "' -H \"Content-Type: application/json\" -H 'Connection: keep-alive' -H 'Accept: application/json' " +
 					"-H 'Authorization: Bearer '\"$SERVICE_ACCOUNT_TOKEN\"'' " +
 					"--data '" + curlBody + "' --compressed",
