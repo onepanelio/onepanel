@@ -13,6 +13,7 @@ func initialize20201209124226() {
 	}
 }
 
+// Up20201209124226 updates the tensorflow workflow
 func Up20201209124226(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkflowTemplateManifest(
@@ -24,6 +25,7 @@ func Up20201209124226(tx *sql.Tx) error {
 	)
 }
 
+// Down20201209124226 rolls back the tensorflow workflow
 func Down20201209124226(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return updateWorkflowTemplateManifest(
