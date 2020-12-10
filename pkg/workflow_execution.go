@@ -267,7 +267,7 @@ func (c *Client) injectHostPortAndResourcesToContainer(template *wfv1.Template, 
 	if template.Script != nil {
 		template.Script.Container.Ports = ports
 		if n != nil && n.Resources.Limits != nil {
-			template.Container.Resources = n.Resources
+			template.Script.Container.Resources = n.Resources
 		}
 	}
 	return nil
