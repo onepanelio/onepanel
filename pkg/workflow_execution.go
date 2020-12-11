@@ -8,8 +8,6 @@ import (
 	"errors"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
-	"github.com/argoproj/argo/persist/sqldb"
-	"github.com/argoproj/argo/workflow/hydrator"
 	"github.com/google/uuid"
 	"github.com/onepanelio/core/pkg/util/gcs"
 	"github.com/onepanelio/core/pkg/util/label"
@@ -775,12 +773,11 @@ func (c *Client) ValidateWorkflowExecution(namespace string, manifest []byte) (e
 	}
 
 	wftmplGetter := templateresolution.WrapWorkflowTemplateInterface(c.ArgoprojV1alpha1().WorkflowTemplates(namespace))
-	cwftmplGetter := templateresolution.WrapClusterWorkflowTemplateInterface(c.argoprojV1alpha1.ClusterWorkflowTemplates())
 	for _, wf := range workflows {
 		if err = c.injectAutomatedFields(namespace, &wf, &WorkflowExecutionOptions{}); err != nil {
 			return err
 		}
-		_, err = validate.ValidateWorkflow(wftmplGetter, cwftmplGetter, &wf, validate.ValidateOpts{})
+		_, err = validate.ValidateWorkflow(wftmplGetter, &wf, validate.ValidateOpts{})
 		if err != nil {
 			return
 		}
@@ -1476,8 +1473,7 @@ func (c *Client) RetryWorkflowExecution(namespace, uid string) (workflow *Workfl
 		return
 	}
 
-	h := hydrator.New(sqldb.ExplosiveOffloadNodeStatusRepo)
-	wf, err = argoutil.RetryWorkflow(c, h, c.ArgoprojV1alpha1().Workflows(namespace), wf, true, "")
+	wf, err = argoutil.RetryWorkflow(c, c.ArgoprojV1alpha1().Workflows(namespace), wf)
 
 	workflow = typeWorkflow(wf)
 
@@ -1495,7 +1491,7 @@ func (c *Client) ResubmitWorkflowExecution(namespace, uid string) (workflow *Wor
 		return
 	}
 
-	wf, err = argoutil.SubmitWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), c, namespace, wf, &wfv1.SubmitOpts{})
+	wf, err = argoutil.SubmitWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), c, namespace, wf, &argoutil.SubmitOpts{})
 	if err != nil {
 		return
 	}
@@ -1506,9 +1502,7 @@ func (c *Client) ResubmitWorkflowExecution(namespace, uid string) (workflow *Wor
 }
 
 func (c *Client) ResumeWorkflowExecution(namespace, uid string) (workflow *WorkflowExecution, err error) {
-	// TODO Review hydrator
-	h := hydrator.New(sqldb.ExplosiveOffloadNodeStatusRepo)
-	err = argoutil.ResumeWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), h, uid, "")
+	err = argoutil.ResumeWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), uid, "")
 	if err != nil {
 		return
 	}
@@ -1542,8 +1536,7 @@ func (c *Client) TerminateWorkflowExecution(namespace, uid string) (err error) {
 		return err
 	}
 
-	h := hydrator.New(sqldb.ExplosiveOffloadNodeStatusRepo)
-	err = argoutil.StopWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), h, uid, "", "")
+	err = argoutil.StopWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), uid, "", "")
 
 	return
 }
@@ -1705,22 +1698,20 @@ func filterOutCustomTypesFromManifest(manifest []byte) (result []byte, err error
 		return manifest, nil
 	}
 
-	specMap, err := convertMapToStringKeys(spec.(map[interface{}]interface{}))
-	if err != nil {
+	specMap, ok := spec.(map[string]interface{})
+	if !ok {
 		return manifest, nil
 	}
-	data["spec"] = specMap
 
 	arguments, ok := specMap["arguments"]
 	if !ok {
 		return manifest, nil
 	}
 
-	argumentsMap, err := convertMapToStringKeys(arguments.(map[interface{}]interface{}))
-	if err != nil {
+	argumentsMap, ok := arguments.(map[string]interface{})
+	if !ok {
 		return manifest, nil
 	}
-	specMap["arguments"] = argumentsMap
 
 	parameters, ok := argumentsMap["parameters"]
 	if !ok {
@@ -1736,8 +1727,8 @@ func filterOutCustomTypesFromManifest(manifest []byte) (result []byte, err error
 	parametersToKeep := make([]interface{}, 0)
 
 	for _, parameter := range parametersList {
-		paramMap, err := convertMapToStringKeys(parameter.(map[interface{}]interface{}))
-		if err != nil {
+		paramMap, ok := parameter.(map[string]interface{})
+		if !ok {
 			continue
 		}
 
@@ -1746,7 +1737,7 @@ func filterOutCustomTypesFromManifest(manifest []byte) (result []byte, err error
 			paramMap["value"] = "<value>"
 		}
 
-		parametersToKeep = append(parametersToKeep, paramMap)
+		parametersToKeep = append(parametersToKeep, parameter)
 
 		keysToDelete := make([]string, 0)
 		for key := range paramMap {
@@ -2255,18 +2246,4 @@ func (c *Client) UpdateWorkflowExecutionMetrics(namespace, uid string, metrics M
 	}
 
 	return
-}
-
-func convertMapToStringKeys(input map[interface{}]interface{}) (output map[string]interface{}, err error) {
-	output = make(map[string]interface{})
-	for key, value := range input {
-		keyString, ok := key.(string)
-		if ok {
-			output[keyString] = value
-		} else {
-			return nil, fmt.Errorf("unable to parse key as a string")
-		}
-	}
-
-	return output, nil
 }
