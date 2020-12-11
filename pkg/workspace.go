@@ -798,7 +798,7 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 
 	// Update parameters if they are passed in
 	if len(parameters) != 0 {
-		sb.Set("parameters", parametersJSON)
+		sb = sb.Set("parameters", parametersJSON)
 	}
 
 	_, err = sb.RunWith(c.DB).
