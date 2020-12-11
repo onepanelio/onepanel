@@ -24,9 +24,9 @@ arguments:
         batch_size_list=16,32,64,128    # batch sizes for hyperparameter tuner
         lr_list=0.0001,0.001,0.01,0.1   # learning rates for hyperparameter tuner
         momentum_range=0,1              # range for momentum for hyperparameter tuner
-        epochs=10                       # epochs to train each model for
+        epochs=2                        # epochs to train each model for
         tuner=TPE                       # any tuner supprted by NNI
-        max_trial_num=2                 # max number of trials to run
+        max_trial_num=10                # max number of trials to run
       hint: 'Define parameters for hyperparameter tuning'
     - displayName: Node pool
       hint: Name of node pool or group to run this workflow task
