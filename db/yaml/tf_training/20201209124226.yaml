@@ -46,7 +46,7 @@ templates:
           mountPath: /mnt/output
     sidecars:
       - name: tensorboard
-        image: 'tensorflow/tensorflow:2.3.0'
+        image: tensorflow/tensorflow:2.3.0
         command:
           - sh
           - '-c'
