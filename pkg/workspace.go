@@ -134,14 +134,14 @@ func mergeWorkspaceParameters(existingParameters, newParameters []Parameter, ove
 	}
 
 	for _, p := range existingParameters {
-		newParam, ok := parameterMap[p.Name]
+		newValue, ok := parameterMap[p.Name]
 		if !ok {
 			parameters = append(parameters, Parameter{
 				Name:  p.Name,
 				Value: p.Value,
 			})
 		} else {
-			p.Value = newParam
+			p.Value = newValue
 		}
 	}
 
