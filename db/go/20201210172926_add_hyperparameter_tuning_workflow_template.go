@@ -12,6 +12,7 @@ func initialize20201210172926() {
 	goose.AddMigration(Up20201210172926, Down20201210172926)
 }
 
+// Up20201210172926 adds Hyperparameter Tuning Workflow Template
 func Up20201210172926(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return createWorkflowTemplate(
@@ -24,6 +25,7 @@ func Up20201210172926(tx *sql.Tx) error {
 	)
 }
 
+// Down20201210172926 archives Hyperparameter Tuning Workflow Template
 func Down20201210172926(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return archiveWorkflowTemplate(hyperparameterTuningTemplateName)
