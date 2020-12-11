@@ -122,8 +122,8 @@ func updateWorkspaceStatusBuilder(namespace, uid string, status *WorkspaceStatus
 }
 
 // mergeWorkspaceParameters combines two parameter arrays. If a parameter in newParameters is not in
-// the existing ones, it is added. If it is, it is ignored.
-func mergeWorkspaceParameters(existingParameters, newParameters []Parameter) (parameters []Parameter) {
+// the existing ones, it is added. If it is and override is true, it is replaced. Otherwise it is ignored.
+func mergeWorkspaceParameters(existingParameters, newParameters []Parameter, override bool) (parameters []Parameter) {
 	parameterMap := make(map[string]*string, 0)
 	for _, p := range newParameters {
 		parameterMap[p.Name] = p.Value
@@ -134,12 +134,14 @@ func mergeWorkspaceParameters(existingParameters, newParameters []Parameter) (pa
 	}
 
 	for _, p := range existingParameters {
-		_, ok := parameterMap[p.Name]
+		newParam, ok := parameterMap[p.Name]
 		if !ok {
 			parameters = append(parameters, Parameter{
 				Name:  p.Name,
 				Value: p.Value,
 			})
+		} else {
+			p.Value = newParam
 		}
 	}
 
@@ -169,7 +171,7 @@ func injectWorkspaceSystemParameters(namespace string, workspace *Workspace, wor
 			Value: ptr.String(host),
 		},
 	}
-	workspace.Parameters = mergeWorkspaceParameters(workspace.Parameters, systemParameters)
+	workspace.Parameters = mergeWorkspaceParameters(workspace.Parameters, systemParameters, false)
 
 	return
 }
@@ -742,7 +744,7 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 		return
 	}
 
-	workspace.Parameters = mergeWorkspaceParameters(workspace.Parameters, parameters)
+	workspace.Parameters = mergeWorkspaceParameters(workspace.Parameters, parameters, true)
 	parametersJSON, err := json.Marshal(workspace.Parameters)
 	if err != nil {
 		return
@@ -796,7 +798,7 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 
 	// Update parameters if they are passed in
 	if len(parameters) != 0 {
-		sb.Set("parameters", parametersJSON)
+		sb = sb.Set("parameters", parametersJSON)
 	}
 
 	_, err = sb.RunWith(c.DB).
