@@ -290,6 +290,7 @@ func (c *Client) addRuntimeFieldsToWorkspaceTemplate(t wfv1.Template, workspace 
 		return nil, errors.New("unable to type check statefulset manifest")
 	}
 	extraContainer := generateNodeCaptureContainer(workspace, config)
+
 	if extraContainer != nil {
 		containers, ok := templateSpec["containers"].([]interface{})
 		if !ok {
@@ -309,8 +310,23 @@ func (c *Client) addRuntimeFieldsToWorkspaceTemplate(t wfv1.Template, workspace 
 		return nil, err
 	}
 
+	mainContainerIndex := -1
+	if len(containers) == 2 {
+		// It's 1 because we prepend the node capture container and we want the other container to be main
+		mainContainerIndex = 1
+	}
+
 	for i := range containers {
 		container := containers[i]
+
+		// Main containers must have the ONEPANEL_MAIN_CONTAINER environment variable
+		for _, envVar := range container.Env {
+			if envVar.Name == "ONEPANEL_MAIN_CONTAINER" {
+				mainContainerIndex = i
+				break
+			}
+		}
+
 		env.AddDefaultEnvVarsToContainer(container)
 		env.PrependEnvVarToContainer(container, "ONEPANEL_API_URL", config["ONEPANEL_API_URL"])
 		env.PrependEnvVarToContainer(container, "ONEPANEL_FQDN", config["ONEPANEL_FQDN"])
@@ -319,6 +335,24 @@ func (c *Client) addRuntimeFieldsToWorkspaceTemplate(t wfv1.Template, workspace 
 		env.PrependEnvVarToContainer(container, "ONEPANEL_RESOURCE_NAMESPACE", "{{workflow.namespace}}")
 		env.PrependEnvVarToContainer(container, "ONEPANEL_RESOURCE_UID", "{{workflow.parameters.sys-uid}}")
 	}
+
+	if mainContainerIndex != -1 {
+		// Add resource limits for GPUs
+		nodePoolVal := ""
+		for _, parameter := range workspace.Parameters {
+			if parameter.Name == "sys-node-pool" {
+				nodePoolVal = *parameter.Value
+			}
+		}
+		n, err := config.NodePoolOptionByValue(nodePoolVal)
+		if err != nil {
+			return nil, err
+		}
+		if n != nil && n.Resources.Limits != nil {
+			containers[mainContainerIndex].Resources = n.Resources
+		}
+	}
+
 	templateSpec["containers"] = containers
 
 	resultManifest, err := yaml.Marshal(statefulSet)
@@ -345,21 +379,6 @@ func generateNodeCaptureContainer(workspace *Workspace, config SystemConfig) map
 				"containerPort": 80,
 			},
 		},
-	}
-
-	// Add resource limits for GPUs
-	nodePoolVal := ""
-	for _, parameter := range workspace.Parameters {
-		if parameter.Name == "sys-node-pool" {
-			nodePoolVal = *parameter.Value
-		}
-	}
-	n, err := config.NodePoolOptionByValue(nodePoolVal)
-	if err != nil {
-		return nil
-	}
-	if n != nil && n.Resources.Limits != nil {
-		extraContainer["resources"] = n.Resources
 	}
 
 	return extraContainer
