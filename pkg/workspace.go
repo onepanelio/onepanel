@@ -290,8 +290,6 @@ func (c *Client) addRuntimeFieldsToWorkspaceTemplate(t wfv1.Template, workspace 
 		return nil, errors.New("unable to type check statefulset manifest")
 	}
 	extraContainer := generateNodeCaptureContainer(workspace, config)
-	resourcesRaw := extraContainer["resources"]
-	delete(extraContainer, "resources")
 
 	if extraContainer != nil {
 		containers, ok := templateSpec["containers"].([]interface{})
@@ -339,9 +337,19 @@ func (c *Client) addRuntimeFieldsToWorkspaceTemplate(t wfv1.Template, workspace 
 	}
 
 	if mainContainerIndex != -1 {
-		resource, ok := resourcesRaw.(corev1.ResourceRequirements)
-		if ok {
-			containers[mainContainerIndex].Resources = resource
+		// Add resource limits for GPUs
+		nodePoolVal := ""
+		for _, parameter := range workspace.Parameters {
+			if parameter.Name == "sys-node-pool" {
+				nodePoolVal = *parameter.Value
+			}
+		}
+		n, err := config.NodePoolOptionByValue(nodePoolVal)
+		if err != nil {
+			return nil, err
+		}
+		if n != nil && n.Resources.Limits != nil {
+			containers[mainContainerIndex].Resources = n.Resources
 		}
 	}
 
@@ -371,21 +379,6 @@ func generateNodeCaptureContainer(workspace *Workspace, config SystemConfig) map
 				"containerPort": 80,
 			},
 		},
-	}
-
-	// Add resource limits for GPUs
-	nodePoolVal := ""
-	for _, parameter := range workspace.Parameters {
-		if parameter.Name == "sys-node-pool" {
-			nodePoolVal = *parameter.Value
-		}
-	}
-	n, err := config.NodePoolOptionByValue(nodePoolVal)
-	if err != nil {
-		return nil
-	}
-	if n != nil && n.Resources.Limits != nil {
-		extraContainer["resources"] = n.Resources
 	}
 
 	return extraContainer
