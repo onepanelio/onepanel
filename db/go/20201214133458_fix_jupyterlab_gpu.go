@@ -17,7 +17,7 @@ func Up20201214133458(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkspaceTemplateManifest(
 		filepath.Join("jupyterlab", "20201214133458.yaml"),
-		cvatTemplateName)
+		jupyterLabTemplateName)
 }
 
 // Down20201214133458 undoes the change
@@ -25,5 +25,5 @@ func Down20201214133458(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return updateWorkspaceTemplateManifest(
 		filepath.Join("jupyterlab", "20201031165106.yaml"),
-		cvatTemplateName)
+		jupyterLabTemplateName)
 }
