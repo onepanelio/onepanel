@@ -1130,8 +1130,27 @@ func (c *Client) WatchWorkflowExecution(namespace, uid string) (<-chan *Workflow
 		var next watch.Event
 		done := false
 
+		timeouts := 0
+
 		for !done {
 			for next = range watcher.ResultChan() {
+				watchEvent, ok := next.Object.(*metav1.Status)
+				if ok {
+					// If a timeout occurred, retry.
+					if strings.Contains(watchEvent.Message, "Client.Timeout or context cancellation") {
+						if timeouts > 5 {
+							done = true
+							break
+						}
+
+						timeouts += 1
+						continue
+					}
+
+					done = true
+					break
+				}
+
 				workflow, ok := next.Object.(*wfv1.Workflow)
 				if !ok {
 					done = true
