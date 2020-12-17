@@ -9,6 +9,7 @@ import (
 func initialize20201214133458() {
 	if _, ok := initializedMigrations[20201214133458]; !ok {
 		goose.AddMigration(Up20201214133458, Down20201214133458)
+		initializedMigrations[20201214133458] = true
 	}
 }
 
