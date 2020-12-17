@@ -1143,7 +1143,7 @@ func (c *Client) WatchWorkflowExecution(namespace, uid string) (<-chan *Workflow
 							break
 						}
 
-						timeouts += 1
+						timeouts++
 						continue
 					}
 
