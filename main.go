@@ -10,7 +10,7 @@ import (
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jmoiron/sqlx"
-	"github.com/onepanelio/core/api"
+	api "github.com/onepanelio/core/api/gen"
 	migrations "github.com/onepanelio/core/db/go"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util/env"

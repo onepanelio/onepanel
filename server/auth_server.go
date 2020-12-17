@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/onepanelio/core/api"
+	api "github.com/onepanelio/core/api/gen"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/server/auth"

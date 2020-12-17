@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/onepanelio/core/api"
+	api "github.com/onepanelio/core/api/gen"
 	"github.com/onepanelio/core/server/auth"
 )
 

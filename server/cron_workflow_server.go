@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/onepanelio/core/api"
+	api "github.com/onepanelio/core/api/gen"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/pkg/util/request/pagination"

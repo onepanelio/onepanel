@@ -18,9 +18,13 @@ jq:
 protoc:
 	protoc -I/usr/local/include \
 		-Iapi/third_party/ \
-		-Iapi/ \
-		--grpc-gateway_out ./api \
+		-Iapi/proto \
+		--go_out ./api/gen --go_opt paths=source_relative \
+		--go-grpc_out ./api/gen --go-grpc_opt paths=source_relative \
+		--go-grpc_opt paths=source_relative \
+		--grpc-gateway_out ./api/gen \
 		--grpc-gateway_opt logtostderr=true \
+		--grpc-gateway_opt allow_delete_body=true \
 	    --grpc-gateway_opt paths=source_relative \
         --grpc-gateway_opt generate_unbound_methods=true \
 		--openapiv2_out ./api \
@@ -29,7 +33,7 @@ protoc:
 		--openapiv2_opt allow_delete_body=true \
 		--openapiv2_opt logtostderr=true \
 		--openapiv2_opt simple_operation_ids=true \
-		api/*.proto
+		api/proto/*.proto
 
 api: init protoc jq
 

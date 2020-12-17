@@ -5,7 +5,7 @@ import (
 	"math"
 	"strings"
 
-	"github.com/onepanelio/core/api"
+	api "github.com/onepanelio/core/api/gen"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/server/auth"
 )

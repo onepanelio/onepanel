@@ -1,6 +1,8 @@
 syntax = "proto3";
 
 package api;
+option go_package = "github.com/onepanelio/core/api/gen";
+
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
