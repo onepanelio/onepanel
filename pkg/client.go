@@ -156,12 +156,12 @@ func (c *Client) GetWebRouter() (router.Web, error) {
 // It uses the KUBERNETES_TIMEOUT environment variable and defaults to 60 seconds if not found or an error occurs
 // parsing the set timeout.
 func getKubernetesTimeout() time.Duration {
-	timeoutSeconds := env.Get("KUBERNETES_TIMEOUT", "60")
+	timeoutSeconds := env.Get("KUBERNETES_TIMEOUT", "180")
 
 	timeout, err := strconv.Atoi(timeoutSeconds)
 	if err != nil {
 		log.Warn("Unable to parse KUBERNETES_TIMEOUT environment variable. Defaulting to 60 seconds")
-		return 60 * time.Second
+		return 180 * time.Second
 	}
 
 	return time.Duration(timeout) * time.Second
