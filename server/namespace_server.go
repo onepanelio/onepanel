@@ -10,7 +10,9 @@ import (
 	"github.com/onepanelio/core/server/auth"
 )
 
-type NamespaceServer struct{}
+type NamespaceServer struct {
+	api.UnimplementedNamespaceServiceServer
+}
 
 func NewNamespaceServer() *NamespaceServer {
 	return &NamespaceServer{}

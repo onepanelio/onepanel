@@ -14,6 +14,7 @@ import (
 
 // AuthServer contains logic for checking Authorization of resources in the system
 type AuthServer struct {
+	api.UnimplementedAuthServiceServer
 }
 
 // NewAuthServer creates a new AuthServer

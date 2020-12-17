@@ -18,11 +18,18 @@ jq:
 protoc:
 	protoc -I/usr/local/include \
 		-Iapi/third_party/ \
- 		-Iapi/ \
- 		api/*.proto \
- 		--go_out=plugins=grpc:api \
- 		--grpc-gateway_out=logtostderr=true,allow_delete_body=true:api \
- 		--swagger_out=allow_merge=true,fqn_for_swagger_name=true,allow_delete_body=true,logtostderr=true,simple_operation_ids=true:api
+		-Iapi/ \
+		--grpc-gateway_out ./api \
+		--grpc-gateway_opt logtostderr=true \
+	    --grpc-gateway_opt paths=source_relative \
+        --grpc-gateway_opt generate_unbound_methods=true \
+		--openapiv2_out ./api \
+		--openapiv2_opt allow_merge=true \
+		--openapiv2_opt fqn_for_openapi_name=true \
+		--openapiv2_opt allow_delete_body=true \
+		--openapiv2_opt logtostderr=true \
+		--openapiv2_opt simple_operation_ids=true \
+		api/*.proto
 
 api: init protoc jq
 

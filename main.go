@@ -8,7 +8,7 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jmoiron/sqlx"
 	"github.com/onepanelio/core/api"
 	migrations "github.com/onepanelio/core/db/go"
@@ -171,17 +171,18 @@ func startHTTPProxy() {
 	opts := []grpc.DialOption{grpc.WithInsecure(), grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(math.MaxInt64),
 		grpc.MaxCallRecvMsgSize(math.MaxInt64))}
 
-	registerHandler(api.RegisterWorkflowTemplateServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
-	registerHandler(api.RegisterWorkflowServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
-	registerHandler(api.RegisterCronWorkflowServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
-	registerHandler(api.RegisterSecretServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
-	registerHandler(api.RegisterNamespaceServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
-	registerHandler(api.RegisterAuthServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
-	registerHandler(api.RegisterLabelServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
-	registerHandler(api.RegisterWorkspaceTemplateServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
-	registerHandler(api.RegisterWorkspaceServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
-	registerHandler(api.RegisterConfigServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
-	registerHandler(api.RegisterServiceServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
+	api.RegisterWorkflowTemplateServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+	api.RegisterWorkflowTemplateServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+	api.RegisterWorkflowServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+	api.RegisterCronWorkflowServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+	api.RegisterSecretServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+	api.RegisterNamespaceServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+	api.RegisterAuthServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+	api.RegisterLabelServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+	api.RegisterWorkspaceTemplateServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+	api.RegisterWorkspaceServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+	api.RegisterConfigServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+	api.RegisterServiceServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
 
 	log.Printf("Starting HTTP proxy on port %v", *httpPort)
 

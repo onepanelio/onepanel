@@ -21,7 +21,9 @@ var reservedWorkspaceNames = map[string]bool{
 	"modeldb": true,
 }
 
-type WorkspaceServer struct{}
+type WorkspaceServer struct {
+	api.UnimplementedWorkspaceServiceServer
+}
 
 func apiWorkspace(wt *v1.Workspace, config v1.SystemConfig) *api.Workspace {
 	protocol := config.APIProtocol()

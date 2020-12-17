@@ -14,7 +14,9 @@ import (
 	"time"
 )
 
-type WorkspaceTemplateServer struct{}
+type WorkspaceTemplateServer struct {
+	api.UnimplementedWorkspaceTemplateServiceServer
+}
 
 func apiWorkspaceTemplate(wt *v1.WorkspaceTemplate) *api.WorkspaceTemplate {
 	res := &api.WorkspaceTemplate{

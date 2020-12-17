@@ -49,7 +49,9 @@ func mapKeyValuesToMap(keyValues []*api.KeyValue) map[string]string {
 	return result
 }
 
-type LabelServer struct{}
+type LabelServer struct {
+	api.UnimplementedLabelServiceServer
+}
 
 func NewLabelServer() *LabelServer {
 	return &LabelServer{}

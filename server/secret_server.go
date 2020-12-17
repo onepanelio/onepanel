@@ -9,7 +9,9 @@ import (
 	"github.com/onepanelio/core/server/auth"
 )
 
-type SecretServer struct{}
+type SecretServer struct {
+	api.UnimplementedSecretServiceServer
+}
 
 func NewSecretServer() *SecretServer {
 	return &SecretServer{}

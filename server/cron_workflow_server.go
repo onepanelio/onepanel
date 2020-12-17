@@ -11,7 +11,9 @@ import (
 	"github.com/onepanelio/core/server/converter"
 )
 
-type CronWorkflowServer struct{}
+type CronWorkflowServer struct {
+	api.UnimplementedCronWorkflowServiceServer
+}
 
 func NewCronWorkflowServer() *CronWorkflowServer {
 	return &CronWorkflowServer{}

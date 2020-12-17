@@ -8,7 +8,9 @@ import (
 )
 
 // ConfigServer contains actions for system configuration related items
-type ConfigServer struct{}
+type ConfigServer struct {
+	api.UnimplementedConfigServiceServer
+}
 
 // NewConfigServer creates a new ConfigServer
 func NewConfigServer() *ConfigServer {

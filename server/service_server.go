@@ -8,7 +8,9 @@ import (
 )
 
 // ServiceServer contains actions for installed services
-type ServiceServer struct{}
+type ServiceServer struct {
+	api.UnimplementedServiceServiceServer
+}
 
 // NewServiceServer creates a new ServiceServer
 func NewServiceServer() *ServiceServer {

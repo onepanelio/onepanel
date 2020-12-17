@@ -11,7 +11,9 @@ import (
 	"github.com/onepanelio/core/server/converter"
 )
 
-type WorkflowTemplateServer struct{}
+type WorkflowTemplateServer struct {
+	api.UnimplementedWorkflowTemplateServiceServer
+}
 
 func NewWorkflowTemplateServer() *WorkflowTemplateServer {
 	return &WorkflowTemplateServer{}

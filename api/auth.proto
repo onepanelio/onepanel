@@ -3,7 +3,7 @@ syntax = "proto3";
 package api;
 
 import "google/api/annotations.proto";
-import "protoc-gen-swagger/options/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 service AuthService {
     rpc IsValidToken(IsValidTokenRequest) returns (IsValidTokenResponse) {
@@ -19,7 +19,8 @@ service AuthService {
             post: "/apis/v1beta1/auth/get_access_token"
             body: "*"
         };
-        option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 			security: {
             }
         };
