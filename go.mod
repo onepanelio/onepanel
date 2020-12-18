@@ -1,10 +1,10 @@
 module github.com/onepanelio/core
 
-go 1.14
+go 1.15
 
 require (
+	cloud.google.com/go/storage v1.10.0
 	github.com/Azure/go-autorest v14.0.0+incompatible // indirect
-	cloud.google.com/go/storage v1.6.0
 	github.com/Azure/go-autorest/autorest/adal v0.8.2 // indirect
 	github.com/Masterminds/squirrel v1.1.0
 	github.com/argoproj/argo v0.0.0-20200331233432-4d1175eb68f6
@@ -14,11 +14,12 @@ require (
 	github.com/evanphx/json-patch v4.5.0+incompatible // indirect
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
-	github.com/golang/protobuf v1.4.1
+	github.com/golang/protobuf v1.4.3
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/handlers v1.4.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway v1.14.4
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.0.1
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/jmoiron/sqlx v1.2.0
@@ -31,12 +32,12 @@ require (
 	github.com/spf13/cobra v0.0.5 // indirect
 	github.com/stretchr/testify v1.4.0
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20200122045848-3419fae592fc
-	golang.org/x/net v0.0.0-20200301022130-244492dfa37a
-	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
-	google.golang.org/api v0.20.0
-	google.golang.org/genproto v0.0.0-20200430143042-b979b6f78d84
-	google.golang.org/grpc v1.28.0
-	google.golang.org/protobuf v1.22.0
+	golang.org/x/net v0.0.0-20200822124328-c89045814202
+	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
+	google.golang.org/api v0.30.0
+	google.golang.org/genproto v0.0.0-20201019141844-1ed22bb0c154
+	google.golang.org/grpc v1.33.1
+	google.golang.org/protobuf v1.25.0
 	gopkg.in/yaml.v2 v2.2.8
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 	istio.io/api v0.0.0-20200107183329-ed4b507c54e1
