@@ -2087,7 +2087,7 @@ var (
 
 	pattern_WorkflowService_CloneWorkflowExecution_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"apis", "v1beta1", "namespace", "workflow_executions", "uid"}, ""))
 
-	pattern_WorkflowService_GetWorkflowExecutionStatisticsForNamespace_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 2, 4}, []string{"apis", "v1beta1", "namespace", "workflow_executions", "statistics"}, ""))
+	pattern_WorkflowService_GetWorkflowExecutionStatisticsForNamespace_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 2, 4}, []string{"apis", "v1beta1", "namespace", "workflow_execution", "statistics"}, ""))
 
 	pattern_WorkflowService_GetWorkflowExecution_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"apis", "v1beta1", "namespace", "workflow_executions", "uid"}, ""))
 

@@ -28,7 +28,7 @@ service WorkflowService {
 
     rpc GetWorkflowExecutionStatisticsForNamespace (GetWorkflowExecutionStatisticsForNamespaceRequest) returns (GetWorkflowExecutionStatisticsForNamespaceResponse) {
         option (google.api.http) = {
-            get: "/apis/v1beta1/{namespace}/workflow_executions/statistics"
+            get: "/apis/v1beta1/{namespace}/workflow_execution/statistics"
         };
     }
 

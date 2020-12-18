@@ -895,6 +895,36 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/workflow_execution/statistics": {
+      "get": {
+        "operationId": "GetWorkflowExecutionStatisticsForNamespace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetWorkflowExecutionStatisticsForNamespaceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkflowService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/workflow_executions": {
       "get": {
         "operationId": "ListWorkflowExecutions",
@@ -1005,36 +1035,6 @@
             "schema": {
               "$ref": "#/definitions/CreateWorkflowExecutionBody"
             }
-          }
-        ],
-        "tags": [
-          "WorkflowService"
-        ]
-      }
-    },
-    "/apis/v1beta1/{namespace}/workflow_executions/statistics": {
-      "get": {
-        "operationId": "GetWorkflowExecutionStatisticsForNamespace",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/GetWorkflowExecutionStatisticsForNamespaceResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/google.rpc.Status"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
           }
         ],
         "tags": [
