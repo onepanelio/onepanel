@@ -11,10 +11,12 @@ import (
 	"github.com/onepanelio/core/server/converter"
 )
 
+// WorkflowTemplateServer is an implementation of the grpc WorkflowTemplateServer
 type WorkflowTemplateServer struct {
 	api.UnimplementedWorkflowTemplateServiceServer
 }
 
+// NewWorkflowTemplateServer creates a new WorkflowTemplateServer
 func NewWorkflowTemplateServer() *WorkflowTemplateServer {
 	return &WorkflowTemplateServer{}
 }

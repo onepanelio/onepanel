@@ -3,7 +3,7 @@ FROM golang:1.15.5 AS builder
 WORKDIR /
 
 RUN apt-get update
-RUN apt-get install unzip
+RUN apt-get install -y --no-install-recommends unzip=6.0-23+deb10u1
 RUN curl -sL -o protoc.zip https://github.com/protocolbuffers/protobuf/releases/download/v3.14.0/protoc-3.14.0-linux-x86_64.zip
 RUN unzip protoc.zip -d proto
 RUN curl -sL -o jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64

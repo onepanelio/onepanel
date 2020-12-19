@@ -11,10 +11,12 @@ import (
 	"github.com/onepanelio/core/server/converter"
 )
 
+// CronWorkflowServer is an implementation of the grpc CronWorkflowServer
 type CronWorkflowServer struct {
 	api.UnimplementedCronWorkflowServiceServer
 }
 
+// NewCronWorkflowServer creates a new CronWorkflowServer
 func NewCronWorkflowServer() *CronWorkflowServer {
 	return &CronWorkflowServer{}
 }

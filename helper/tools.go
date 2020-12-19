@@ -1,6 +1,6 @@
 // +build tools
 
-package core_helper
+package corehelper
 
 import (
 	_ "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway"

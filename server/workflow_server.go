@@ -25,10 +25,12 @@ import (
 	requestSort "github.com/onepanelio/core/pkg/util/request/sort"
 )
 
+// WorkflowServer is an implementation of the grpc WorkflowServer
 type WorkflowServer struct {
 	api.UnimplementedWorkflowServiceServer
 }
 
+// NewWorkflowServer creates a new WorkflowServer
 func NewWorkflowServer() *WorkflowServer {
 	return &WorkflowServer{}
 }

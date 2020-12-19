@@ -14,8 +14,14 @@ import (
 	"time"
 )
 
+// WorkspaceTemplateServer is an implementation of the grpc WorkspaceTemplateServer
 type WorkspaceTemplateServer struct {
 	api.UnimplementedWorkspaceTemplateServiceServer
+}
+
+// NewWorkspaceTemplateServer creates a new WorkspaceTemplateServer
+func NewWorkspaceTemplateServer() *WorkspaceTemplateServer {
+	return &WorkspaceTemplateServer{}
 }
 
 func apiWorkspaceTemplate(wt *v1.WorkspaceTemplate) *api.WorkspaceTemplate {
@@ -35,10 +41,6 @@ func apiWorkspaceTemplate(wt *v1.WorkspaceTemplate) *api.WorkspaceTemplate {
 	}
 
 	return res
-}
-
-func NewWorkspaceTemplateServer() *WorkspaceTemplateServer {
-	return &WorkspaceTemplateServer{}
 }
 
 func (s WorkspaceTemplateServer) GenerateWorkspaceTemplateWorkflowTemplate(ctx context.Context, req *api.GenerateWorkspaceTemplateWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {

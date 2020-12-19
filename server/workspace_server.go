@@ -21,8 +21,14 @@ var reservedWorkspaceNames = map[string]bool{
 	"modeldb": true,
 }
 
+// WorkspaceServer is an implementation of the grpc WorkspaceServer
 type WorkspaceServer struct {
 	api.UnimplementedWorkspaceServiceServer
+}
+
+// NewWorkspaceServer creates a new WorkspaceServer
+func NewWorkspaceServer() *WorkspaceServer {
+	return &WorkspaceServer{}
 }
 
 func apiWorkspace(wt *v1.Workspace, config v1.SystemConfig) *api.Workspace {
@@ -80,10 +86,6 @@ func apiWorkspace(wt *v1.Workspace, config v1.SystemConfig) *api.Workspace {
 	}
 
 	return res
-}
-
-func NewWorkspaceServer() *WorkspaceServer {
-	return &WorkspaceServer{}
 }
 
 func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWorkspaceRequest) (*api.Workspace, error) {

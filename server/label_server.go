@@ -49,10 +49,12 @@ func mapKeyValuesToMap(keyValues []*api.KeyValue) map[string]string {
 	return result
 }
 
+// LabelServer is an implementation of the grpc LabelServer
 type LabelServer struct {
 	api.UnimplementedLabelServiceServer
 }
 
+// NewLabelServer creates a new LabelServer
 func NewLabelServer() *LabelServer {
 	return &LabelServer{}
 }

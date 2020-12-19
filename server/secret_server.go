@@ -9,10 +9,12 @@ import (
 	"github.com/onepanelio/core/server/auth"
 )
 
+// SecretServer is an implementation of the grpc SecretServer
 type SecretServer struct {
 	api.UnimplementedSecretServiceServer
 }
 
+// NewSecretServer creates a new SecretServer
 func NewSecretServer() *SecretServer {
 	return &SecretServer{}
 }
