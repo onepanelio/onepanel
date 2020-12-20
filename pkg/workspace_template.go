@@ -945,6 +945,12 @@ func (c *Client) generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *Wo
 		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
 	}
 
+	modifiedParameters, err := c.replaceSysNodePoolOptions(workspaceSpec.Arguments.Parameters)
+	if err != nil {
+		return nil, err
+	}
+	workspaceSpec.Arguments.Parameters = modifiedParameters
+
 	if err = generateArguments(workspaceSpec, config); err != nil {
 		return nil, err
 	}
