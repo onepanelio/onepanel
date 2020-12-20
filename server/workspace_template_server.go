@@ -61,8 +61,7 @@ func (s WorkspaceTemplateServer) GenerateWorkspaceTemplateWorkflowTemplate(ctx c
 		Manifest:  req.WorkspaceTemplate.Manifest,
 	}
 	workflowTemplate, err := client.GenerateWorkspaceTemplateWorkflowTemplate(workspaceTemplate)
-
-	if workflowTemplate == nil {
+	if err != nil || workflowTemplate == nil {
 		return &api.WorkflowTemplate{
 			Manifest: "",
 		}, err
