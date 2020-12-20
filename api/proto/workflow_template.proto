@@ -8,6 +8,14 @@ import "label.proto";
 import "common.proto";
 
 service WorkflowTemplateService {
+    // Get the generated WorkflowTemplate, applying any modifications based on the content
+    rpc GenerateWorkflowTemplate (GenerateWorkflowTemplateRequest) returns (WorkflowTemplate) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/{namespace}/workflow_templates/{uid}/generate"
+            body: "workflowTemplate"
+        };
+    }
+
     rpc CreateWorkflowTemplate (CreateWorkflowTemplateRequest) returns (WorkflowTemplate) {
         option (google.api.http) = {
             post: "/apis/v1beta1/{namespace}/workflow_templates"
@@ -57,6 +65,12 @@ service WorkflowTemplateService {
             put: "/apis/v1beta1/{namespace}/workflow_templates/{uid}/archive"
         };
     }
+}
+
+message GenerateWorkflowTemplateRequest {
+    string namespace = 1;
+    string uid = 2;
+    WorkflowTemplate workflowTemplate = 3;
 }
 
 message CreateWorkflowTemplateRequest {
