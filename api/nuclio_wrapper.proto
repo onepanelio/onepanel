@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+package api;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+service NuclioWrapperService {
+  // Get list of Nuclio Functions
+  rpc GetFunctions(GetFunctionsRequest) returns (Functions) {
+    option(google.api.http) = {
+      get: "/apis/v1beta1/nuclio_wrapper/api/v1/lambda/functions"
+    };
+  }
+
+  // Describe a Nuclio Function
+  rpc GetFunction(GetFunctionRequest) returns (Function) {
+    option(google.api.http) = {
+      get: "/apis/v1beta1/nuclio_wrapper/api/v1/lambda/functions/{uid}"
+    };
+  }
+
+  // Call a Nuclio Function
+  rpc ExecuteFunction(ExecuteFunctionRequest) returns (ExecuteResponse) {
+    option(google.api.http) = {
+      post: "/apis/v1beta1/nuclio_wrapper/api/v1/lambda/requests"
+      body: "body"
+    };
+  }
+
+  // Get list of Nuclio function requests
+  rpc GetRequests(GetRequestsRequest) returns (Requests) {
+    option(google.api.http) = {
+      get: "/apis/v1beta1/nuclio_wrapper/api/v1/lambda/requests"
+    };
+  }
+
+  // Get status of Nuclio function
+  rpc GetRequest(GetRequestRequest) returns (Request) {
+    option(google.api.http) = {
+      get: "/apis/v1beta1/nuclio_wrapper/api/v1/lambda/requests/{request_id}"
+    };
+  }
+
+  // Cancel a nuclio function but don't delete
+  rpc DeleteRequest(DeleteRequestRequest) returns (Request) {
+    option(google.api.http) = {
+      delete: "/apis/v1beta1/nuclio_wrapper/api/v1/lambda/requests/{request_id}"
+    };
+  }
+}
+
+message GetFunctionsRequest {}
+
+message GetFunctionRequest {
+  string uid = 1;
+}
+
+message Functions {
+  string id = 1;
+  string kind = 2;
+  repeated Label labels = 3;
+  string state = 4;
+  string description = 5;
+  string framework = 6;
+  string name = 7;
+}
+
+message Function {
+
+}
+
+message Label {
+  string value = 1;
+}
+
+message ExecuteFunctionRequest {
+  string threshold = 1;
+  string maxDistance = 2;
+  string task = 3;
+  string function = 4;
+}
+
+message ExecuteResponse {
+  string id = 1;
+  Function function = 2;
+  string status = 3;
+  string progress = 4;
+  string enqueued = 5;
+  string started = 6;
+  string ended = 7;
+  string exc_info = 8;
+}
+
+message GetRequestsRequest {
+
+}
+
+message Requests {
+
+}
+
+message GetRequestRequest {
+  string uid = 1;
+}
+
+message Request {
+
+}
+
+message DeleteRequestRequest {
+ string uid = 1;
+}
