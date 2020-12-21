@@ -1,5 +1,18 @@
 ## Database migrations
 
+### Docker
+
+Note: Up migrations are automatically executed when the application is run.
+
+```bash
+docker run --rm --mount type=bind,source="${PWD}",target=/root onepanel-helper:v1.0.0 goose -dir db/sql create <name> sql  # Create migration in db/sql folder
+docker run --rm --mount type=bind,source="${PWD}",target=/root onepanel-helper:v1.0.0 goose -dir db postgres "${DB_DATASOURCE_NAME}" up # Migrate the DB to the most recent version available
+docker run --rm --mount type=bind,source="${PWD}",target=/root onepanel-helper:v1.0.0 goose -dir db postgres "${DB_DATASOURCE_NAME}" down # Roll back the version by 1
+docker run --rm --mount type=bind,source="${PWD}",target=/root onepanel-helper:v1.0.0 goose help  # See all available commands
+```
+
+### Local 
+
 Install `goose`:
 ```bash
 go get -u github.com/pressly/goose/cmd/goose
@@ -8,13 +21,15 @@ go get -u github.com/pressly/goose/cmd/goose
 Note: Up migrations are automatically executed when the application is run.
 
 ```bash
-goose -dir db create <name> sql                       # Create migration in db folder
+goose -dir db/sql create <name> sql                   # Create migration in db/sql folder
 goose -dir db postgres "${DB_DATASOURCE_NAME}" up     # Migrate the DB to the most recent version available
 goose -dir db postgres "${DB_DATASOURCE_NAME}" down   # Roll back the version by 1
 goose help                                            # See all available commands
 ```
 
-## gRPC installation
+## gRPC 
+
+### local installation
 
 Install gRPC:
 ```bash
@@ -46,6 +61,15 @@ This will place three binaries in your `$GOBIN`;
 Make sure that your `$GOBIN` is in your `$PATH`.
 
 ## API code generation
+
+### Docker
+
+Generate Go and Swagger APIs:
+```bash
+docker run --rm --mount type=bind,source="${PWD}",target=/root onepanel-helper:v1.0.0 make api version=1.0.0
+```
+
+### Local Installation
 
 Generate Go and Swagger APIs:
 ```bash

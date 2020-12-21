@@ -5,13 +5,17 @@ import (
 	"math"
 	"strings"
 
-	"github.com/onepanelio/core/api"
+	api "github.com/onepanelio/core/api/gen"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/server/auth"
 )
 
-type NamespaceServer struct{}
+// NamespaceServer is an implementation of the grpc NamespaceServer
+type NamespaceServer struct {
+	api.UnimplementedNamespaceServiceServer
+}
 
+// NewNamespaceServer creates a new NamespaceServer
 func NewNamespaceServer() *NamespaceServer {
 	return &NamespaceServer{}
 }

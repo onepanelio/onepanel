@@ -3,12 +3,14 @@ package server
 import (
 	"context"
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/onepanelio/core/api"
+	api "github.com/onepanelio/core/api/gen"
 	"github.com/onepanelio/core/server/auth"
 )
 
 // ConfigServer contains actions for system configuration related items
-type ConfigServer struct{}
+type ConfigServer struct {
+	api.UnimplementedConfigServiceServer
+}
 
 // NewConfigServer creates a new ConfigServer
 func NewConfigServer() *ConfigServer {

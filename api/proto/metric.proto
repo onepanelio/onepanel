@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package api;
+option go_package = "github.com/onepanelio/core/api/gen";
+
+message Metric {
+    string name = 1;
+    double value = 2;
+    string format = 3;
+}

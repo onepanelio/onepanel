@@ -1,0 +1,318 @@
+syntax = "proto3";
+
+package api;
+option go_package = "github.com/onepanelio/core/api/gen";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "workflow_template.proto";
+import "metric.proto";
+import "label.proto";
+import "common.proto";
+
+service WorkflowService {
+    // Creates a Workflow
+    rpc CreateWorkflowExecution (CreateWorkflowExecutionRequest) returns (WorkflowExecution) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/{namespace}/workflow_executions"
+            body: "body"
+        };
+    }
+
+    // Clone a Workflow. This is the same as running it again.
+    rpc CloneWorkflowExecution (CloneWorkflowExecutionRequest) returns (WorkflowExecution) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/{namespace}/workflow_executions/{uid}"
+        };
+    }
+
+    rpc GetWorkflowExecutionStatisticsForNamespace (GetWorkflowExecutionStatisticsForNamespaceRequest) returns (GetWorkflowExecutionStatisticsForNamespaceResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflow_execution/statistics"
+        };
+    }
+
+    rpc GetWorkflowExecution (GetWorkflowExecutionRequest) returns (WorkflowExecution) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflow_executions/{uid}"
+        };
+    }
+
+    rpc ListWorkflowExecutions (ListWorkflowExecutionsRequest) returns (ListWorkflowExecutionsResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflow_executions"
+        };
+    }
+
+    rpc WatchWorkflowExecution (WatchWorkflowExecutionRequest) returns (stream WorkflowExecution) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/watch"
+        };
+    }
+
+    rpc GetWorkflowExecutionLogs (GetWorkflowExecutionLogsRequest) returns (stream LogEntry) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/pods/{podName}/containers/{containerName}/logs"
+        };
+    }
+
+    rpc GetWorkflowExecutionMetrics (GetWorkflowExecutionMetricsRequest) returns (GetWorkflowExecutionMetricsResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/pods/{podName}/metrics"
+        };
+    }
+
+    rpc ResubmitWorkflowExecution (ResubmitWorkflowExecutionRequest) returns (WorkflowExecution) {
+        option (google.api.http) = {
+            put: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/resubmit"
+        };
+    }
+
+    rpc TerminateWorkflowExecution (TerminateWorkflowExecutionRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            put: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/terminate"
+        };
+    }
+
+    rpc GetArtifact (GetArtifactRequest) returns (ArtifactResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/artifacts/{key=**}"
+        };
+    }
+
+    rpc ListFiles (ListFilesRequest) returns (ListFilesResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/files/{path=**}"
+        };
+    }
+
+    rpc AddWorkflowExecutionStatistics (AddWorkflowExecutionStatisticRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/statistics"
+            body: "statistics"
+        };
+    }
+
+    rpc CronStartWorkflowExecutionStatistic (CronStartWorkflowExecutionStatisticRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/cron_start_statistics"
+            body: "statistics"
+        };
+    }
+
+    rpc UpdateWorkflowExecutionStatus (UpdateWorkflowExecutionStatusRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            put: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/status"
+            body: "status"
+        };
+    }
+
+    rpc AddWorkflowExecutionMetrics (AddWorkflowExecutionsMetricsRequest) returns (WorkflowExecutionsMetricsResponse) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/metric"
+            body: "*"
+        };
+    }
+
+    rpc UpdateWorkflowExecutionMetrics (UpdateWorkflowExecutionsMetricsRequest) returns (WorkflowExecutionsMetricsResponse) {
+        option (google.api.http) = {
+            put: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/metric"
+            body: "*"
+        };
+    }
+}
+
+message CreateWorkflowExecutionBody {
+    string workflowTemplateUid = 2;
+    int64 workflowTemplateVersion = 3;
+
+    repeated Parameter parameters = 4;
+    repeated KeyValue labels = 5;
+}
+
+message CreateWorkflowExecutionRequest {
+    string namespace = 1;
+
+    CreateWorkflowExecutionBody body = 2;
+}
+
+message CloneWorkflowExecutionRequest {
+    string namespace = 1;
+    string uid = 2;
+}
+
+message GetWorkflowExecutionRequest {
+    string namespace = 1;
+    string uid = 2;
+}
+
+message GetArtifactRequest {
+    string namespace = 1;
+    string uid = 2;
+    string key = 3;
+}
+
+message WatchWorkflowExecutionRequest {
+    string namespace = 1;
+    string uid = 2;
+}
+
+message ResubmitWorkflowExecutionRequest {
+    string namespace = 1;
+    string uid = 2;
+}
+
+message TerminateWorkflowExecutionRequest {
+    string namespace = 1;
+    string uid = 2;
+}
+
+message GetWorkflowExecutionLogsRequest {
+    string namespace = 1;
+    string uid = 2;
+    string podName = 3;
+    string containerName = 4;
+}
+
+message GetWorkflowExecutionMetricsRequest {
+    string namespace = 1;
+    string uid = 2;
+    string podName = 3;
+}
+
+message GetWorkflowExecutionMetricsResponse {
+    repeated Metric metrics = 1;
+}
+
+message ListWorkflowExecutionsRequest {
+    string namespace = 1;
+    string workflowTemplateUid = 2;
+    string workflowTemplateVersion = 3;
+    int32 pageSize = 4;
+    int32 page = 5;
+    string order = 6;
+    string labels = 7;
+    string phase = 8;
+    bool includeSystem = 9;
+}
+
+message ListWorkflowExecutionsResponse {
+    int32 count = 1;
+    repeated WorkflowExecution workflowExecutions = 2;
+    int32 page = 3;
+    int32 pages = 4;
+    int32 totalCount = 5;
+    int32 totalAvailableCount = 6;
+}
+
+message LogEntry {
+    string timestamp = 1;
+    string content = 2;
+}
+
+message WorkflowExecutionMetadata {
+    string url = 1;
+}
+
+message WorkflowExecution {
+    string createdAt = 1;
+    string uid = 2;
+    string name = 3;
+    string phase = 4;
+    string startedAt = 5;
+    string finishedAt = 6;
+    string manifest = 7;
+
+    repeated Parameter parameters = 8;
+
+    WorkflowTemplate workflowTemplate = 9;
+
+    repeated KeyValue labels = 10;
+
+    WorkflowExecutionMetadata metadata = 11;
+
+    repeated Metric metrics = 12;
+}
+
+message ArtifactResponse {
+    bytes data = 1;
+}
+
+message File {
+    string path = 1;
+    string name = 2;
+    string extension = 3;
+    int64 size = 4;
+    string contentType = 5;
+    string lastModified = 6;
+    bool directory = 7;
+}
+
+message ListFilesRequest {
+    string namespace = 1;
+    string uid = 2;
+    string path = 3;
+}
+
+message ListFilesResponse {
+    repeated File files = 1;
+    string parentPath = 2;
+}
+
+message Statistics {
+    string workflowStatus = 1;
+    int64 workflowTemplateId = 2;
+}
+
+message AddWorkflowExecutionStatisticRequest {
+    string namespace = 1;
+    string uid = 2;
+    Statistics statistics = 3;
+}
+
+message CronStartWorkflowExecutionStatisticRequest {
+    string namespace = 1;
+    string uid = 2;
+    Statistics statistics = 3;
+}
+
+message WorkflowExecutionStatus {
+    string phase = 1;
+}
+
+message UpdateWorkflowExecutionStatusRequest {
+    string namespace = 1;
+    string uid = 2;
+    WorkflowExecutionStatus status = 3;
+}
+
+message GetWorkflowExecutionStatisticsForNamespaceRequest {
+    string namespace = 1;
+}
+
+message GetWorkflowExecutionStatisticsForNamespaceResponse {
+    WorkflowExecutionStatisticReport stats = 1;
+}
+
+message AddWorkflowExecutionMetricRequest {
+    string namespace = 1;
+    string uid = 2;
+    Metric metric = 3;
+}
+
+message AddWorkflowExecutionsMetricsRequest {
+    string namespace = 1;
+    string uid = 2;
+    bool override = 3;
+    repeated Metric metrics = 4;
+}
+
+message UpdateWorkflowExecutionsMetricsRequest {
+    string namespace = 1;
+    string uid = 2;
+    repeated Metric metrics = 4;
+}
+
+message WorkflowExecutionsMetricsResponse {
+    repeated Metric metrics = 4;
+}

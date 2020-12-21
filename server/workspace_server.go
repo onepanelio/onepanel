@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/onepanelio/core/api"
+	api "github.com/onepanelio/core/api/gen"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/ptr"
@@ -21,7 +21,15 @@ var reservedWorkspaceNames = map[string]bool{
 	"modeldb": true,
 }
 
-type WorkspaceServer struct{}
+// WorkspaceServer is an implementation of the grpc WorkspaceServer
+type WorkspaceServer struct {
+	api.UnimplementedWorkspaceServiceServer
+}
+
+// NewWorkspaceServer creates a new WorkspaceServer
+func NewWorkspaceServer() *WorkspaceServer {
+	return &WorkspaceServer{}
+}
 
 func apiWorkspace(wt *v1.Workspace, config v1.SystemConfig) *api.Workspace {
 	protocol := config.APIProtocol()
@@ -78,10 +86,6 @@ func apiWorkspace(wt *v1.Workspace, config v1.SystemConfig) *api.Workspace {
 	}
 
 	return res
-}
-
-func NewWorkspaceServer() *WorkspaceServer {
-	return &WorkspaceServer{}
 }
 
 func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWorkspaceRequest) (*api.Workspace, error) {

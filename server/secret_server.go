@@ -4,13 +4,17 @@ import (
 	"context"
 
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/onepanelio/core/api"
+	api "github.com/onepanelio/core/api/gen"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/server/auth"
 )
 
-type SecretServer struct{}
+// SecretServer is an implementation of the grpc SecretServer
+type SecretServer struct {
+	api.UnimplementedSecretServiceServer
+}
 
+// NewSecretServer creates a new SecretServer
 func NewSecretServer() *SecretServer {
 	return &SecretServer{}
 }

@@ -1,9 +1,0 @@
-syntax = "proto3";
-
-package api;
-
-message Metric {
-    string name = 1;
-    double value = 2;
-    string format = 3;
-}
