@@ -21,7 +21,7 @@ arguments:
       value: annotation-dump/sample_dataset
       displayName: Dataset path
       hint: Path to annotated data in default object storage (i.e S3). In CVAT, this parameter will be pre-populated.
-      visibility: internal
+      visibility: private
 
     - name: cvat-output-path
       value: workflow-data/output/sample_output
