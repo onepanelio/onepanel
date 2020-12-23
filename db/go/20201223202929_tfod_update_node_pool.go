@@ -13,6 +13,7 @@ func initialize20201223202929() {
 	}
 }
 
+// Up20201223202929 updates tfod with sys.nodepool
 func Up20201223202929(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkflowTemplateManifest(
@@ -25,6 +26,7 @@ func Up20201223202929(tx *sql.Tx) error {
 	)
 }
 
+// Down20201223202929 undoes the sys.nodepool changes
 func Down20201223202929(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return updateWorkflowTemplateManifest(

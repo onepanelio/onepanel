@@ -13,6 +13,7 @@ func initialize20201223062947() {
 	}
 }
 
+// Up20201223062947 updates tf_training with sys.nodepool changes
 func Up20201223062947(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkflowTemplateManifest(
@@ -25,6 +26,7 @@ func Up20201223062947(tx *sql.Tx) error {
 	)
 }
 
+// Down20201223062947 undoes sys.nodepool changes
 func Down20201223062947(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return updateWorkflowTemplateManifest(
