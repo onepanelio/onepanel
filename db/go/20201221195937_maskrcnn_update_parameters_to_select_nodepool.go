@@ -13,6 +13,7 @@ func initialize20201221195937() {
 	}
 }
 
+// Up20201221195937 updates maskrcnn with sys.nodepool changes
 func Up20201221195937(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkflowTemplateManifest(
@@ -25,6 +26,7 @@ func Up20201221195937(tx *sql.Tx) error {
 	)
 }
 
+// Down20201221195937 undoes the sys.nodepool changes
 func Down20201221195937(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return updateWorkflowTemplateManifest(
