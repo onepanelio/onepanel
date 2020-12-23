@@ -43,15 +43,10 @@ arguments:
         }
     - displayName: Node pool
       hint: Name of node pool or group to run this workflow task
-      type: select.select
+      type: select.nodepool
       name: sys-node-pool
       value: Standard_D4s_v3
       required: true
-      options:
-        - name: 'CPU: 4, RAM: 16GB'
-          value: Standard_D4s_v3
-        - name: 'GPU: 1xV100, CPU: 6, RAM: 56GB'
-          value: Standard_NC6s_v3
 
 volumeClaimTemplates:
   - metadata:
