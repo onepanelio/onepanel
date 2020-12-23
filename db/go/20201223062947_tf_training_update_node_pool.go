@@ -1,0 +1,38 @@
+package migration
+
+import (
+	"database/sql"
+	"github.com/pressly/goose"
+	"path/filepath"
+)
+
+func initialize20201223062947() {
+	if _, ok := initializedMigrations[20201223062947]; !ok {
+		goose.AddMigration(Up20201223062947, Down20201223062947)
+		initializedMigrations[20201223062947] = true
+	}
+}
+
+func Up20201223062947(tx *sql.Tx) error {
+	// This code is executed when the migration is applied.
+	return updateWorkflowTemplateManifest(
+		filepath.Join("tf_training", "20201223062947.yaml"),
+		tensorflowWorkflowTemplateName,
+		map[string]string{
+			"created-by": "system",
+			"used-by":    "cvat",
+		},
+	)
+}
+
+func Down20201223062947(tx *sql.Tx) error {
+	// This code is executed when the migration is rolled back.
+	return updateWorkflowTemplateManifest(
+		filepath.Join("tf_training", "20201223062947.yaml"),
+		tensorflowWorkflowTemplateName,
+		map[string]string{
+			"created-by": "system",
+			"used-by":    "cvat",
+		},
+	)
+}

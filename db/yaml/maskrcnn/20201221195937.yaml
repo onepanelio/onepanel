@@ -11,13 +11,13 @@ arguments:
       value: annotation-dump/sample_dataset
       hint: Path to annotated data in default object storage (i.e S3). In CVAT, this parameter will be pre-populated.
       displayName: Dataset path
-      visibility: private
+      visibility: internal
 
     - name: cvat-output-path
       value: workflow-data/output/sample_output
       hint: Path to store output artifacts in default object storage (i.e s3). In CVAT, this parameter will be pre-populated.
       displayName: Workflow output path
-      visibility: private
+      visibility: internal
 
     - name: cvat-finetune-checkpoint
       value: ''
@@ -29,7 +29,7 @@ arguments:
       displayName: Number of classes
       hint: Number of classes (i.e in CVAT taks) + 1 for background
       value: '81'
-      visibility: private
+      visibility: internal
 
     - name: hyperparameters
       displayName: Hyperparameters
@@ -60,21 +60,13 @@ arguments:
 
     - displayName: Node pool
       hint: Name of node pool or group to run this workflow task
-      type: select.select
+      type: select.nodepool
       visibility: public
       name: sys-node-pool
-      value: Standard_D4s_v3
+      value: {{.DefaultNodePoolOption}}
       required: true
-      options:
-        - name: 'CPU: 2, RAM: 8GB'
-          value: Standard_D2s_v3
-        - name: 'CPU: 4, RAM: 16GB'
-          value: Standard_D4s_v3
-        - name: 'GPU: 1xK80, CPU: 6, RAM: 56GB'
-          value: Standard_NC6
 templates:
-  - name: main
-    dag:
+  - dag:
       tasks:
         - name: train-model
           template: tensorflow
@@ -90,8 +82,8 @@ templates:
     #      - train-model
     #      name: notify-in-slack
     #      template: slack-notify-success
-  - name: tensorflow
-    container:
+    name: main
+  - container:
       args:
         - |
           apt-get update \
@@ -124,34 +116,24 @@ templates:
       workingDir: /mnt/src
     nodeSelector:
       beta.kubernetes.io/instance-type: '{{workflow.parameters.sys-node-pool}}'
-    sidecars:
-      - name: tensorboard
-        image: tensorflow/tensorflow:2.3.0
-        command: [sh, -c]
-        env:
-          - name: ONEPANEL_INTERACTIVE_SIDECAR
-            value: 'true'
-        args: ["tensorboard --logdir /mnt/output/"]
-        ports:
-          - containerPort: 6006
-            name: tensorboard
     inputs:
       artifacts:
         - name: data
           path: /mnt/data/datasets/
-          {{.ArtifactRepositoryType}}:
+          s3:
             key: '{{workflow.namespace}}/{{workflow.parameters.cvat-annotation-path}}'
         - git:
             repo: '{{workflow.parameters.source}}'
             revision: "no-boto"
           name: src
           path: /mnt/src
+    name: tensorflow
     outputs:
       artifacts:
         - name: model
           optional: true
           path: /mnt/output
-          {{.ArtifactRepositoryType}}:
+          s3:
             key: '{{workflow.namespace}}/{{workflow.parameters.cvat-output-path}}/{{workflow.name}}'
 # Uncomment the lines below if you want to send Slack notifications
 #- container:
