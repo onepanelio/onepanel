@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/onepanelio/core/api"
+	api "github.com/onepanelio/core/api/gen"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/pkg/util/request/pagination"
@@ -11,8 +11,12 @@ import (
 	"github.com/onepanelio/core/server/converter"
 )
 
-type CronWorkflowServer struct{}
+// CronWorkflowServer is an implementation of the grpc CronWorkflowServer
+type CronWorkflowServer struct {
+	api.UnimplementedCronWorkflowServiceServer
+}
 
+// NewCronWorkflowServer creates a new CronWorkflowServer
 func NewCronWorkflowServer() *CronWorkflowServer {
 	return &CronWorkflowServer{}
 }

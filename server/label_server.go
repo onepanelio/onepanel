@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	"github.com/onepanelio/core/api"
+	api "github.com/onepanelio/core/api/gen"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/onepanelio/core/server/converter"
@@ -49,8 +49,12 @@ func mapKeyValuesToMap(keyValues []*api.KeyValue) map[string]string {
 	return result
 }
 
-type LabelServer struct{}
+// LabelServer is an implementation of the grpc LabelServer
+type LabelServer struct {
+	api.UnimplementedLabelServiceServer
+}
 
+// NewLabelServer creates a new LabelServer
 func NewLabelServer() *LabelServer {
 	return &LabelServer{}
 }

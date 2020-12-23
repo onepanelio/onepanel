@@ -8,9 +8,9 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jmoiron/sqlx"
-	"github.com/onepanelio/core/api"
+	api "github.com/onepanelio/core/api/gen"
 	migrations "github.com/onepanelio/core/db/go"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util/env"
@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	k8runtime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"math"
 	"net"
@@ -55,7 +56,7 @@ func main() {
 			log.Fatalf("Failed to connect to Kubernetes cluster: %v", err)
 		}
 
-		go watchConfigmapChanges(client, "onepanel", stopCh, func(configMap *corev1.ConfigMap) error {
+		go watchConfigmapChanges("onepanel", stopCh, func(configMap *corev1.ConfigMap) error {
 			log.Printf("Configmap changed")
 			stopCh <- struct{}{}
 
@@ -214,7 +215,12 @@ func registerHandler(register registerFunc, ctx context.Context, mux *runtime.Se
 }
 
 // watchConfigmapChanges sets up a listener for configmap changes and calls the onChange function when it happens
-func watchConfigmapChanges(client *v1.Client, namespace string, stopCh <-chan struct{}, onChange func(*corev1.ConfigMap) error) {
+func watchConfigmapChanges(namespace string, stopCh <-chan struct{}, onChange func(*corev1.ConfigMap) error) {
+	client, err := kubernetes.NewForConfig(v1.NewConfig())
+	if err != nil {
+		return
+	}
+
 	restClient := client.CoreV1().RESTClient()
 	resource := "configmaps"
 	fieldSelector := fields.ParseSelectorOrDie(fmt.Sprintf("metadata.name=%s", "onepanel"))
@@ -235,6 +241,7 @@ func watchConfigmapChanges(client *v1.Client, namespace string, stopCh <-chan st
 			VersionedParams(&options, apiv1.ParameterCodec)
 		return req.Watch()
 	}
+
 	source := &cache.ListWatch{ListFunc: listFunc, WatchFunc: watchFunc}
 	_, controller := cache.NewInformer(
 		source,

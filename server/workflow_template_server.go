@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"errors"
-	"github.com/onepanelio/core/api"
+	api "github.com/onepanelio/core/api/gen"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util/request"
 	"github.com/onepanelio/core/pkg/util/request/pagination"
@@ -11,8 +11,12 @@ import (
 	"github.com/onepanelio/core/server/converter"
 )
 
-type WorkflowTemplateServer struct{}
+// WorkflowTemplateServer is an implementation of the grpc WorkflowTemplateServer
+type WorkflowTemplateServer struct {
+	api.UnimplementedWorkflowTemplateServiceServer
+}
 
+// NewWorkflowTemplateServer creates a new WorkflowTemplateServer
 func NewWorkflowTemplateServer() *WorkflowTemplateServer {
 	return &WorkflowTemplateServer{}
 }

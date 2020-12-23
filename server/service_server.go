@@ -2,13 +2,15 @@ package server
 
 import (
 	"context"
-	"github.com/onepanelio/core/api"
+	api "github.com/onepanelio/core/api/gen"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/server/auth"
 )
 
 // ServiceServer contains actions for installed services
-type ServiceServer struct{}
+type ServiceServer struct {
+	api.UnimplementedServiceServiceServer
+}
 
 // NewServiceServer creates a new ServiceServer
 func NewServiceServer() *ServiceServer {

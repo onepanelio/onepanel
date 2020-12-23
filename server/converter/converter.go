@@ -1,7 +1,7 @@
 package converter
 
 import (
-	"github.com/onepanelio/core/api"
+	api "github.com/onepanelio/core/api/gen"
 	v1 "github.com/onepanelio/core/pkg"
 	"sort"
 	"time"

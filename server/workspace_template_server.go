@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	"github.com/onepanelio/core/api"
+	api "github.com/onepanelio/core/api/gen"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/request"
@@ -14,7 +14,15 @@ import (
 	"time"
 )
 
-type WorkspaceTemplateServer struct{}
+// WorkspaceTemplateServer is an implementation of the grpc WorkspaceTemplateServer
+type WorkspaceTemplateServer struct {
+	api.UnimplementedWorkspaceTemplateServiceServer
+}
+
+// NewWorkspaceTemplateServer creates a new WorkspaceTemplateServer
+func NewWorkspaceTemplateServer() *WorkspaceTemplateServer {
+	return &WorkspaceTemplateServer{}
+}
 
 func apiWorkspaceTemplate(wt *v1.WorkspaceTemplate) *api.WorkspaceTemplate {
 	res := &api.WorkspaceTemplate{
@@ -33,10 +41,6 @@ func apiWorkspaceTemplate(wt *v1.WorkspaceTemplate) *api.WorkspaceTemplate {
 	}
 
 	return res
-}
-
-func NewWorkspaceTemplateServer() *WorkspaceTemplateServer {
-	return &WorkspaceTemplateServer{}
 }
 
 func (s WorkspaceTemplateServer) GenerateWorkspaceTemplateWorkflowTemplate(ctx context.Context, req *api.GenerateWorkspaceTemplateWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {

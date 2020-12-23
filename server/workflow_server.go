@@ -9,6 +9,7 @@ import (
 	"github.com/onepanelio/core/pkg/util/request/pagination"
 	"github.com/onepanelio/core/pkg/util/router"
 	"github.com/onepanelio/core/server/converter"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sort"
@@ -16,7 +17,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/onepanelio/core/api"
+	api "github.com/onepanelio/core/api/gen"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/server/auth"
@@ -24,8 +25,12 @@ import (
 	requestSort "github.com/onepanelio/core/pkg/util/request/sort"
 )
 
-type WorkflowServer struct{}
+// WorkflowServer is an implementation of the grpc WorkflowServer
+type WorkflowServer struct {
+	api.UnimplementedWorkflowServiceServer
+}
 
+// NewWorkflowServer creates a new WorkflowServer
 func NewWorkflowServer() *WorkflowServer {
 	return &WorkflowServer{}
 }
@@ -217,6 +222,7 @@ func (s *WorkflowServer) WatchWorkflowExecution(req *api.WatchWorkflowExecutionR
 		}
 		wf.Namespace = req.Namespace
 		if err := stream.Send(apiWorkflowExecution(wf, webRouter)); err != nil {
+			log.Printf("Stream Send failed: %v\n", err)
 			return err
 		}
 	}

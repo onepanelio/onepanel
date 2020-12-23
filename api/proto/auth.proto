@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package api;
+option go_package = "github.com/onepanelio/core/api/gen";
+
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+service AuthService {
+    rpc IsValidToken(IsValidTokenRequest) returns (IsValidTokenResponse) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/auth/token"
+            body: "*"
+        };
+        option deprecated = true;
+    }
+
+    rpc GetAccessToken(GetAccessTokenRequest) returns (GetAccessTokenResponse) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/auth/get_access_token"
+            body: "*"
+        };
+
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+			security: {
+            }
+        };
+    }
+
+    rpc IsAuthorized(IsAuthorizedRequest) returns (IsAuthorizedResponse) {
+        option (google.api.http) = {
+            post: "/apis/v1beta1/auth"
+            body: "isAuthorized"
+        };
+    }
+}
+
+message IsValidTokenRequest {
+    string username = 1;
+    string token = 2;
+}
+
+message IsValidTokenResponse {
+    string domain = 1;
+    string token = 2;
+    string username = 3;
+}
+
+message IsAuthorized {
+    string namespace = 1;
+    string verb = 2;
+    string group = 3;
+    string resource = 4;
+    string resourceName = 5;
+}
+
+message IsAuthorizedRequest {
+    IsAuthorized isAuthorized = 1;
+}
+
+message IsAuthorizedResponse {
+    bool authorized = 1;
+}
+
+message GetAccessTokenRequest {
+    string username = 1;
+    string token = 2;
+}
+
+message GetAccessTokenResponse {
+    string domain = 1;
+    string accessToken = 2;
+    string username = 3;
+}

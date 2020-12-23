@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package api;
+option go_package = "github.com/onepanelio/core/api/gen";
+
+message Parameter {
+    string name = 1;
+    string value = 2;
+    string type = 3;
+    string displayName = 4;
+    string hint = 5;
+    bool required = 6;
+    string visibility = 7;
+
+    repeated ParameterOption options = 8;
+}
+
+message ParameterOption {
+    string name = 1;
+    string value = 2;
+}

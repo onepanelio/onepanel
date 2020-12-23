@@ -18,13 +18,27 @@ jq:
 protoc:
 	protoc -I/usr/local/include \
 		-Iapi/third_party/ \
- 		-Iapi/ \
- 		api/*.proto \
- 		--go_out=plugins=grpc:api \
- 		--grpc-gateway_out=logtostderr=true,allow_delete_body=true:api \
- 		--swagger_out=allow_merge=true,fqn_for_swagger_name=true,allow_delete_body=true,logtostderr=true,simple_operation_ids=true:api
+		-Iapi/proto \
+		--go_out ./api/gen --go_opt paths=source_relative \
+		--go-grpc_out ./api/gen --go-grpc_opt paths=source_relative \
+		--go-grpc_opt paths=source_relative \
+		--grpc-gateway_out ./api/gen \
+		--grpc-gateway_opt logtostderr=true \
+		--grpc-gateway_opt allow_delete_body=true \
+	    --grpc-gateway_opt paths=source_relative \
+        --grpc-gateway_opt generate_unbound_methods=true \
+		--openapiv2_out ./api \
+		--openapiv2_opt allow_merge=true \
+		--openapiv2_opt fqn_for_openapi_name=true \
+		--openapiv2_opt allow_delete_body=true \
+		--openapiv2_opt logtostderr=true \
+		--openapiv2_opt simple_operation_ids=true \
+		api/proto/*.proto
 
 api: init protoc jq
+
+api-docker: init
+	docker run --rm --mount type=bind,source="${PWD}",target=/root onepanel/helper:v1.0.0 make api version=$(version)
 
 docker-build:
 	docker build -t onepanel-core .
