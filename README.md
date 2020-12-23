@@ -34,11 +34,7 @@ Onepanel can be found on [LF AI Landscape](http://landscape.lfai.foundation/sele
 ## Online demo
 We have created an [online demo environment](https://onepanel.typeform.com/to/kQfDX5Vf?product=github) so that you can quickly try Onepanel.
 
-Note that this is a shared demo environment with the following restrictions:
-
-- Data is reset every few hours
-- One type of node pool (machine type) with a limit of 5 concurrent nodes
-- Certain actions may be restricted
+Note that this is a **shared**, **read only** demo environment.
 
 ## Quick start
 See [quick start guide](https://docs.onepanel.ai/docs/getting-started/quickstart) to get started with the platform of your choice.
