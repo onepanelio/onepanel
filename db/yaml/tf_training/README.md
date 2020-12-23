@@ -1,1 +1,1 @@
-See https://github.com/onepanelio/templates/blob/master/workflows/tensorflow-mnist-training/template.yaml
+https://github.com/onepanelio/templates/blob/master/workflows/tensorflow-mnist-training/template.yaml
