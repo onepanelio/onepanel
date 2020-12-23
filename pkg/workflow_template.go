@@ -422,29 +422,9 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (work
 		return workflowTemplate, err
 	}
 
-	workflowTemplate.Parameters = wtv.Parameters
-
-	nodePoolOptions, err := c.systemConfig.NodePoolOptions()
+	workflowTemplate.Parameters, err = c.replaceSysNodePoolOptions(wtv.Parameters)
 	if err != nil {
 		return nil, err
-	}
-	nodePoolParameterOptions := make([]*ParameterOption, 0)
-	for _, option := range nodePoolOptions {
-		nodePoolParameterOptions = append(nodePoolParameterOptions, &ParameterOption{
-			Name:  option.Name,
-			Value: option.Value,
-		})
-	}
-
-	for i := range workflowTemplate.Parameters {
-		param := &workflowTemplate.Parameters[i]
-		if param.Type == "select.nodepool" {
-			param.Options = nodePoolParameterOptions
-
-			if param.Value != nil && *param.Value == "default" {
-				param.Value = ptr.String(param.Options[0].Value)
-			}
-		}
 	}
 
 	return workflowTemplate, nil
@@ -1119,7 +1099,7 @@ func (c *Client) GetWorkflowTemplateLabels(namespace, name, prefix string, versi
 	return
 }
 
-// GenerateWorkflowTemplate replaces any special parameters with runtime values
+// GenerateWorkflowTemplateManifest replaces any special parameters with runtime values
 func (c *Client) GenerateWorkflowTemplateManifest(manifest string) (string, error) {
 	manifestObject := make(map[string]interface{})
 	if err := yaml.Unmarshal([]byte(manifest), &manifestObject); err != nil {
