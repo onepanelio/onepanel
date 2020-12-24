@@ -58,7 +58,7 @@ Onepanel is modular and consists of the following repositories:
 [Backend](https://github.com/onepanelio/core/) (this repository) - Code base for backend (Go)\
 [Frontend](https://github.com/onepanelio/core-ui/) - Code base for frontend (Angular + TypeScript)\
 [CLI](https://github.com/onepanelio/cli/) - Code base for installation and management CLI (Go)\
-[Manifests](https://github.com/onepanelio/core-ui/) - Kustomize manifests used by installation and management CLI (YAML)\
+[Manifests](https://github.com/onepanelio/manifests/) - Kustomize manifests used by installation and management CLI (YAML)\
 [Python SDK](https://github.com/onepanelio/python-sdk/) - Python SDK code and documentation (Python)\
 [Templates](https://github.com/onepanelio/templates) - Various Workspace, Workflow, Task and Sidecar Templates\
 [Documentation](https://github.com/onepanelio/core-docs/) - The repository for documentation site\
