@@ -9,15 +9,15 @@ import (
 	"github.com/pressly/goose"
 )
 
-func initialize20201214133459() {
-	if _, ok := initializedMigrations[20201214133459]; !ok {
-		goose.AddMigration(Up20201214133459, Down20201214133459)
-		initializedMigrations[20201214133459] = true
+func initialize20201224191654() {
+	if _, ok := initializedMigrations[20201224191654]; !ok {
+		goose.AddMigration(Up20201224191654, Down20201224191654)
+		initializedMigrations[20201224191654] = true
 	}
 }
 
-// Up20201214133459 updates the argo template labels
-func Up20201214133459(tx *sql.Tx) error {
+// Up20201224191654 updates the argo template labels
+func Up20201224191654(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	client, err := getClient()
 	if err != nil {
@@ -100,8 +100,8 @@ func Up20201214133459(tx *sql.Tx) error {
 	return err
 }
 
-// Down20201214133459 reverts the argo template label updates
-func Down20201214133459(tx *sql.Tx) error {
+// Down20201224191654 reverts the argo template label updates
+func Down20201224191654(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	client, err := getClient()
 	if err != nil {
