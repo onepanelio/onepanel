@@ -1,3 +1,4 @@
+# source: https://github.com/onepanelio/templates/blob/master/workflows/nni-hyperparameter-tuning/mnist/
 entrypoint: main
 arguments:
   parameters:
