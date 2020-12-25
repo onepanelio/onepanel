@@ -116,17 +116,17 @@ templates:
         - mountPath: /mnt/output
           name: output
       workingDir: /mnt/src
-      sidecars:
-        - name: tensorboard
-          image: tensorflow/tensorflow:2.3.0
-          command: [ sh, -c ]
-          env:
-            - name: ONEPANEL_INTERACTIVE_SIDECAR
-              value: 'true'
-          args: [ "tensorboard --logdir /mnt/output/" ]
-          ports:
-            - containerPort: 6006
-              name: tensorboard
+    sidecars:
+      - name: tensorboard
+        image: tensorflow/tensorflow:2.3.0
+        command: [ sh, -c ]
+        env:
+          - name: ONEPANEL_INTERACTIVE_SIDECAR
+            value: 'true'
+        args: [ "tensorboard --logdir /mnt/output/" ]
+        ports:
+          - containerPort: 6006
+            name: tensorboard
     nodeSelector:
       beta.kubernetes.io/instance-type: '{{workflow.parameters.sys-node-pool}}'
     inputs:
