@@ -88,11 +88,11 @@ templates:
             revision: '{{workflow.parameters.revision}}'
           path: /mnt/data/src
         - name: config
-          path: /mnt/data/src/workflows/nni-hyperparameter-tuning/mnist/config.yaml
+          path: /mnt/data/src/workflows/hyperparameter-tuning/mnist/config.yaml
           raw:
             data: '{{workflow.parameters.config}}'
         - name: search-space
-          path: /mnt/data/src/workflows/nni-hyperparameter-tuning/mnist/search_space.json
+          path: /mnt/data/src/workflows/hyperparameter-tuning/mnist/search_space.json
           raw:
             data: '{{workflow.parameters.search-space}}'
     outputs:
@@ -106,7 +106,7 @@ templates:
       image: onepanel/dl:0.17.0
       args:
         - --config
-        - /mnt/data/src/workflows/nni-hyperparameter-tuning/mnist/config.yaml
+        - /mnt/data/src/workflows/hyperparameter-tuning/mnist/config.yaml
       workingDir: /mnt
       volumeMounts:
         - name: hyperparamtuning-data
