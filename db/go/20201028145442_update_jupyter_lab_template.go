@@ -18,7 +18,7 @@ func initialize20201028145442() {
 func Up20201028145442(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkspaceTemplateManifest(
-		filepath.Join("workspaces", "20201028145442.yaml"),
+		filepath.Join("workspaces", "jupyterlab", "20201028145442.yaml"),
 		jupyterLabTemplateName)
 }
 
