@@ -78,6 +78,10 @@ func (s *WorkspaceTemplateServer) CreateWorkspaceTemplate(ctx context.Context, r
 		return nil, err
 	}
 
+	if IsNameReservedForSystem(req.WorkspaceTemplate.Name) {
+		return nil, v1.NameReservedForSystemError()
+	}
+
 	workspaceTemplate := &v1.WorkspaceTemplate{
 		Namespace:   req.Namespace,
 		Name:        req.WorkspaceTemplate.Name,
