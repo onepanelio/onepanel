@@ -335,6 +335,7 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		//Istio does not prevent the main container from stopping
 		if envVarValueInSidecars(template.Sidecars, "ONEPANEL_INTERACTIVE_SIDECAR", "true") {
 			template.Metadata.Annotations["sidecar.istio.io/inject"] = "true"
+			template.Metadata.Annotations["traffic.sidecar.istio.io/includeOutboundIPRanges"] = ""
 		} else {
 			template.Metadata.Annotations["sidecar.istio.io/inject"] = "false"
 		}
