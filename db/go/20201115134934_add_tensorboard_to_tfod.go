@@ -17,7 +17,7 @@ func initialize20201115134934() {
 func Up20201115134934(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkflowTemplateManifest(
-		filepath.Join("tfod", "20201115134934.yaml"),
+		filepath.Join("workflows", "tf-object-detection-training", "20201115134934.yaml"),
 		tensorflowObjectDetectionWorkflowTemplateName,
 		map[string]string{
 			"used-by": "cvat",

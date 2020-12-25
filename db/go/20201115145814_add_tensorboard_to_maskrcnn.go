@@ -17,7 +17,7 @@ func initialize20201115145814() {
 func Up20201115145814(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkflowTemplateManifest(
-		filepath.Join("maskrcnn", "20201115145814.yaml"),
+		filepath.Join("workflows", "maskrcnn-training", "20201115145814.yaml"),
 		maskRCNNWorkflowTemplateName,
 		map[string]string{
 			"used-by": "cvat",

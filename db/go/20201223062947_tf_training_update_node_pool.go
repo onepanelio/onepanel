@@ -17,7 +17,7 @@ func initialize20201223062947() {
 func Up20201223062947(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkflowTemplateManifest(
-		filepath.Join("tensorflow-mnist-training", "20201223062947.yaml"),
+		filepath.Join("workflows", "tensorflow-mnist-training", "20201223062947.yaml"),
 		tensorflowWorkflowTemplateName,
 		map[string]string{
 			"created-by": "system",
@@ -30,7 +30,7 @@ func Up20201223062947(tx *sql.Tx) error {
 func Down20201223062947(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return updateWorkflowTemplateManifest(
-		filepath.Join("tensorflow-mnist-training", "20201223062947.yaml"),
+		filepath.Join("workflows", "tensorflow-mnist-training", "20201223062947.yaml"),
 		tensorflowWorkflowTemplateName,
 		map[string]string{
 			"created-by": "system",

@@ -13,11 +13,11 @@ func initialize20201223202929() {
 	}
 }
 
-// Up20201223202929 updates tfod with sys.nodepool
+// Up20201223202929 updates tf-object-detection-training with sys.nodepool
 func Up20201223202929(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkflowTemplateManifest(
-		filepath.Join("tfod", "20201223202929.yaml"),
+		filepath.Join("workflows", "tf-object-detection-training", "20201223202929.yaml"),
 		tensorflowObjectDetectionWorkflowTemplateName,
 		map[string]string{
 			"created-by": "system",
@@ -30,7 +30,7 @@ func Up20201223202929(tx *sql.Tx) error {
 func Down20201223202929(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return updateWorkflowTemplateManifest(
-		filepath.Join("tfod", "20201208155115.yaml"),
+		filepath.Join("workflows", "tf-object-detection-training", "20201208155115.yaml"),
 		tensorflowObjectDetectionWorkflowTemplateName,
 		map[string]string{
 			"created-by": "system",
