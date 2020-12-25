@@ -20,7 +20,7 @@ func initialize20201028145443() {
 func Up20201028145443(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkspaceTemplateManifest(
-		filepath.Join("vscode", "20201028145443.yaml"),
+		filepath.Join("workspaces", "vscode", "20201028145443.yaml"),
 		vscodeWorkspaceTemplateName)
 }
 
@@ -28,6 +28,6 @@ func Up20201028145443(tx *sql.Tx) error {
 func Down20201028145443(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return updateWorkspaceTemplateManifest(
-		filepath.Join("vscode", "20201028145443.yaml"),
+		filepath.Join("workspaces", "vscode", "20201028145443.yaml"),
 		vscodeWorkspaceTemplateName)
 }

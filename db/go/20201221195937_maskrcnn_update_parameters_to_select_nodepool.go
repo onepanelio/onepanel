@@ -17,7 +17,7 @@ func initialize20201221195937() {
 func Up20201221195937(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkflowTemplateManifest(
-		filepath.Join("maskrcnn", "20201221195937.yaml"),
+		filepath.Join("workflows", "maskrcnn-training", "20201221195937.yaml"),
 		maskRCNNWorkflowTemplateName,
 		map[string]string{
 			"created-by": "system",
@@ -30,7 +30,7 @@ func Up20201221195937(tx *sql.Tx) error {
 func Down20201221195937(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return updateWorkflowTemplateManifest(
-		filepath.Join("maskrcnn", "20201208155115.yaml"),
+		filepath.Join("workflows", "maskrcnn-training", "20201208155115.yaml"),
 		maskRCNNWorkflowTemplateName,
 		map[string]string{
 			"created-by": "system",

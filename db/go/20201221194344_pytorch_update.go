@@ -16,7 +16,7 @@ func initialize20201221194344() {
 // Up20201221194344 updates pytorch_training with the sys.nodepool changes
 func Up20201221194344(tx *sql.Tx) error {
 	return updateWorkflowTemplateManifest(
-		filepath.Join("pytorch_training", "20201221194344.yaml"),
+		filepath.Join("workflows", "pytorch_training", "20201221194344.yaml"),
 		pytorchMnistWorkflowTemplateName,
 		map[string]string{
 			"created-by": "system",
@@ -28,7 +28,7 @@ func Up20201221194344(tx *sql.Tx) error {
 func Down20201221194344(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return updateWorkflowTemplateManifest(
-		filepath.Join("pytorch_training", "20200605090509.yaml"),
+		filepath.Join("workflows", "pytorch_training", "20200605090509.yaml"),
 		pytorchMnistWorkflowTemplateName,
 		map[string]string{
 			"created-by": "system",
