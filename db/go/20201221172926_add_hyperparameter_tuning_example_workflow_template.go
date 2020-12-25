@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-const hyperparameterTuningTemplateName = "Hyperparameter Tuning"
+const hyperparameterTuningTemplateName = "Hyperparameter Tuning Example"
 
 func initialize20201225172926() {
 	if _, ok := initializedMigrations[20201225172926]; !ok {
@@ -19,7 +19,7 @@ func initialize20201225172926() {
 func Up20201225172926(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return createWorkflowTemplate(
-		filepath.Join("hyperparam_tuning", "20201225172926.yaml"),
+		filepath.Join("workflows", "hyperparam_tuning", "20201225172926.yaml"),
 		hyperparameterTuningTemplateName,
 		map[string]string{
 			"framework": "pytorch",
