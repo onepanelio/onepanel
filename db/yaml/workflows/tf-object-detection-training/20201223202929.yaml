@@ -1,26 +1,10 @@
 # source: https://github.com/onepanelio/templates/blob/master/workflows/tf-object-detection-training/
 arguments:
   parameters:
-    - name: source
-      value: https://github.com/tensorflow/models.git
-      displayName: Model source code
-      type: hidden
-      visibility: private
-
-    - name: trainingsource
-      value: https://github.com/onepanelio/templates.git
-      type: hidden
-      visibility: private
-
-    - name: revision
-      value: v1.13.0
-      type: hidden
-      visibility: private
-
     - name: cvat-annotation-path
       value: annotation-dump/sample_dataset
       displayName: Dataset path
-      hint: Path to annotated data in default object storage (i.e S3). In CVAT, this parameter will be pre-populated.
+      hint: Path to annotated data (TFRecord format) in default object storage. In CVAT, this parameter will be pre-populated.
       visibility: internal
 
     - name: cvat-output-path
@@ -57,7 +41,7 @@ arguments:
       displayName: Hyperparameters
       visibility: public
       type: textarea.textarea
-      hint: "Please refer to our <a href='https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model#arguments-optional' target='_blank'>documentation</a> for more information on parameters. Number of classes will be automatically populated if you had 'sys-num-classes' parameter in a workflow."
+      hint: 'Please refer to our <a href="https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model/#hyperparameters" target="_blank">documentation</a> for more information on parameters.'
 
     - name: cvat-finetune-checkpoint
       value: ''
@@ -66,8 +50,8 @@ arguments:
       visibility: public
 
     - name: cvat-num-classes
-      value: '81'
-      hint: Number of classes
+      value: '10'
+      hint: Number of classes. In CVAT, this parameter will be pre-populated.
       displayName: Number of classes
       visibility: internal
 
@@ -107,7 +91,7 @@ templates:
         - |
           apt-get update && \
           apt-get install -y python3-pip git wget unzip libglib2.0-0 libsm6 libxext6 libxrender-dev && \
-          pip install pillow lxml Cython contextlib2 jupyter matplotlib numpy scipy boto3 pycocotools pyyaml google-cloud-storage test-generator && \
+          pip install pillow lxml Cython contextlib2 matplotlib numpy scipy pycocotools pyyaml test-generator && \
           cd /mnt/src/tf/research && \
           export PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/slim && \
           mkdir -p /mnt/src/protoc && \
@@ -146,12 +130,12 @@ templates:
           s3:
             key: '{{workflow.parameters.cvat-finetune-checkpoint}}'
         - git:
-            repo: '{{workflow.parameters.source}}'
-            revision: '{{workflow.parameters.revision}}'
+            repo: https://github.com/tensorflow/models.git
+            revision: v1.13.0
           name: src
           path: /mnt/src/tf
         - git:
-            repo: '{{workflow.parameters.trainingsource}}'
+            repo: https://github.com/onepanelio/templates.git
           name: tsrc
           path: /mnt/src/train
     name: tensorflow
@@ -164,7 +148,6 @@ templates:
             key: '{{workflow.namespace}}/{{workflow.parameters.cvat-output-path}}/{{workflow.name}}'
 volumeClaimTemplates:
   - metadata:
-      creationTimestamp: null
       name: data
     spec:
       accessModes:
@@ -173,7 +156,6 @@ volumeClaimTemplates:
         requests:
           storage: 200Gi
   - metadata:
-      creationTimestamp: null
       name: output
     spec:
       accessModes:
