@@ -58,16 +58,3 @@ templates:
           mountPath: /mnt/data
         - name: output
           mountPath: /mnt/output
-# Uncomment the lines below if you want to send Slack notifications
-#  - name: slack-notify-success
-#    container:
-#      image: technosophos/slack-notify
-#      command: [sh,-c]
-#      args: ['SLACK_USERNAME=Worker SLACK_TITLE="{{workflow.name}} {{inputs.parameters.status}}" SLACK_ICON=https://www.gravatar.com/avatar/5c4478592fe00878f62f0027be59c1bd SLACK_MESSAGE=$(cat /tmp/metrics.json)} ./slack-notify']
-#    inputs:
-#      parameters:
-#      - name: status
-#      artifacts:
-#      - name: metrics
-#        path: /tmp/metrics.json
-#        optional: true
