@@ -1,4 +1,4 @@
-# source: https://github.com/onepanelio/templates/blob/master/workflows/pytorch-mnist-training/template.yaml
+# source: https://github.com/onepanelio/templates/blob/master/workflows/pytorch-mnist-training/
 entrypoint: main
 arguments:
   parameters:

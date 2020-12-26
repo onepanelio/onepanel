@@ -1,4 +1,4 @@
-# source: https://github.com/onepanelio/templates/blob/master/workflows/tensorflow-mnist-training/template.yaml
+# source: https://github.com/onepanelio/templates/blob/master/workflows/tensorflow-mnist-training/
 arguments:
   parameters:
     - name: epochs
