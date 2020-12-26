@@ -2,7 +2,7 @@
 arguments:
   parameters:
     - name: epochs
-      value: '100'
+      value: '10'
     - displayName: Node pool
       hint: Name of node pool or group to run this workflow task
       type: select.nodepool
@@ -39,17 +39,20 @@ templates:
 
         (x_train, y_train),(x_test, y_test) = mnist.load_data()
         x_train, x_test = x_train / 255.0, x_test / 255.0
+        x_train = x_train[..., tf.newaxis]
+        x_test = x_test[..., tf.newaxis]
 
-        def create_model():
-          return tf.keras.models.Sequential([
-            tf.keras.layers.Flatten(input_shape=(28, 28)),
-            tf.keras.layers.Dense(512, activation='relu'),
-            tf.keras.layers.Dropout(0.2),
-            tf.keras.layers.Dense(10, activation='softmax')
-          ])
-
-        model = create_model()
-        model.compile(optimizer='adam',
+        model = tf.keras.Sequential([
+          tf.keras.layers.Conv2D(filters=32, kernel_size=5, activation='relu'),
+          tf.keras.layers.MaxPool2D(pool_size=2),
+          tf.keras.layers.Conv2D(filters=64, kernel_size=5, activation='relu'),
+          tf.keras.layers.MaxPool2D(pool_size=2),
+          tf.keras.layers.Flatten(),
+          tf.keras.layers.Dense(units=124, activation='relu'),
+          tf.keras.layers.Dropout(rate=0.75),
+          tf.keras.layers.Dense(units=10, activation='softmax')
+        ])
+        model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.001),
                       loss='sparse_categorical_crossentropy',
                       metrics=['accuracy'])
 
