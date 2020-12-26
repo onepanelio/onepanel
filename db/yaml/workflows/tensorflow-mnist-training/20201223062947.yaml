@@ -1,7 +1,15 @@
+# source: https://github.com/onepanelio/templates/blob/master/workflows/tensorflow-mnist-training/template.yaml
 arguments:
   parameters:
     - name: epochs
       value: '10'
+    - displayName: Node pool
+      hint: Name of node pool or group to run this workflow task
+      type: select.nodepool
+      name: sys-node-pool
+      value: {{.DefaultNodePoolOption}}
+      visibility: public
+      required: true
 entrypoint: main
 templates:
   - name: main
@@ -18,9 +26,12 @@ templates:
       source: |
         import tensorflow as tf
         import datetime
+
         mnist = tf.keras.datasets.mnist
+
         (x_train, y_train),(x_test, y_test) = mnist.load_data()
         x_train, x_test = x_train / 255.0, x_test / 255.0
+
         def create_model():
           return tf.keras.models.Sequential([
             tf.keras.layers.Flatten(input_shape=(28, 28)),
@@ -28,13 +39,16 @@ templates:
             tf.keras.layers.Dropout(0.2),
             tf.keras.layers.Dense(10, activation='softmax')
           ])
+
         model = create_model()
         model.compile(optimizer='adam',
                       loss='sparse_categorical_crossentropy',
                       metrics=['accuracy'])
+
         # Write logs to /mnt/output
         log_dir = "/mnt/output/logs/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+
         history = model.fit(x=x_train,
                   y=y_train,
                   epochs={{workflow.parameters.epochs}},
@@ -44,6 +58,9 @@ templates:
         # TensorBoard sidecar will automatically mount this volume
         - name: output
           mountPath: /mnt/output
+
+    nodeSelector:
+      beta.kubernetes.io/instance-type: '{{workflow.parameters.sys-node-pool}}'
     sidecars:
       - name: tensorboard
         image: 'tensorflow/tensorflow:2.3.0'
@@ -59,6 +76,7 @@ templates:
         ports:
           - containerPort: 6006
             name: tensorboard
+
 volumeClaimTemplates:
   # Provision a volume that can be shared between main container and TensorBoard side car
   - metadata:

@@ -184,15 +184,15 @@ func generateRuntimeParameters(config SystemConfig) (parameters []Parameter, err
 	if err != nil {
 		return nil, err
 	}
-	if len(nodePoolOptions) == 0 {
-		return nil, fmt.Errorf("no node pool options in config")
-	}
 	var options []*ParameterOption
 	for _, option := range nodePoolOptions {
 		options = append(options, &ParameterOption{
 			Name:  option.Name,
 			Value: option.Value,
 		})
+	}
+	if len(options) == 0 {
+		return nil, fmt.Errorf("no node pool options in config")
 	}
 
 	parameters = append(parameters, Parameter{
@@ -204,7 +204,7 @@ func generateRuntimeParameters(config SystemConfig) (parameters []Parameter, err
 	parameters = append(parameters, Parameter{
 		Name:        "sys-node-pool",
 		Value:       ptr.String(options[0].Value),
-		Type:        "select.select",
+		Type:        "select.nodepool",
 		Options:     options,
 		DisplayName: ptr.String("Node pool"),
 		Hint:        ptr.String("Name of node pool or group"),
@@ -943,6 +943,14 @@ func (c *Client) generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *Wo
 	workspaceSpec, err := parseWorkspaceSpec(workspaceTemplate.Manifest)
 	if err != nil {
 		return nil, util.NewUserError(codes.InvalidArgument, err.Error())
+	}
+
+	if workspaceSpec.Arguments != nil {
+		modifiedParameters, err := c.replaceSysNodePoolOptions(workspaceSpec.Arguments.Parameters)
+		if err != nil {
+			return nil, err
+		}
+		workspaceSpec.Arguments.Parameters = modifiedParameters
 	}
 
 	if err = generateArguments(workspaceSpec, config); err != nil {

@@ -13,11 +13,11 @@ func initialize20201208155115() {
 	}
 }
 
-// Up20201208155115 update the tfod workflow template to replace tty with an environment variable
+// Up20201208155115 update the tf-object-detection-training workflow template to replace tty with an environment variable
 func Up20201208155115(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkflowTemplateManifest(
-		filepath.Join("tfod", "20201208155115.yaml"),
+		filepath.Join("workflows", "tf-object-detection-training", "20201208155115.yaml"),
 		tensorflowObjectDetectionWorkflowTemplateName,
 		map[string]string{
 			"used-by": "cvat",
@@ -29,7 +29,7 @@ func Up20201208155115(tx *sql.Tx) error {
 func Down20201208155115(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return updateWorkflowTemplateManifest(
-		filepath.Join("tfod", "20201130130433.yaml"),
+		filepath.Join("workflows", "tf-object-detection-training", "20201130130433.yaml"),
 		tensorflowObjectDetectionWorkflowTemplateName,
 		map[string]string{
 			"used-by": "cvat",

@@ -152,6 +152,21 @@ func (c *Client) GetWebRouter() (router.Web, error) {
 	return webRouter, err
 }
 
+// GetArtifactRepositoryType returns the configured artifact repository type for the given namespace.
+// possible return values are: "s3", "gcs"
+func (c *Client) GetArtifactRepositoryType(namespace string) (string, error) {
+	artifactRepositoryType := "s3"
+	nsConfig, err := c.GetNamespaceConfig(namespace)
+	if err != nil {
+		return "", err
+	}
+	if nsConfig.ArtifactRepository.GCS != nil {
+		artifactRepositoryType = "gcs"
+	}
+
+	return artifactRepositoryType, nil
+}
+
 // getKubernetesTimeout returns the timeout for kubernetes requests.
 // It uses the KUBERNETES_TIMEOUT environment variable and defaults to 60 seconds if not found or an error occurs
 // parsing the set timeout.

@@ -17,6 +17,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type WorkflowTemplateServiceClient interface {
+	// Get the generated WorkflowTemplate, applying any modifications based on the content
+	GenerateWorkflowTemplate(ctx context.Context, in *GenerateWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error)
 	CreateWorkflowTemplate(ctx context.Context, in *CreateWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error)
 	CreateWorkflowTemplateVersion(ctx context.Context, in *CreateWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error)
 	GetWorkflowTemplate(ctx context.Context, in *GetWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error)
@@ -32,6 +34,15 @@ type workflowTemplateServiceClient struct {
 
 func NewWorkflowTemplateServiceClient(cc grpc.ClientConnInterface) WorkflowTemplateServiceClient {
 	return &workflowTemplateServiceClient{cc}
+}
+
+func (c *workflowTemplateServiceClient) GenerateWorkflowTemplate(ctx context.Context, in *GenerateWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error) {
+	out := new(WorkflowTemplate)
+	err := c.cc.Invoke(ctx, "/api.WorkflowTemplateService/GenerateWorkflowTemplate", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *workflowTemplateServiceClient) CreateWorkflowTemplate(ctx context.Context, in *CreateWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error) {
@@ -101,6 +112,8 @@ func (c *workflowTemplateServiceClient) ArchiveWorkflowTemplate(ctx context.Cont
 // All implementations must embed UnimplementedWorkflowTemplateServiceServer
 // for forward compatibility
 type WorkflowTemplateServiceServer interface {
+	// Get the generated WorkflowTemplate, applying any modifications based on the content
+	GenerateWorkflowTemplate(context.Context, *GenerateWorkflowTemplateRequest) (*WorkflowTemplate, error)
 	CreateWorkflowTemplate(context.Context, *CreateWorkflowTemplateRequest) (*WorkflowTemplate, error)
 	CreateWorkflowTemplateVersion(context.Context, *CreateWorkflowTemplateRequest) (*WorkflowTemplate, error)
 	GetWorkflowTemplate(context.Context, *GetWorkflowTemplateRequest) (*WorkflowTemplate, error)
@@ -115,6 +128,9 @@ type WorkflowTemplateServiceServer interface {
 type UnimplementedWorkflowTemplateServiceServer struct {
 }
 
+func (UnimplementedWorkflowTemplateServiceServer) GenerateWorkflowTemplate(context.Context, *GenerateWorkflowTemplateRequest) (*WorkflowTemplate, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GenerateWorkflowTemplate not implemented")
+}
 func (UnimplementedWorkflowTemplateServiceServer) CreateWorkflowTemplate(context.Context, *CreateWorkflowTemplateRequest) (*WorkflowTemplate, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateWorkflowTemplate not implemented")
 }
@@ -148,6 +164,24 @@ type UnsafeWorkflowTemplateServiceServer interface {
 
 func RegisterWorkflowTemplateServiceServer(s grpc.ServiceRegistrar, srv WorkflowTemplateServiceServer) {
 	s.RegisterService(&_WorkflowTemplateService_serviceDesc, srv)
+}
+
+func _WorkflowTemplateService_GenerateWorkflowTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GenerateWorkflowTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkflowTemplateServiceServer).GenerateWorkflowTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.WorkflowTemplateService/GenerateWorkflowTemplate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkflowTemplateServiceServer).GenerateWorkflowTemplate(ctx, req.(*GenerateWorkflowTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _WorkflowTemplateService_CreateWorkflowTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -280,6 +314,10 @@ var _WorkflowTemplateService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "api.WorkflowTemplateService",
 	HandlerType: (*WorkflowTemplateServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GenerateWorkflowTemplate",
+			Handler:    _WorkflowTemplateService_GenerateWorkflowTemplate_Handler,
+		},
 		{
 			MethodName: "CreateWorkflowTemplate",
 			Handler:    _WorkflowTemplateService_CreateWorkflowTemplate_Handler,
