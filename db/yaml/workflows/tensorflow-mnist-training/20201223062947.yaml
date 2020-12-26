@@ -54,7 +54,7 @@ templates:
                       metrics=['accuracy'])
 
         # Write TensorBoard logs to /mnt/output
-        log_dir = "/mnt/output/tensorboard/"
+        log_dir = '/mnt/output/tensorboard/'
         tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
         model.fit(x=x_train,
