@@ -117,7 +117,7 @@ templates:
       beta.kubernetes.io/instance-type: '{{workflow.parameters.sys-node-pool}}'
     sidecars:
       - name: nni-web-ui
-        image: 'onepanel/nni-proxy:0.0.1'
+        image: 'onepanel/nni-web-ui:0.17.0'
         env:
           - name: ONEPANEL_INTERACTIVE_SIDECAR
             value: 'true'
