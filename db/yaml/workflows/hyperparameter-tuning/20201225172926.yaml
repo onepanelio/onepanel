@@ -26,7 +26,7 @@ arguments:
           classArgs:
             optimize_mode: maximize   # choices: maximize, minimize
         trial:
-          command: python mnist.py --output /mnt/output
+          command: python main.py --output /mnt/output
           codeDir: .
           # gpuNum: 1                 # uncomment and update to number of GPUs
     - name: search-space
@@ -46,7 +46,7 @@ arguments:
       hint: Name of node pool or group to run this workflow task
       type: select.nodepool
       name: sys-node-pool
-      value: Standard_D4s_v3
+      value: {{.DefaultNodePoolOption}}
       required: true
 
 volumeClaimTemplates:
