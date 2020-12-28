@@ -82,7 +82,6 @@ templates:
                         epoch, batch_idx * len(data), len(train_loader.dataset),
                         100. * batch_idx / len(train_loader), loss.item()))
 
-                    # TODO: Fix this
                     writer.add_scalar('training loss', loss.item(), epoch)
 
 
