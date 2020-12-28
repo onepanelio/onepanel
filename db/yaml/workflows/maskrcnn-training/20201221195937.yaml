@@ -1,21 +1,15 @@
 # source: https://github.com/onepanelio/templates/blob/master/workflows/maskrcnn-training/
 arguments:
   parameters:
-    - name: source
-      value: https://github.com/onepanelio/Mask_RCNN.git
-      displayName: Model source code
-      type: hidden
-      visibility: private
-
     - name: cvat-annotation-path
       value: annotation-dump/sample_dataset
-      hint: Path to annotated data in default object storage (i.e S3). In CVAT, this parameter will be pre-populated.
+      hint: Path to annotated data in default object storage. In CVAT, this parameter will be pre-populated.
       displayName: Dataset path
       visibility: internal
 
     - name: cvat-output-path
       value: workflow-data/output/sample_output
-      hint: Path to store output artifacts in default object storage (i.e s3). In CVAT, this parameter will be pre-populated.
+      hint: Path to store output artifacts in default object storage. In CVAT, this parameter will be pre-populated.
       displayName: Workflow output path
       visibility: internal
 
@@ -27,8 +21,8 @@ arguments:
 
     - name: cvat-num-classes
       displayName: Number of classes
-      hint: Number of classes (i.e in CVAT taks) + 1 for background
-      value: '81'
+      hint: Number of classes + 1 for background. In CVAT, this parameter will be pre-populated.
+      value: '11'
       visibility: internal
 
     - name: hyperparameters
@@ -39,7 +33,7 @@ arguments:
         stage-1-epochs=1    #  Epochs for network heads
         stage-2-epochs=2    #  Epochs for finetune layers
         stage-3-epochs=3    #  Epochs for all layers
-      hint: "Please refer to our <a href='https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model#arguments-optional' target='_blank'>documentation</a> for more information on parameters. Number of classes will be automatically populated if you had 'sys-num-classes' parameter in a workflow."
+      hint: "See <a href='https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model#maskrcnn-hyperparameters' target='_blank'>documentation</a> for more information on parameters."
 
     - name: dump-format
       value: cvat_coco
@@ -124,8 +118,8 @@ templates:
           s3:
             key: '{{workflow.namespace}}/{{workflow.parameters.cvat-annotation-path}}'
         - git:
-            repo: '{{workflow.parameters.source}}'
-            revision: "no-boto"
+            repo: 'https://github.com/onepanelio/Mask_RCNN.git'
+            revision: 'no-boto'
           name: src
           path: /mnt/src
     name: tensorflow
@@ -138,7 +132,6 @@ templates:
             key: '{{workflow.namespace}}/{{workflow.parameters.cvat-output-path}}/{{workflow.name}}'
 volumeClaimTemplates:
   - metadata:
-      creationTimestamp: null
       name: data
     spec:
       accessModes:
@@ -147,7 +140,6 @@ volumeClaimTemplates:
         requests:
           storage: 200Gi
   - metadata:
-      creationTimestamp: null
       name: output
     spec:
       accessModes:
