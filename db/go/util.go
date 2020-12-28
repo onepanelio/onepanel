@@ -126,10 +126,11 @@ func updateWorkflowTemplateManifest(filename, templateName string, labels map[st
 			Labels:   labels,
 		}
 
-		err = ReplaceArtifactRepositoryType(client, namespace, workflowTemplate, nil)
+		workflowTemplate.Manifest, err = ReplaceRuntimeVariablesInManifest(client, namespace.Name, workflowTemplate.Manifest)
 		if err != nil {
 			return err
 		}
+
 		if _, err := client.CreateWorkflowTemplateVersion(namespace.Name, workflowTemplate); err != nil {
 			return err
 		}

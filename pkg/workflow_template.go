@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/pkg/util/request"
 	pagination "github.com/onepanelio/core/pkg/util/request/pagination"
 	"strconv"
@@ -30,6 +31,38 @@ type WorkflowTemplateFilter struct {
 // GetLabels returns the labels in the filter
 func (wt *WorkflowTemplateFilter) GetLabels() []*Label {
 	return wt.Labels
+}
+
+// replaceSysNodePoolOptions replaces a select.nodepool parameter with the nodePool options in the systemConfig
+// and returns the new parameters with the change.
+func (c *Client) replaceSysNodePoolOptions(parameters []Parameter) (result []Parameter, err error) {
+	nodePoolOptions, err := c.systemConfig.NodePoolOptions()
+	if err != nil {
+		return result, err
+	}
+
+	nodePoolParameterOptions := make([]*ParameterOption, 0)
+	for _, option := range nodePoolOptions {
+		nodePoolParameterOptions = append(nodePoolParameterOptions, &ParameterOption{
+			Name:  option.Name,
+			Value: option.Value,
+		})
+	}
+
+	for i := range parameters {
+		param := parameters[i]
+		if param.Type == "select.nodepool" {
+			param.Options = nodePoolParameterOptions
+
+			if param.Value != nil && *param.Value == "default" {
+				param.Value = ptr.String(param.Options[0].Value)
+			}
+		}
+
+		result = append(result, param)
+	}
+
+	return
 }
 
 func applyWorkflowTemplateFilter(sb sq.SelectBuilder, request *request.Request) (sq.SelectBuilder, error) {
@@ -389,7 +422,11 @@ func (c *Client) getWorkflowTemplate(namespace, uid string, version int64) (work
 		return workflowTemplate, err
 	}
 
-	workflowTemplate.Parameters = wtv.Parameters
+	workflowTemplate.Parameters, err = c.replaceSysNodePoolOptions(wtv.Parameters)
+	if err != nil {
+		return nil, err
+	}
+
 	return workflowTemplate, nil
 }
 
@@ -1060,4 +1097,43 @@ func (c *Client) GetWorkflowTemplateLabels(namespace, name, prefix string, versi
 	labels = label.RemovePrefix(prefix, labels)
 
 	return
+}
+
+// GenerateWorkflowTemplateManifest replaces any special parameters with runtime values
+func (c *Client) GenerateWorkflowTemplateManifest(manifest string) (string, error) {
+	manifestObject := make(map[string]interface{})
+	if err := yaml.Unmarshal([]byte(manifest), &manifestObject); err != nil {
+		return "", util.NewUserError(codes.InvalidArgument, "Invalid yaml")
+	}
+
+	argumentsRaw := manifestObject["arguments"]
+	arguments, ok := argumentsRaw.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("unable to parse arguments")
+	}
+
+	jsonParameters, err := json.Marshal(arguments["parameters"])
+	if err != nil {
+		return "", err
+	}
+
+	parameters := make([]Parameter, 0)
+	if err := json.Unmarshal(jsonParameters, &parameters); err != nil {
+		return "", err
+	}
+
+	parameters, err = c.replaceSysNodePoolOptions(parameters)
+	if err != nil {
+		return "", err
+	}
+
+	arguments["parameters"] = parameters
+	manifestObject["arguments"] = arguments
+
+	finalManifest, err := yaml.Marshal(manifestObject)
+	if err != nil {
+		return "", err
+	}
+
+	return string(finalManifest), err
 }

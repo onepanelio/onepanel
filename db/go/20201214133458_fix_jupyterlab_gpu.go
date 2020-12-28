@@ -17,7 +17,7 @@ func initialize20201214133458() {
 func Up20201214133458(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkspaceTemplateManifest(
-		filepath.Join("jupyterlab", "20201214133458.yaml"),
+		filepath.Join("workspaces", "jupyterlab", "20201214133458.yaml"),
 		jupyterLabTemplateName)
 }
 
@@ -25,6 +25,6 @@ func Up20201214133458(tx *sql.Tx) error {
 func Down20201214133458(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return updateWorkspaceTemplateManifest(
-		filepath.Join("jupyterlab", "20201031165106.yaml"),
+		filepath.Join("workspaces", "jupyterlab", "20201031165106.yaml"),
 		jupyterLabTemplateName)
 }

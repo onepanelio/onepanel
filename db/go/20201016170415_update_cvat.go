@@ -17,7 +17,7 @@ func initialize20201016170415() {
 func Up20201016170415(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkspaceTemplateManifest(
-		filepath.Join("cvat", "20201016170415.yaml"),
+		filepath.Join("workspaces", "cvat", "20201016170415.yaml"),
 		cvatTemplateName)
 }
 
