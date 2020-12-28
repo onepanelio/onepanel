@@ -56,16 +56,16 @@ arguments:
       visibility: internal
 
     - name: tf-image
-      value: tensorflow/tensorflow:1.15.4-py3
+      value: tensorflow/tensorflow:1.13.1-py3
       type: select.select
       displayName: Select TensorFlow image
       visibility: public
       hint: Select the GPU image if you are running on a GPU node pool
       options:
-        - name: 'TensorFlow 1.15.4 CPU Image'
-          value: 'tensorflow/tensorflow:1.15.4-py3'
-        - name: 'TensorFlow 1.15.4 GPU Image'
-          value: 'tensorflow/tensorflow:1.15.4-gpu-py3'
+        - name: 'TensorFlow 1.13.1 CPU Image'
+          value: 'tensorflow/tensorflow:1.13.1-py3'
+        - name: 'TensorFlow 1.13.1 GPU Image'
+          value: 'tensorflow/tensorflow:1.13.1-gpu-py3'
 
     - name: dump-format
       value: cvat_tfrecord
