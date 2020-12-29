@@ -38,23 +38,15 @@ func (wt *WorkflowTemplateFilter) GetLabels() []*Label {
 // replaceSysNodePoolOptions replaces a select.nodepool parameter with the nodePool options in the systemConfig
 // and returns the new parameters with the change.
 func (c *Client) replaceSysNodePoolOptions(parameters []Parameter) (result []Parameter, err error) {
-	nodePoolOptions, err := c.systemConfig.NodePoolOptions()
+	nodePoolOptions, err := c.systemConfig.NodePoolOptionsAsParameters()
 	if err != nil {
 		return result, err
-	}
-
-	nodePoolParameterOptions := make([]*ParameterOption, 0)
-	for _, option := range nodePoolOptions {
-		nodePoolParameterOptions = append(nodePoolParameterOptions, &ParameterOption{
-			Name:  option.Name,
-			Value: option.Value,
-		})
 	}
 
 	for i := range parameters {
 		param := parameters[i]
 		if param.Type == "select.nodepool" {
-			param.Options = nodePoolParameterOptions
+			param.Options = nodePoolOptions
 
 			if param.Value != nil && *param.Value == "default" {
 				param.Value = ptr.String(param.Options[0].Value)
@@ -67,6 +59,7 @@ func (c *Client) replaceSysNodePoolOptions(parameters []Parameter) (result []Par
 	return
 }
 
+// parameterOptionToNodes returns a mapping Node where the content's are the options name/value
 func parameterOptionToNodes(option *ParameterOption) *yaml3.Node {
 	result := &yaml3.Node{
 		Kind: yaml3.MappingNode,
@@ -95,6 +88,7 @@ func parameterOptionToNodes(option *ParameterOption) *yaml3.Node {
 	return result
 }
 
+// parameterOptionsToNodes returns an array of nodes representing the options
 func parameterOptionsToNodes(options []*ParameterOption) []*yaml3.Node {
 	result := make([]*yaml3.Node, 0)
 
@@ -1204,22 +1198,18 @@ func (c *Client) GenerateWorkflowTemplateManifest(manifest string) (string, erro
 	parametersIndex := extensions.CreateYamlIndex("arguments", "parameters")
 
 	if extensions.HasNode(root, parametersIndex) {
-		resultNode, err := extensions.GetNode(root, extensions.CreateYamlIndex("arguments", "parameters"))
+		resultNode, err := extensions.GetNode(root, parametersIndex)
 		if err != nil {
 			return "", err
 		}
 
-		nodePoolOptions, err := c.systemConfig.NodePoolOptions()
+		nodePoolOptions, err := c.systemConfig.NodePoolOptionsAsParameters()
 		if err != nil {
 			return "", err
 		}
 
-		nodePoolParameterOptions := make([]*ParameterOption, 0)
-		for _, option := range nodePoolOptions {
-			nodePoolParameterOptions = append(nodePoolParameterOptions, &ParameterOption{
-				Name:  option.Name,
-				Value: option.Value,
-			})
+		if len(nodePoolOptions) == 0 {
+			return "", fmt.Errorf("no node pool options")
 		}
 
 		for _, child := range resultNode.Content {
@@ -1229,7 +1219,7 @@ func (c *Client) GenerateWorkflowTemplateManifest(manifest string) (string, erro
 			}
 
 			if hasKey {
-				if err := extensions.SetKeyValue(child, "value", nodePoolParameterOptions[0].Value); err != nil {
+				if err := extensions.SetKeyValue(child, "value", nodePoolOptions[0].Value); err != nil {
 					return "", err
 				}
 
@@ -1249,7 +1239,7 @@ func (c *Client) GenerateWorkflowTemplateManifest(manifest string) (string, erro
 				}
 
 				optionsNode.Kind = yaml3.SequenceNode
-				optionsNode.Content = parameterOptionsToNodes(nodePoolParameterOptions)
+				optionsNode.Content = parameterOptionsToNodes(nodePoolOptions)
 			}
 		}
 	}

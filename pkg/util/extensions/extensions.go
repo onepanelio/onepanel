@@ -25,6 +25,7 @@ func (y *YamlIndex) String() string {
 
 // CreateYamlIndex creates a YamlIndex that specifies the Key via string parts.
 // e.g. a key maybe be: parent.child.favoriteNumber and the returned YamlIndex would reflect this.
+// Note: this does not yet support indexing array values.
 func CreateYamlIndex(parts ...string) *YamlIndex {
 	copyParts := make([]string, len(parts))
 
