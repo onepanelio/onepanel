@@ -22,7 +22,7 @@ func Up20201225172926(tx *sql.Tx) error {
 		filepath.Join("workflows", "hyperparameter-tuning", "20201225172926.yaml"),
 		hyperparameterTuningTemplateName,
 		map[string]string{
-			"framework":  "pytorch",
+			"framework":  "tensorflow",
 			"tuner":      "TPE",
 			"created-by": "system",
 		},
