@@ -99,52 +99,6 @@ func parameterOptionsToNodes(options []*ParameterOption) []*yaml3.Node {
 	return result
 }
 
-// formatWorkflowTemplateManifest will remove any extraneous values from the workflow template manifest.
-// For example, select.nodepool should not have any options. If it does, they are stripped out.
-func formatWorkflowTemplateManifest(manifest string) (string, error) {
-	root := &yaml3.Node{}
-	err := yaml3.Unmarshal([]byte(manifest), root)
-	if err != nil {
-		return "", err
-	}
-
-	parametersIndex := extensions.CreateYamlIndex("arguments", "parameters")
-
-	if extensions.HasNode(root, parametersIndex) {
-		resultNode, err := extensions.GetNode(root, parametersIndex)
-		if err != nil {
-			return "", err
-		}
-
-		for _, child := range resultNode.Content {
-			hasKey, err := extensions.HasKeyValue(child, "type", "select.nodepool")
-			if err != nil {
-				return "", err
-			}
-
-			if hasKey {
-				if err := extensions.SetKeyValue(child, "value", "default"); err != nil {
-					return "", err
-				}
-
-				optionsIndex := extensions.CreateYamlIndex("options")
-				if extensions.HasNode(child, optionsIndex) {
-					if err := extensions.DeleteNode(child, optionsIndex); err != nil {
-						return "", err
-					}
-				}
-			}
-		}
-	}
-
-	finalManifest, err := yaml3.Marshal(root)
-	if err != nil {
-		return "", err
-	}
-
-	return string(finalManifest), nil
-}
-
 func applyWorkflowTemplateFilter(sb sq.SelectBuilder, request *request.Request) (sq.SelectBuilder, error) {
 	if !request.HasFilter() {
 		return sb, nil
@@ -280,12 +234,6 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 	if err != nil {
 		return nil, nil, err
 	}
-
-	newManifest, err := formatWorkflowTemplateManifest(workflowTemplate.Manifest)
-	if err != nil {
-		return nil, nil, err
-	}
-	workflowTemplate.Manifest = newManifest
 
 	params, err := ParseParametersFromManifest([]byte(workflowTemplate.Manifest))
 	if err != nil {
@@ -663,12 +611,6 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 	if workflowTemplate.UID == "" {
 		return nil, fmt.Errorf("uid required for CreateWorkflowTemplateVersion")
 	}
-
-	newManifest, err := formatWorkflowTemplateManifest(workflowTemplate.Manifest)
-	if err != nil {
-		return nil, err
-	}
-	workflowTemplate.Manifest = newManifest
 
 	// validate workflow template
 	if err := c.validateWorkflowTemplate(namespace, workflowTemplate); err != nil {
@@ -1222,19 +1164,30 @@ func (c *Client) GenerateWorkflowTemplateManifest(manifest string) (string, erro
 			}
 
 			if hasKey {
+				isDefault, err := extensions.HasKeyValue(child, "value", "default")
+				if err != nil {
+					return "", err
+				}
+				if !isDefault {
+					return "", util.NewUserError(codes.InvalidArgument, "select.nodepool must have a value of 'default'")
+				}
+
 				if err := extensions.SetKeyValue(child, "value", nodePoolOptions[0].Value); err != nil {
 					return "", err
 				}
 
 				optionsIndex := extensions.CreateYamlIndex("options")
-				if !extensions.HasNode(child, optionsIndex) {
-					child.Content = append(child.Content, &yaml3.Node{
-						Kind:  yaml3.ScalarNode,
-						Value: "options",
-					}, &yaml3.Node{
-						Kind: yaml3.SequenceNode,
-					})
+
+				if extensions.HasNode(child, optionsIndex) {
+					return "", util.NewUserError(codes.InvalidArgument, "select.nodepool must not have any options")
 				}
+
+				child.Content = append(child.Content, &yaml3.Node{
+					Kind:  yaml3.ScalarNode,
+					Value: "options",
+				}, &yaml3.Node{
+					Kind: yaml3.SequenceNode,
+				})
 
 				optionsNode, err := extensions.GetNode(child, optionsIndex)
 				if err != nil {
