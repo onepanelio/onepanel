@@ -13,6 +13,7 @@ func initialize20201229205644() {
 	}
 }
 
+// Up20201229205644 updates the jupyterlab workspace template
 func Up20201229205644(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkspaceTemplateManifest(
@@ -20,6 +21,7 @@ func Up20201229205644(tx *sql.Tx) error {
 		jupyterLabTemplateName)
 }
 
+// Down20201229205644 rolls back the jupyterab workspace template update
 func Down20201229205644(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return updateWorkspaceTemplateManifest(
