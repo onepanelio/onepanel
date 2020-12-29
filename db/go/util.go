@@ -81,7 +81,7 @@ func createWorkflowTemplate(filename, templateName string, labels map[string]str
 			Labels:   labels,
 		}
 
-		err = ReplaceArtifactRepositoryType(client, namespace, workflowTemplate, nil)
+		workflowTemplate.Manifest, err = ReplaceRuntimeVariablesInManifest(client, namespace.Name, workflowTemplate.Manifest)
 		if err != nil {
 			return err
 		}
