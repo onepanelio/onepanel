@@ -6,11 +6,13 @@ import (
 	"strings"
 )
 
+// NodePair is a convenience wrapper for two nodes, usually a key/value pair.
 type NodePair struct {
 	Key   *yaml.Node
 	Value *yaml.Node
 }
 
+// YamlIndex identifies a path in a Yaml Node Tree
 type YamlIndex struct {
 	parts []string
 }
@@ -35,6 +37,7 @@ func CreateYamlIndex(parts ...string) *YamlIndex {
 	}
 }
 
+// HasNode returns true if the root node has the key
 func HasNode(root *yaml.Node, key *YamlIndex) bool {
 	if key == nil || len(key.parts) == 0 {
 		return false
@@ -66,6 +69,7 @@ func HasNode(root *yaml.Node, key *YamlIndex) bool {
 	return true
 }
 
+// GetNode returns the node that contains the content for the key
 // TODO support indexes
 func GetNode(root *yaml.Node, key *YamlIndex) (*yaml.Node, error) {
 	if key == nil || len(key.parts) == 0 {
@@ -98,6 +102,7 @@ func GetNode(root *yaml.Node, key *YamlIndex) (*yaml.Node, error) {
 	return currentNode, nil
 }
 
+// SetKeyValue set's the content node's value to value for the indicated key
 func SetKeyValue(node *yaml.Node, key string, value string) error {
 	if node.Kind != yaml.MappingNode {
 		return fmt.Errorf("not a mapping node")
@@ -135,6 +140,7 @@ func HasKeyValue(node *yaml.Node, key string, value string) (bool, error) {
 	return false, nil
 }
 
+// Iterate runs through all of the content nodes in the indicated root node
 func Iterate(root *yaml.Node, callable func(parent, value *yaml.Node)) {
 	for _, child := range root.Content {
 		callable(root, child)
@@ -142,6 +148,7 @@ func Iterate(root *yaml.Node, callable func(parent, value *yaml.Node)) {
 	}
 }
 
+// DeleteNode will delete the key and content nodes for the given key
 func DeleteNode(node *yaml.Node, key *YamlIndex) error {
 	if node.Kind != yaml.MappingNode {
 		return fmt.Errorf("not a mapping node")
