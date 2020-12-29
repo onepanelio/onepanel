@@ -113,6 +113,24 @@ func (s SystemConfig) NodePoolOptions() (options []*NodePoolOption, err error) {
 	return
 }
 
+// NodePoolOptionsAsParameters returns the NodePool options as []*ParameterOption
+func (s SystemConfig) NodePoolOptionsAsParameters() (result []*ParameterOption, err error) {
+	nodePoolOptions, err := s.NodePoolOptions()
+	if err != nil {
+		return nil, err
+	}
+
+	result = make([]*ParameterOption, 0)
+	for _, option := range nodePoolOptions {
+		result = append(result, &ParameterOption{
+			Name:  option.Name,
+			Value: option.Value,
+		})
+	}
+
+	return
+}
+
 // NodePoolOptionByValue returns the nodePoolOption based on a given value
 func (s SystemConfig) NodePoolOptionByValue(value string) (option *NodePoolOption, err error) {
 	options, err := s.NodePoolOptions()
