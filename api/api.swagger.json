@@ -141,54 +141,6 @@
         ]
       }
     },
-    "/apis/v1beta1/labels/{namespace}/{resource}/labels": {
-      "get": {
-        "operationId": "GetAvailableLabels",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/GetLabelsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/google.rpc.Status"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "resource",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "keyLike",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "skipKeys",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "LabelService"
-        ]
-      }
-    },
     "/apis/v1beta1/namespaces": {
       "get": {
         "operationId": "ListNamespaces",
@@ -2755,6 +2707,54 @@
         ],
         "tags": [
           "WorkspaceService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/{resource}/labels": {
+      "get": {
+        "operationId": "GetAvailableLabels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetLabelsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "resource",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "keyLike",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "skipKeys",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "LabelService"
         ]
       }
     },

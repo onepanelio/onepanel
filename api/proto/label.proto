@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 service LabelService {
     rpc GetAvailableLabels (GetAvailableLabelsRequest) returns (GetLabelsResponse) {
         option (google.api.http) = {
-            get: "/apis/v1beta1/labels/{namespace}/{resource}/labels"
+            get: "/apis/v1beta1/{namespace}/{resource}/labels"
         };
     }
 
