@@ -127,8 +127,11 @@ func formatWorkflowTemplateManifest(manifest string) (string, error) {
 					return "", err
 				}
 
-				if err := extensions.DeleteNode(child, extensions.CreateYamlIndex("options")); err != nil {
-					return "", err
+				optionsIndex := extensions.CreateYamlIndex("options")
+				if extensions.HasNode(child, optionsIndex) {
+					if err := extensions.DeleteNode(child, optionsIndex); err != nil {
+						return "", err
+					}
 				}
 			}
 		}
