@@ -2,6 +2,7 @@ package migration
 
 import (
 	"errors"
+	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	v1 "github.com/onepanelio/core/pkg"
@@ -78,6 +79,10 @@ func Initialize() {
 	initialize20201209124226()
 	initialize20201211161117()
 	initialize20201214133458()
+	initialize20201221194344()
+	initialize20201221195937()
+	initialize20201223062947()
+	initialize20201223202929()
 
 	if err := client.DB.Close(); err != nil {
 		log.Printf("[error] closing db %v", err)
@@ -123,28 +128,71 @@ func getRanSQLMigrations(client *v1.Client) (map[uint64]bool, error) {
 
 // ReplaceArtifactRepositoryType will look for {{.ArtifactRepositoryType}} in the migration and replace it based on config.
 func ReplaceArtifactRepositoryType(client *v1.Client, namespace *v1.Namespace, workflowTemplate *v1.WorkflowTemplate, workspaceTemplate *v1.WorkspaceTemplate) error {
-	artifactRepositoryType := "s3"
-	nsConfig, err := client.GetNamespaceConfig(namespace.Name)
+	artifactRepositoryType, err := client.GetArtifactRepositoryType(namespace.Name)
 	if err != nil {
 		return err
 	}
-	if nsConfig.ArtifactRepository.GCS != nil {
-		artifactRepositoryType = "gcs"
+
+	replaceMap := map[string]string{
+		"{{.ArtifactRepositoryType}}": artifactRepositoryType,
 	}
 
+	if workflowTemplate == nil && workspaceTemplate == nil {
+		return errors.New("workflow and workspace template cannot both be nil")
+	}
 	if workflowTemplate != nil {
-		workflowTemplate.Manifest = strings.NewReplacer(
-			"{{.ArtifactRepositoryType}}", artifactRepositoryType).Replace(workflowTemplate.Manifest)
+		workflowTemplate.Manifest = ReplaceMapValues(workflowTemplate.Manifest, replaceMap)
 	}
 	if workspaceTemplate != nil {
-		workspaceTemplate.Manifest = strings.NewReplacer(
-			"{{.ArtifactRepositoryType}}", artifactRepositoryType).Replace(workspaceTemplate.Manifest)
-	}
-	if workflowTemplate == nil && workspaceTemplate == nil {
-		return errors.New("workflow and workspace template cannot be nil")
+		workspaceTemplate.Manifest = ReplaceMapValues(workspaceTemplate.Manifest, replaceMap)
 	}
 
 	return nil
+}
+
+// ReplaceMapValues will replace strings that are keys in the input map with their values
+// the result is returned
+func ReplaceMapValues(value string, replaceMap map[string]string) string {
+	replacePairs := make([]string, 0)
+
+	for key, value := range replaceMap {
+		replacePairs = append(replacePairs, key)
+		replacePairs = append(replacePairs, value)
+	}
+
+	return strings.NewReplacer(replacePairs...).
+		Replace(value)
+}
+
+// ReplaceRuntimeVariablesInManifest will replace any values that are runtime variables
+// with the values currently present in the configuration for a given namespace.
+// the result is returned
+func ReplaceRuntimeVariablesInManifest(client *v1.Client, namespace string, manifest string) (string, error) {
+	artifactRepositoryType, err := client.GetArtifactRepositoryType(namespace)
+	if err != nil {
+		return manifest, err
+	}
+
+	sysConfig, err := client.GetSystemConfig()
+	if err != nil {
+		return manifest, err
+	}
+
+	nodePoolOptions, err := sysConfig.NodePoolOptions()
+	if err != nil {
+		return manifest, err
+	}
+
+	if len(nodePoolOptions) == 0 {
+		return manifest, fmt.Errorf("no node pool options in the configuration")
+	}
+
+	replaceMap := map[string]string{
+		"{{.ArtifactRepositoryType}}": artifactRepositoryType,
+		"{{.DefaultNodePoolOption}}":  nodePoolOptions[0].Value,
+	}
+
+	return ReplaceMapValues(manifest, replaceMap), nil
 }
 
 // readDataFile returns the contents of a file in the db/data/{path} directory

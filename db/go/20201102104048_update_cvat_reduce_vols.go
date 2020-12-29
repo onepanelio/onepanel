@@ -19,7 +19,7 @@ func initialize20201102104048() {
 func Up20201102104048(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return updateWorkspaceTemplateManifest(
-		filepath.Join("cvat", "20201102104048.yaml"),
+		filepath.Join("workspaces", "cvat", "20201102104048.yaml"),
 		cvatTemplateName)
 }
 
@@ -27,6 +27,6 @@ func Up20201102104048(tx *sql.Tx) error {
 func Down20201102104048(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return updateWorkspaceTemplateManifest(
-		filepath.Join("cvat", "20201016170415.yaml"),
+		filepath.Join("workspaces", "cvat", "20201016170415.yaml"),
 		cvatTemplateName)
 }

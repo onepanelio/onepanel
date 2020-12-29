@@ -2,9 +2,9 @@ entrypoint: main
 arguments:
   parameters:
     - name: source
-      value: https://github.com/onepanelio/tensorflow-examples.git
+      value: https://github.com/onepanelio/pytorch-examples.git
     - name: command
-      value: "python mnist/main.py --epochs=5"
+      value: "python mnist/main.py --epochs=1"
 volumeClaimTemplates:
   - metadata:
       name: data
@@ -52,7 +52,7 @@ templates:
           archive:
             none: {}
     container:
-      image: tensorflow/tensorflow:latest
+      image: pytorch/pytorch:latest
       command: [sh,-c]
       args: ["{{workflow.parameters.command}}"]
       workingDir: /mnt/src

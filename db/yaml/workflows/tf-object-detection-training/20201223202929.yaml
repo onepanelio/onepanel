@@ -1,0 +1,165 @@
+# source: https://github.com/onepanelio/templates/blob/master/workflows/tf-object-detection-training/
+arguments:
+  parameters:
+    - name: cvat-annotation-path
+      value: annotation-dump/sample_dataset
+      displayName: Dataset path
+      hint: Path to annotated data (TFRecord format) in default object storage. In CVAT, this parameter will be pre-populated.
+      visibility: internal
+
+    - name: cvat-output-path
+      value: workflow-data/output/sample_output
+      hint: Path to store output artifacts in default object storage (i.e s3). In CVAT, this parameter will be pre-populated.
+      displayName: Workflow output path
+      visibility: internal
+
+    - name: cvat-model
+      value: frcnn-res50-coco
+      displayName: Model
+      hint: TF Detection API's model to use for training.
+      type: select.select
+      visibility: public
+      options:
+        - name: 'Faster RCNN-ResNet 101-COCO'
+          value: frcnn-res101-coco
+        - name: 'Faster RCNN-ResNet 101-Low Proposal-COCO'
+          value: frcnn-res101-low
+        - name: 'Faster RCNN-ResNet 50-COCO'
+          value: frcnn-res50-coco
+        - name: 'Faster RCNN-NAS-COCO'
+          value: frcnn-nas-coco
+        - name: 'SSD MobileNet V1-COCO'
+          value: ssd-mobilenet-v1-coco2
+        - name: 'SSD MobileNet V2-COCO'
+          value: ssd-mobilenet-v2-coco
+        - name: 'SSDLite MobileNet-COCO'
+          value: ssdlite-mobilenet-coco
+
+    - name: hyperparameters
+      value: |-
+        num-steps=10000
+      displayName: Hyperparameters
+      visibility: public
+      type: textarea.textarea
+      hint: 'See <a href="https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model/#tfod-hyperparameters" target="_blank">documentation</a> for more information on parameters.'
+
+    - name: cvat-finetune-checkpoint
+      value: ''
+      hint: Select the last fine-tune checkpoint for this model. It may take up to 5 minutes for a recent checkpoint show here. Leave empty if this is the first time you're training this model.
+      displayName: Checkpoint path
+      visibility: public
+
+    - name: cvat-num-classes
+      value: '10'
+      hint: Number of classes. In CVAT, this parameter will be pre-populated.
+      displayName: Number of classes
+      visibility: internal
+
+    - name: tf-image
+      value: tensorflow/tensorflow:1.13.1-py3
+      type: select.select
+      displayName: Select TensorFlow image
+      visibility: public
+      hint: Select the GPU image if you are running on a GPU node pool
+      options:
+        - name: 'TensorFlow 1.13.1 CPU Image'
+          value: 'tensorflow/tensorflow:1.13.1-py3'
+        - name: 'TensorFlow 1.13.1 GPU Image'
+          value: 'tensorflow/tensorflow:1.13.1-gpu-py3'
+
+    - name: dump-format
+      value: cvat_tfrecord
+      visibility: public
+
+    - displayName: Node pool
+      hint: Name of node pool or group to run this workflow task
+      type: select.nodepool
+      name: sys-node-pool
+      value: {{.DefaultNodePoolOption}}
+      visibility: public
+      required: true
+
+entrypoint: main
+templates:
+  - dag:
+      tasks:
+        - name: train-model
+          template: tensorflow
+    name: main
+  - container:
+      args:
+        - |
+          apt-get update && \
+          apt-get install -y python3-pip git wget unzip libglib2.0-0 libsm6 libxext6 libxrender-dev && \
+          pip install pillow lxml Cython contextlib2 matplotlib numpy scipy pycocotools pyyaml test-generator && \
+          cd /mnt/src/tf/research && \
+          export PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/slim && \
+          mkdir -p /mnt/src/protoc && \
+          wget -P /mnt/src/protoc https://github.com/protocolbuffers/protobuf/releases/download/v3.10.1/protoc-3.10.1-linux-x86_64.zip && \
+          cd /mnt/src/protoc/ && \
+          unzip protoc-3.10.1-linux-x86_64.zip && \
+          cd /mnt/src/tf/research/ && \
+          /mnt/src/protoc/bin/protoc object_detection/protos/*.proto --python_out=. && \
+          cd /mnt/src/train/workflows/tf-object-detection-training && \
+          python train.py \
+            --extras="{{workflow.parameters.hyperparameters}}" \
+            --model="{{workflow.parameters.cvat-model}}" \
+            --num_classes="{{workflow.parameters.cvat-num-classes}}" \
+            --sys_finetune_checkpoint={{workflow.parameters.cvat-finetune-checkpoint}}
+      command:
+        - sh
+        - -c
+      image: '{{workflow.parameters.tf-image}}'
+      volumeMounts:
+        - mountPath: /mnt/data
+          name: data
+        - mountPath: /mnt/output
+          name: output
+      workingDir: /mnt/src
+    nodeSelector:
+      beta.kubernetes.io/instance-type: '{{workflow.parameters.sys-node-pool}}'
+    inputs:
+      artifacts:
+        - name: data
+          path: /mnt/data/datasets/
+          s3:
+            key: '{{workflow.namespace}}/{{workflow.parameters.cvat-annotation-path}}'
+        - name: models
+          path: /mnt/data/models/
+          optional: true
+          s3:
+            key: '{{workflow.parameters.cvat-finetune-checkpoint}}'
+        - git:
+            repo: https://github.com/tensorflow/models.git
+            revision: v1.13.0
+          name: src
+          path: /mnt/src/tf
+        - git:
+            repo: https://github.com/onepanelio/templates.git
+          name: tsrc
+          path: /mnt/src/train
+    name: tensorflow
+    outputs:
+      artifacts:
+        - name: model
+          optional: true
+          path: /mnt/output
+          s3:
+            key: '{{workflow.namespace}}/{{workflow.parameters.cvat-output-path}}/{{workflow.name}}'
+volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 200Gi
+  - metadata:
+      name: output
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 200Gi

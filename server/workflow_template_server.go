@@ -47,6 +47,34 @@ func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 	return res
 }
 
+// GenerateWorkflowTemplate generates a workflow template, applying any modifications based on the content of the manifest
+func (s *WorkflowTemplateServer) GenerateWorkflowTemplate(ctx context.Context, req *api.GenerateWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
+	client := getClient(ctx)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflowtemplates", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	if req.WorkflowTemplate.Manifest == "" {
+		return &api.WorkflowTemplate{
+			Manifest: "",
+		}, nil
+	}
+
+	finalManifest, err := client.GenerateWorkflowTemplateManifest(req.WorkflowTemplate.Manifest)
+	if err != nil {
+		return &api.WorkflowTemplate{
+			Manifest: "",
+		}, err
+	}
+
+	workflowTemplate := &v1.WorkflowTemplate{
+		Manifest: finalManifest,
+	}
+
+	return apiWorkflowTemplate(workflowTemplate), nil
+}
+
 // CreateWorkflowTemplate creates a workflow template and the initial version
 func (s *WorkflowTemplateServer) CreateWorkflowTemplate(ctx context.Context, req *api.CreateWorkflowTemplateRequest) (*api.WorkflowTemplate, error) {
 	client := getClient(ctx)
