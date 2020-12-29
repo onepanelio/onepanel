@@ -85,6 +85,11 @@ func ParseParametersFromManifest(manifest []byte) ([]Parameter, error) {
 		if parameter.Visibility == nil {
 			parameter.Visibility = ptr.String("public")
 		}
+
+		if parameter.Type == "select.nodepool" {
+			parameter.Options = make([]*ParameterOption, 0)
+			parameter.Value = ptr.String("default")
+		}
 	}
 
 	if err := IsValidParameters(manifestResult.Arguments.Parameters); err != nil {

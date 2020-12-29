@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/onepanelio/core/pkg/util/extensions"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/pkg/util/request"
 	pagination "github.com/onepanelio/core/pkg/util/request/pagination"
+	yaml3 "gopkg.in/yaml.v3"
 	"strconv"
 	"strings"
 	"time"
@@ -63,6 +65,87 @@ func (c *Client) replaceSysNodePoolOptions(parameters []Parameter) (result []Par
 	}
 
 	return
+}
+
+func parameterOptionToNodes(option *ParameterOption) *yaml3.Node {
+	result := &yaml3.Node{
+		Kind: yaml3.MappingNode,
+	}
+
+	result.Content = append(result.Content, &yaml3.Node{
+		Kind:  yaml3.ScalarNode,
+		Value: "name",
+	})
+
+	result.Content = append(result.Content, &yaml3.Node{
+		Kind:  yaml3.ScalarNode,
+		Value: option.Name,
+	})
+
+	result.Content = append(result.Content, &yaml3.Node{
+		Kind:  yaml3.ScalarNode,
+		Value: "value",
+	})
+
+	result.Content = append(result.Content, &yaml3.Node{
+		Kind:  yaml3.ScalarNode,
+		Value: option.Value,
+	})
+
+	return result
+}
+
+func parameterOptionsToNodes(options []*ParameterOption) []*yaml3.Node {
+	result := make([]*yaml3.Node, 0)
+
+	for _, option := range options {
+		result = append(result, parameterOptionToNodes(option))
+	}
+
+	return result
+}
+
+// formatWorkflowTemplateManifest will remove any extraneous values from the workflow template manifest.
+// For example, select.nodepool should not have any options. If it does, they are stripped out.
+func formatWorkflowTemplateManifest(manifest string) (string, error) {
+	root := &yaml3.Node{}
+	err := yaml3.Unmarshal([]byte(manifest), root)
+	if err != nil {
+		return "", err
+	}
+
+	parametersIndex := extensions.CreateYamlIndex("arguments", "parameters")
+
+	if extensions.HasNode(root, parametersIndex) {
+		resultNode, err := extensions.GetNode(root, parametersIndex)
+		if err != nil {
+			return "", err
+		}
+
+		for _, child := range resultNode.Content {
+			hasKey, err := extensions.HasKeyValue(child, "type", "select.nodepool")
+			if err != nil {
+				return "", err
+			}
+
+			if hasKey {
+				if err := extensions.SetKeyValue(child, "value", "default"); err != nil {
+					return "", err
+				}
+
+				if err := extensions.DeleteNode(child, extensions.CreateYamlIndex("options")); err != nil {
+					return "", err
+				}
+			}
+		}
+	}
+
+	finalManifest, err := yaml3.Marshal(root)
+	if err != nil {
+		return "", err
+	}
+
+	return string(finalManifest), nil
 }
 
 func applyWorkflowTemplateFilter(sb sq.SelectBuilder, request *request.Request) (sq.SelectBuilder, error) {
@@ -200,6 +283,12 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 	if err != nil {
 		return nil, nil, err
 	}
+
+	newManifest, err := formatWorkflowTemplateManifest(workflowTemplate.Manifest)
+	if err != nil {
+		return nil, nil, err
+	}
+	workflowTemplate.Manifest = newManifest
 
 	params, err := ParseParametersFromManifest([]byte(workflowTemplate.Manifest))
 	if err != nil {
@@ -577,6 +666,12 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 	if workflowTemplate.UID == "" {
 		return nil, fmt.Errorf("uid required for CreateWorkflowTemplateVersion")
 	}
+
+	newManifest, err := formatWorkflowTemplateManifest(workflowTemplate.Manifest)
+	if err != nil {
+		return nil, err
+	}
+	workflowTemplate.Manifest = newManifest
 
 	// validate workflow template
 	if err := c.validateWorkflowTemplate(namespace, workflowTemplate); err != nil {
@@ -1101,36 +1196,65 @@ func (c *Client) GetWorkflowTemplateLabels(namespace, name, prefix string, versi
 
 // GenerateWorkflowTemplateManifest replaces any special parameters with runtime values
 func (c *Client) GenerateWorkflowTemplateManifest(manifest string) (string, error) {
-	manifestObject := make(map[string]interface{})
-	if err := yaml.Unmarshal([]byte(manifest), &manifestObject); err != nil {
-		return "", util.NewUserError(codes.InvalidArgument, "Invalid yaml")
-	}
-
-	argumentsRaw := manifestObject["arguments"]
-	arguments, ok := argumentsRaw.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("unable to parse arguments")
-	}
-
-	jsonParameters, err := json.Marshal(arguments["parameters"])
-	if err != nil {
+	root := &yaml3.Node{}
+	if err := yaml3.Unmarshal([]byte(manifest), root); err != nil {
 		return "", err
 	}
 
-	parameters := make([]Parameter, 0)
-	if err := json.Unmarshal(jsonParameters, &parameters); err != nil {
-		return "", err
+	parametersIndex := extensions.CreateYamlIndex("arguments", "parameters")
+
+	if extensions.HasNode(root, parametersIndex) {
+		resultNode, err := extensions.GetNode(root, extensions.CreateYamlIndex("arguments", "parameters"))
+		if err != nil {
+			return "", err
+		}
+
+		nodePoolOptions, err := c.systemConfig.NodePoolOptions()
+		if err != nil {
+			return "", err
+		}
+
+		nodePoolParameterOptions := make([]*ParameterOption, 0)
+		for _, option := range nodePoolOptions {
+			nodePoolParameterOptions = append(nodePoolParameterOptions, &ParameterOption{
+				Name:  option.Name,
+				Value: option.Value,
+			})
+		}
+
+		for _, child := range resultNode.Content {
+			hasKey, err := extensions.HasKeyValue(child, "type", "select.nodepool")
+			if err != nil {
+				return "", err
+			}
+
+			if hasKey {
+				if err := extensions.SetKeyValue(child, "value", nodePoolParameterOptions[0].Value); err != nil {
+					return "", err
+				}
+
+				optionsIndex := extensions.CreateYamlIndex("options")
+				if !extensions.HasNode(child, optionsIndex) {
+					child.Content = append(child.Content, &yaml3.Node{
+						Kind:  yaml3.ScalarNode,
+						Value: "options",
+					}, &yaml3.Node{
+						Kind: yaml3.SequenceNode,
+					})
+				}
+
+				optionsNode, err := extensions.GetNode(child, optionsIndex)
+				if err != nil {
+					return "", err
+				}
+
+				optionsNode.Kind = yaml3.SequenceNode
+				optionsNode.Content = parameterOptionsToNodes(nodePoolParameterOptions)
+			}
+		}
 	}
 
-	parameters, err = c.replaceSysNodePoolOptions(parameters)
-	if err != nil {
-		return "", err
-	}
-
-	arguments["parameters"] = parameters
-	manifestObject["arguments"] = arguments
-
-	finalManifest, err := yaml.Marshal(manifestObject)
+	finalManifest, err := yaml3.Marshal(root)
 	if err != nil {
 		return "", err
 	}
