@@ -19,7 +19,7 @@ func initialize20201225172926() {
 func Up20201225172926(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	return createWorkflowTemplate(
-		filepath.Join("workflows", "hyperparam_tuning", "20201225172926.yaml"),
+		filepath.Join("workflows", "hyperparameter_tuning", "20201225172926.yaml"),
 		hyperparameterTuningTemplateName,
 		map[string]string{
 			"framework":  "pytorch",
