@@ -1152,6 +1152,10 @@ func (c *Client) GenerateWorkflowTemplateManifest(manifest string) (string, erro
 		if err != nil {
 			return "", err
 		}
+		legalNodePoolValues := make([]string, 0)
+		for _, opt := range nodePoolOptions {
+			legalNodePoolValues = append(legalNodePoolValues, opt.Value)
+		}
 
 		if len(nodePoolOptions) == 0 {
 			return "", fmt.Errorf("no node pool options")
@@ -1164,12 +1168,12 @@ func (c *Client) GenerateWorkflowTemplateManifest(manifest string) (string, erro
 			}
 
 			if hasKey {
-				isDefault, err := extensions.HasKeyValue(child, "value", "default")
+				isValid, err := extensions.HasKeyValue(child, "value", legalNodePoolValues...)
 				if err != nil {
 					return "", err
 				}
-				if !isDefault {
-					return "", util.NewUserError(codes.InvalidArgument, "select.nodepool must have a value of 'default'")
+				if !isValid {
+					return "", util.NewUserError(codes.InvalidArgument, fmt.Sprintf("select.nodepool has an invalid value. Valid values are: %v", strings.Join(legalNodePoolValues, ", ")))
 				}
 
 				if err := extensions.SetKeyValue(child, "value", nodePoolOptions[0].Value); err != nil {

@@ -122,9 +122,9 @@ func SetKeyValue(node *yaml.Node, key string, value string) error {
 	return nil
 }
 
-// HasKeyValue checks if the node (assumed to be a mapping node) has a key with the given value.
+// HasKeyValue checks if the node (assumed to be a mapping node) has a key with the given value(s). If many values, any is ok.
 // If it does not, (false, nil) is returned. If there is an error, like a key not existing, an error is returned.
-func HasKeyValue(node *yaml.Node, key string, value string) (bool, error) {
+func HasKeyValue(node *yaml.Node, key string, values ...string) (bool, error) {
 	if node.Kind != yaml.MappingNode {
 		return false, fmt.Errorf("not a mapping node")
 	}
@@ -134,7 +134,11 @@ func HasKeyValue(node *yaml.Node, key string, value string) (bool, error) {
 		valueNode := node.Content[i+1]
 
 		if keyNode.Value == key {
-			return valueNode.Value == value, nil
+			for _, val := range values {
+				if valueNode.Value == val {
+					return true, nil
+				}
+			}
 		}
 	}
 
