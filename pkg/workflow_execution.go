@@ -1231,7 +1231,7 @@ func (c *Client) WatchWorkflowExecution(namespace, uid string) (<-chan *Workflow
 	return workflowWatcher, nil
 }
 
-func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName string) (<-chan *LogEntry, error) {
+func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName string) (<-chan []*LogEntry, error) {
 	wf, err := c.ArgoprojV1alpha1().Workflows(namespace).Get(uid, metav1.GetOptions{})
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -1337,12 +1337,11 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName
 		return nil, util.NewUserError(codes.NotFound, "Log not found.")
 	}
 
-	logWatcher := make(chan *LogEntry)
+	logWatcher := make(chan []*LogEntry)
 	go func() {
 		buffer := make([]byte, 4096)
 		reader := bufio.NewReader(stream)
 
-		newLine := true
 		for {
 			bytesRead, err := reader.Read(buffer)
 			if err != nil && err.Error() != "EOF" {
@@ -1350,30 +1349,32 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName
 			}
 			content := string(buffer[:bytesRead])
 
-			if newLine {
-				parts := strings.Split(content, " ")
-				if len(parts) == 0 {
-					logWatcher <- &LogEntry{Content: content}
-				} else {
-					timestamp, err := time.Parse(time.RFC3339, parts[0])
-					if err != nil {
-						logWatcher <- &LogEntry{Content: content}
-					} else {
-						logWatcher <- &LogEntry{
-							Timestamp: timestamp,
-							Content:   strings.Join(parts[1:], " "),
-						}
-					}
+			chunk := make([]*LogEntry, 0)
+			lines := strings.Split(content, "\n")
+			for _, line := range lines {
+				if line == "" {
+					continue
 				}
-			} else {
-				logWatcher <- &LogEntry{Content: content}
+				parts := strings.Split(line, " ")
+				if len(parts) == 0 {
+					continue
+				}
+				timestamp, err := time.Parse(time.RFC3339, parts[0])
+				if err != nil {
+					chunk = append(chunk, &LogEntry{Content: content})
+				} else {
+					chunk = append(chunk, &LogEntry{
+						Timestamp: timestamp,
+						Content:   strings.Join(parts[1:], " "),
+					})
+				}
 			}
+
+			logWatcher <- chunk
 
 			if err != nil && err.Error() == "EOF" {
 				break
 			}
-
-			newLine = strings.Contains(content, "\n")
 		}
 
 		close(logWatcher)
