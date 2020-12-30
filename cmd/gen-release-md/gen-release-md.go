@@ -205,7 +205,7 @@ func getMilestone(repository string, version, username, token *string) (*milesto
 		}
 	}
 
-	return nil, errors.New("milestone not found")
+	return nil, fmt.Errorf("milestone 'v%v' not found for '%v'", *version, repository)
 }
 
 // Get issues from repository
