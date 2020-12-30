@@ -50,7 +50,7 @@ service WorkflowService {
         };
     }
 
-    rpc GetWorkflowExecutionLogs (GetWorkflowExecutionLogsRequest) returns (stream LogEntry) {
+    rpc GetWorkflowExecutionLogs (GetWorkflowExecutionLogsRequest) returns (stream LogStreamResponse) {
         option (google.api.http) = {
             get: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/pods/{podName}/containers/{containerName}/logs"
         };
@@ -203,6 +203,10 @@ message ListWorkflowExecutionsResponse {
     int32 pages = 4;
     int32 totalCount = 5;
     int32 totalAvailableCount = 6;
+}
+
+message LogStreamResponse {
+    repeated LogEntry logEntries = 1;
 }
 
 message LogEntry {

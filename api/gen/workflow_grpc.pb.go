@@ -140,7 +140,7 @@ func (c *workflowServiceClient) GetWorkflowExecutionLogs(ctx context.Context, in
 }
 
 type WorkflowService_GetWorkflowExecutionLogsClient interface {
-	Recv() (*LogEntry, error)
+	Recv() (*LogStreamResponse, error)
 	grpc.ClientStream
 }
 
@@ -148,8 +148,8 @@ type workflowServiceGetWorkflowExecutionLogsClient struct {
 	grpc.ClientStream
 }
 
-func (x *workflowServiceGetWorkflowExecutionLogsClient) Recv() (*LogEntry, error) {
-	m := new(LogEntry)
+func (x *workflowServiceGetWorkflowExecutionLogsClient) Recv() (*LogStreamResponse, error) {
+	m := new(LogStreamResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -460,7 +460,7 @@ func _WorkflowService_GetWorkflowExecutionLogs_Handler(srv interface{}, stream g
 }
 
 type WorkflowService_GetWorkflowExecutionLogsServer interface {
-	Send(*LogEntry) error
+	Send(*LogStreamResponse) error
 	grpc.ServerStream
 }
 
@@ -468,7 +468,7 @@ type workflowServiceGetWorkflowExecutionLogsServer struct {
 	grpc.ServerStream
 }
 
-func (x *workflowServiceGetWorkflowExecutionLogsServer) Send(m *LogEntry) error {
+func (x *workflowServiceGetWorkflowExecutionLogsServer) Send(m *LogStreamResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 

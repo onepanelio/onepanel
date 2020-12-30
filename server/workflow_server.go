@@ -242,16 +242,23 @@ func (s *WorkflowServer) GetWorkflowExecutionLogs(req *api.GetWorkflowExecutionL
 		return err
 	}
 
-	le := &v1.LogEntry{}
+	le := []*v1.LogEntry{}
 	for {
 		le = <-watcher
 		if le == nil {
 			break
 		}
 
-		if err := stream.Send(&api.LogEntry{
-			Timestamp: le.Timestamp.String(),
-			Content:   le.Content,
+		apiLogEntries := make([]*api.LogEntry, len(le))
+		for i, item := range le {
+			apiLogEntries[i] = &api.LogEntry{
+				Timestamp: item.Timestamp.Format(time.RFC3339),
+				Content:   item.Content,
+			}
+		}
+
+		if err := stream.Send(&api.LogStreamResponse{
+			LogEntries: apiLogEntries,
 		}); err != nil {
 			return err
 		}
