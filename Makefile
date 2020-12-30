@@ -35,10 +35,10 @@ protoc:
 		--openapiv2_opt simple_operation_ids=true \
 		api/proto/*.proto
 
-api: init protoc jq
+api-internal: init protoc jq
 
-api-docker: init
-	docker run --rm --mount type=bind,source="${PWD}",target=/root onepanel/helper:v1.0.0 make api version=$(version)
+api: init
+	docker run --rm --mount type=bind,source="${PWD}",target=/root onepanel/helper:v1.0.0 make api-internal version=$(version)
 
 docker-build:
 	docker build -t onepanel-core .
