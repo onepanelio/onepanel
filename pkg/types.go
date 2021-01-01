@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
@@ -59,6 +60,38 @@ type ConfigMap struct {
 type LogEntry struct {
 	Timestamp time.Time
 	Content   string
+}
+
+// IsEmpty returns true if the content for the log entry is just an empty string
+func (l *LogEntry) IsEmpty() bool {
+	return l.Content == ""
+}
+
+// LogEntryFromLine creates a LogEntry given a line of text
+// it tries to parse out a timestamp and content
+func LogEntryFromLine(line *string) *LogEntry {
+	if line == nil {
+		return nil
+	}
+
+	if *line == "" {
+		return &LogEntry{Content: ""}
+	}
+
+	parts := strings.Split(*line, " ")
+	if len(parts) == 0 {
+		return nil
+	}
+
+	timestamp, err := time.Parse(time.RFC3339, parts[0])
+	if err != nil {
+		return &LogEntry{Content: *line}
+	} else {
+		return &LogEntry{
+			Timestamp: timestamp,
+			Content:   strings.Join(parts[1:], " "),
+		}
+	}
 }
 
 type Metric struct {
