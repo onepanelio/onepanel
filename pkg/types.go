@@ -86,11 +86,11 @@ func LogEntryFromLine(line *string) *LogEntry {
 	timestamp, err := time.Parse(time.RFC3339, parts[0])
 	if err != nil {
 		return &LogEntry{Content: *line}
-	} else {
-		return &LogEntry{
-			Timestamp: timestamp,
-			Content:   strings.Join(parts[1:], " "),
-		}
+	}
+
+	return &LogEntry{
+		Timestamp: timestamp,
+		Content:   strings.Join(parts[1:], " "),
 	}
 }
 
