@@ -1342,6 +1342,7 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName
 		buffer := make([]byte, 4096)
 		reader := bufio.NewReader(stream)
 
+		lastChunkSent := -1
 		lastLine := ""
 		for {
 			bytesRead, err := reader.Read(buffer)
@@ -1358,52 +1359,36 @@ func (c *Client) GetWorkflowExecutionLogs(namespace, uid, podName, containerName
 					lastLine = line
 					continue
 				}
-				if line == "" {
+
+				newLogEntry := LogEntryFromLine(&line)
+				if newLogEntry == nil {
 					continue
 				}
-				parts := strings.Split(line, " ")
-				if len(parts) == 0 {
-					continue
-				}
-				timestamp, err := time.Parse(time.RFC3339, parts[0])
-				if err != nil {
-					chunk = append(chunk, &LogEntry{Content: line})
-				} else {
-					chunk = append(chunk, &LogEntry{
-						Timestamp: timestamp,
-						Content:   strings.Join(parts[1:], " "),
-					})
+
+				chunk = append(chunk, newLogEntry)
+			}
+
+			if lastChunkSent == 0 && lastLine != "" {
+				newLogEntry := LogEntryFromLine(&lastLine)
+				if newLogEntry != nil {
+					chunk = append(chunk, newLogEntry)
+					lastLine = ""
 				}
 			}
 
-			logWatcher <- chunk
+			if len(chunk) > 0 {
+				logWatcher <- chunk
+			}
+			lastChunkSent = len(chunk)
 
 			if err != nil && err.Error() == "EOF" {
 				break
 			}
 		}
 
-		if lastLine != "" {
-			logWatcher <- []*LogEntry{
-				{
-					Content: lastLine,
-				},
-			}
-
-			parts := strings.Split(lastLine, " ")
-			if len(parts) != 0 {
-				timestamp, err := time.Parse(time.RFC3339, parts[0])
-				if err != nil {
-					logWatcher <- []*LogEntry{{Content: lastLine}}
-				} else {
-					logWatcher <- []*LogEntry{
-						{
-							Timestamp: timestamp,
-							Content:   strings.Join(parts[1:], " "),
-						},
-					}
-				}
-			}
+		newLogEntry := LogEntryFromLine(&lastLine)
+		if newLogEntry != nil {
+			logWatcher <- []*LogEntry{newLogEntry}
 		}
 
 		close(logWatcher)
