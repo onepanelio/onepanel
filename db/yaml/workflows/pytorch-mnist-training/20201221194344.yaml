@@ -24,8 +24,6 @@ templates:
         - name: output
           path: /mnt/output
           optional: true
-          archive:
-            none: {}
     script:
       image: onepanel/dl:0.17.0
       command:
