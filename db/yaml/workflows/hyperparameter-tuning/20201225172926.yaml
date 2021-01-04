@@ -100,8 +100,6 @@ templates:
         - name: output
           path: /mnt/output
           optional: true
-          archive:
-            none: {}
     container:
       image: onepanel/dl:0.17.0
       args:
