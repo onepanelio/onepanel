@@ -21,7 +21,6 @@ func Up20201223062947(tx *sql.Tx) error {
 		tensorflowWorkflowTemplateName,
 		map[string]string{
 			"created-by": "system",
-			"used-by":    "cvat",
 		},
 	)
 }
