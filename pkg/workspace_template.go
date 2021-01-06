@@ -429,7 +429,8 @@ func createStatefulSetManifest(spec *WorkspaceSpec) (statefulSetManifest string,
 			NodeSelector: map[string]string{
 				"{{workflow.parameters.sys-node-pool-label}}": "{{workflow.parameters.sys-node-pool}}",
 			},
-			Containers: spec.Containers,
+			ImagePullSecrets: spec.ImagePullSecrets,
+			Containers:       spec.Containers,
 			Volumes: []corev1.Volume{
 				{
 					Name: "sys-dshm",
@@ -783,10 +784,11 @@ metadata:
 	}
 
 	workflowTemplateSpec := map[string]interface{}{
-		"arguments":  spec.Arguments,
-		"entrypoint": "workspace",
-		"onExit":     "handleExit",
-		"templates":  templates,
+		"arguments":        spec.Arguments,
+		"entrypoint":       "workspace",
+		"onExit":           "handleExit",
+		"templates":        templates,
+		"imagePullSecrets": spec.ImagePullSecrets,
 	}
 
 	workflowTemplateSpecManifestBytes, err := yaml.Marshal(workflowTemplateSpec)
