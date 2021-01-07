@@ -101,7 +101,7 @@ templates:
           cd /mnt/src/tf/research/ && \
           /mnt/src/protoc/bin/protoc object_detection/protos/*.proto --python_out=. && \
           cd /mnt/src/train/workflows/tf-object-detection-training && \
-          python train.py \
+          python main.py \
             --extras="{{workflow.parameters.hyperparameters}}" \
             --model="{{workflow.parameters.cvat-model}}" \
             --num_classes="{{workflow.parameters.cvat-num-classes}}" \
