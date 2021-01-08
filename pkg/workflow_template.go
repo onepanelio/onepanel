@@ -472,6 +472,20 @@ func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTe
 	}
 
 	for _, version := range dbVersions {
+		if version.ParametersBytes != nil {
+			_, err := version.LoadParametersFromBytes()
+			if err != nil {
+				return nil, err
+			}
+
+			updatedParameters, err := c.replaceSysNodePoolOptions(version.Parameters)
+			if err != nil {
+				return nil, err
+			}
+
+			version.Parameters = updatedParameters
+		}
+
 		newItem := WorkflowTemplate{
 			ID:         version.WorkflowTemplate.ID,
 			CreatedAt:  version.CreatedAt.UTC(),
@@ -482,6 +496,7 @@ func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTe
 			IsLatest:   version.IsLatest,
 			IsArchived: version.WorkflowTemplate.IsArchived,
 			Labels:     version.Labels,
+			Parameters: version.Parameters,
 		}
 
 		workflowTemplateVersions = append(workflowTemplateVersions, &newItem)
