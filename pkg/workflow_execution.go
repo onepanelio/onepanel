@@ -464,9 +464,10 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 		param := wf.Spec.Arguments.Parameters[i]
 		if param.Value != nil {
 			// Strip out whitespace from parameter value
-			formattedValue := strings.Replace(*param.Value, " ", "", -1)
-			*param.Value = strings.Replace(formattedValue, "{{workflow.namespace}}", namespace, -1)
-			*param.Value = strings.Replace(*param.Value, "{{workspace.namespace}}", namespace, -1)
+			formattedValue := strings.ReplaceAll(*param.Value, " ", "")
+			param.Value = &formattedValue
+			*param.Value = strings.ReplaceAll(*param.Value, "{{workflow.namespace}}", namespace)
+			*param.Value = strings.ReplaceAll(*param.Value, "{{workspace.namespace}}", namespace)
 		}
 
 		newParameters = append(newParameters, param)
