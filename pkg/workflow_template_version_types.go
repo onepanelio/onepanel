@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"encoding/json"
 	"github.com/onepanelio/core/pkg/util/sql"
 	"github.com/onepanelio/core/pkg/util/types"
 	"time"
@@ -36,6 +37,26 @@ func WorkflowTemplateVersionsToIDs(resources []*WorkflowTemplateVersion) (ids []
 	}
 
 	return
+}
+
+// LoadParametersFromBytes loads Parameters from the WorkflowTemplateVersion's ParameterBytes field.
+func (wtv *WorkflowTemplateVersion) LoadParametersFromBytes() ([]Parameter, error) {
+	loadedParameters := make([]Parameter, 0)
+
+	err := json.Unmarshal(wtv.ParametersBytes, &loadedParameters)
+	if err != nil {
+		return wtv.Parameters, err
+	}
+
+	// It might be nil because the value "null" is stored in db if there are no parameters.
+	// for consistency, we return an empty array.
+	if loadedParameters == nil {
+		loadedParameters = make([]Parameter, 0)
+	}
+
+	wtv.Parameters = loadedParameters
+
+	return wtv.Parameters, err
 }
 
 // getWorkflowTemplateVersionColumns returns all of the columns for workflow template versions modified by alias, destination.

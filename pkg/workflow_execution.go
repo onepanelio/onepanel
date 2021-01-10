@@ -423,7 +423,6 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 	if opts == nil {
 		opts = &WorkflowExecutionOptions{}
 	}
-
 	if opts.Name != "" {
 		wf.ObjectMeta.Name = opts.Name
 	}
@@ -459,6 +458,21 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 	if opts.Labels != nil {
 		wf.ObjectMeta.Labels = opts.Labels
 	}
+
+	newParameters := make([]wfv1.Parameter, 0)
+	for i := range wf.Spec.Arguments.Parameters {
+		param := wf.Spec.Arguments.Parameters[i]
+		if param.Value != nil {
+			// Strip out whitespace from parameter value
+			formattedValue := strings.ReplaceAll(*param.Value, " ", "")
+			param.Value = &formattedValue
+			*param.Value = strings.ReplaceAll(*param.Value, "{{workflow.namespace}}", namespace)
+			*param.Value = strings.ReplaceAll(*param.Value, "{{workspace.namespace}}", namespace)
+		}
+
+		newParameters = append(newParameters, param)
+	}
+	wf.Spec.Arguments.Parameters = newParameters
 
 	if err = injectWorkflowExecutionStatusCaller(wf, wfv1.NodeRunning); err != nil {
 		return nil, err
