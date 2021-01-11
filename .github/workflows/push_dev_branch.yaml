@@ -33,6 +33,6 @@ jobs:
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
         name: onepanel/core
-        tags: "dev"
+        tags: "latest"
         username: ${{ secrets.DOCKER_HUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_TOKEN }}
