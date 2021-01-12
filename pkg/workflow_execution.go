@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
+	"github.com/argoproj/argo/persist/sqldb"
+	"github.com/argoproj/argo/workflow/hydrator"
 	"github.com/google/uuid"
 	"github.com/onepanelio/core/pkg/util/gcs"
 	"github.com/onepanelio/core/pkg/util/label"
@@ -442,7 +444,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 		for _, param := range opts.Parameters {
 			newParams = append(newParams, wfv1.Parameter{
 				Name:  param.Name,
-				Value: param.Value,
+				Value: wfv1.AnyStringPtr(*param.Value),
 			})
 			passedParams[param.Name] = true
 		}
@@ -468,8 +470,9 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 			if reErr != nil {
 				return nil, reErr
 			}
-			value := re.ReplaceAllString(*param.Value, namespace)
-			param.Value = &value
+			paramValueStr := param.Value.String()
+			paramValueStr = re.ReplaceAllString(paramValueStr, namespace)
+			param.Value = wfv1.AnyStringPtr(paramValueStr)
 		}
 
 		newParameters = append(newParameters, param)
@@ -636,7 +639,10 @@ func (c *Client) injectAccessForSidecars(namespace string, wf *wfv1.Workflow) ([
 			virtualServiceNameUUID := "vs-" + uuid.New().String()
 			hosts := []string{serviceName}
 			wf.Spec.Templates[tIdx].Outputs.Parameters = append(wf.Spec.Templates[tIdx].Outputs.Parameters,
-				wfv1.Parameter{Name: "sys-sidecar-url--" + s.Name, Value: &serviceName},
+				wfv1.Parameter{
+					Name:  "sys-sidecar-url--" + s.Name,
+					Value: wfv1.AnyStringPtr(serviceName),
+				},
 			)
 			virtualService := map[string]interface{}{
 				"apiVersion": "networking.istio.io/v1alpha3",
@@ -790,11 +796,12 @@ func (c *Client) ValidateWorkflowExecution(namespace string, manifest []byte) (e
 	}
 
 	wftmplGetter := templateresolution.WrapWorkflowTemplateInterface(c.ArgoprojV1alpha1().WorkflowTemplates(namespace))
+	clusterWftmplGetter := templateresolution.WrapClusterWorkflowTemplateInterface(c.ArgoprojV1alpha1().ClusterWorkflowTemplates())
 	for _, wf := range workflows {
 		if err = c.injectAutomatedFields(namespace, &wf, &WorkflowExecutionOptions{}); err != nil {
 			return err
 		}
-		_, err = validate.ValidateWorkflow(wftmplGetter, &wf, validate.ValidateOpts{})
+		_, err = validate.ValidateWorkflow(wftmplGetter, clusterWftmplGetter, &wf, validate.ValidateOpts{})
 		if err != nil {
 			return
 		}
@@ -1524,7 +1531,10 @@ func (c *Client) RetryWorkflowExecution(namespace, uid string) (workflow *Workfl
 		return
 	}
 
-	wf, err = argoutil.RetryWorkflow(c, c.ArgoprojV1alpha1().Workflows(namespace), wf)
+	hy := hydrator.New(sqldb.ExplosiveOffloadNodeStatusRepo)
+
+	// TODO test
+	wf, err = argoutil.RetryWorkflow(c, hy, c.ArgoprojV1alpha1().Workflows(namespace), uid, true, "")
 
 	workflow = typeWorkflow(wf)
 
@@ -1542,7 +1552,7 @@ func (c *Client) ResubmitWorkflowExecution(namespace, uid string) (workflow *Wor
 		return
 	}
 
-	wf, err = argoutil.SubmitWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), c, namespace, wf, &argoutil.SubmitOpts{})
+	wf, err = argoutil.SubmitWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), c, namespace, wf, &wfv1.SubmitOpts{})
 	if err != nil {
 		return
 	}
@@ -1553,7 +1563,9 @@ func (c *Client) ResubmitWorkflowExecution(namespace, uid string) (workflow *Wor
 }
 
 func (c *Client) ResumeWorkflowExecution(namespace, uid string) (workflow *WorkflowExecution, err error) {
-	err = argoutil.ResumeWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), uid, "")
+	// TODO test
+	hy := hydrator.New(sqldb.ExplosiveOffloadNodeStatusRepo)
+	err = argoutil.ResumeWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), hy, uid, "")
 	if err != nil {
 		return
 	}
@@ -1587,7 +1599,9 @@ func (c *Client) TerminateWorkflowExecution(namespace, uid string) (err error) {
 		return err
 	}
 
-	err = argoutil.StopWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), uid, "", "")
+	// TODO test
+	hy := hydrator.New(sqldb.ExplosiveOffloadNodeStatusRepo)
+	err = argoutil.StopWorkflow(c.ArgoprojV1alpha1().Workflows(namespace), hy, uid, "", "")
 
 	return
 }

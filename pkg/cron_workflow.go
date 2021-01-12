@@ -354,7 +354,7 @@ func (c *Client) buildCronWorkflowDefinition(namespace string, workflowTemplateI
 		for _, param := range opts.Parameters {
 			newParams = append(newParams, wfv1.Parameter{
 				Name:  param.Name,
-				Value: param.Value,
+				Value: wfv1.AnyStringPtr(*param.Value),
 			})
 			passedParams[param.Name] = true
 		}

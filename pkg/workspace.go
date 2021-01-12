@@ -220,7 +220,7 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 	for i, p := range argoTemplate.Spec.Arguments.Parameters {
 		value := runtimeParametersMap[p.Name]
 		if value != nil {
-			argoTemplate.Spec.Arguments.Parameters[i].Value = value
+			argoTemplate.Spec.Arguments.Parameters[i].Value = wfv1.AnyStringPtr(*value)
 		}
 	}
 
@@ -428,7 +428,7 @@ func (c *Client) startWorkspace(namespace string, parameters []byte, workspace *
 	for i, p := range argoTemplate.Spec.Arguments.Parameters {
 		value := runtimeParametersMap[p.Name]
 		if value != nil {
-			argoTemplate.Spec.Arguments.Parameters[i].Value = value
+			argoTemplate.Spec.Arguments.Parameters[i].Value = wfv1.AnyStringPtr(*value)
 		}
 	}
 
