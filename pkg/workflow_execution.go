@@ -468,8 +468,8 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 			if reErr != nil {
 				return nil, reErr
 			}
-			*param.Value = re.ReplaceAllString(*param.Value, namespace)
-			*param.Value = re.ReplaceAllString(*param.Value, namespace)
+			value := re.ReplaceAllString(*param.Value, namespace)
+			param.Value = &value
 		}
 
 		newParameters = append(newParameters, param)
