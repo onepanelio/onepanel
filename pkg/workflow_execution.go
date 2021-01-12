@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/watch"
 	"net/http"
+	"regexp"
 	yaml2 "sigs.k8s.io/yaml"
 	"strconv"
 	"strings"
@@ -463,11 +464,12 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 	for i := range wf.Spec.Arguments.Parameters {
 		param := wf.Spec.Arguments.Parameters[i]
 		if param.Value != nil {
-			// Strip out whitespace from parameter value
-			formattedValue := strings.ReplaceAll(*param.Value, " ", "")
-			param.Value = &formattedValue
-			*param.Value = strings.ReplaceAll(*param.Value, "{{workflow.namespace}}", namespace)
-			*param.Value = strings.ReplaceAll(*param.Value, "{{workspace.namespace}}", namespace)
+			re, reErr := regexp.Compile(`{{\s*workflow.namespace\s*}}|{{\s*workspace.namespace\s*}}`)
+			if reErr != nil {
+				return nil, reErr
+			}
+			*param.Value = re.ReplaceAllString(*param.Value, namespace)
+			*param.Value = re.ReplaceAllString(*param.Value, namespace)
 		}
 
 		newParameters = append(newParameters, param)
