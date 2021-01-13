@@ -24,8 +24,8 @@ Production scale vision AI platform with fully integrated modules for model buil
 Onepanel can be found on [LF AI Landscape](http://landscape.lfai.foundation/selected=onepanel)
 
 ## Features
--  Annotate images and video, train your model directly from CVAT and use it for automatic annotation of bounding boxes and polygon masks
--  JupyterLab configured with extensions for TensorBoard, Git/GitHub, debugging, notebook diffing and support for Conda, OpenCV, Tensorflow and PyTorch with GPU.
+-  Annotate images and video, train models directly from CVAT and use it for automatic annotation of bounding boxes and polygon masks
+-  JupyterLab configured with TensorBoard, Git/GitHub, debugging, notebook diffing, Conda, OpenCV, Tensorflow and PyTorch with GPU.
 -  Build fully reproducible, distributed and parallel data processing and training pipelines with real-time logs and output snapshots.
 -  Bring your own IDEs, annotation tools and pipelines with a version controlled YAML and Docker based template engine.
 -  Track and visualize metrics and experiments with TensorBoard
