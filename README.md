@@ -25,12 +25,12 @@ Onepanel can be found on [LF AI Landscape](http://landscape.lfai.foundation/sele
 
 ## Features
 -  Iteratively annotate, train and automatically annotate with bounding boxes and polygon masks.
--  Easily add hyperparameter tuning to any training pipeline, snapshotting the best metrics, hyperparameters and model.
--  JupyterLab configured with TensorBoard, Git, debugging, diffing, Conda, OpenCV, TensorFlow and PyTorch with GPU.
--  Build fully reproducible, distributed and parallel data processing and training pipelines with real-time logs and output snapshots.
--  Bring your own IDEs, annotation tools and pipelines with a version controlled YAML and Docker based template engine.
--  Track and visualize metrics and experiments with TensorBoard.
--  Further extend and automated your pipelines with a powerful [Python SDK](https://github.com/onepanelio/python-sdk).
+-  Easily add hyperparameter tuning to any training pipeline, snapshotting best metrics, hyperparameters and model.
+-  JupyterLab with TensorBoard, Git, debugging, diffing, Conda, OpenCV, TensorFlow, PyTorch and GPU support.
+-  Build reproducible, distributed and parallel data and training pipelines with realtime logs and output snapshots.
+-  Bring your own IDEs, tools and pipelines with a version controlled YAML and Docker based template engine.
+-  Track and visualize metrics and experiments with TensorBoard, NNI UI or bring your own tool.
+-  Further extend and automate your pipelines with a powerful [Python SDK](https://github.com/onepanelio/python-sdk).
 
 ## Online demo
 We have created an [online demo](https://onepanel.typeform.com/to/kQfDX5Vf?product=github) so that you can get a feel for some of Onepanel's features.
