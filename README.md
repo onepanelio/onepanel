@@ -29,7 +29,7 @@ Onepanel can be found on [LF AI Landscape](http://landscape.lfai.foundation/sele
 -  Build fully reproducible, distributed and parallel data processing and training pipelines with real-time logs and output snapshots.
 -  Bring your own IDEs, annotation tools and pipelines with a version controlled YAML and Docker based template engine.
 -  Track and visualize metrics and experiments with TensorBoard
--  Extend Onepanel with a powerful [Python SDK](https://github.com/onepanelio/python-sdk) to further automate your pipelines.
+-  Further extend and automated your pipelines with a powerful [Python SDK](https://github.com/onepanelio/python-sdk).
 
 ## Online demo
 We have created an [online demo](https://onepanel.typeform.com/to/kQfDX5Vf?product=github) so that you can get a feel for some of Onepanel's features.
