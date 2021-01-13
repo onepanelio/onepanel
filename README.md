@@ -17,7 +17,7 @@ Production scale vision AI platform with fully integrated modules for model buil
 
 -  End-to-end workflow and infrastructure automation for production scale vision AI
 -  Best of breed, open source deep learning tools seamlessly integrated in one unified platform
--  Easily scale your data processing, training and hyperparameter tuning pipelines to multiple CPU/GPU/TPU nodes
+-  Scale and distribute your data, training and hyperparameter tuning pipelines to multiple CPU/GPU nodes
 -  Customizable, reproducible and version controlled tooling and pipeline templates
 -  Scalability, flexibility and resiliency of Kubernetes without the complexities
 
