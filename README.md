@@ -9,43 +9,37 @@
 [![chat](https://img.shields.io/badge/support-slack-01579b)](https://join.slack.com/t/onepanel-ce/shared_invite/zt-eyjnwec0-nLaHhjif9Y~gA05KuX6AUg)
 [![license](https://img.shields.io/github/license/onepanelio/core?color=01579b)](https://opensource.org/licenses/Apache-2.0)
 
-Production scale vision AI platform with fully integrated modules for model building, automated labeling, data processing, model training and hyperparameter tuning pipelines.
+Production scale vision AI platform with fully integrated modules for model building, automated labeling, data processing, model training and hyperparameter tuning.
 
 <img width="100%" src="img/onepanel.gif">
 
 ## Why Onepanel?
 
--  End-to-end automation for production scale vision AI pipelines
+-  End-to-end workflow and infrastructure automation for production scale vision AI
 -  Best of breed, open source deep learning tools seamlessly integrated in one unified platform
--  Infrastructure automation so you can easily scale your data processing and training pipelines to multiple nodes
+-  Easily scale your data processing and training pipelines to multiple CPU/GPU nodes
 -  Customizable, reproducible and version controlled tooling and pipeline templates
--  Scalability, flexibility and resiliency of Kubernetes without the deployment and configuration complexities
+-  Scalability, flexibility and resiliency of Kubernetes without the complexities
 
 Onepanel can be found on [LF AI Landscape](http://landscape.lfai.foundation/selected=onepanel)
 
 ## Features
--  Annotate images and video with automatic annotation of bounding boxes and polygon masks, fully integrated with data processing and training pipelines.
+-  Annotate images and video, train your model directly from CVAT and use it for automatic annotation of bounding boxes and polygon masks
 -  JupyterLab configured with extensions for TensorBoard, Git/GitHub, debugging, notebook diffing and support for Conda, OpenCV, Tensorflow and PyTorch with GPU.
 -  Build fully reproducible, distributed and parallel data processing and training pipelines with real-time logs and output snapshots.
 -  Bring your own IDEs, annotation tools and pipelines with a version controlled YAML and Docker based template engine.
--  Track and visualize model metrics and experiments with TensorBoard or bring your own experiment tracking tools.
--  Extend Onepanel with powerful REST APIs and SDKs to further automate your workflows.
+-  Track and visualize metrics and experiments with TensorBoard
+-  Extend Onepanel with a powerful [Python SDK](https://github.com/onepanelio/python-sdk) to further automate your pipelines.
 
 ## Online demo
-We have created an [online demo environment](https://onepanel.typeform.com/to/kQfDX5Vf?product=github) so that you can get a feel for some of Onepanel's features.
+We have created an [online demo](https://onepanel.typeform.com/to/kQfDX5Vf?product=github) so that you can get a feel for some of Onepanel's features.
 
-**Note:** This is a shared, read only, demo environment that will be occasionally rebuilt.
+**Note:** This is a shared and read only deployment that will be occasionally rebuilt.
 
 ## Quick start
-See [quick start guide](https://docs.onepanel.ai/docs/getting-started/quickstart) to get started with the platform of your choice.
-
-### Quick start videos
-[Getting started with Microsoft Azure](https://youtu.be/CQBIYfBk3Zk)\
-[Getting started with Amazon EKS](https://youtu.be/Ipdd8f6D6IM)\
-[Getting started with Google GKE](https://youtu.be/pZRO63SnQ8A)
+See [quick start guide](https://docs.onepanel.ai/docs/getting-started/quickstart) to get started.
 
 ## Community
-See [documentation](https://docs.onepanel.ai) to get started or for more detailed operational and user guides.
 
 To submit a feature request, report a bug or documentation issue, please open a GitHub [pull request](https://github.com/onepanelio/core/pulls) or [issue](https://github.com/onepanelio/core/issues).
 
