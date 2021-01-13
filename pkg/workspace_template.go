@@ -522,11 +522,11 @@ func unmarshalWorkflowTemplate(spec *WorkspaceSpec, serviceManifest, virtualServ
 				continue
 			}
 
-			item := wfv1.Item{
-				Value: []byte(v.Name),
+			item, err := wfv1.ParseItem(fmt.Sprintf(`"%v"`, v.Name))
+			if err != nil {
+				return "", err
 			}
 			volumeClaimItems = append(volumeClaimItems, item)
-
 			volumeClaimsMapped[v.Name] = true
 		}
 	}
