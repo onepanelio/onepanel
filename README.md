@@ -7,9 +7,10 @@
 [![docs](https://img.shields.io/github/v/release/onepanelio/core?color=01579b&label=docs)](https://docs.onepanel.io)
 [![issues](https://img.shields.io/github/issues-raw/onepanelio/core?color=01579b&label=issues)](https://github.com/onepanelio/core/issues)
 [![chat](https://img.shields.io/badge/support-slack-01579b)](https://join.slack.com/t/onepanel-ce/shared_invite/zt-eyjnwec0-nLaHhjif9Y~gA05KuX6AUg)
+[![lfai](https://img.shields.io/badge/link-LFAI-01579b)](https://landscape.lfai.foundation/selected=onepanel)
 [![license](https://img.shields.io/github/license/onepanelio/core?color=01579b)](https://opensource.org/licenses/Apache-2.0)
 
-Production scale vision AI platform with fully integrated modules for model building, automated labeling, data processing, model training and hyperparameter tuning.
+Production grade, end-to-end vision AI platform with fully integrated modules for model building, automated labeling, data processing, model training and hyperparameter tuning.
 
 <img width="100%" src="img/onepanel.gif">
 
@@ -21,16 +22,14 @@ Production scale vision AI platform with fully integrated modules for model buil
 -  Customizable, reproducible and version controlled tooling and pipeline templates
 -  Scalability, flexibility and resiliency of Kubernetes without the complexities
 
-Onepanel can be found on [LF AI Landscape](http://landscape.lfai.foundation/selected=onepanel)
-
 ## Features
 -  Iteratively annotate, train and automatically annotate with bounding boxes and polygon masks.
--  Easily add hyperparameter tuning to any training pipeline, snapshotting best metrics, parameters and model.
+-  Easily add hyperparameter tuning to any training pipeline, saving the best metrics, parameters and model.
 -  JupyterLab with TensorBoard, Git, debugging, diffing, Conda, OpenCV, TensorFlow, PyTorch and GPU support.
 -  Build reproducible, distributed and parallel data and training pipelines with realtime logs and output snapshots.
 -  Bring your own IDEs, tools and pipelines with a version controlled YAML and Docker based template engine.
 -  Track and visualize metrics and experiments with TensorBoard, NNI UI or bring your own tool.
--  Further extend and automate your pipelines with a powerful [Python SDK](https://github.com/onepanelio/python-sdk).
+-  Programmatically execute and define your pipelines with a powerful [Python SDK](https://github.com/onepanelio/python-sdk).
 
 ## Online demo
 We have created an [online demo](https://onepanel.typeform.com/to/kQfDX5Vf?product=github) so that you can get a feel for some of Onepanel's features.
