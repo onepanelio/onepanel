@@ -25,6 +25,6 @@ func Up20201115133046(tx *sql.Tx) error {
 func Down20201115133046(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return updateWorkspaceTemplateManifest(
-		filepath.Join("workspaces", "cvat", "20201113094916"),
+		filepath.Join("workspaces", "cvat", "20201113094916.yaml"),
 		cvatTemplateName)
 }
