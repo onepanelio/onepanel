@@ -1781,7 +1781,7 @@ func filterOutCustomTypesFromManifest(manifest []byte) (result []byte, err error
 		return manifest, nil
 	}
 
-	specMap, ok := spec.(map[string]interface{})
+	specMap, ok := spec.(map[interface{}]interface{})
 	if !ok {
 		return manifest, nil
 	}
@@ -1791,7 +1791,7 @@ func filterOutCustomTypesFromManifest(manifest []byte) (result []byte, err error
 		return manifest, nil
 	}
 
-	argumentsMap, ok := arguments.(map[string]interface{})
+	argumentsMap, ok := arguments.(map[interface{}]interface{})
 	if !ok {
 		return manifest, nil
 	}
@@ -1810,7 +1810,7 @@ func filterOutCustomTypesFromManifest(manifest []byte) (result []byte, err error
 	parametersToKeep := make([]interface{}, 0)
 
 	for _, parameter := range parametersList {
-		paramMap, ok := parameter.(map[string]interface{})
+		paramMap, ok := parameter.(map[interface{}]interface{})
 		if !ok {
 			continue
 		}
@@ -1822,7 +1822,7 @@ func filterOutCustomTypesFromManifest(manifest []byte) (result []byte, err error
 
 		parametersToKeep = append(parametersToKeep, parameter)
 
-		keysToDelete := make([]string, 0)
+		keysToDelete := make([]interface{}, 0)
 		for key := range paramMap {
 			if key != "name" && key != "value" {
 				keysToDelete = append(keysToDelete, key)
