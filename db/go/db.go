@@ -192,6 +192,7 @@ func ReplaceRuntimeVariablesInManifest(client *v1.Client, namespace string, mani
 
 	replaceMap := map[string]string{
 		"{{.ArtifactRepositoryType}}": artifactRepositoryType,
+		"{{.NodePoolLabel}}":          *sysConfig.NodePoolLabel(),
 		"{{.DefaultNodePoolOption}}":  nodePoolOptions[0].Value,
 	}
 
