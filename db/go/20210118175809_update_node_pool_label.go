@@ -13,6 +13,7 @@ func initialize20210118175809() {
 	}
 }
 
+// Up20210118175809 updates workflows so that the nodePoolSelector label is based on k8s config
 func Up20210118175809(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	if err := updateWorkflowTemplateManifest(
@@ -74,6 +75,7 @@ func Up20210118175809(tx *sql.Tx) error {
 	return nil
 }
 
+// Down20210118175809 reverts the migration
 func Down20210118175809(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	if err := updateWorkflowTemplateManifest(
