@@ -61,18 +61,14 @@ func Up20210118175809(tx *sql.Tx) error {
 		return err
 	}
 
-	if err := updateWorkflowTemplateManifest(
+	return updateWorkflowTemplateManifest(
 		filepath.Join("workflows", "tf-object-detection-training", "20210118175809.yaml"),
 		tensorflowObjectDetectionWorkflowTemplateName,
 		map[string]string{
 			"created-by": "system",
 			"used-by":    "cvat",
 		},
-	); err != nil {
-		return err
-	}
-
-	return nil
+	)
 }
 
 // Down20210118175809 reverts the migration
@@ -122,7 +118,7 @@ func Down20210118175809(tx *sql.Tx) error {
 		return err
 	}
 
-	if err := updateWorkflowTemplateManifest(
+	return updateWorkflowTemplateManifest(
 		filepath.Join("workflows", "hyperparameter-tuning", "20201225172926.yaml"),
 		tensorflowObjectDetectionWorkflowTemplateName,
 		map[string]string{
@@ -130,9 +126,5 @@ func Down20210118175809(tx *sql.Tx) error {
 			"tuner":      "TPE",
 			"created-by": "system",
 		},
-	); err != nil {
-		return err
-	}
-
-	return nil
+	)
 }
