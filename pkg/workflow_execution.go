@@ -481,11 +481,11 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 			value := re.ReplaceAllString(*param.Value, namespace)
 
 			if sysName != "" {
-				reWorkspaceUid, reErr := regexp.Compile(`{{\s*workspace.uid\s*}}`)
+				reWorkspaceUID, reErr := regexp.Compile(`{{\s*workspace.uid\s*}}`)
 				if reErr != nil {
 					return nil, reErr
 				}
-				value = reWorkspaceUid.ReplaceAllString(*param.Value, sysName)
+				value = reWorkspaceUID.ReplaceAllString(*param.Value, sysName)
 			}
 
 			param.Value = &value
