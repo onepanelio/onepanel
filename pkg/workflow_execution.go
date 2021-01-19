@@ -462,12 +462,16 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 
 	newParameters := make([]wfv1.Parameter, 0)
 
-	// Only used for workspaces. sysName is the workspace uid
-	sysName := ""
+	// Only used for workspaces
+	workspaceUID := ""
 	for i := range wf.Spec.Arguments.Parameters {
 		param := wf.Spec.Arguments.Parameters[i]
 		if param.Name == "sys-name" {
-			sysName = *param.Value
+			uid, err := GenerateWorkspaceUID(*param.Value)
+			if err != nil {
+				return nil, err
+			}
+			workspaceUID = uid
 		}
 	}
 
@@ -480,12 +484,12 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 			}
 			value := re.ReplaceAllString(*param.Value, namespace)
 
-			if sysName != "" {
+			if workspaceUID != "" {
 				reWorkspaceUID, reErr := regexp.Compile(`{{\s*workspace.uid\s*}}`)
 				if reErr != nil {
 					return nil, reErr
 				}
-				value = reWorkspaceUID.ReplaceAllString(*param.Value, sysName)
+				value = reWorkspaceUID.ReplaceAllString(value, workspaceUID)
 			}
 
 			param.Value = &value

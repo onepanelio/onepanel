@@ -84,7 +84,7 @@ func (w *Workspace) GetParameterValue(name string) *string {
 
 // GenerateUID generates a uid from the input name and sets it on the workspace
 func (w *Workspace) GenerateUID(name string) error {
-	result, err := uid2.GenerateUID(name, 30)
+	result, err := GenerateWorkspaceUID(name)
 	if err != nil {
 		return err
 	}
@@ -92,6 +92,11 @@ func (w *Workspace) GenerateUID(name string) error {
 	w.UID = result
 
 	return nil
+}
+
+// GenerateWorkspaceUID creates a uid from a workspace name. The limit is 30 characters
+func GenerateWorkspaceUID(name string) (string, error) {
+	return uid2.GenerateUID(name, 30)
 }
 
 // getWorkspaceColumns returns all of the columns for workspace modified by alias, destination.
