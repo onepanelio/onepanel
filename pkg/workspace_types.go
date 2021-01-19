@@ -94,6 +94,7 @@ func (w *Workspace) GenerateUID(name string) error {
 	return nil
 }
 
+// GenerateWorkspaceUID creates a uid from a workspace name. The limit is 30 characters
 func GenerateWorkspaceUID(name string) (string, error) {
 	return uid2.GenerateUID(name, 30)
 }
