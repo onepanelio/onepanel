@@ -2558,7 +2558,7 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/workspaces/{uid}/containers/{containerName}": {
+    "/apis/v1beta1/{namespace}/workspaces/{uid}/containers/{containerName}/logs": {
       "get": {
         "operationId": "GetWorkspaceContainerLogs",
         "responses": {

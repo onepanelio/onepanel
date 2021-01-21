@@ -76,7 +76,7 @@ service WorkspaceService {
 
 	rpc GetWorkspaceContainerLogs (GetWorkspaceContainerLogsRequest) returns (stream LogStreamResponse) {
 		option (google.api.http) = {
-            get: "/apis/v1beta1/{namespace}/workspaces/{uid}/containers/{containerName}"
+            get: "/apis/v1beta1/{namespace}/workspaces/{uid}/containers/{containerName}/logs"
         };
 	}
 }
