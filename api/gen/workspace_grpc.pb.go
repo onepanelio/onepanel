@@ -28,6 +28,7 @@ type WorkspaceServiceClient interface {
 	ResumeWorkspace(ctx context.Context, in *ResumeWorkspaceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DeleteWorkspace(ctx context.Context, in *DeleteWorkspaceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RetryLastWorkspaceAction(ctx context.Context, in *RetryActionWorkspaceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetWorkspaceContainerLogs(ctx context.Context, in *GetWorkspaceContainerLogsRequest, opts ...grpc.CallOption) (WorkspaceService_GetWorkspaceContainerLogsClient, error)
 }
 
 type workspaceServiceClient struct {
@@ -128,6 +129,38 @@ func (c *workspaceServiceClient) RetryLastWorkspaceAction(ctx context.Context, i
 	return out, nil
 }
 
+func (c *workspaceServiceClient) GetWorkspaceContainerLogs(ctx context.Context, in *GetWorkspaceContainerLogsRequest, opts ...grpc.CallOption) (WorkspaceService_GetWorkspaceContainerLogsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_WorkspaceService_serviceDesc.Streams[0], "/api.WorkspaceService/GetWorkspaceContainerLogs", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &workspaceServiceGetWorkspaceContainerLogsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type WorkspaceService_GetWorkspaceContainerLogsClient interface {
+	Recv() (*LogStreamResponse, error)
+	grpc.ClientStream
+}
+
+type workspaceServiceGetWorkspaceContainerLogsClient struct {
+	grpc.ClientStream
+}
+
+func (x *workspaceServiceGetWorkspaceContainerLogsClient) Recv() (*LogStreamResponse, error) {
+	m := new(LogStreamResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // WorkspaceServiceServer is the server API for WorkspaceService service.
 // All implementations must embed UnimplementedWorkspaceServiceServer
 // for forward compatibility
@@ -142,6 +175,7 @@ type WorkspaceServiceServer interface {
 	ResumeWorkspace(context.Context, *ResumeWorkspaceRequest) (*emptypb.Empty, error)
 	DeleteWorkspace(context.Context, *DeleteWorkspaceRequest) (*emptypb.Empty, error)
 	RetryLastWorkspaceAction(context.Context, *RetryActionWorkspaceRequest) (*emptypb.Empty, error)
+	GetWorkspaceContainerLogs(*GetWorkspaceContainerLogsRequest, WorkspaceService_GetWorkspaceContainerLogsServer) error
 	mustEmbedUnimplementedWorkspaceServiceServer()
 }
 
@@ -178,6 +212,9 @@ func (UnimplementedWorkspaceServiceServer) DeleteWorkspace(context.Context, *Del
 }
 func (UnimplementedWorkspaceServiceServer) RetryLastWorkspaceAction(context.Context, *RetryActionWorkspaceRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RetryLastWorkspaceAction not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) GetWorkspaceContainerLogs(*GetWorkspaceContainerLogsRequest, WorkspaceService_GetWorkspaceContainerLogsServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetWorkspaceContainerLogs not implemented")
 }
 func (UnimplementedWorkspaceServiceServer) mustEmbedUnimplementedWorkspaceServiceServer() {}
 
@@ -372,6 +409,27 @@ func _WorkspaceService_RetryLastWorkspaceAction_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WorkspaceService_GetWorkspaceContainerLogs_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetWorkspaceContainerLogsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(WorkspaceServiceServer).GetWorkspaceContainerLogs(m, &workspaceServiceGetWorkspaceContainerLogsServer{stream})
+}
+
+type WorkspaceService_GetWorkspaceContainerLogsServer interface {
+	Send(*LogStreamResponse) error
+	grpc.ServerStream
+}
+
+type workspaceServiceGetWorkspaceContainerLogsServer struct {
+	grpc.ServerStream
+}
+
+func (x *workspaceServiceGetWorkspaceContainerLogsServer) Send(m *LogStreamResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 var _WorkspaceService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "api.WorkspaceService",
 	HandlerType: (*WorkspaceServiceServer)(nil),
@@ -417,6 +475,12 @@ var _WorkspaceService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _WorkspaceService_RetryLastWorkspaceAction_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "GetWorkspaceContainerLogs",
+			Handler:       _WorkspaceService_GetWorkspaceContainerLogs_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "workspace.proto",
 }

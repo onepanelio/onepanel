@@ -387,3 +387,43 @@ func (s *WorkspaceServer) GetWorkspaceStatisticsForNamespace(ctx context.Context
 		Stats: converter.WorkspaceStatisticsReportToAPI(report),
 	}, nil
 }
+
+func (s *WorkspaceServer) GetWorkspaceContainerLogs(req *api.GetWorkspaceContainerLogsRequest, stream api.WorkspaceService_GetWorkspaceContainerLogsServer) error {
+	client := getClient(stream.Context())
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "onepanel.io", "workspaces", req.Uid)
+	if err != nil || !allowed {
+		return err
+	}
+
+	watcher, err := client.GetWorkspaceContainerLogs(req.Namespace, req.Uid, req.ContainerName)
+	if err != nil {
+		return err
+	}
+
+	le := make([]*v1.LogEntry, 0)
+	for {
+		le = <-watcher
+		if le == nil {
+			break
+		}
+
+		apiLogEntries := make([]*api.LogEntry, len(le))
+		for i, item := range le {
+			apiLogEntries[i] = &api.LogEntry{
+				Content: item.Content,
+			}
+
+			if item.Timestamp.After(time.Time{}) {
+				apiLogEntries[i].Timestamp = item.Timestamp.Format(time.RFC3339)
+			}
+		}
+
+		if err := stream.Send(&api.LogStreamResponse{
+			LogEntries: apiLogEntries,
+		}); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

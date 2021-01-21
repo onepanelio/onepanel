@@ -73,6 +73,12 @@ service WorkspaceService {
             put: "/apis/v1beta1/{namespace}/workspaces/{uid}/retry"
         };
 	}
+
+	rpc GetWorkspaceContainerLogs (GetWorkspaceContainerLogsRequest) returns (stream LogStreamResponse) {
+		option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/workspaces/{uid}/containers/{containerName}"
+        };
+	}
 }
 
 message Workspace {
@@ -193,4 +199,10 @@ message GetWorkspaceStatisticsForNamespaceRequest {
 
 message GetWorkspaceStatisticsForNamespaceResponse {
 	WorkspaceStatisticReport stats = 1;
+}
+
+message GetWorkspaceContainerLogsRequest {
+	string namespace = 1;
+	string uid = 2;
+	string containerName = 3;
 }
