@@ -388,6 +388,7 @@ func (s *WorkspaceServer) GetWorkspaceStatisticsForNamespace(ctx context.Context
 	}, nil
 }
 
+// GetWorkspaceContainerLogs returns logs for a given container name in a Workspace
 func (s *WorkspaceServer) GetWorkspaceContainerLogs(req *api.GetWorkspaceContainerLogsRequest, stream api.WorkspaceService_GetWorkspaceContainerLogsServer) error {
 	client := getClient(stream.Context())
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "onepanel.io", "workspaces", req.Uid)

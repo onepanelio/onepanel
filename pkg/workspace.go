@@ -882,6 +882,7 @@ func (c *Client) GetWorkspaceStatisticsForNamespace(namespace string) (report *W
 	return
 }
 
+// GetWorkspaceContainerLogs returns logs for a given container name in a Workspace
 func (c *Client) GetWorkspaceContainerLogs(namespace, uid, containerName string) (<-chan []*LogEntry, error) {
 	var stream io.ReadCloser
 
