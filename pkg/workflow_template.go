@@ -352,7 +352,8 @@ func (c *Client) getWorkflowTemplateVersionDB(namespace, name, version string) (
 	workflowTemplateVersion = &WorkflowTemplateVersion{}
 
 	whereMap := sq.Eq{
-		"wt.name": name,
+		"wt.name":        name,
+		"wt.is_archived": false,
 	}
 
 	if version == "latest" {
