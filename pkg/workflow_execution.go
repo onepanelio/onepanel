@@ -484,6 +484,7 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 			if reErr != nil {
 				return nil, reErr
 			}
+
 			value := re.ReplaceAllString(param.Value.String(), namespace)
 
 			if workspaceUID != "" {
