@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/onepanelio/core/pkg/util/env"
 	"github.com/onepanelio/core/pkg/util/extensions"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/pkg/util/request"
@@ -1168,7 +1169,7 @@ func (c *Client) GenerateWorkflowTemplateManifest(manifest string) (string, erro
 		if err != nil {
 			return "", err
 		}
-		legalNodePoolValues := make([]string, 0)
+		legalNodePoolValues := []string{env.Get("ONEPANEL_TEMPLATE_NODEPOOL_DEFAULT_VALUE", "default")}
 		for _, opt := range nodePoolOptions {
 			legalNodePoolValues = append(legalNodePoolValues, opt.Value)
 		}
