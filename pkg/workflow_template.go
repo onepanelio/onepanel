@@ -1168,7 +1168,7 @@ func (c *Client) GenerateWorkflowTemplateManifest(manifest string) (string, erro
 		if err != nil {
 			return "", err
 		}
-		legalNodePoolValues := make([]string, 0)
+		legalNodePoolValues := []string{"default"}
 		for _, opt := range nodePoolOptions {
 			legalNodePoolValues = append(legalNodePoolValues, opt.Value)
 		}
