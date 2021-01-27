@@ -7,7 +7,7 @@
 [![docs](https://img.shields.io/github/v/release/onepanelio/core?color=01579b&label=docs)](https://docs.onepanel.io)
 [![issues](https://img.shields.io/github/issues-raw/onepanelio/core?color=01579b&label=issues)](https://github.com/onepanelio/core/issues)
 [![chat](https://img.shields.io/badge/support-slack-01579b)](https://join.slack.com/t/onepanel-ce/shared_invite/zt-eyjnwec0-nLaHhjif9Y~gA05KuX6AUg)
-[![lfai](https://img.shields.io/badge/link-LFAI-01579b)](https://landscape.lfai.foundation/selected=onepanel)
+[![lfai](https://img.shields.io/badge/link-LFAI-01579b)](https://landscape.lfai.foundation/?selected=onepanel)
 [![license](https://img.shields.io/github/license/onepanelio/core?color=01579b)](https://opensource.org/licenses/Apache-2.0)
 
 Production grade, end-to-end vision AI platform with fully integrated modules for model building, automated labeling, data processing, model training and hyperparameter tuning.
