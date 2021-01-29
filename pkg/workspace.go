@@ -1,10 +1,13 @@
 package v1
 
 import (
+	"bufio"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+
 	sq "github.com/Masterminds/squirrel"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/asaskevich/govalidator"
@@ -877,4 +880,84 @@ func (c *Client) GetWorkspaceStatisticsForNamespace(namespace string) (report *W
 	err = c.DB.Getx(report, query)
 
 	return
+}
+
+// GetWorkspaceContainerLogs returns logs for a given container name in a Workspace
+func (c *Client) GetWorkspaceContainerLogs(namespace, uid, containerName string) (<-chan []*LogEntry, error) {
+	var stream io.ReadCloser
+
+	stream, err := c.CoreV1().Pods(namespace).GetLogs(uid+"-0", &corev1.PodLogOptions{
+		Container:  containerName,
+		Follow:     true,
+		Timestamps: true,
+	}).Stream()
+
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace":     namespace,
+			"UID":           uid,
+			"ContainerName": containerName,
+			"Error":         err.Error(),
+		}).Error("Error with logs.")
+		return nil, util.NewUserError(codes.NotFound, "Log not found.")
+	}
+
+	logWatcher := make(chan []*LogEntry)
+	go func() {
+		buffer := make([]byte, 4096)
+		reader := bufio.NewReader(stream)
+
+		lastChunkSent := -1
+		lastLine := ""
+		for {
+			bytesRead, err := reader.Read(buffer)
+			if err != nil && err.Error() != "EOF" {
+				break
+			}
+			content := lastLine + string(buffer[:bytesRead])
+			lastLine = ""
+
+			chunk := make([]*LogEntry, 0)
+			lines := strings.Split(content, "\n")
+			for lineIndex, line := range lines {
+				if lineIndex == len(lines)-1 {
+					lastLine = line
+					continue
+				}
+
+				newLogEntry := LogEntryFromLine(&line)
+				if newLogEntry == nil {
+					continue
+				}
+
+				chunk = append(chunk, newLogEntry)
+			}
+
+			if lastChunkSent == 0 && lastLine != "" {
+				newLogEntry := LogEntryFromLine(&lastLine)
+				if newLogEntry != nil {
+					chunk = append(chunk, newLogEntry)
+					lastLine = ""
+				}
+			}
+
+			if len(chunk) > 0 {
+				logWatcher <- chunk
+			}
+			lastChunkSent = len(chunk)
+
+			if err != nil && err.Error() == "EOF" {
+				break
+			}
+		}
+
+		newLogEntry := LogEntryFromLine(&lastLine)
+		if newLogEntry != nil {
+			logWatcher <- []*LogEntry{newLogEntry}
+		}
+
+		close(logWatcher)
+	}()
+
+	return logWatcher, err
 }

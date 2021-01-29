@@ -205,15 +205,6 @@ message ListWorkflowExecutionsResponse {
     int32 totalAvailableCount = 6;
 }
 
-message LogStreamResponse {
-    repeated LogEntry logEntries = 1;
-}
-
-message LogEntry {
-    string timestamp = 1;
-    string content = 2;
-}
-
 message WorkflowExecutionMetadata {
     string url = 1;
 }
