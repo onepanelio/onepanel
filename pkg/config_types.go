@@ -350,6 +350,7 @@ func (g *ArtifactRepositoryGCSProvider) FormatKey(namespace, workflowName, podNa
 	return keyFormat
 }
 
+// NamespaceConfig represents configuration for the namespace
 type NamespaceConfig struct {
 	ArtifactRepository ArtifactRepositoryProvider
 }
