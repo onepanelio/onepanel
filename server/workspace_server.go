@@ -32,6 +32,10 @@ func NewWorkspaceServer() *WorkspaceServer {
 }
 
 func apiWorkspace(wt *v1.Workspace, config v1.SystemConfig) *api.Workspace {
+	if wt == nil {
+		return nil
+	}
+
 	protocol := config.APIProtocol()
 	domain := config.Domain()
 
@@ -53,11 +57,25 @@ func apiWorkspace(wt *v1.Workspace, config v1.SystemConfig) *api.Workspace {
 		return nil
 	}
 
+	services, err := wt.WorkspaceTemplate.GetServices()
+	if err != nil {
+		return nil
+	}
+
+	apiServices := make([]*api.WorkspaceComponent, 0)
+	for _, service := range services {
+		apiServices = append(apiServices, &api.WorkspaceComponent{
+			Name: service.Name,
+			Url:  wt.GetURL(*protocol, *domain) + service.Path,
+		})
+	}
+
 	res := &api.Workspace{
-		Uid:       wt.UID,
-		Name:      wt.Name,
-		CreatedAt: wt.CreatedAt.UTC().Format(time.RFC3339),
-		Url:       wt.GetURL(*protocol, *domain),
+		Uid:                 wt.UID,
+		Name:                wt.Name,
+		CreatedAt:           wt.CreatedAt.UTC().Format(time.RFC3339),
+		Url:                 wt.GetURL(*protocol, *domain),
+		WorkspaceComponents: apiServices,
 	}
 	res.Parameters = converter.ParametersToAPI(wt.Parameters)
 
@@ -88,6 +106,7 @@ func apiWorkspace(wt *v1.Workspace, config v1.SystemConfig) *api.Workspace {
 	return res
 }
 
+// CreateWorkspace create a workspace
 func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWorkspaceRequest) (*api.Workspace, error) {
 	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "onepanel.io", "workspaces", "")
@@ -137,6 +156,7 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 	return apiWorkspace, nil
 }
 
+// GetWorkspace returns a Workspace information
 func (s *WorkspaceServer) GetWorkspace(ctx context.Context, req *api.GetWorkspaceRequest) (*api.Workspace, error) {
 	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "onepanel.io", "workspaces", req.Uid)
@@ -147,6 +167,9 @@ func (s *WorkspaceServer) GetWorkspace(ctx context.Context, req *api.GetWorkspac
 	workspace, err := client.GetWorkspace(req.Namespace, req.Uid)
 	if err != nil {
 		return nil, err
+	}
+	if workspace == nil {
+		return nil, util.NewUserError(codes.NotFound, "Not found")
 	}
 
 	sysConfig, err := client.GetSystemConfig()
@@ -173,6 +196,7 @@ func (s *WorkspaceServer) GetWorkspace(ctx context.Context, req *api.GetWorkspac
 	return apiWorkspace, nil
 }
 
+// UpdateWorkspaceStatus updates a given workspaces status such as running, paused, etc.
 func (s *WorkspaceServer) UpdateWorkspaceStatus(ctx context.Context, req *api.UpdateWorkspaceStatusRequest) (*empty.Empty, error) {
 	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "onepanel.io", "workspaces", req.Uid)
@@ -189,6 +213,7 @@ func (s *WorkspaceServer) UpdateWorkspaceStatus(ctx context.Context, req *api.Up
 	return &empty.Empty{}, err
 }
 
+// UpdateWorkspace updates a workspace's status
 func (s *WorkspaceServer) UpdateWorkspace(ctx context.Context, req *api.UpdateWorkspaceRequest) (*empty.Empty, error) {
 	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "onepanel.io", "workspaces", req.Uid)
@@ -212,6 +237,7 @@ func (s *WorkspaceServer) UpdateWorkspace(ctx context.Context, req *api.UpdateWo
 	return &empty.Empty{}, err
 }
 
+// ListWorkspaces lists the current workspaces for a given namespace
 func (s *WorkspaceServer) ListWorkspaces(ctx context.Context, req *api.ListWorkspaceRequest) (*api.ListWorkspaceResponse, error) {
 	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "onepanel.io", "workspaces", "")
@@ -272,6 +298,7 @@ func (s *WorkspaceServer) ListWorkspaces(ctx context.Context, req *api.ListWorks
 	}, nil
 }
 
+// PauseWorkspace requests to pause a given workspace
 func (s *WorkspaceServer) PauseWorkspace(ctx context.Context, req *api.PauseWorkspaceRequest) (*empty.Empty, error) {
 	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "onepanel.io", "workspaces", req.Uid)
@@ -284,6 +311,7 @@ func (s *WorkspaceServer) PauseWorkspace(ctx context.Context, req *api.PauseWork
 	return &empty.Empty{}, err
 }
 
+// ResumeWorkspace attempts to resume a workspace
 func (s *WorkspaceServer) ResumeWorkspace(ctx context.Context, req *api.ResumeWorkspaceRequest) (*empty.Empty, error) {
 	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "onepanel.io", "workspaces", req.Uid)
@@ -296,6 +324,7 @@ func (s *WorkspaceServer) ResumeWorkspace(ctx context.Context, req *api.ResumeWo
 	return &empty.Empty{}, err
 }
 
+// DeleteWorkspace requests to delete a workspace
 func (s *WorkspaceServer) DeleteWorkspace(ctx context.Context, req *api.DeleteWorkspaceRequest) (*empty.Empty, error) {
 	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "delete", "onepanel.io", "workspaces", req.Uid)

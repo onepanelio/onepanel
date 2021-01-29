@@ -829,18 +829,22 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 	return
 }
 
+// UpdateWorkspace marks a workspace as "updating"
 func (c *Client) UpdateWorkspace(namespace, uid string, parameters []Parameter) (err error) {
 	return c.updateWorkspace(namespace, uid, "update", "apply", &WorkspaceStatus{Phase: WorkspaceUpdating}, parameters...)
 }
 
+// PauseWorkspace pauses a workspace
 func (c *Client) PauseWorkspace(namespace, uid string) (err error) {
 	return c.updateWorkspace(namespace, uid, "pause", "delete", &WorkspaceStatus{Phase: WorkspacePausing})
 }
 
+// ResumeWorkspace resumes a workspace
 func (c *Client) ResumeWorkspace(namespace, uid string) (err error) {
 	return c.updateWorkspace(namespace, uid, "create", "apply", &WorkspaceStatus{Phase: WorkspaceLaunching})
 }
 
+// DeleteWorkspace deletes a workspace
 func (c *Client) DeleteWorkspace(namespace, uid string) (err error) {
 	return c.updateWorkspace(namespace, uid, "delete", "delete", &WorkspaceStatus{Phase: WorkspaceTerminating})
 }

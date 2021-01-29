@@ -145,6 +145,24 @@ func HasKeyValue(node *yaml.Node, key string, values ...string) (bool, error) {
 	return false, nil
 }
 
+// GetKeyValue gets the value of the key from the node (assumed to be a mapping node)
+func GetKeyValue(node *yaml.Node, key string) (*yaml.Node, error) {
+	if node.Kind != yaml.MappingNode {
+		return nil, fmt.Errorf("not a mapping node")
+	}
+
+	for i := 0; i < len(node.Content)-1; i += 2 {
+		keyNode := node.Content[i]
+		valueNode := node.Content[i+1]
+
+		if keyNode.Value == key {
+			return valueNode, nil
+		}
+	}
+
+	return nil, fmt.Errorf("not found")
+}
+
 // Iterate runs through all of the content nodes in the indicated root node
 func Iterate(root *yaml.Node, callable func(parent, value *yaml.Node)) {
 	for _, child := range root.Content {

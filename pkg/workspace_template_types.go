@@ -3,13 +3,24 @@ package v1
 import (
 	"fmt"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/onepanelio/core/pkg/util/extensions"
 	"github.com/onepanelio/core/pkg/util/sql"
 	"github.com/onepanelio/core/pkg/util/types"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
+	yaml3 "gopkg.in/yaml.v3"
 	"sigs.k8s.io/yaml"
+	"strings"
 	"time"
 )
 
+// WorkspaceService represents services available to external access in a Workspace
+type WorkspaceService struct {
+	Name string
+	Path string
+}
+
+// WorkspaceTemplate represents the data associated with a WorkspaceTemplate
+// this is a mix of DB and "in-memory" fields
 type WorkspaceTemplate struct {
 	ID                         uint64
 	WorkspaceTemplateVersionID uint64 `db:"workspace_template_version_id"`
@@ -78,6 +89,58 @@ func (wt *WorkspaceTemplate) InjectRuntimeParameters(config SystemConfig) error 
 	wt.WorkflowTemplate.Manifest = string(resultManifest)
 
 	return nil
+}
+
+// GetServices returns an array of WorkspaceServices
+func (wt *WorkspaceTemplate) GetServices() ([]*WorkspaceService, error) {
+	result := make([]*WorkspaceService, 0)
+
+	root := &yaml3.Node{}
+	if err := yaml3.Unmarshal([]byte(wt.Manifest), root); err != nil {
+		return nil, err
+	}
+
+	containers, err := extensions.GetNode(root, extensions.CreateYamlIndex("containers"))
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return result, nil
+		}
+
+		return nil, err
+	}
+
+	for _, container := range containers.Content {
+		hasKeyValue, err := extensions.HasKeyValue(container, "name", "sys-filesyncer")
+		if err != nil {
+			return nil, err
+		}
+
+		if hasKeyValue {
+			argsValue, err := extensions.GetKeyValue(container, "args")
+			if err != nil {
+				continue
+			}
+
+			path := ""
+			for _, arg := range argsValue.Content {
+				if strings.Contains(arg.Value, "server-prefix") {
+					parts := strings.Split(arg.Value, "=")
+					if len(parts) > 1 {
+						path = parts[1]
+					}
+				}
+			}
+
+			fmt.Printf("%v", argsValue)
+
+			result = append(result, &WorkspaceService{
+				Name: "sys-filesyncer",
+				Path: path,
+			})
+		}
+	}
+
+	return result, nil
 }
 
 // WorkspaceTemplatesToVersionIDs plucks the WorkspaceTemplateVersionID from each template and returns it in an array
