@@ -2,16 +2,41 @@
 arguments:
   parameters:
     - name: cvat-annotation-path
-      value: annotation-dump/sample_dataset
+      value: 'artifacts/{{workflow.namespace}}/annotations/'
+      hint: Path to annotated data (COCO format) in default object storage. In CVAT, this parameter will be pre-populated.
       displayName: Dataset path
-      hint: Path to annotated data (TFRecord format) in default object storage. In CVAT, this parameter will be pre-populated.
       visibility: internal
 
-    - name: cvat-output-path
-      value: workflow-data/output/sample_output
-      hint: Path to store output artifacts in default object storage (i.e s3). In CVAT, this parameter will be pre-populated.
-      displayName: Workflow output path
-      visibility: internal
+    - name: val-split
+      value: 10
+      displayName: Validation split size
+      type: input.number
+      visibility: public
+      hint: Enter validation set size in percentage of full dataset. (0 - 100)
+
+    - name: num-augmentation-cycles
+      value: 1
+      displayName: Number of augmentation cycles
+      type: input.number
+      visibility: public
+      hint: Number of augmentation cycles, zero means no data augmentation
+
+    - name: preprocessing-parameters
+      value: |-
+        RandomBrightnessContrast:
+            p: 0.2
+        GaussianBlur:
+            p: 0.3
+        GaussNoise:
+            p: 0.4
+        HorizontalFlip:
+            p: 0.5
+        VerticalFlip:
+            p: 0.3
+      displayName: Preprocessing parameters
+      visibility: public
+      type: textarea.textarea
+      hint: 'See <a href="https://albumentations.ai/docs/api_reference/augmentations/transforms/" target="_blank">documentation</a> for more information on parameters.'
 
     - name: cvat-model
       value: frcnn-res50-coco
@@ -35,25 +60,30 @@ arguments:
         - name: 'SSDLite MobileNet-COCO'
           value: ssdlite-mobilenet-coco
 
-    - name: hyperparameters
-      value: |-
-        num-steps=10000
-      displayName: Hyperparameters
-      visibility: public
-      type: textarea.textarea
-      hint: 'See <a href="https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model/#tfod-hyperparameters" target="_blank">documentation</a> for more information on parameters.'
-
-    - name: cvat-finetune-checkpoint
-      value: ''
-      hint: Select the last fine-tune checkpoint for this model. It may take up to 5 minutes for a recent checkpoint show here. Leave empty if this is the first time you're training this model.
-      displayName: Checkpoint path
-      visibility: public
-
     - name: cvat-num-classes
       value: '10'
       hint: Number of classes. In CVAT, this parameter will be pre-populated.
       displayName: Number of classes
       visibility: internal
+
+    - name: hyperparameters
+      value: |-
+        num_steps: 10000
+      displayName: Hyperparameters
+      visibility: public
+      type: textarea.textarea
+      hint: 'See <a href="https://docs.onepanel.ai/docs/reference/cvat/built-in-models#tfod-hyperparameters" target="_blank">documentation</a> for more information on parameters.'
+
+    - name: dump-format
+      value: cvat_coco
+      displayName: CVAT dump format
+      visibility: private
+
+    - name: cvat-finetune-checkpoint
+      value: ''
+      hint: Path to the last fine-tune checkpoint for this model in default object storage. Leave empty if this is the first time you're training this model.
+      displayName: Checkpoint path
+      visibility: public
 
     - name: tf-image
       value: tensorflow/tensorflow:1.13.1-py3
@@ -67,10 +97,6 @@ arguments:
         - name: 'TensorFlow 1.13.1 GPU Image'
           value: 'tensorflow/tensorflow:1.13.1-gpu-py3'
 
-    - name: dump-format
-      value: cvat_tfrecord
-      visibility: public
-
     - displayName: Node pool
       hint: Name of node pool or group to run this workflow task
       type: select.nodepool
@@ -83,14 +109,22 @@ entrypoint: main
 templates:
   - dag:
       tasks:
+        - name: preprocessing
+          template: preprocessing
         - name: train-model
           template: tensorflow
+          dependencies: [preprocessing]
+          arguments:
+            artifacts:
+              - name: data
+                from: "{{tasks.preprocessing.outputs.artifacts.processed-data}}"
     name: main
   - container:
       args:
         - |
           apt-get update && \
           apt-get install -y python3-pip git wget unzip libglib2.0-0 libsm6 libxext6 libxrender-dev && \
+          pip install --upgrade pip && \
           pip install pillow lxml Cython contextlib2 matplotlib numpy scipy pycocotools pyyaml test-generator && \
           cd /mnt/src/tf/research && \
           export PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/slim && \
@@ -105,14 +139,15 @@ templates:
             --extras="{{workflow.parameters.hyperparameters}}" \
             --model="{{workflow.parameters.cvat-model}}" \
             --num_classes="{{workflow.parameters.cvat-num-classes}}" \
-            --sys_finetune_checkpoint={{workflow.parameters.cvat-finetune-checkpoint}}
+            --sys_finetune_checkpoint="{{workflow.parameters.cvat-finetune-checkpoint}}" \
+            --from_preprocessing=True
       command:
         - sh
         - -c
       image: '{{workflow.parameters.tf-image}}'
       volumeMounts:
         - mountPath: /mnt/data
-          name: data
+          name: processed-data
         - mountPath: /mnt/output
           name: output
       workingDir: /mnt/src
@@ -122,8 +157,6 @@ templates:
       artifacts:
         - name: data
           path: /mnt/data/datasets/
-          s3:
-            key: '{{workflow.namespace}}/{{workflow.parameters.cvat-annotation-path}}'
         - name: models
           path: /mnt/data/models/
           optional: true
@@ -136,6 +169,7 @@ templates:
           path: /mnt/src/tf
         - git:
             repo: https://github.com/onepanelio/templates.git
+            revision: v0.18.0
           name: tsrc
           path: /mnt/src/train
     name: tensorflow
@@ -144,11 +178,72 @@ templates:
         - name: model
           optional: true
           path: /mnt/output
+    sidecars:
+      - name: tensorboard
+        image: '{{workflow.parameters.tf-image}}'
+        command:
+          - sh
+          - '-c'
+        env:
+          - name: ONEPANEL_INTERACTIVE_SIDECAR
+            value: 'true'
+        args:
+          # Read logs from /mnt/output - this directory is auto-mounted from volumeMounts
+          - tensorboard --logdir /mnt/output/checkpoints/
+        ports:
+          - containerPort: 6006
+            name: tensorboard
+  - container:
+      args:
+        - |
+          pip install --upgrade pip &&\
+          pip install opencv-python albumentations tqdm pyyaml pycocotools && \
+          cd /mnt/src/preprocessing/workflows/albumentations-preprocessing && \
+          python -u main.py \
+            --data_aug_params="{{workflow.parameters.preprocessing-parameters}}" \
+            --format="tfrecord" \
+            --val_split={{workflow.parameters.val-split}} \
+            --aug_steps={{workflow.parameters.num-augmentation-cycles}}
+      command:
+        - sh
+        - -c
+      image: '{{workflow.parameters.tf-image}}'
+      volumeMounts:
+        - mountPath: /mnt/data
+          name: data
+        - mountPath: /mnt/output
+          name: processed-data
+      workingDir: /mnt/src
+    nodeSelector:
+      {{.NodePoolLabel}}: '{{workflow.parameters.sys-node-pool}}'
+    inputs:
+      artifacts:
+        - name: data
+          path: /mnt/data/datasets/
           s3:
-            key: '{{workflow.namespace}}/{{workflow.parameters.cvat-output-path}}/{{workflow.name}}'
+            key: '{{workflow.parameters.cvat-annotation-path}}'
+        - git:
+            repo: https://github.com/onepanelio/templates.git
+            revision: v0.18.0
+          name: src
+          path: /mnt/src/preprocessing
+    name: preprocessing
+    outputs:
+      artifacts:
+        - name: processed-data
+          optional: true
+          path: /mnt/output
 volumeClaimTemplates:
   - metadata:
       name: data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 200Gi
+  - metadata:
+      name: processed-data
     spec:
       accessModes:
         - ReadWriteOnce
