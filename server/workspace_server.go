@@ -425,7 +425,8 @@ func (s *WorkspaceServer) GetWorkspaceContainerLogs(req *api.GetWorkspaceContain
 		return err
 	}
 
-	watcher, err := client.GetWorkspaceContainerLogs(req.Namespace, req.Uid, req.ContainerName)
+	sinceTime := time.Unix(req.SinceTime, 0)
+	watcher, err := client.GetWorkspaceContainerLogs(req.Namespace, req.Uid, req.ContainerName, sinceTime)
 	if err != nil {
 		return err
 	}

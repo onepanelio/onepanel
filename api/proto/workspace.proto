@@ -211,4 +211,5 @@ message GetWorkspaceContainerLogsRequest {
 	string namespace = 1;
 	string uid = 2;
 	string containerName = 3;
+	int64 sinceTime = 4;
 }

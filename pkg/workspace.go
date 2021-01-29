@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	sq "github.com/Masterminds/squirrel"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
@@ -887,13 +888,16 @@ func (c *Client) GetWorkspaceStatisticsForNamespace(namespace string) (report *W
 }
 
 // GetWorkspaceContainerLogs returns logs for a given container name in a Workspace
-func (c *Client) GetWorkspaceContainerLogs(namespace, uid, containerName string) (<-chan []*LogEntry, error) {
+func (c *Client) GetWorkspaceContainerLogs(namespace, uid, containerName string, sinceTime time.Time) (<-chan []*LogEntry, error) {
 	var stream io.ReadCloser
+
+	k8sSinceTime := metav1.NewTime(sinceTime)
 
 	stream, err := c.CoreV1().Pods(namespace).GetLogs(uid+"-0", &corev1.PodLogOptions{
 		Container:  containerName,
 		Follow:     true,
 		Timestamps: true,
+		SinceTime:  &k8sSinceTime,
 	}).Stream()
 
 	if err != nil {
