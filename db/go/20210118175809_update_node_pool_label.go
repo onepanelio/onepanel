@@ -18,7 +18,7 @@ func Up20210118175809(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	if err := updateWorkflowTemplateManifest(
 		filepath.Join("workflows", "hyperparameter-tuning", "20210118175809.yaml"),
-		tensorflowObjectDetectionWorkflowTemplateName,
+		hyperparameterTuningTemplateName,
 		map[string]string{
 			"framework":  "tensorflow",
 			"tuner":      "TPE",
@@ -30,7 +30,7 @@ func Up20210118175809(tx *sql.Tx) error {
 
 	if err := updateWorkflowTemplateManifest(
 		filepath.Join("workflows", "maskrcnn-training", "20210118175809.yaml"),
-		tensorflowObjectDetectionWorkflowTemplateName,
+		maskRCNNWorkflowTemplateName,
 		map[string]string{
 			"created-by": "system",
 			"used-by":    "cvat",
@@ -41,7 +41,7 @@ func Up20210118175809(tx *sql.Tx) error {
 
 	if err := updateWorkflowTemplateManifest(
 		filepath.Join("workflows", "pytorch-mnist-training", "20210118175809.yaml"),
-		tensorflowObjectDetectionWorkflowTemplateName,
+		pytorchWorkflowTemplateName,
 		map[string]string{
 			"created-by": "system",
 		},
@@ -51,7 +51,7 @@ func Up20210118175809(tx *sql.Tx) error {
 
 	if err := updateWorkflowTemplateManifest(
 		filepath.Join("workflows", "tensorflow-mnist-training", "20210118175809.yaml"),
-		tensorflowObjectDetectionWorkflowTemplateName,
+		tensorflowWorkflowTemplateName,
 		map[string]string{
 			"created-by": "system",
 			"framework":  "tensorflow",
@@ -87,7 +87,7 @@ func Down20210118175809(tx *sql.Tx) error {
 
 	if err := updateWorkflowTemplateManifest(
 		filepath.Join("workflows", "tensorflow-mnist-training", "20201223062947.yaml"),
-		tensorflowObjectDetectionWorkflowTemplateName,
+		tensorflowWorkflowTemplateName,
 		map[string]string{
 			"created-by": "system",
 			"framework":  "tensorflow",
@@ -99,7 +99,7 @@ func Down20210118175809(tx *sql.Tx) error {
 
 	if err := updateWorkflowTemplateManifest(
 		filepath.Join("workflows", "pytorch-mnist-training", "20201221194344.yaml"),
-		tensorflowObjectDetectionWorkflowTemplateName,
+		pytorchWorkflowTemplateName,
 		map[string]string{
 			"created-by": "system",
 		},
@@ -109,7 +109,7 @@ func Down20210118175809(tx *sql.Tx) error {
 
 	if err := updateWorkflowTemplateManifest(
 		filepath.Join("workflows", "maskrcnn-training", "20201221195937.yaml"),
-		tensorflowObjectDetectionWorkflowTemplateName,
+		maskRCNNWorkflowTemplateName,
 		map[string]string{
 			"created-by": "system",
 			"used-by":    "cvat",
@@ -120,7 +120,7 @@ func Down20210118175809(tx *sql.Tx) error {
 
 	return updateWorkflowTemplateManifest(
 		filepath.Join("workflows", "hyperparameter-tuning", "20201225172926.yaml"),
-		tensorflowObjectDetectionWorkflowTemplateName,
+		hyperparameterTuningTemplateName,
 		map[string]string{
 			"framework":  "tensorflow",
 			"tuner":      "TPE",
