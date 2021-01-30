@@ -1,4 +1,3 @@
-# Workspace arguments
 containers:
   - name: cvat-db
     image: postgres:10-alpine

@@ -176,7 +176,7 @@ templates:
       {{.NodePoolLabel}}: '{{workflow.parameters.sys-node-pool}}'
     sidecars:
       - name: tensorboard
-        image: tensorflow/tensorflow:2.3.0
+        image: onepanel/dl:0.17.0
         command:
           - sh
           - '-c'
