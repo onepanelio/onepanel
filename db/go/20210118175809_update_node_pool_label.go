@@ -44,6 +44,7 @@ func Up20210118175809(tx *sql.Tx) error {
 		pytorchWorkflowTemplateName,
 		map[string]string{
 			"created-by": "system",
+			"framework":  "pytorch",
 		},
 	); err != nil {
 		return err
@@ -55,7 +56,6 @@ func Up20210118175809(tx *sql.Tx) error {
 		map[string]string{
 			"created-by": "system",
 			"framework":  "tensorflow",
-			"used-by":    "cvat",
 		},
 	); err != nil {
 		return err
@@ -91,7 +91,6 @@ func Down20210118175809(tx *sql.Tx) error {
 		map[string]string{
 			"created-by": "system",
 			"framework":  "tensorflow",
-			"used-by":    "cvat",
 		},
 	); err != nil {
 		return err
