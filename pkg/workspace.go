@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	sq "github.com/Masterminds/squirrel"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
@@ -829,18 +830,22 @@ func (c *Client) updateWorkspace(namespace, uid, workspaceAction, resourceAction
 	return
 }
 
+// UpdateWorkspace marks a workspace as "updating"
 func (c *Client) UpdateWorkspace(namespace, uid string, parameters []Parameter) (err error) {
 	return c.updateWorkspace(namespace, uid, "update", "apply", &WorkspaceStatus{Phase: WorkspaceUpdating}, parameters...)
 }
 
+// PauseWorkspace pauses a workspace
 func (c *Client) PauseWorkspace(namespace, uid string) (err error) {
 	return c.updateWorkspace(namespace, uid, "pause", "delete", &WorkspaceStatus{Phase: WorkspacePausing})
 }
 
+// ResumeWorkspace resumes a workspace
 func (c *Client) ResumeWorkspace(namespace, uid string) (err error) {
 	return c.updateWorkspace(namespace, uid, "create", "apply", &WorkspaceStatus{Phase: WorkspaceLaunching})
 }
 
+// DeleteWorkspace deletes a workspace
 func (c *Client) DeleteWorkspace(namespace, uid string) (err error) {
 	return c.updateWorkspace(namespace, uid, "delete", "delete", &WorkspaceStatus{Phase: WorkspaceTerminating})
 }
@@ -883,13 +888,16 @@ func (c *Client) GetWorkspaceStatisticsForNamespace(namespace string) (report *W
 }
 
 // GetWorkspaceContainerLogs returns logs for a given container name in a Workspace
-func (c *Client) GetWorkspaceContainerLogs(namespace, uid, containerName string) (<-chan []*LogEntry, error) {
+func (c *Client) GetWorkspaceContainerLogs(namespace, uid, containerName string, sinceTime time.Time) (<-chan []*LogEntry, error) {
 	var stream io.ReadCloser
+
+	k8sSinceTime := metav1.NewTime(sinceTime)
 
 	stream, err := c.CoreV1().Pods(namespace).GetLogs(uid+"-0", &corev1.PodLogOptions{
 		Container:  containerName,
 		Follow:     true,
 		Timestamps: true,
+		SinceTime:  &k8sSinceTime,
 	}).Stream()
 
 	if err != nil {

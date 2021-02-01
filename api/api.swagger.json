@@ -2602,6 +2602,13 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "sinceTime",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
           }
         ],
         "tags": [
@@ -3982,6 +3989,23 @@
           "items": {
             "$ref": "#/definitions/Parameter"
           }
+        },
+        "workspaceComponents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WorkspaceComponent"
+          }
+        }
+      }
+    },
+    "WorkspaceComponent": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
         }
       }
     },

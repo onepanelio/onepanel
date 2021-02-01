@@ -62,6 +62,7 @@ func (c *Client) GetDefaultConfig() (config *ConfigMap, err error) {
 	return
 }
 
+// GetNamespaceConfig returns the NamespaceConfig given a namespace
 func (c *Client) GetNamespaceConfig(namespace string) (config *NamespaceConfig, err error) {
 	configMap, err := c.getConfigMap(namespace, "onepanel")
 	if err != nil {

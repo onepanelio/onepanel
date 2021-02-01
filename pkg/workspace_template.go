@@ -988,7 +988,7 @@ func (c *Client) generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *Wo
 	return workflowTemplate, nil
 }
 
-// CreateWorkspaceTemplateWorkflowTemplate generates and returns a workflowTemplate for a given workspaceTemplate manifest
+// GenerateWorkspaceTemplateWorkflowTemplate generates and returns a workflowTemplate for a given workspaceTemplate manifest
 func (c *Client) GenerateWorkspaceTemplateWorkflowTemplate(workspaceTemplate *WorkspaceTemplate) (workflowTemplate *WorkflowTemplate, err error) {
 	workflowTemplate, err = c.generateWorkspaceTemplateWorkflowTemplate(workspaceTemplate)
 	if err != nil {

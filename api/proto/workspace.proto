@@ -81,6 +81,16 @@ service WorkspaceService {
 	}
 }
 
+message WorkspaceComponent {
+	string name = 1;
+	string url = 2;
+}
+
+message WorkspaceComponent {
+	string name = 1;
+	string url = 2;
+}
+
 message Workspace {
 	string uid = 1;
 	string name = 2;
@@ -92,6 +102,7 @@ message Workspace {
 	repeated KeyValue labels = 8;
 	string url = 9;
 	repeated Parameter templateParameters = 10;
+	repeated WorkspaceComponent workspaceComponents = 11;
 }
 
 message WorkspaceStatus {
@@ -205,4 +216,5 @@ message GetWorkspaceContainerLogsRequest {
 	string namespace = 1;
 	string uid = 2;
 	string containerName = 3;
+	int64 sinceTime = 4;
 }
