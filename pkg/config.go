@@ -97,11 +97,6 @@ func (c *Client) GetNamespaceConfig(namespace string) (config *NamespaceConfig, 
 			secretKey, _ := base64.StdEncoding.DecodeString(secret.Data[config.ArtifactRepository.S3.SecretKeySecret.Key])
 			config.ArtifactRepository.S3.Secretkey = string(secretKey)
 		}
-	case config.ArtifactRepository.GCS != nil:
-		{
-			serviceJSON, _ := base64.StdEncoding.DecodeString(secret.Data[config.ArtifactRepository.GCS.ServiceAccountKeySecret.Key])
-			config.ArtifactRepository.GCS.ServiceAccountJSON = string(serviceJSON)
-		}
 	default:
 		return nil, util.NewUserError(codes.NotFound, "Artifact repository config not found.")
 	}
