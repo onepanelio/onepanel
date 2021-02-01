@@ -39,7 +39,7 @@ containers:
               jupyter labextension list 1>/dev/null 2> /data/.jup.txt;
               cat /data/.jup.txt | sed -n '2,$p' | awk 'sub(/v/,"@", $2){print $1$2}' > /data/.jupexported.txt;
   - name: sys-filesyncer
-    image: onepanel/filesyncer:0.18.0
+    image: onepanel/filesyncer:v0.18.0
     imagePullPolicy: Always
     args:
       - server
