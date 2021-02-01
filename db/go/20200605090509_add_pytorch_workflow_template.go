@@ -86,7 +86,7 @@ templates:
         optional: true
 `
 
-const pytorchMnistWorkflowTemplateName = "PyTorch Training"
+const pytorchWorkflowTemplateName = "PyTorch Training"
 
 func initialize20200605090509() {
 	if _, ok := initializedMigrations[20200605090509]; !ok {
@@ -120,7 +120,7 @@ func Up20200605090509(tx *sql.Tx) error {
 	}
 
 	workflowTemplate := &v1.WorkflowTemplate{
-		Name:     pytorchMnistWorkflowTemplateName,
+		Name:     pytorchWorkflowTemplateName,
 		Manifest: pytorchMnistWorkflowTemplate,
 	}
 
@@ -150,7 +150,7 @@ func Down20200605090509(tx *sql.Tx) error {
 		return err
 	}
 
-	uid, err := uid2.GenerateUID(pytorchMnistWorkflowTemplateName, 30)
+	uid, err := uid2.GenerateUID(pytorchWorkflowTemplateName, 30)
 	if err != nil {
 		return err
 	}

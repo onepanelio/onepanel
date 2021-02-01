@@ -17,7 +17,7 @@ func initialize20201221194344() {
 func Up20201221194344(tx *sql.Tx) error {
 	return updateWorkflowTemplateManifest(
 		filepath.Join("workflows", "pytorch-mnist-training", "20201221194344.yaml"),
-		pytorchMnistWorkflowTemplateName,
+		pytorchWorkflowTemplateName,
 		map[string]string{
 			"created-by": "system",
 		},
@@ -29,7 +29,7 @@ func Down20201221194344(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	return updateWorkflowTemplateManifest(
 		filepath.Join("workflows", "pytorch-mnist-training", "20200605090509.yaml"),
-		pytorchMnistWorkflowTemplateName,
+		pytorchWorkflowTemplateName,
 		map[string]string{
 			"created-by": "system",
 		},
