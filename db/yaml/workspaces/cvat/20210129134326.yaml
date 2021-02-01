@@ -22,7 +22,7 @@ containers:
       - containerPort: 6379
         name: tcp
   - name: cvat
-    image: onepanel/cvat:0.18.0_cvat.1.0.0
+    image: onepanel/cvat:v0.18.0_cvat.1.0.0
     env:
       - name: DJANGO_MODWSGI_EXTRA_ARGS
         value: ""
@@ -70,7 +70,7 @@ containers:
         mountPath: /etc/onepanel
         readOnly: true
   - name: cvat-ui
-    image: onepanel/cvat-ui:0.18.0_cvat.1.0.0
+    image: onepanel/cvat-ui:v0.18.0_cvat.1.0.0
     ports:
       - containerPort: 80
         name: http
