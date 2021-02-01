@@ -75,7 +75,7 @@ containers:
       - containerPort: 80
         name: http
   - name: sys-filesyncer
-    image: onepanel/filesyncer:0.18.0
+    image: onepanel/filesyncer:v0.18.0
     imagePullPolicy: Always
     args:
       - server
