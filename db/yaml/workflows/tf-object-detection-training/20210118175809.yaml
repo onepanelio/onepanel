@@ -72,7 +72,7 @@ arguments:
       displayName: Hyperparameters
       visibility: public
       type: textarea.textarea
-      hint: 'See <a href="https://docs.onepanel.ai/docs/reference/cvat/built-in-models#tfod-hyperparameters" target="_blank">documentation</a> for more information on parameters.'
+      hint: 'See <a href="https://docs.onepanel.ai/docs/reference/workflows/training#tfod-hyperparameters" target="_blank">documentation</a> for more information on parameters.'
 
     - name: dump-format
       value: cvat_coco

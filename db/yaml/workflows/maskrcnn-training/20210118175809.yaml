@@ -53,7 +53,7 @@ arguments:
         stage_2_epochs: 1    #  Epochs for finetune layers
         stage_3_epochs: 1    #  Epochs for all layers
         num_steps: 1000     #  Num steps per epoch
-      hint: "See <a href='https://docs.onepanel.ai/docs/reference/cvat/built-in-models#maskrcnn-hyperparameters' target='_blank'>documentation</a> for more information on parameters."
+      hint: 'See <a href="https://docs.onepanel.ai/docs/reference/workflows/training#maskrcnn-hyperparameters" target="_blank">documentation</a> for more information on parameters.'
 
     - name: dump-format
       value: cvat_coco
