@@ -119,7 +119,7 @@
         ]
       }
     },
-    "/apis/v1beta1/config": {
+    "/apis/v1beta1/config/{namespace}": {
       "get": {
         "operationId": "GetConfig",
         "responses": {
@@ -136,6 +136,14 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
         "tags": [
           "ConfigService"
         ]
@@ -3214,6 +3222,9 @@
         },
         "nodePool": {
           "$ref": "#/definitions/NodePool"
+        },
+        "bucket": {
+          "type": "string"
         }
       }
     },
