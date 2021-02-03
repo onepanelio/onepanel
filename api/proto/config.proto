@@ -7,15 +7,25 @@ import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
 service ConfigService {
-    rpc GetConfig (GetConfigRequest) returns (GetConfigResponse) {
+    rpc GetConfig (google.protobuf.Empty) returns (GetConfigResponse) {
         option (google.api.http) = {
-            get: "/apis/v1beta1/config/{namespace}"
+            get: "/apis/v1beta1/config"
+        };
+    }
+
+    rpc GetNamespaceConfig (GetNamespaceConfigRequest) returns (GetNamespaceConfigResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/config"
         };
     }
 }
 
-message GetConfigRequest {
+message GetNamespaceConfigRequest {
     string namespace = 1;
+}
+
+message GetNamespaceConfigResponse {
+    string bucket = 1;
 }
 
 message GetConfigResponse {
@@ -23,7 +33,6 @@ message GetConfigResponse {
     string domain = 2;
     string fqdn = 3;
     NodePool nodePool = 4;
-    string bucket = 5;
 }
 
 message NodePoolOption {

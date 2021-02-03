@@ -119,7 +119,7 @@
         ]
       }
     },
-    "/apis/v1beta1/config/{namespace}": {
+    "/apis/v1beta1/config": {
       "get": {
         "operationId": "GetConfig",
         "responses": {
@@ -136,14 +136,6 @@
             }
           }
         },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
         "tags": [
           "ConfigService"
         ]
@@ -220,6 +212,36 @@
         ],
         "tags": [
           "NamespaceService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/config": {
+      "get": {
+        "operationId": "GetNamespaceConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetNamespaceConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ConfigService"
         ]
       }
     },
@@ -3222,9 +3244,6 @@
         },
         "nodePool": {
           "$ref": "#/definitions/NodePool"
-        },
-        "bucket": {
-          "type": "string"
         }
       }
     },
@@ -3236,6 +3255,14 @@
           "items": {
             "$ref": "#/definitions/KeyValue"
           }
+        }
+      }
+    },
+    "GetNamespaceConfigResponse": {
+      "type": "object",
+      "properties": {
+        "bucket": {
+          "type": "string"
         }
       }
     },
