@@ -28,11 +28,8 @@ func getArtifactRepositoryBucket(client *v1.Client, namespace string) (string, e
 		return "", err
 	}
 
-	switch {
-	case namespaceConfig.ArtifactRepository.S3 != nil:
+	if namespaceConfig.ArtifactRepository.S3 != nil {
 		return namespaceConfig.ArtifactRepository.S3.Bucket, nil
-	case namespaceConfig.ArtifactRepository.GCS != nil:
-		return namespaceConfig.ArtifactRepository.GCS.Bucket, nil
 	}
 
 	return "", fmt.Errorf("unknown artifact repository")
