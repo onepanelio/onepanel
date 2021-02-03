@@ -215,6 +215,36 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/config": {
+      "get": {
+        "operationId": "GetNamespaceConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetNamespaceConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ConfigService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/cron_workflow": {
       "post": {
         "operationId": "CreateCronWorkflow",
@@ -3225,6 +3255,14 @@
           "items": {
             "$ref": "#/definitions/KeyValue"
           }
+        }
+      }
+    },
+    "GetNamespaceConfigResponse": {
+      "type": "object",
+      "properties": {
+        "bucket": {
+          "type": "string"
         }
       }
     },

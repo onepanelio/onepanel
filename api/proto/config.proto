@@ -12,6 +12,20 @@ service ConfigService {
             get: "/apis/v1beta1/config"
         };
     }
+
+    rpc GetNamespaceConfig (GetNamespaceConfigRequest) returns (GetNamespaceConfigResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta1/{namespace}/config"
+        };
+    }
+}
+
+message GetNamespaceConfigRequest {
+    string namespace = 1;
+}
+
+message GetNamespaceConfigResponse {
+    string bucket = 1;
 }
 
 message GetConfigResponse {
