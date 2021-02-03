@@ -97,6 +97,7 @@ func (c *Client) GetNamespaceConfig(namespace string) (config *NamespaceConfig, 
 			config.ArtifactRepository.S3.AccessKey = string(accessKey)
 			secretKey, _ := base64.StdEncoding.DecodeString(secret.Data[config.ArtifactRepository.S3.SecretKeySecret.Key])
 			config.ArtifactRepository.S3.Secretkey = string(secretKey)
+			//config.ArtifactRepository.S3.Endpoint = "localhost:9000"
 		}
 	case config.ArtifactRepository.GCS != nil:
 		{
