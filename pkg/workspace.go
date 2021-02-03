@@ -891,7 +891,10 @@ func (c *Client) GetWorkspaceStatisticsForNamespace(namespace string) (report *W
 func (c *Client) GetWorkspaceContainerLogs(namespace, uid, containerName string, sinceTime time.Time) (<-chan []*LogEntry, error) {
 	var stream io.ReadCloser
 
-	k8sSinceTime := metav1.NewTime(sinceTime)
+	k8sSinceTime := metav1.NewTime(sinceTime.UTC())
+
+	fmt.Printf("%v\n", sinceTime.Unix())
+	fmt.Printf("%v\n", k8sSinceTime.Unix())
 
 	stream, err := c.CoreV1().Pods(namespace).GetLogs(uid+"-0", &corev1.PodLogOptions{
 		Container:  containerName,
