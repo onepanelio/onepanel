@@ -114,10 +114,15 @@ templates:
           optional: true
     container:
       image: onepanel/dl:0.17.0
+      command:
+        - sh
+        - -c
       args:
-        - --config
-        # [CHANGE] Update the path below to point to config.yaml path as described above
-        - /mnt/data/src/workflows/hyperparameter-tuning/mnist/config.yaml
+        # [CHANGE] Update the config path below to point to config.yaml path as described above
+        # Note that you can `pip install` additional tools here if necessary
+        - |
+          python -u /opt/onepanel/nni/start.py \
+            --config /mnt/data/src/workflows/hyperparameter-tuning/mnist/config.yaml
       workingDir: /mnt
       volumeMounts:
         - name: hyperparamtuning-data
