@@ -56,6 +56,30 @@ func main() {
 			log.Fatalf("Failed to connect to Kubernetes cluster: %v", err)
 		}
 
+		client.ClearSystemConfigCache()
+		sysConfig, err := client.GetSystemConfig()
+		if err != nil {
+			log.Fatalf("Failed to get system config: %v", err)
+		}
+
+		dbDriverName, databaseDataSourceName := sysConfig.DatabaseConnection()
+		// sqlx.MustConnect will panic when it can't connect to DB. In that case, this whole application will crash.
+		// This is okay, as the pod will restart and try connecting to DB again.
+		// dbDriverName may be nil, but sqlx will then panic.
+		db := sqlx.MustConnect(dbDriverName, databaseDataSourceName)
+		goose.SetTableName("goose_db_version")
+		if err := goose.Run("up", db.DB, filepath.Join("db", "sql")); err != nil {
+			log.Fatalf("Failed to run database sql migrations: %v", err)
+			db.Close()
+		}
+
+		goose.SetTableName("goose_db_go_version")
+		migrations.Initialize()
+		if err := goose.Run("up", db.DB, filepath.Join("db", "go")); err != nil {
+			log.Fatalf("Failed to run database go migrations: %v", err)
+			db.Close()
+		}
+
 		go watchConfigmapChanges("onepanel", stopCh, func(configMap *corev1.ConfigMap) error {
 			log.Printf("Configmap changed")
 			stopCh <- struct{}{}
@@ -65,28 +89,12 @@ func main() {
 
 		for {
 			client.ClearSystemConfigCache()
-			sysConfig, err := client.GetSystemConfig()
+			sysConfig, err = client.GetSystemConfig()
 			if err != nil {
 				log.Fatalf("Failed to get system config: %v", err)
 			}
 
-			dbDriverName, databaseDataSourceName := sysConfig.DatabaseConnection()
-			// sqlx.MustConnect will panic when it can't connect to DB. In that case, this whole application will crash.
-			// This is okay, as the pod will restart and try connecting to DB again.
-			// dbDriverName may be nil, but sqlx will then panic.
-			db := sqlx.MustConnect(dbDriverName, databaseDataSourceName)
-			goose.SetTableName("goose_db_version")
-			if err := goose.Run("up", db.DB, filepath.Join("db", "sql")); err != nil {
-				log.Fatalf("Failed to run database sql migrations: %v", err)
-				db.Close()
-			}
-
-			goose.SetTableName("goose_db_go_version")
-			migrations.Initialize()
-			if err := goose.Run("up", db.DB, filepath.Join("db", "go")); err != nil {
-				log.Fatalf("Failed to run database go migrations: %v", err)
-				db.Close()
-			}
+			dbDriverName, databaseDataSourceName = sysConfig.DatabaseConnection()
 
 			s := startRPCServer(v1.NewDB(db), kubeConfig, sysConfig, stopCh)
 
@@ -94,7 +102,7 @@ func main() {
 
 			s.Stop()
 			if err := db.Close(); err != nil {
-				log.Printf("[error] closing db connection")
+				log.Printf("[error] closing db connection %v", err.Error())
 			}
 		}
 	}()
