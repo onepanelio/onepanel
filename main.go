@@ -95,6 +95,7 @@ func main() {
 			}
 
 			dbDriverName, databaseDataSourceName = sysConfig.DatabaseConnection()
+			db = sqlx.MustConnect(dbDriverName, databaseDataSourceName)
 
 			s := startRPCServer(v1.NewDB(db), kubeConfig, sysConfig, stopCh)
 
