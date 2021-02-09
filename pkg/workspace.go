@@ -315,11 +315,6 @@ func (c *Client) addRuntimeFieldsToWorkspaceTemplate(t wfv1.Template, workspace 
 	}
 
 	mainContainerIndex := -1
-	if len(containers) == 2 {
-		// It's 1 because we prepend the node capture container and we want the other container to be main
-		mainContainerIndex = 1
-	}
-
 	for i := range containers {
 		container := containers[i]
 

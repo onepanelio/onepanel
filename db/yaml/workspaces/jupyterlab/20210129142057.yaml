@@ -8,6 +8,8 @@ containers:
         value: "'{'headers':{'Content-Security-Policy':\"frame-ancestors\ *\ 'self'\"}}'"
       - name: TENSORBOARD_PROXY_URL
         value: '//$(ONEPANEL_RESOURCE_UID)--$(ONEPANEL_RESOURCE_NAMESPACE).$(ONEPANEL_DOMAIN)/tensorboard'
+      - name: ONEPANEL_MAIN_CONTAINER
+        value: 'true'
     ports:
       - containerPort: 8888
         name: jupyterlab
