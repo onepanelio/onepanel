@@ -19,7 +19,7 @@ Production grade, end-to-end vision AI platform with fully integrated modules fo
 -  End-to-end workflow and infrastructure automation for production scale vision AI
 -  Best of breed, open source deep learning tools seamlessly integrated in one unified platform
 -  Scale and distribute your data, training and hyperparameter tuning pipelines to multiple CPU/GPU nodes
--  Customizable, reproducible and version controlled tooling and pipeline templates
+-  Customizable, reproducible and version controlled environments and pipelines
 -  Scalability, flexibility and resiliency of Kubernetes without the complexities
 
 ## Features
@@ -62,4 +62,4 @@ We are grateful for the support these communities provide and do our best to con
 Onepanel is licensed under [Apache 2.0](https://github.com/onepanelio/core/blob/master/LICENSE).
 
 ## Need a managed solution?
-Visit our [website](https://www.onepanel.io/) for more information about our enterprise offering.
+Visit our [website](https://www.onepanel.ai/) for more information about our enterprise offering.
