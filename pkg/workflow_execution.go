@@ -2089,7 +2089,11 @@ func injectFilesyncerSidecar(wf *wfv1.Workflow) error {
 
 	for i := range wf.Spec.Templates {
 		template := &wf.Spec.Templates[i]
-		template.Sidecars = append(template.Sidecars, filesyncer)
+
+		if (template.Container != nil && len(template.Container.VolumeMounts) != 0) ||
+			(template.Script != nil && len(template.Script.VolumeMounts) != 0) {
+			template.Sidecars = append(template.Sidecars, filesyncer)
+		}
 	}
 
 	return nil
