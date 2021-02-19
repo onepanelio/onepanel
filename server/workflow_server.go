@@ -2,9 +2,11 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/onepanelio/core/pkg/util"
+	"github.com/onepanelio/core/pkg/util/collection"
 	"github.com/onepanelio/core/pkg/util/request"
 	"github.com/onepanelio/core/pkg/util/request/pagination"
 	"github.com/onepanelio/core/pkg/util/router"
@@ -35,15 +37,68 @@ func NewWorkflowServer() *WorkflowServer {
 	return &WorkflowServer{}
 }
 
+// removedUnusedManifestFields removes any fields not necessary in a Workflow Manfiest.
+// this is used to cut down the size for more efficient data transmission
+func removedUnusedManifestFields(manifest string) (string, error) {
+	if manifest == "" {
+		return "", nil
+	}
+
+	result := make(map[string]map[string]interface{})
+	if err := json.Unmarshal([]byte(manifest), &result); err != nil {
+		return "", err
+	}
+
+	for key := range result {
+		collection.RemoveBlanks(result[key])
+	}
+
+	delete(result["metadata"], "managedFields")
+	delete(result["status"], "resourcesDuration")
+
+	templatesRaw, ok := result["spec"]["templates"]
+	if ok {
+		templatesArray := templatesRaw.([]interface{})
+
+		for _, template := range templatesArray {
+			templateMap := template.(map[string]interface{})
+			delete(templateMap, "metadata")
+		}
+	}
+
+	nodeStatusRaw, ok := result["status"]["nodes"]
+	if ok {
+		nodeStatusArray := nodeStatusRaw.(map[string]interface{})
+
+		for _, nodeStatus := range nodeStatusArray {
+			nodeStatusMap := nodeStatus.(map[string]interface{})
+			delete(nodeStatusMap, "resourcesDuration")
+		}
+	}
+
+	finalManifestBytes, err := json.Marshal(result)
+	if err != nil {
+		return "", err
+	}
+
+	return string(finalManifestBytes), nil
+}
+
 // apiWorkflowExecution converts a package workflow execution to the api version
 // router is optional
 func apiWorkflowExecution(wf *v1.WorkflowExecution, router router.Web) (workflow *api.WorkflowExecution) {
+	manifest, err := removedUnusedManifestFields(wf.Manifest)
+	if err != nil {
+		log.Printf("error trimming manifest %v", err)
+		return nil
+	}
+
 	workflow = &api.WorkflowExecution{
 		CreatedAt: wf.CreatedAt.Format(time.RFC3339),
 		Uid:       wf.UID,
 		Name:      wf.Name,
 		Phase:     string(wf.Phase),
-		Manifest:  wf.Manifest,
+		Manifest:  manifest,
 		Labels:    converter.MappingToKeyValue(wf.Labels),
 		Metrics:   converter.MetricsToAPI(wf.Metrics),
 	}

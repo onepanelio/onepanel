@@ -288,7 +288,7 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 	if opts.PodGCStrategy == nil {
 		if wf.Spec.PodGC == nil {
 			//TODO - Load this data from onepanel config-map or secret
-			podGCStrategy := env.GetEnv("ARGO_POD_GC_STRATEGY", "OnPodCompletion")
+			podGCStrategy := env.Get("ARGO_POD_GC_STRATEGY", "OnPodCompletion")
 			strategy := PodGCStrategy(podGCStrategy)
 			wf.Spec.PodGC = &wfv1.PodGC{
 				Strategy: strategy,
@@ -2071,8 +2071,8 @@ func injectFilesyncerSidecar(wf *wfv1.Workflow) error {
 	filesyncer := wfv1.UserContainer{
 		Container: corev1.Container{
 			Name:  "sys-filesyncer",
-			Image: "onepanel/filesyncer:test-server-6",
-			Args:  []string{"server", "-server-prefix=/sys/filesyncer"},
+			Image: "onepanel/filesyncer:test-server-7",
+			Args:  []string{"server", "-server-prefix=/sys/filesyncer", "-backend=local-storage"},
 			Env: []corev1.EnvVar{
 				{
 					Name:  "ONEPANEL_INTERACTIVE_SIDECAR",
