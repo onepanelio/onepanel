@@ -288,7 +288,7 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 	if opts.PodGCStrategy == nil {
 		if wf.Spec.PodGC == nil {
 			//TODO - Load this data from onepanel config-map or secret
-			podGCStrategy := env.GetEnv("ARGO_POD_GC_STRATEGY", "OnPodCompletion")
+			podGCStrategy := env.Get("ARGO_POD_GC_STRATEGY", "OnPodCompletion")
 			strategy := PodGCStrategy(podGCStrategy)
 			wf.Spec.PodGC = &wfv1.PodGC{
 				Strategy: strategy,
@@ -498,6 +498,10 @@ func (c *Client) createWorkflow(namespace string, workflowTemplateID uint64, wor
 		newParameters = append(newParameters, param)
 	}
 	wf.Spec.Arguments.Parameters = newParameters
+
+	if err = injectFilesyncerSidecar(wf); err != nil {
+		return nil, err
+	}
 
 	if err = injectWorkflowExecutionStatusCaller(wf, wfv1.NodeRunning); err != nil {
 		return nil, err
@@ -2061,6 +2065,38 @@ func getCURLNodeTemplate(name, curlMethod, curlPath, curlBody string, inputs wfv
 		},
 	}
 	return
+}
+
+func injectFilesyncerSidecar(wf *wfv1.Workflow) error {
+	filesyncer := wfv1.UserContainer{
+		Container: corev1.Container{
+			Name:  "sys-filesyncer",
+			Image: "onepanel/filesyncer:v0.19.0",
+			Args:  []string{"server", "-server-prefix=/sys/filesyncer", "-backend=local-storage"},
+			Env: []corev1.EnvVar{
+				{
+					Name:  "ONEPANEL_INTERACTIVE_SIDECAR",
+					Value: "true",
+				},
+			},
+			Ports: []corev1.ContainerPort{
+				{
+					ContainerPort: 8888,
+				},
+			},
+		},
+	}
+
+	for i := range wf.Spec.Templates {
+		template := &wf.Spec.Templates[i]
+
+		if (template.Container != nil && len(template.Container.VolumeMounts) != 0) ||
+			(template.Script != nil && len(template.Script.VolumeMounts) != 0) {
+			template.Sidecars = append(template.Sidecars, filesyncer)
+		}
+	}
+
+	return nil
 }
 
 func injectExitHandlerWorkflowExecutionStatistic(wf *wfv1.Workflow, workflowTemplateId *uint64) error {
