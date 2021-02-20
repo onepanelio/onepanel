@@ -2071,7 +2071,7 @@ func injectFilesyncerSidecar(wf *wfv1.Workflow) error {
 	filesyncer := wfv1.UserContainer{
 		Container: corev1.Container{
 			Name:  "sys-filesyncer",
-			Image: "onepanel/filesyncer:test-server-7",
+			Image: "onepanel/filesyncer:v0.19.0",
 			Args:  []string{"server", "-server-prefix=/sys/filesyncer", "-backend=local-storage"},
 			Env: []corev1.EnvVar{
 				{
