@@ -522,8 +522,11 @@ func unmarshalWorkflowTemplate(spec *WorkspaceSpec, serviceManifest, virtualServ
 				continue
 			}
 
-			volumeClaimItems = append(volumeClaimItems, wfv1.Item{Type: wfv1.String, StrVal: v.Name})
-
+			item, err := wfv1.ParseItem(fmt.Sprintf(`"%v"`, v.Name))
+			if err != nil {
+				return "", err
+			}
+			volumeClaimItems = append(volumeClaimItems, item)
 			volumeClaimsMapped[v.Name] = true
 		}
 	}
@@ -580,7 +583,7 @@ metadata:
 							Parameters: []wfv1.Parameter{
 								{
 									Name:  "update-revision",
-									Value: ptr.String("{{tasks.create-stateful-set.outputs.parameters.update-revision}}"),
+									Value: wfv1.AnyStringPtr("{{tasks.create-stateful-set.outputs.parameters.update-revision}}"),
 								},
 							},
 						},
@@ -611,7 +614,7 @@ metadata:
 							Parameters: []wfv1.Parameter{
 								{
 									Name:  "sys-pvc-name",
-									Value: ptr.String("{{item}}"),
+									Value: wfv1.AnyStringPtr("{{item}}"),
 								},
 							},
 						},
@@ -626,7 +629,7 @@ metadata:
 							Parameters: []wfv1.Parameter{
 								{
 									Name:  "sys-workspace-phase",
-									Value: ptr.String(string(WorkspaceRunning)),
+									Value: wfv1.AnyStringPtr(WorkspaceRunning),
 								},
 							},
 						},
@@ -640,7 +643,7 @@ metadata:
 							Parameters: []wfv1.Parameter{
 								{
 									Name:  "sys-workspace-phase",
-									Value: ptr.String(string(WorkspacePaused)),
+									Value: wfv1.AnyStringPtr(WorkspacePaused),
 								},
 							},
 						},
@@ -654,7 +657,7 @@ metadata:
 							Parameters: []wfv1.Parameter{
 								{
 									Name:  "sys-workspace-phase",
-									Value: ptr.String(string(WorkspaceTerminated)),
+									Value: wfv1.AnyStringPtr(WorkspaceTerminated),
 								},
 							},
 						},
