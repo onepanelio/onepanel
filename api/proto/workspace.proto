@@ -59,6 +59,7 @@ service WorkspaceService {
 	rpc ResumeWorkspace (ResumeWorkspaceRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
             put: "/apis/v1beta1/{namespace}/workspaces/{uid}/resume"
+						body: "body"
         };
 	}
 
@@ -175,6 +176,7 @@ message PauseWorkspaceRequest {
 message ResumeWorkspaceRequest {
 	string namespace = 1;
 	string uid = 2;
+	UpdateWorkspaceBody body = 3;
 }
 
 message DeleteWorkspaceRequest {
