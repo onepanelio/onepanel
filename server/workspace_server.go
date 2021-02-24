@@ -334,18 +334,7 @@ func (s *WorkspaceServer) ResumeWorkspace(ctx context.Context, req *api.ResumeWo
 		return &empty.Empty{}, err
 	}
 
-	var parameters []v1.Parameter
-	for _, param := range req.Body.Parameters {
-		if param.Type == "input.hidden" {
-			continue
-		}
-
-		parameters = append(parameters, v1.Parameter{
-			Name:  param.Name,
-			Value: ptr.String(param.Value),
-		})
-	}
-	err = client.ResumeWorkspace(req.Namespace, req.Uid, parameters)
+	err = client.ResumeWorkspace(req.Namespace, req.Uid)
 
 	return &empty.Empty{}, err
 }
@@ -406,7 +395,7 @@ func (s *WorkspaceServer) RetryLastWorkspaceAction(ctx context.Context, req *api
 			return nil, err
 		}
 	case v1.WorkspaceFailedToResume:
-		if err := client.ResumeWorkspace(req.Namespace, workspace.UID, workspace.Parameters); err != nil {
+		if err := client.ResumeWorkspace(req.Namespace, workspace.UID); err != nil {
 			return nil, err
 		}
 	case v1.WorkspaceFailedToTerminate:
