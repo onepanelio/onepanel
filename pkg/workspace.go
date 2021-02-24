@@ -836,8 +836,8 @@ func (c *Client) PauseWorkspace(namespace, uid string) (err error) {
 }
 
 // ResumeWorkspace resumes a workspace
-func (c *Client) ResumeWorkspace(namespace, uid string) (err error) {
-	return c.updateWorkspace(namespace, uid, "create", "apply", &WorkspaceStatus{Phase: WorkspaceLaunching})
+func (c *Client) ResumeWorkspace(namespace, uid string, parameters []Parameter) (err error) {
+	return c.updateWorkspace(namespace, uid, "create", "apply", &WorkspaceStatus{Phase: WorkspaceLaunching}, parameters...)
 }
 
 // DeleteWorkspace deletes a workspace
