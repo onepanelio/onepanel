@@ -81,6 +81,10 @@ func apiWorkspace(wt *v1.Workspace, config v1.SystemConfig) *api.Workspace {
 
 	nodePoolMap, err := config.NodePoolOptionsMap()
 	if err != nil {
+		log.WithFields(log.Fields{
+			"Method": "apiWorkspace",
+			"Error":  "Unable to get Node Pool Options Map",
+		}).Error(err.Error())
 		return nil
 	}
 
