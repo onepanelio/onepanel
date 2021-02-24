@@ -79,6 +79,21 @@ func apiWorkspace(wt *v1.Workspace, config v1.SystemConfig) *api.Workspace {
 	}
 	res.Parameters = converter.ParametersToAPI(wt.Parameters)
 
+	nodePoolMap, err := config.NodePoolOptionsMap()
+	if err != nil {
+		return nil
+	}
+
+	for _, parameter := range res.Parameters {
+		if parameter.Name == "sys-node-pool" {
+			mapVal := nodePoolMap[parameter.Value]
+			res.MachineType = &api.MachineType{
+				Name:  mapVal.Name,
+				Value: mapVal.Value,
+			}
+		}
+	}
+
 	res.Status = &api.WorkspaceStatus{
 		Phase: string(wt.Status.Phase),
 	}
@@ -156,7 +171,7 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 	return apiWorkspace, nil
 }
 
-// GetWorkspace returns a Workspace information
+// GetWorkspace returns Workspace information
 func (s *WorkspaceServer) GetWorkspace(ctx context.Context, req *api.GetWorkspaceRequest) (*api.Workspace, error) {
 	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "onepanel.io", "workspaces", req.Uid)
@@ -319,7 +334,18 @@ func (s *WorkspaceServer) ResumeWorkspace(ctx context.Context, req *api.ResumeWo
 		return &empty.Empty{}, err
 	}
 
-	err = client.ResumeWorkspace(req.Namespace, req.Uid)
+	var parameters []v1.Parameter
+	for _, param := range req.Body.Parameters {
+		if param.Type == "input.hidden" {
+			continue
+		}
+
+		parameters = append(parameters, v1.Parameter{
+			Name:  param.Name,
+			Value: ptr.String(param.Value),
+		})
+	}
+	err = client.ResumeWorkspace(req.Namespace, req.Uid, parameters)
 
 	return &empty.Empty{}, err
 }
@@ -380,7 +406,7 @@ func (s *WorkspaceServer) RetryLastWorkspaceAction(ctx context.Context, req *api
 			return nil, err
 		}
 	case v1.WorkspaceFailedToResume:
-		if err := client.ResumeWorkspace(req.Namespace, workspace.UID); err != nil {
+		if err := client.ResumeWorkspace(req.Namespace, workspace.UID, workspace.Parameters); err != nil {
 			return nil, err
 		}
 	case v1.WorkspaceFailedToTerminate:
