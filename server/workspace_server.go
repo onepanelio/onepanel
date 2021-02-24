@@ -79,6 +79,21 @@ func apiWorkspace(wt *v1.Workspace, config v1.SystemConfig) *api.Workspace {
 	}
 	res.Parameters = converter.ParametersToAPI(wt.Parameters)
 
+	nodePoolMap, err := config.NodePoolOptionsMap()
+	if err != nil {
+		return nil
+	}
+
+	for _, parameter := range res.Parameters {
+		if parameter.Name == "sys-node-pool" {
+			mapVal := nodePoolMap[parameter.Value]
+			res.MachineType = &api.MachineType{
+				Name:  mapVal.Name,
+				Value: mapVal.Value,
+			}
+		}
+	}
+
 	res.Status = &api.WorkspaceStatus{
 		Phase: string(wt.Status.Phase),
 	}

@@ -105,6 +105,7 @@ message Workspace {
 	string url = 9;
 	repeated Parameter templateParameters = 10;
 	repeated WorkspaceComponent workspaceComponents = 11;
+	MachineType machineType = 12;
 }
 
 message WorkspaceStatus {

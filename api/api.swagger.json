@@ -3852,6 +3852,17 @@
         }
       }
     },
+    "MachineType": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
     "Metric": {
       "type": "object",
       "properties": {
@@ -4235,6 +4246,9 @@
           "items": {
             "$ref": "#/definitions/WorkspaceComponent"
           }
+        },
+        "machineType": {
+          "$ref": "#/definitions/MachineType"
         }
       }
     },

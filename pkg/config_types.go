@@ -131,6 +131,28 @@ func (s SystemConfig) NodePoolOptionsAsParameters() (result []*ParameterOption, 
 	return
 }
 
+// NodePoolOptionsMap returns a map where each key is a node pool value and the value is a NodePoolOption
+func (s SystemConfig) NodePoolOptionsMap() (result map[string]*NodePoolOption, err error) {
+	data := s.GetValue("applicationNodePoolOptions")
+	if data == nil {
+		return nil, fmt.Errorf("no nodePoolOptions in config")
+	}
+
+	options := make([]*NodePoolOption, 0)
+	if err = k8yaml.Unmarshal([]byte(*data), &options); err != nil {
+		return
+	}
+
+	result = make(map[string]*NodePoolOption)
+	for i := range options {
+		val := options[i]
+
+		result[val.Value] = val
+	}
+
+	return
+}
+
 // NodePoolOptionByValue returns the nodePoolOption based on a given value
 func (s SystemConfig) NodePoolOptionByValue(value string) (option *NodePoolOption, err error) {
 	options, err := s.NodePoolOptions()
@@ -153,8 +175,8 @@ func (s SystemConfig) DatabaseDriverName() *string {
 
 // DatabaseConnection returns system config information to connect to a database
 func (s SystemConfig) DatabaseConnection() (driverName, dataSourceName string) {
-	dataSourceName = fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
-		s["databaseHost"], s["databaseUsername"], s["databasePassword"], s["databaseName"])
+	dataSourceName = fmt.Sprintf("host=%v port=5433 user=%v password=%v dbname=%v sslmode=disable",
+		"localhost", s["databaseUsername"], s["databasePassword"], s["databaseName"])
 
 	driverName = *s.DatabaseDriverName()
 
