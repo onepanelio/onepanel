@@ -385,6 +385,12 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 				injectArtifactRepositoryConfig(&artifact, namespaceConfig)
 				template.Inputs.Artifacts[j] = artifact
 			}
+
+			if template.Metadata.Labels == nil {
+				template.Metadata.Labels = make(map[string]string)
+			}
+			template.Metadata.Labels["onepanelio/entity-type"] = "Workflow"
+			template.Metadata.Labels["onepanelio/entity-uid"] = opts.GenerateName
 		}
 	}
 
