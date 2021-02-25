@@ -422,7 +422,9 @@ func createStatefulSetManifest(spec *WorkspaceSpec) (statefulSetManifest string,
 	template := corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
-				"app": "{{workflow.parameters.sys-uid}}",
+				"app":                     "{{workflow.parameters.sys-uid}}",
+				"onepanel.io/entity-type": "Workspace",
+				"onepanel.io/entity-uid":  "{{workflow.parameters.sys-uid}}",
 			},
 		},
 		Spec: corev1.PodSpec{
