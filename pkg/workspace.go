@@ -56,6 +56,24 @@ func applyWorkspaceFilter(sb sq.SelectBuilder, request *request.Request) (sq.Sel
 		})
 	}
 
+	// template, name are reserved labels.
+	// we query the columns on the appropriate tables instead
+	finalLabels := make([]*Label, 0)
+	for _, label := range filter.Labels {
+		if label.Key == "template" {
+			sb = sb.Where(sq.And{
+				sq.Expr("wt.name ILIKE ?", "%"+label.Value+"%"),
+			})
+		} else if label.Key == "name" {
+			sb = sb.Where(sq.And{
+				sq.Expr("w.name ILIKE ?", "%"+label.Value+"%"),
+			})
+		} else {
+			finalLabels = append(finalLabels, label)
+		}
+	}
+	filter.Labels = finalLabels
+
 	sb, err := ApplyLabelSelectQuery("w.labels", sb, &filter)
 	if err != nil {
 		return sb, err
@@ -963,4 +981,24 @@ func (c *Client) GetWorkspaceContainerLogs(namespace, uid, containerName string,
 	}()
 
 	return logWatcher, err
+}
+
+// ListWorkspacesField loads all of the distinct field values for workspaces
+func (c *Client) ListWorkspacesField(namespace, field string) (value []string, err error) {
+	if field != "name" {
+		return nil, fmt.Errorf("unsupported field '%v'", field)
+	}
+
+	columnName := fmt.Sprintf("w.%v", field)
+
+	sb := sb.Select(columnName).
+		Distinct().
+		From("workspaces w").
+		Where(sq.Eq{
+			"w.namespace": namespace,
+		}).OrderBy(columnName)
+
+	err = c.DB.Selectx(&value, sb)
+
+	return
 }

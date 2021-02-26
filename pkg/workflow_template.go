@@ -1228,3 +1228,24 @@ func (c *Client) GenerateWorkflowTemplateManifest(manifest string) (string, erro
 
 	return string(finalManifest), err
 }
+
+// ListWorkflowTemplatesField loads all of the distinct field values for workflow templates
+func (c *Client) ListWorkflowTemplatesField(namespace, field string, isSystem bool) (value []string, err error) {
+	if field != "name" {
+		return nil, fmt.Errorf("unsupported field '%v'", field)
+	}
+
+	columnName := fmt.Sprintf("wt.%v", field)
+
+	sb := sb.Select(columnName).
+		Distinct().
+		From("workflow_templates wt").
+		Where(sq.Eq{
+			"wt.namespace": namespace,
+			"wt.is_system": isSystem,
+		}).OrderBy(columnName)
+
+	err = c.DB.Selectx(&value, sb)
+
+	return
+}

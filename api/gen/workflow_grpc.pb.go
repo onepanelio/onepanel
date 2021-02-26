@@ -37,6 +37,7 @@ type WorkflowServiceClient interface {
 	UpdateWorkflowExecutionStatus(ctx context.Context, in *UpdateWorkflowExecutionStatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	AddWorkflowExecutionMetrics(ctx context.Context, in *AddWorkflowExecutionsMetricsRequest, opts ...grpc.CallOption) (*WorkflowExecutionsMetricsResponse, error)
 	UpdateWorkflowExecutionMetrics(ctx context.Context, in *UpdateWorkflowExecutionsMetricsRequest, opts ...grpc.CallOption) (*WorkflowExecutionsMetricsResponse, error)
+	ListWorkflowExecutionsField(ctx context.Context, in *ListWorkflowExecutionsFieldRequest, opts ...grpc.CallOption) (*ListWorkflowExecutionsFieldResponse, error)
 }
 
 type workflowServiceClient struct {
@@ -246,6 +247,15 @@ func (c *workflowServiceClient) UpdateWorkflowExecutionMetrics(ctx context.Conte
 	return out, nil
 }
 
+func (c *workflowServiceClient) ListWorkflowExecutionsField(ctx context.Context, in *ListWorkflowExecutionsFieldRequest, opts ...grpc.CallOption) (*ListWorkflowExecutionsFieldResponse, error) {
+	out := new(ListWorkflowExecutionsFieldResponse)
+	err := c.cc.Invoke(ctx, "/api.WorkflowService/ListWorkflowExecutionsField", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WorkflowServiceServer is the server API for WorkflowService service.
 // All implementations must embed UnimplementedWorkflowServiceServer
 // for forward compatibility
@@ -269,6 +279,7 @@ type WorkflowServiceServer interface {
 	UpdateWorkflowExecutionStatus(context.Context, *UpdateWorkflowExecutionStatusRequest) (*emptypb.Empty, error)
 	AddWorkflowExecutionMetrics(context.Context, *AddWorkflowExecutionsMetricsRequest) (*WorkflowExecutionsMetricsResponse, error)
 	UpdateWorkflowExecutionMetrics(context.Context, *UpdateWorkflowExecutionsMetricsRequest) (*WorkflowExecutionsMetricsResponse, error)
+	ListWorkflowExecutionsField(context.Context, *ListWorkflowExecutionsFieldRequest) (*ListWorkflowExecutionsFieldResponse, error)
 	mustEmbedUnimplementedWorkflowServiceServer()
 }
 
@@ -326,6 +337,9 @@ func (UnimplementedWorkflowServiceServer) AddWorkflowExecutionMetrics(context.Co
 }
 func (UnimplementedWorkflowServiceServer) UpdateWorkflowExecutionMetrics(context.Context, *UpdateWorkflowExecutionsMetricsRequest) (*WorkflowExecutionsMetricsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateWorkflowExecutionMetrics not implemented")
+}
+func (UnimplementedWorkflowServiceServer) ListWorkflowExecutionsField(context.Context, *ListWorkflowExecutionsFieldRequest) (*ListWorkflowExecutionsFieldResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListWorkflowExecutionsField not implemented")
 }
 func (UnimplementedWorkflowServiceServer) mustEmbedUnimplementedWorkflowServiceServer() {}
 
@@ -652,6 +666,24 @@ func _WorkflowService_UpdateWorkflowExecutionMetrics_Handler(srv interface{}, ct
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WorkflowService_ListWorkflowExecutionsField_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListWorkflowExecutionsFieldRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkflowServiceServer).ListWorkflowExecutionsField(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.WorkflowService/ListWorkflowExecutionsField",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkflowServiceServer).ListWorkflowExecutionsField(ctx, req.(*ListWorkflowExecutionsFieldRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _WorkflowService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "api.WorkflowService",
 	HandlerType: (*WorkflowServiceServer)(nil),
@@ -715,6 +747,10 @@ var _WorkflowService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateWorkflowExecutionMetrics",
 			Handler:    _WorkflowService_UpdateWorkflowExecutionMetrics_Handler,
+		},
+		{
+			MethodName: "ListWorkflowExecutionsField",
+			Handler:    _WorkflowService_ListWorkflowExecutionsField_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

@@ -272,3 +272,21 @@ func (s *WorkflowTemplateServer) ArchiveWorkflowTemplate(ctx context.Context, re
 		},
 	}, nil
 }
+
+// ListWorkflowTemplatesField returns a list of all the distinct values of a field from WorkflowTemplates
+func (s *WorkflowTemplateServer) ListWorkflowTemplatesField(ctx context.Context, req *api.ListWorkflowTemplatesFieldRequest) (*api.ListWorkflowTemplatesFieldResponse, error) {
+	client := getClient(ctx)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "onepanel.io", "workspaces", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	values, err := client.ListWorkflowTemplatesField(req.Namespace, req.FieldName, req.IsSystem)
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.ListWorkflowTemplatesFieldResponse{
+		Values: values,
+	}, nil
+}

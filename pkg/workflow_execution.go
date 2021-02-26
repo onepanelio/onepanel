@@ -116,6 +116,24 @@ func applyWorkflowExecutionFilter(sb sq.SelectBuilder, request *request.Request)
 		return sb, nil
 	}
 
+	// template, name are reserved labels.
+	// we query the columns on the appropriate tables instead
+	finalLabels := make([]*Label, 0)
+	for _, label := range filter.Labels {
+		if label.Key == "template" {
+			sb = sb.Where(sq.And{
+				sq.Expr("wt.name ILIKE ?", "%"+label.Value+"%"),
+			})
+		} else if label.Key == "name" {
+			sb = sb.Where(sq.And{
+				sq.Expr("we.name ILIKE ?", "%"+label.Value+"%"),
+			})
+		} else {
+			finalLabels = append(finalLabels, label)
+		}
+	}
+	filter.Labels = finalLabels
+
 	sb, err := ApplyLabelSelectQuery("we.labels", sb, &filter)
 	if err != nil {
 		return sb, err
@@ -2372,6 +2390,29 @@ func (c *Client) UpdateWorkflowExecutionMetrics(namespace, uid string, metrics M
 	if err != nil {
 		return nil, util.NewUserError(codes.Internal, "Error updating metrics.")
 	}
+
+	return
+}
+
+// ListWorkflowExecutionsField loads all of the distinct field values for workflow executions
+func (c *Client) ListWorkflowExecutionsField(namespace, field string) (value []string, err error) {
+	if field != "name" {
+		return nil, fmt.Errorf("unsupported field '%v'", field)
+	}
+
+	columnName := fmt.Sprintf("we.%v", field)
+
+	sb := sb.Select(columnName).
+		Distinct().
+		From("workflow_executions we").
+		Join("workflow_template_versions wtv ON we.workflow_template_version_id = wtv.id").
+		Join("workflow_templates wt ON wtv.workflow_template_id = wt.id").
+		Where(sq.And{sq.Eq{
+			"we.namespace": namespace,
+			"wt.is_system": false,
+		}}).OrderBy(columnName)
+
+	err = c.DB.Selectx(&value, sb)
 
 	return
 }

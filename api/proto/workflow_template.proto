@@ -65,6 +65,12 @@ service WorkflowTemplateService {
             put: "/apis/v1beta1/{namespace}/workflow_templates/{uid}/archive"
         };
     }
+
+    rpc ListWorkflowTemplatesField (ListWorkflowTemplatesFieldRequest) returns (ListWorkflowTemplatesFieldResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta/{namespace}/field/workflow_templates/{fieldName}"
+        };
+    }
 }
 
 message GenerateWorkflowTemplateRequest {
@@ -166,4 +172,14 @@ message GetWorkflowTemplateLabelsRequest {
     string namespace = 1;
     string name = 2;
     int64 version = 3;
+}
+
+message ListWorkflowTemplatesFieldRequest {
+    string namespace = 1;
+    string fieldName = 2;
+    bool isSystem = 3;
+}
+
+message ListWorkflowTemplatesFieldResponse {
+    repeated string values = 1;
 }

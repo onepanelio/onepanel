@@ -79,6 +79,12 @@ service WorkspaceService {
             get: "/apis/v1beta1/{namespace}/workspaces/{uid}/containers/{containerName}/logs"
         };
 	}
+
+	rpc ListWorkspacesField (ListWorkspacesFieldRequest) returns (ListWorkspacesFieldResponse) {
+		option (google.api.http) = {
+			get: "/apis/v1beta/{namespace}/field/workspaces/{fieldName}"
+		};
+	}
 }
 
 message WorkspaceComponent {
@@ -212,4 +218,13 @@ message GetWorkspaceContainerLogsRequest {
 	string uid = 2;
 	string containerName = 3;
 	int64 sinceTime = 4;
+}
+
+message ListWorkspacesFieldRequest {
+	string namespace = 1;
+	string fieldName = 2;
+}
+
+message ListWorkspacesFieldResponse {
+	repeated string values = 1;
 }

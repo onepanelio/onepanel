@@ -1349,3 +1349,23 @@ func (c *Client) ArchiveWorkspaceTemplate(namespace string, uid string) (archive
 
 	return true, nil
 }
+
+// ListWorkspaceTemplatesField loads all of the distinct field values for workspace templates
+func (c *Client) ListWorkspaceTemplatesField(namespace, field string) (value []string, err error) {
+	if field != "name" {
+		return nil, fmt.Errorf("unsupported field '%v'", field)
+	}
+
+	columnName := fmt.Sprintf("wt.%v", field)
+
+	sb := sb.Select(columnName).
+		Distinct().
+		From("workspace_templates wt").
+		Where(sq.Eq{
+			"wt.namespace": namespace,
+		}).OrderBy(columnName)
+
+	err = c.DB.Selectx(&value, sb)
+
+	return
+}
