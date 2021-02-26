@@ -2390,11 +2390,18 @@ func (c *Client) UpdateWorkflowExecutionMetrics(namespace, uid string, metrics M
 
 // ListWorkflowExecutionsField loads all of the distinct field values for workflow executions
 func (c *Client) ListWorkflowExecutionsField(namespace, field string) (value []string, err error) {
-	if field != "name" {
+	columnName := ""
+
+	switch field {
+	case "name":
+		columnName = "we.name"
+		break
+	case "templateName":
+		columnName = "wt.name"
+		break
+	default:
 		return nil, fmt.Errorf("unsupported field '%v'", field)
 	}
-
-	columnName := fmt.Sprintf("we.%v", field)
 
 	sb := sb.Select(columnName).
 		Distinct().

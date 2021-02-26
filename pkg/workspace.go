@@ -985,18 +985,29 @@ func (c *Client) GetWorkspaceContainerLogs(namespace, uid, containerName string,
 
 // ListWorkspacesField loads all of the distinct field values for workspaces
 func (c *Client) ListWorkspacesField(namespace, field string) (value []string, err error) {
-	if field != "name" {
+	columnName := ""
+
+	switch field {
+	case "name":
+		columnName = "w.name"
+		break
+	case "templateName":
+		columnName = "wt.name"
+		break
+	default:
 		return nil, fmt.Errorf("unsupported field '%v'", field)
 	}
-
-	columnName := fmt.Sprintf("w.%v", field)
 
 	sb := sb.Select(columnName).
 		Distinct().
 		From("workspaces w").
-		Where(sq.Eq{
-			"w.namespace": namespace,
-		}).OrderBy(columnName)
+		Join("workspace_templates wt ON w.workspace_template_id = wt.id").
+		Where(sq.And{
+			sq.Eq{
+				"w.namespace": namespace,
+			}, sq.NotEq{
+				"w.phase": WorkspaceTerminated,
+			}}).OrderBy(columnName)
 
 	err = c.DB.Selectx(&value, sb)
 
