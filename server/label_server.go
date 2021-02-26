@@ -6,6 +6,7 @@ import (
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/server/auth"
 	"github.com/onepanelio/core/server/converter"
+	"strings"
 )
 
 func getGroupAndResourceByIdentifier(identifier string) (group, resource string) {
@@ -43,7 +44,9 @@ func mapKeyValuesToMap(keyValues []*api.KeyValue) map[string]string {
 	result := make(map[string]string)
 
 	for _, keyValue := range keyValues {
-		result[keyValue.Key] = keyValue.Value
+		trimmedKey := strings.TrimSpace(keyValue.Key)
+		trimmedValue := strings.TrimSpace(keyValue.Value)
+		result[trimmedKey] = trimmedValue
 	}
 
 	return result

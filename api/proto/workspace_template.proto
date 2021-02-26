@@ -57,6 +57,12 @@ service WorkspaceTemplateService {
             get: "/apis/v1beta1/{namespace}/workspace_templates/{uid}/versions"
         };
     }
+
+    rpc ListWorkspaceTemplatesField (ListWorkspaceTemplatesFieldRequest) returns (ListWorkspaceTemplatesFieldResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta/{namespace}/field/workspace_templates/{fieldName}"
+        };
+    }
 }
 
 message WorkspaceTemplate {
@@ -127,4 +133,11 @@ message ListWorkspaceTemplateVersionsResponse {
     repeated WorkspaceTemplate workspaceTemplates = 2;
 }
 
+message ListWorkspaceTemplatesFieldRequest {
+    string namespace = 1;
+    string fieldName = 2;
+}
 
+message ListWorkspaceTemplatesFieldResponse {
+    repeated string values = 1;
+}

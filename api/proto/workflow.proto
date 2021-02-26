@@ -120,6 +120,12 @@ service WorkflowService {
             body: "*"
         };
     }
+
+    rpc ListWorkflowExecutionsField (ListWorkflowExecutionsFieldRequest) returns (ListWorkflowExecutionsFieldResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta/{namespace}/field/workflow_executions/{fieldName}"
+        };
+    }
 }
 
 message CreateWorkflowExecutionBody {
@@ -310,4 +316,13 @@ message UpdateWorkflowExecutionsMetricsRequest {
 
 message WorkflowExecutionsMetricsResponse {
     repeated Metric metrics = 4;
+}
+
+message ListWorkflowExecutionsFieldRequest {
+    string namespace = 1;
+    string fieldName = 2;
+}
+
+message ListWorkflowExecutionsFieldResponse {
+    repeated string values = 1;
 }

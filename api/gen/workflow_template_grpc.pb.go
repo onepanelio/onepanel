@@ -26,6 +26,7 @@ type WorkflowTemplateServiceClient interface {
 	ListWorkflowTemplates(ctx context.Context, in *ListWorkflowTemplatesRequest, opts ...grpc.CallOption) (*ListWorkflowTemplatesResponse, error)
 	CloneWorkflowTemplate(ctx context.Context, in *CloneWorkflowTemplateRequest, opts ...grpc.CallOption) (*WorkflowTemplate, error)
 	ArchiveWorkflowTemplate(ctx context.Context, in *ArchiveWorkflowTemplateRequest, opts ...grpc.CallOption) (*ArchiveWorkflowTemplateResponse, error)
+	ListWorkflowTemplatesField(ctx context.Context, in *ListWorkflowTemplatesFieldRequest, opts ...grpc.CallOption) (*ListWorkflowTemplatesFieldResponse, error)
 }
 
 type workflowTemplateServiceClient struct {
@@ -108,6 +109,15 @@ func (c *workflowTemplateServiceClient) ArchiveWorkflowTemplate(ctx context.Cont
 	return out, nil
 }
 
+func (c *workflowTemplateServiceClient) ListWorkflowTemplatesField(ctx context.Context, in *ListWorkflowTemplatesFieldRequest, opts ...grpc.CallOption) (*ListWorkflowTemplatesFieldResponse, error) {
+	out := new(ListWorkflowTemplatesFieldResponse)
+	err := c.cc.Invoke(ctx, "/api.WorkflowTemplateService/ListWorkflowTemplatesField", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WorkflowTemplateServiceServer is the server API for WorkflowTemplateService service.
 // All implementations must embed UnimplementedWorkflowTemplateServiceServer
 // for forward compatibility
@@ -121,6 +131,7 @@ type WorkflowTemplateServiceServer interface {
 	ListWorkflowTemplates(context.Context, *ListWorkflowTemplatesRequest) (*ListWorkflowTemplatesResponse, error)
 	CloneWorkflowTemplate(context.Context, *CloneWorkflowTemplateRequest) (*WorkflowTemplate, error)
 	ArchiveWorkflowTemplate(context.Context, *ArchiveWorkflowTemplateRequest) (*ArchiveWorkflowTemplateResponse, error)
+	ListWorkflowTemplatesField(context.Context, *ListWorkflowTemplatesFieldRequest) (*ListWorkflowTemplatesFieldResponse, error)
 	mustEmbedUnimplementedWorkflowTemplateServiceServer()
 }
 
@@ -151,6 +162,9 @@ func (UnimplementedWorkflowTemplateServiceServer) CloneWorkflowTemplate(context.
 }
 func (UnimplementedWorkflowTemplateServiceServer) ArchiveWorkflowTemplate(context.Context, *ArchiveWorkflowTemplateRequest) (*ArchiveWorkflowTemplateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ArchiveWorkflowTemplate not implemented")
+}
+func (UnimplementedWorkflowTemplateServiceServer) ListWorkflowTemplatesField(context.Context, *ListWorkflowTemplatesFieldRequest) (*ListWorkflowTemplatesFieldResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListWorkflowTemplatesField not implemented")
 }
 func (UnimplementedWorkflowTemplateServiceServer) mustEmbedUnimplementedWorkflowTemplateServiceServer() {
 }
@@ -310,6 +324,24 @@ func _WorkflowTemplateService_ArchiveWorkflowTemplate_Handler(srv interface{}, c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WorkflowTemplateService_ListWorkflowTemplatesField_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListWorkflowTemplatesFieldRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkflowTemplateServiceServer).ListWorkflowTemplatesField(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.WorkflowTemplateService/ListWorkflowTemplatesField",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkflowTemplateServiceServer).ListWorkflowTemplatesField(ctx, req.(*ListWorkflowTemplatesFieldRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _WorkflowTemplateService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "api.WorkflowTemplateService",
 	HandlerType: (*WorkflowTemplateServiceServer)(nil),
@@ -345,6 +377,10 @@ var _WorkflowTemplateService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ArchiveWorkflowTemplate",
 			Handler:    _WorkflowTemplateService_ArchiveWorkflowTemplate_Handler,
+		},
+		{
+			MethodName: "ListWorkflowTemplatesField",
+			Handler:    _WorkflowTemplateService_ListWorkflowTemplatesField_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -458,3 +458,20 @@ func (s *WorkspaceServer) GetWorkspaceContainerLogs(req *api.GetWorkspaceContain
 
 	return nil
 }
+
+func (s *WorkspaceServer) ListWorkspacesField(ctx context.Context, req *api.ListWorkspacesFieldRequest) (*api.ListWorkspacesFieldResponse, error) {
+	client := getClient(ctx)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "onepanel.io", "workspaces", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	values, err := client.ListWorkspacesField(req.Namespace, req.FieldName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.ListWorkspacesFieldResponse{
+		Values: values,
+	}, nil
+}

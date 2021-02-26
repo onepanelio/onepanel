@@ -230,3 +230,20 @@ func (s *WorkspaceTemplateServer) ArchiveWorkspaceTemplate(ctx context.Context, 
 		IsArchived: archived,
 	}, nil
 }
+
+func (s *WorkspaceTemplateServer) ListWorkspaceTemplatesField(ctx context.Context, req *api.ListWorkspaceTemplatesFieldRequest) (*api.ListWorkspaceTemplatesFieldResponse, error) {
+	client := getClient(ctx)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflowtemplates", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	values, err := client.ListWorkspaceTemplatesField(req.Namespace, req.FieldName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.ListWorkspaceTemplatesFieldResponse{
+		Values: values,
+	}, nil
+}

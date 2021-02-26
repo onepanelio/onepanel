@@ -29,6 +29,7 @@ type WorkspaceTemplateServiceClient interface {
 	GetWorkspaceTemplate(ctx context.Context, in *GetWorkspaceTemplateRequest, opts ...grpc.CallOption) (*WorkspaceTemplate, error)
 	ListWorkspaceTemplates(ctx context.Context, in *ListWorkspaceTemplatesRequest, opts ...grpc.CallOption) (*ListWorkspaceTemplatesResponse, error)
 	ListWorkspaceTemplateVersions(ctx context.Context, in *ListWorkspaceTemplateVersionsRequest, opts ...grpc.CallOption) (*ListWorkspaceTemplateVersionsResponse, error)
+	ListWorkspaceTemplatesField(ctx context.Context, in *ListWorkspaceTemplatesFieldRequest, opts ...grpc.CallOption) (*ListWorkspaceTemplatesFieldResponse, error)
 }
 
 type workspaceTemplateServiceClient struct {
@@ -102,6 +103,15 @@ func (c *workspaceTemplateServiceClient) ListWorkspaceTemplateVersions(ctx conte
 	return out, nil
 }
 
+func (c *workspaceTemplateServiceClient) ListWorkspaceTemplatesField(ctx context.Context, in *ListWorkspaceTemplatesFieldRequest, opts ...grpc.CallOption) (*ListWorkspaceTemplatesFieldResponse, error) {
+	out := new(ListWorkspaceTemplatesFieldResponse)
+	err := c.cc.Invoke(ctx, "/api.WorkspaceTemplateService/ListWorkspaceTemplatesField", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WorkspaceTemplateServiceServer is the server API for WorkspaceTemplateService service.
 // All implementations must embed UnimplementedWorkspaceTemplateServiceServer
 // for forward compatibility
@@ -118,6 +128,7 @@ type WorkspaceTemplateServiceServer interface {
 	GetWorkspaceTemplate(context.Context, *GetWorkspaceTemplateRequest) (*WorkspaceTemplate, error)
 	ListWorkspaceTemplates(context.Context, *ListWorkspaceTemplatesRequest) (*ListWorkspaceTemplatesResponse, error)
 	ListWorkspaceTemplateVersions(context.Context, *ListWorkspaceTemplateVersionsRequest) (*ListWorkspaceTemplateVersionsResponse, error)
+	ListWorkspaceTemplatesField(context.Context, *ListWorkspaceTemplatesFieldRequest) (*ListWorkspaceTemplatesFieldResponse, error)
 	mustEmbedUnimplementedWorkspaceTemplateServiceServer()
 }
 
@@ -145,6 +156,9 @@ func (UnimplementedWorkspaceTemplateServiceServer) ListWorkspaceTemplates(contex
 }
 func (UnimplementedWorkspaceTemplateServiceServer) ListWorkspaceTemplateVersions(context.Context, *ListWorkspaceTemplateVersionsRequest) (*ListWorkspaceTemplateVersionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListWorkspaceTemplateVersions not implemented")
+}
+func (UnimplementedWorkspaceTemplateServiceServer) ListWorkspaceTemplatesField(context.Context, *ListWorkspaceTemplatesFieldRequest) (*ListWorkspaceTemplatesFieldResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListWorkspaceTemplatesField not implemented")
 }
 func (UnimplementedWorkspaceTemplateServiceServer) mustEmbedUnimplementedWorkspaceTemplateServiceServer() {
 }
@@ -286,6 +300,24 @@ func _WorkspaceTemplateService_ListWorkspaceTemplateVersions_Handler(srv interfa
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WorkspaceTemplateService_ListWorkspaceTemplatesField_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListWorkspaceTemplatesFieldRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceTemplateServiceServer).ListWorkspaceTemplatesField(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.WorkspaceTemplateService/ListWorkspaceTemplatesField",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceTemplateServiceServer).ListWorkspaceTemplatesField(ctx, req.(*ListWorkspaceTemplatesFieldRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _WorkspaceTemplateService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "api.WorkspaceTemplateService",
 	HandlerType: (*WorkspaceTemplateServiceServer)(nil),
@@ -317,6 +349,10 @@ var _WorkspaceTemplateService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListWorkspaceTemplateVersions",
 			Handler:    _WorkspaceTemplateService_ListWorkspaceTemplateVersions_Handler,
+		},
+		{
+			MethodName: "ListWorkspaceTemplatesField",
+			Handler:    _WorkspaceTemplateService_ListWorkspaceTemplatesField_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -579,3 +579,20 @@ func (s *WorkflowServer) UpdateWorkflowExecutionMetrics(ctx context.Context, req
 
 	return resp, nil
 }
+
+func (s *WorkflowServer) ListWorkflowExecutionsField(ctx context.Context, req *api.ListWorkflowExecutionsFieldRequest) (*api.ListWorkflowExecutionsFieldResponse, error) {
+	client := getClient(ctx)
+	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "onepanel.io", "workspaces", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	values, err := client.ListWorkflowExecutionsField(req.Namespace, req.FieldName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.ListWorkflowExecutionsFieldResponse{
+		Values: values,
+	}, nil
+}

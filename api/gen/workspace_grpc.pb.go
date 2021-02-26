@@ -29,6 +29,7 @@ type WorkspaceServiceClient interface {
 	DeleteWorkspace(ctx context.Context, in *DeleteWorkspaceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RetryLastWorkspaceAction(ctx context.Context, in *RetryActionWorkspaceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetWorkspaceContainerLogs(ctx context.Context, in *GetWorkspaceContainerLogsRequest, opts ...grpc.CallOption) (WorkspaceService_GetWorkspaceContainerLogsClient, error)
+	ListWorkspacesField(ctx context.Context, in *ListWorkspacesFieldRequest, opts ...grpc.CallOption) (*ListWorkspacesFieldResponse, error)
 }
 
 type workspaceServiceClient struct {
@@ -161,6 +162,15 @@ func (x *workspaceServiceGetWorkspaceContainerLogsClient) Recv() (*LogStreamResp
 	return m, nil
 }
 
+func (c *workspaceServiceClient) ListWorkspacesField(ctx context.Context, in *ListWorkspacesFieldRequest, opts ...grpc.CallOption) (*ListWorkspacesFieldResponse, error) {
+	out := new(ListWorkspacesFieldResponse)
+	err := c.cc.Invoke(ctx, "/api.WorkspaceService/ListWorkspacesField", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WorkspaceServiceServer is the server API for WorkspaceService service.
 // All implementations must embed UnimplementedWorkspaceServiceServer
 // for forward compatibility
@@ -176,6 +186,7 @@ type WorkspaceServiceServer interface {
 	DeleteWorkspace(context.Context, *DeleteWorkspaceRequest) (*emptypb.Empty, error)
 	RetryLastWorkspaceAction(context.Context, *RetryActionWorkspaceRequest) (*emptypb.Empty, error)
 	GetWorkspaceContainerLogs(*GetWorkspaceContainerLogsRequest, WorkspaceService_GetWorkspaceContainerLogsServer) error
+	ListWorkspacesField(context.Context, *ListWorkspacesFieldRequest) (*ListWorkspacesFieldResponse, error)
 	mustEmbedUnimplementedWorkspaceServiceServer()
 }
 
@@ -215,6 +226,9 @@ func (UnimplementedWorkspaceServiceServer) RetryLastWorkspaceAction(context.Cont
 }
 func (UnimplementedWorkspaceServiceServer) GetWorkspaceContainerLogs(*GetWorkspaceContainerLogsRequest, WorkspaceService_GetWorkspaceContainerLogsServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetWorkspaceContainerLogs not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) ListWorkspacesField(context.Context, *ListWorkspacesFieldRequest) (*ListWorkspacesFieldResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListWorkspacesField not implemented")
 }
 func (UnimplementedWorkspaceServiceServer) mustEmbedUnimplementedWorkspaceServiceServer() {}
 
@@ -430,6 +444,24 @@ func (x *workspaceServiceGetWorkspaceContainerLogsServer) Send(m *LogStreamRespo
 	return x.ServerStream.SendMsg(m)
 }
 
+func _WorkspaceService_ListWorkspacesField_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListWorkspacesFieldRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).ListWorkspacesField(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.WorkspaceService/ListWorkspacesField",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).ListWorkspacesField(ctx, req.(*ListWorkspacesFieldRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _WorkspaceService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "api.WorkspaceService",
 	HandlerType: (*WorkspaceServiceServer)(nil),
@@ -473,6 +505,10 @@ var _WorkspaceService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RetryLastWorkspaceAction",
 			Handler:    _WorkspaceService_RetryLastWorkspaceAction_Handler,
+		},
+		{
+			MethodName: "ListWorkspacesField",
+			Handler:    _WorkspaceService_ListWorkspacesField_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
