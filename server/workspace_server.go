@@ -459,6 +459,7 @@ func (s *WorkspaceServer) GetWorkspaceContainerLogs(req *api.GetWorkspaceContain
 	return nil
 }
 
+// ListWorkspacesField returns a list of all the distinct values of a field from Workspaces
 func (s *WorkspaceServer) ListWorkspacesField(ctx context.Context, req *api.ListWorkspacesFieldRequest) (*api.ListWorkspacesFieldResponse, error) {
 	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "onepanel.io", "workspaces", "")

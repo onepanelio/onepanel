@@ -231,6 +231,7 @@ func (s *WorkspaceTemplateServer) ArchiveWorkspaceTemplate(ctx context.Context, 
 	}, nil
 }
 
+// ListWorkspaceTemplatesField returns a list of all the distinct values of a field from WorkspaceTemplates
 func (s *WorkspaceTemplateServer) ListWorkspaceTemplatesField(ctx context.Context, req *api.ListWorkspaceTemplatesFieldRequest) (*api.ListWorkspaceTemplatesFieldResponse, error) {
 	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflowtemplates", "")
