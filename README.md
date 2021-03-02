@@ -10,43 +10,25 @@
 [![lfai](https://img.shields.io/badge/link-LFAI-01579b)](https://landscape.lfai.foundation/?selected=onepanel)
 [![license](https://img.shields.io/github/license/onepanelio/core?color=01579b)](https://opensource.org/licenses/Apache-2.0)
 
-Production grade, end-to-end vision AI platform with fully integrated modules for model building, automated labeling, data processing, model training and hyperparameter tuning.
+The open and extensible integrated development environment (IDE) for computer vision with fully integrated modules for model building, automated labeling, data processing, model training, hyperparameter tuning and workflow orchestration.
 
 <img width="100%" src="img/onepanel.gif">
 
 ## Why Onepanel?
-
--  End-to-end workflow and infrastructure automation for production scale vision AI
--  Best of breed, open source deep learning tools seamlessly integrated in one unified platform
--  Scale and distribute your data, training and hyperparameter tuning pipelines to multiple CPU/GPU nodes
--  Customizable, reproducible and version controlled environments and pipelines
--  Scalability, flexibility and resiliency of Kubernetes without the complexities
-
-## Features
--  Iteratively annotate, train and automatically annotate with bounding boxes and polygon masks.
--  Easily add hyperparameter tuning to any training pipeline, saving the best metrics, parameters and model.
--  JupyterLab with TensorBoard, Git, debugging, diffing, Conda, OpenCV, TensorFlow, PyTorch and GPU support.
--  Build reproducible, distributed and parallel data and training pipelines with realtime logs and output snapshots.
--  Bring your own IDEs, tools and pipelines with a version controlled YAML and Docker based template engine.
--  Track and visualize metrics and experiments with TensorBoard, NNI UI or bring your own tool.
--  Programmatically execute and define your pipelines with a powerful [Python SDK](https://github.com/onepanelio/python-sdk).
-
-## Online demo
-We have created an [online demo](https://onepanel.typeform.com/to/kQfDX5Vf?product=github) so that you can get a feel for some of Onepanel's features.
-
-**Note:** This is a shared and read only deployment that will be occasionally rebuilt.
+<img width="100%" src="img/features.png">
 
 ## Quick start
 See [quick start guide](https://docs.onepanel.ai/docs/getting-started/quickstart) to get started.
 
-## Community
+## Online demo
+For a quick look at some features see this shared, read-only [online demo](https://onepanel.typeform.com/to/kQfDX5Vf?product=github).
 
+## Community
 To submit a feature request, report a bug or documentation issue, please open a GitHub [pull request](https://github.com/onepanelio/core/pulls) or [issue](https://github.com/onepanelio/core/issues).
 
-For help, questions, release announcements and contribution discussions, join us on [Slack](https://join.slack.com/t/onepanel-ce/shared_invite/zt-eyjnwec0-nLaHhjif9Y~gA05KuX6AUg) or [GitHub discussions](https://github.com/onepanelio/core/discussions).
+For help, questions, release announcements and contribution discussions, join us on [Slack](https://join.slack.com/t/onepanel-ce/shared_invite/zt-eyjnwec0-nLaHhjif9Y~gA05KuX6AUg).
 
 ## Contributing
-
 Onepanel is modular and consists of [multiple repositories](https://docs.onepanel.ai/docs/getting-started/contributing/#project-repositories).
 
 See [contribution guide](https://docs.onepanel.ai/docs/getting-started/contributing) and `CONTRIBUTING.md` in each repository for additional contribution guidelines.
@@ -54,7 +36,7 @@ See [contribution guide](https://docs.onepanel.ai/docs/getting-started/contribut
 ## Acknowledgments
 Onepanel seamlessly integrates the following open source projects under the hood:
 
-[Argo](https://github.com/argoproj/argo) | [CVAT](https://github.com/opencv/cvat) | [JupyterLab](https://github.com/jupyterlab/jupyterlab) | [NNI](https://github.com/microsoft/nni)
+[Argo](https://github.com/argoproj/argo) | [Couler](https://github.com/couler-proj/couler) | [CVAT](https://github.com/opencv/cvat) | [JupyterLab](https://github.com/jupyterlab/jupyterlab) | [NNI](https://github.com/microsoft/nni)
 
 We are grateful for the support these communities provide and do our best to contribute back as much as possible.
 
