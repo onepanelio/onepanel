@@ -156,7 +156,7 @@ func (s *WorkspaceServer) CreateWorkspace(ctx context.Context, req *api.CreateWo
 	return apiWorkspace, nil
 }
 
-// GetWorkspace returns a Workspace information
+// GetWorkspace returns Workspace information
 func (s *WorkspaceServer) GetWorkspace(ctx context.Context, req *api.GetWorkspaceRequest) (*api.Workspace, error) {
 	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "onepanel.io", "workspaces", req.Uid)
@@ -319,7 +319,14 @@ func (s *WorkspaceServer) ResumeWorkspace(ctx context.Context, req *api.ResumeWo
 		return &empty.Empty{}, err
 	}
 
-	err = client.ResumeWorkspace(req.Namespace, req.Uid)
+	var parameters []v1.Parameter
+	for _, param := range req.Body.Parameters {
+		parameters = append(parameters, v1.Parameter{
+			Name:  param.Name,
+			Value: ptr.String(param.Value),
+		})
+	}
+	err = client.ResumeWorkspace(req.Namespace, req.Uid, parameters)
 
 	return &empty.Empty{}, err
 }
@@ -380,7 +387,7 @@ func (s *WorkspaceServer) RetryLastWorkspaceAction(ctx context.Context, req *api
 			return nil, err
 		}
 	case v1.WorkspaceFailedToResume:
-		if err := client.ResumeWorkspace(req.Namespace, workspace.UID); err != nil {
+		if err := client.ResumeWorkspace(req.Namespace, workspace.UID, workspace.Parameters); err != nil {
 			return nil, err
 		}
 	case v1.WorkspaceFailedToTerminate:
