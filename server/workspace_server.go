@@ -321,10 +321,6 @@ func (s *WorkspaceServer) ResumeWorkspace(ctx context.Context, req *api.ResumeWo
 
 	var parameters []v1.Parameter
 	for _, param := range req.Body.Parameters {
-		if param.Type == "input.hidden" {
-			continue
-		}
-
 		parameters = append(parameters, v1.Parameter{
 			Name:  param.Name,
 			Value: ptr.String(param.Value),
