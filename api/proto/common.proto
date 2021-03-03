@@ -28,3 +28,8 @@ message LogEntry {
     string timestamp = 1;
     string content = 2;
 }
+
+message MachineType {
+    string name = 1;
+    string value = 2;
+}

@@ -736,6 +736,12 @@ func (c *Client) ListWorkspaces(namespace string, request *request.Request) (wor
 		return nil, err
 	}
 
+	for _, workspace := range workspaces {
+		if err = json.Unmarshal(workspace.ParametersBytes, &workspace.Parameters); err != nil {
+			return nil, err
+		}
+	}
+
 	return
 }
 
