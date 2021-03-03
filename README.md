@@ -44,4 +44,4 @@ We are grateful for the support these communities provide and do our best to con
 Onepanel is licensed under [Apache 2.0](https://github.com/onepanelio/core/blob/master/LICENSE).
 
 ## Managed solution
-Visit our [website](https://www.onepanel.ai/) for more information about our managed on-premises solution.
+Visit our [website](https://www.onepanel.ai/) for more information on our managed on-premises solution.
