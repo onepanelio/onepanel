@@ -1,4 +1,4 @@
-<img width="240px" src="img/logo.png">
+<img width="200px" src="img/logo.png">
 
 ![build](https://img.shields.io/github/workflow/status/onepanelio/core/Publish%20dev%20docker%20image/master?color=01579b)
 ![code](https://img.shields.io/codacy/grade/d060fc4d1ac64b85b78f85c691ead86a?color=01579b)
@@ -10,7 +10,7 @@
 [![lfai](https://img.shields.io/badge/link-LFAI-01579b)](https://landscape.lfai.foundation/?selected=onepanel)
 [![license](https://img.shields.io/github/license/onepanelio/core?color=01579b)](https://opensource.org/licenses/Apache-2.0)
 
-The open and extensible integrated development environment (IDE) for computer vision with fully integrated modules for model building, automated labeling, data processing, model training, hyperparameter tuning and workflow orchestration.
+The open and extensible integrated development environment (IDE) for computer vision with built-in modules for model building, automated labeling, data processing, model training, hyperparameter tuning and workflow orchestration.
 
 <img width="100%" src="img/onepanel.gif">
 
@@ -43,5 +43,5 @@ We are grateful for the support these communities provide and do our best to con
 ## License
 Onepanel is licensed under [Apache 2.0](https://github.com/onepanelio/core/blob/master/LICENSE).
 
-## Need a managed solution?
-Visit our [website](https://www.onepanel.ai/) for more information about our enterprise offering.
+## Managed solution
+Visit our [website](https://www.onepanel.ai/) for more information on our managed on-premises solution.
