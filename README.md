@@ -10,7 +10,7 @@
 [![lfai](https://img.shields.io/badge/link-LFAI-01579b)](https://landscape.lfai.foundation/?selected=onepanel)
 [![license](https://img.shields.io/github/license/onepanelio/core?color=01579b)](https://opensource.org/licenses/Apache-2.0)
 
-The open and extensible integrated development environment (IDE) for computer vision with fully integrated modules for model building, automated labeling, data processing, model training, hyperparameter tuning and workflow orchestration.
+The open and extensible integrated development environment (IDE) for computer vision with built-in modules for model building, automated labeling, data processing, model training, hyperparameter tuning and workflow orchestration.
 
 <img width="100%" src="img/onepanel.gif">
 
