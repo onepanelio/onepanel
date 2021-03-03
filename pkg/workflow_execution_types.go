@@ -31,14 +31,15 @@ type WorkflowExecution struct {
 
 // WorkflowExecutionOptions are options you have for an executing workflow
 type WorkflowExecutionOptions struct {
-	Name           string
-	GenerateName   string
-	Entrypoint     string
-	Parameters     []Parameter
-	ServiceAccount string
-	Labels         map[string]string
-	ListOptions    *ListOptions
-	PodGCStrategy  *PodGCStrategy
+	Name                string
+	GenerateName        string
+	Entrypoint          string
+	Parameters          []Parameter
+	ServiceAccount      string
+	Labels              map[string]string
+	ListOptions         *ListOptions
+	PodGCStrategy       *PodGCStrategy
+	WorkflowTemplateUID string
 }
 
 // WorkflowExecutionStatistic is a record keeping track of what happened to a workflow execution
