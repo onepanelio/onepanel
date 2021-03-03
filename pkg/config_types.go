@@ -175,8 +175,8 @@ func (s SystemConfig) DatabaseDriverName() *string {
 
 // DatabaseConnection returns system config information to connect to a database
 func (s SystemConfig) DatabaseConnection() (driverName, dataSourceName string) {
-	dataSourceName = fmt.Sprintf("host=%v port=5433 user=%v password=%v dbname=%v sslmode=disable",
-		"localhost", s["databaseUsername"], s["databasePassword"], s["databaseName"])
+	dataSourceName = fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
+		s["databaseHost"], s["databaseUsername"], s["databasePassword"], s["databaseName"])
 
 	driverName = *s.DatabaseDriverName()
 
