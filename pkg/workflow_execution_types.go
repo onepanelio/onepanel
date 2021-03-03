@@ -39,7 +39,7 @@ type WorkflowExecutionOptions struct {
 	Labels              map[string]string
 	ListOptions         *ListOptions
 	PodGCStrategy       *PodGCStrategy
-	WorkflowTemplateUid string
+	WorkflowTemplateUID string
 }
 
 // WorkflowExecutionStatistic is a record keeping track of what happened to a workflow execution

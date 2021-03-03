@@ -408,7 +408,7 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 				template.Metadata.Labels = make(map[string]string)
 			}
 			template.Metadata.Labels["onepanel.io/entity-type"] = "Workflow"
-			template.Metadata.Labels["onepanel.io/entity-uid"] = opts.WorkflowTemplateUid
+			template.Metadata.Labels["onepanel.io/entity-uid"] = opts.WorkflowTemplateUID
 		}
 	}
 
@@ -893,7 +893,7 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 		return nil, err
 	}
 	opts.GenerateName = nameUID + "-"
-	opts.WorkflowTemplateUid = workflowTemplate.UID
+	opts.WorkflowTemplateUID = workflowTemplate.UID
 
 	opts.Labels[workflowTemplateUIDLabelKey] = workflowTemplate.UID
 	opts.Labels[workflowTemplateVersionLabelKey] = fmt.Sprint(workflowTemplate.Version)
