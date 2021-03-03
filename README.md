@@ -1,4 +1,4 @@
-<img width="240px" src="img/logo.png">
+<img width="200px" src="img/logo.png">
 
 ![build](https://img.shields.io/github/workflow/status/onepanelio/core/Publish%20dev%20docker%20image/master?color=01579b)
 ![code](https://img.shields.io/codacy/grade/d060fc4d1ac64b85b78f85c691ead86a?color=01579b)
@@ -43,5 +43,5 @@ We are grateful for the support these communities provide and do our best to con
 ## License
 Onepanel is licensed under [Apache 2.0](https://github.com/onepanelio/core/blob/master/LICENSE).
 
-## Need a managed solution?
-Visit our [website](https://www.onepanel.ai/) for more information about our enterprise offering.
+## Managed solution
+Visit our [website](https://www.onepanel.ai/) for more information about our managed on-premises solution.
