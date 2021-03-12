@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	goerrors "errors"
+	"strings"
 
 	"github.com/onepanelio/core/pkg/util"
 	log "github.com/sirupsen/logrus"
@@ -225,7 +226,7 @@ func (c *Client) AddSecretKeyValue(namespace string, secret *Secret) (inserted b
 			}
 		}
 		if secretDataKeyExists {
-			errorMsg := "Key: " + key + " already exists in secret."
+			errorMsg := "Key '" + key + "' already exists"
 			return false, util.NewUserError(codes.AlreadyExists, errorMsg)
 		}
 	}
@@ -283,9 +284,15 @@ func (c *Client) AddSecretKeyValue(namespace string, secret *Secret) (inserted b
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
-			"Secret":    secret,
+			"Secret":    secret.Name,
 			"Error":     err.Error(),
 		}).Error("Error adding key and value to Secret.")
+
+		if strings.Contains(err.Error(), "Request entity too large:") ||
+			strings.Contains(err.Error(), "Too long: must have at most") {
+			return false, util.NewUserError(codes.InvalidArgument, "Value is too long")
+		}
+
 		return false, util.NewUserError(codes.Unknown, "Error adding key and value to Secret.")
 	}
 	return true, nil
@@ -311,9 +318,10 @@ func (c *Client) UpdateSecretKeyValue(namespace string, secret *Secret) (updated
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
-			"Secret":    secret,
+			"Secret":    secret.Name,
 			"Error":     err.Error(),
 		}).Error("Unable to find secret.")
+
 		return false, util.NewUserError(codes.NotFound, "Unable to find secret.")
 	}
 	secretDataKeyExists := false
@@ -344,9 +352,15 @@ func (c *Client) UpdateSecretKeyValue(namespace string, secret *Secret) (updated
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
-			"Secret":    secret,
+			"Secret":    secret.Name,
 			"Error":     err.Error(),
 		}).Error("Unable to update secret key value.")
+
+		if strings.Contains(err.Error(), "Request entity too large:") ||
+			strings.Contains(err.Error(), "Too long: must have at most") {
+			return false, util.NewUserError(codes.InvalidArgument, "Value is too long")
+		}
+
 		return false, util.NewUserError(codes.Unknown, "Unable to update secret key value.")
 	}
 	return true, nil
