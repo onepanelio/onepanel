@@ -4,12 +4,23 @@
 
 Note: Up migrations are automatically executed when the application is run.
 
+#### Linux / Mac
+
 ```bash
 docker run --rm --mount type=bind,source="${PWD}",target=/root onepanel/helper:v1.0.0 goose -dir db/sql create <name> sql  # Create migration in db/sql folder
 docker run --rm --mount type=bind,source="${PWD}",target=/root onepanel/helper:v1.0.0 goose -dir db postgres "${DB_DATASOURCE_NAME}" up # Migrate the DB to the most recent version available
 docker run --rm --mount type=bind,source="${PWD}",target=/root onepanel/helper:v1.0.0 goose -dir db postgres "${DB_DATASOURCE_NAME}" down # Roll back the version by 1
 docker run --rm --mount type=bind,source="${PWD}",target=/root onepanel/helper:v1.0.0 goose help  # See all available commands
 ```
+
+#### Windows
+
+``bash
+docker run --rm --mount type=bind,source="%CD%",target=/root onepanel/helper:v1.0.0 goose -dir db/sql create wow sql  # Create migration in db/sql folder
+docker run --rm --mount type=bind,source="%CD%",target=/root onepanel/helper:v1.0.0 goose -dir db postgres "${DB_DATASOURCE_NAME}" up # Migrate the DB to the most recent version available
+docker run --rm --mount type=bind,source="%CD%",target=/root onepanel/helper:v1.0.0 goose -dir db postgres "${DB_DATASOURCE_NAME}" down # Roll back the version by 1
+docker run --rm --mount type=bind,source="%CD%",target=/root onepanel/helper:v1.0.0 goose help  # See all available commands
+``
 
 ### Local 
 
@@ -64,85 +75,26 @@ Make sure that your `$GOBIN` is in your `$PATH`.
 
 ### Docker
 
-Generate Go and Swagger APIs:
+Generate Go and Swagger APIs
+
+#### Linux / Mac
+
 ```bash
-docker run --rm --mount type=bind,source="${PWD}",target=/root onepanel-helper:v1.0.0 make api version=1.0.0
+docker run --rm --mount type=bind,source="${PWD}",target=/root onepanel/helper:v1.0.0 make api-internal version=1.0.0
+```
+
+#### Windows
+
+```bash
+docker run --rm --mount type=bind,source="%CD%",target=/root onepanel/helper:v1.0.0 make api-internal version=1.0.0
 ```
 
 ### Local Installation
 
 Generate Go and Swagger APIs:
 ```bash
-make api version=1.0.0
+make api-internal version=1.0.0
 ```
-
-## Minikube Debugging and Development
-
-It is possible to access host resources with minikube.
-- This means you can run core and core-ui on your machine, and have minikube
-execute API calls to your machine.
-
-NOTE:
-- Do not use host access with Minikube and VMWare. This has been shown not to work
-in our testing.
-If you have a work-around, feel free to let us know.
-
-To make this work, some setup is needed.
-- Minikube started with driver=virtualbox
-
-Get your Minikube ssh IP
-https://minikube.sigs.k8s.io/docs/handbook/host-access/
-
-```shell script
-minikube ssh "route -n | grep ^0.0.0.0 | awk '{ print \$2 }'"
-```
-Example output:
-```shell script
-10.0.2.2
-```
-
-When running core api, add these ENV variables.
-```shell script
-ONEPANEL_CORE_SERVICE_HOST=10.0.2.2 # IP you just got
-ONEPANEL_CORE_SERVICE_PORT=8888 # HTTP Port set in main.go
-```
-
-DB Access
-- You will need to change the Postgres service from ClusterIP to NodePort
-
-Run
-```shell script
-minikube service list
-```
-
-Look at Postgres, you'll see something like this:
-```shell script
-$ minikube service list
-|----------------------|----------------------------------------|--------------------|--------------------------------|
-|      NAMESPACE       |                  NAME                  |    TARGET PORT     |              URL               |
-|----------------------|----------------------------------------|--------------------|--------------------------------|
-| application-system   | application-controller-manager-service | No node port       |
-| default              | kubernetes                             | No node port       |
-| kube-system          | kube-dns                               | No node port       |
-| kubernetes-dashboard | dashboard-metrics-scraper              | No node port       |
-| kubernetes-dashboard | kubernetes-dashboard                   | No node port       |
-| onepanel             | onepanel-core                          | http/8888          | http://192.168.99.101:32000    |
-|                      |                                        | grpc/8887          | http://192.168.99.101:32001    |
-| onepanel             | onepanel-core-ui                       | http/80            | http://192.168.99.101:32002    |
-| onepanel             | postgres                               |               5432 | http://192.168.99.101:31975    |
-|----------------------|----------------------------------------|--------------------|--------------------------------|
-```
-Grab `http://192.168.99.101:31975`
-Use this in main.go for the following lines:
-
-```shell script
-	databaseDataSourceName := fmt.Sprintf("port=31975 host=%v user=%v password=%v dbname=%v sslmode=disable",
-		"192.168.99.101", config["databaseUsername"], config["databasePassword"], config["databaseName"])
-```
-This should connect your developing core to the minikube db.
-
-After this, build main.go and run the executable.
-- Or use your IDE equivalent
 
 ## Code Structure & Organization
 
