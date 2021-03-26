@@ -2,11 +2,19 @@ package v1
 
 import (
 	"bufio"
-	"cloud.google.com/go/storage"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
+	"cloud.google.com/go/storage"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/argoproj/argo/persist/sqldb"
 	"github.com/argoproj/argo/workflow/hydrator"
@@ -19,17 +27,10 @@ import (
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
 	"golang.org/x/net/context"
 	"gopkg.in/yaml.v2"
-	"io"
-	"io/ioutil"
 	networking "istio.io/api/networking/v1alpha3"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/watch"
-	"net/http"
-	"regexp"
 	yaml2 "sigs.k8s.io/yaml"
-	"strconv"
-	"strings"
-	"time"
 
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/argoproj/argo/workflow/common"
@@ -336,6 +337,16 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 		},
 	})
 
+	// Create artifacts out volume
+	wf.Spec.Volumes = append(wf.Spec.Volumes, corev1.Volume{
+		Name: "out",
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{
+				Medium: corev1.StorageMediumMemory,
+			},
+		},
+	})
+
 	systemConfig, err := c.GetSystemConfig()
 	if err != nil {
 		return err
@@ -367,6 +378,11 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 				Name:      "sys-dshm",
 				MountPath: "/dev/shm",
 			})
+
+			template.Container.VolumeMounts = append(template.Container.VolumeMounts, corev1.VolumeMount{
+				Name:      "out",
+				MountPath: "/mnt/out",
+			})
 			err = c.injectHostPortAndResourcesToContainer(template, opts, systemConfig)
 			if err != nil {
 				return err
@@ -386,7 +402,7 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 			// Always add output artifacts for metrics but make them optional
 			template.Outputs.Artifacts = append(template.Outputs.Artifacts, wfv1.Artifact{
 				Name:     "sys-metrics",
-				Path:     "/tmp/sys-metrics.json",
+				Path:     "/mnt/out/sys-metrics.json",
 				Optional: true,
 				Archive: &wfv1.ArchiveStrategy{
 					None: &wfv1.NoneStrategy{},
