@@ -15,12 +15,12 @@ docker run --rm --mount type=bind,source="${PWD}",target=/root onepanel/helper:v
 
 #### Windows
 
-``bash
+```bash
 docker run --rm --mount type=bind,source="%CD%",target=/root onepanel/helper:v1.0.0 goose -dir db/sql create wow sql  # Create migration in db/sql folder
 docker run --rm --mount type=bind,source="%CD%",target=/root onepanel/helper:v1.0.0 goose -dir db postgres "${DB_DATASOURCE_NAME}" up # Migrate the DB to the most recent version available
 docker run --rm --mount type=bind,source="%CD%",target=/root onepanel/helper:v1.0.0 goose -dir db postgres "${DB_DATASOURCE_NAME}" down # Roll back the version by 1
 docker run --rm --mount type=bind,source="%CD%",target=/root onepanel/helper:v1.0.0 goose help  # See all available commands
-``
+```
 
 ### Local 
 
