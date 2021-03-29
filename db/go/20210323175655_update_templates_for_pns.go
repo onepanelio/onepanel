@@ -48,15 +48,11 @@ func Down20210323175655(tx *sql.Tx) error {
 		return err
 	}
 
-	if err := updateWorkflowTemplateManifest(
+	return updateWorkflowTemplateManifest(
 		filepath.Join("workflows", "pytorch-mnist-training", "20210118175809.yaml"),
 		pytorchWorkflowTemplateName,
 		map[string]string{
 			"created-by": "system",
 			"framework":  "pytorch",
-		}); err != nil {
-		return err
-	}
-
-	return nil
+		})
 }

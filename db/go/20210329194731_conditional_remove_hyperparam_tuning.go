@@ -71,7 +71,6 @@ func Up20210329194731(tx *sql.Tx) error {
 // Down20210329194731 returns the hyperparameter-tuning workflow if it was deleted
 func Down20210329194731(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
-
 	client, err := getClient()
 	if err != nil {
 		return err
@@ -95,7 +94,7 @@ func Down20210329194731(tx *sql.Tx) error {
 		}
 
 		if workflowTemplate == nil {
-			return createWorkflowTemplate(
+			err := createWorkflowTemplate(
 				filepath.Join("workflows", "hyperparameter-tuning", "20210118175809.yaml"),
 				hyperparameterTuningTemplateName,
 				map[string]string{
@@ -104,6 +103,9 @@ func Down20210329194731(tx *sql.Tx) error {
 					"created-by": "system",
 				},
 			)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
