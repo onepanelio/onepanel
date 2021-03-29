@@ -17,17 +17,6 @@ func initialize20210323175655() {
 func Up20210323175655(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	if err := updateWorkflowTemplateManifest(
-		filepath.Join("workflows", "hyperparameter-tuning", "20210323175655.yaml"),
-		hyperparameterTuningTemplateName,
-		map[string]string{
-			"framework":  "tensorflow",
-			"tuner":      "TPE",
-			"created-by": "system",
-		}); err != nil {
-		return err
-	}
-
-	if err := updateWorkflowTemplateManifest(
 		filepath.Join("workflows", "pytorch-mnist-training", "20210323175655.yaml"),
 		pytorchWorkflowTemplateName,
 		map[string]string{
@@ -69,12 +58,5 @@ func Down20210323175655(tx *sql.Tx) error {
 		return err
 	}
 
-	return updateWorkflowTemplateManifest(
-		filepath.Join("workflows", "hyperparameter-tuning", "20210323175655.yaml"),
-		hyperparameterTuningTemplateName,
-		map[string]string{
-			"framework":  "tensorflow",
-			"tuner":      "TPE",
-			"created-by": "system",
-		})
+	return nil
 }

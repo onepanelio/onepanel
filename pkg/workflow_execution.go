@@ -308,7 +308,6 @@ func injectEnvironmentVariables(container *corev1.Container, systemConfig System
 func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (err error) {
 	if opts.PodGCStrategy == nil {
 		if wf.Spec.PodGC == nil {
-			//TODO - Load this data from onepanel config-map or secret
 			podGCStrategy := env.Get("ARGO_POD_GC_STRATEGY", "OnPodCompletion")
 			strategy := PodGCStrategy(podGCStrategy)
 			wf.Spec.PodGC = &wfv1.PodGC{
@@ -2445,6 +2444,20 @@ func (c *Client) ListWorkflowExecutionsField(namespace, field string) (value []s
 		}}).OrderBy(columnName)
 
 	err = c.DB.Selectx(&value, sb)
+
+	return
+}
+
+// CountWorkflowExecutionsForWorkflowTemplate returns the number of workflow executions associated with the workflow template identified by it's id.
+func (c *Client) CountWorkflowExecutionsForWorkflowTemplate(workflowTemplateID uint64) (count int, err error) {
+	err = sb.Select("COUNT(*)").
+		From("workflow_executions we").
+		Join("workflow_template_versions wtv ON we.workflow_template_version_id = wtv.id").
+		Join("workflow_templates wt ON wtv.workflow_template_id = wt.id").
+		Where(sq.Eq{"wt.id": workflowTemplateID}).
+		RunWith(c.DB).
+		QueryRow().
+		Scan(&count)
 
 	return
 }
