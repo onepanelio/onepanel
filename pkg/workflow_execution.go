@@ -335,6 +335,13 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 				Medium: corev1.StorageMediumMemory,
 			},
 		},
+	}, corev1.Volume{ // Artifacts out
+		Name: "tmp",
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{
+				Medium: corev1.StorageMediumMemory,
+			},
+		},
 	})
 
 	// Create artifacts out volume
@@ -380,9 +387,10 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 			})
 
 			template.Container.VolumeMounts = append(template.Container.VolumeMounts, corev1.VolumeMount{
-				Name:      "out",
-				MountPath: "/mnt/out",
+				Name:      "tmp",
+				MountPath: "/mnt/tmp",
 			})
+
 			err = c.injectHostPortAndResourcesToContainer(template, opts, systemConfig)
 			if err != nil {
 				return err
@@ -402,7 +410,7 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 			// Always add output artifacts for metrics but make them optional
 			template.Outputs.Artifacts = append(template.Outputs.Artifacts, wfv1.Artifact{
 				Name:     "sys-metrics",
-				Path:     "/mnt/out/sys-metrics.json",
+				Path:     "/mnt/tmp/sys-metrics.json",
 				Optional: true,
 				Archive: &wfv1.ArchiveStrategy{
 					None: &wfv1.NoneStrategy{},

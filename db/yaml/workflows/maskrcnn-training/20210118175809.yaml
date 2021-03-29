@@ -103,7 +103,7 @@ templates:
       command:
         - sh
         - -c
-      image: onepanel/dl:0.17.0
+      image: onepanel/dl:v0.20.0
       volumeMounts:
         - mountPath: /mnt/data
           name: processed-data
@@ -112,7 +112,7 @@ templates:
       workingDir: /mnt/src
     sidecars:
       - name: tensorboard
-        image: onepanel/dl:0.17.0
+        image: onepanel/dl:v0.20.0
         command: [ sh, -c ]
         env:
           - name: ONEPANEL_INTERACTIVE_SIDECAR
@@ -155,7 +155,7 @@ templates:
       command:
         - sh
         - -c
-      image: onepanel/dl:0.17.0
+      image: onepanel/dl:v0.20.0
       volumeMounts:
         - mountPath: /mnt/data
           name: data
