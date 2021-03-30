@@ -14,10 +14,6 @@ func initialize20210329194731() {
 	}
 }
 
-func init() {
-	goose.AddMigration(Up20210329194731, Down20210329194731)
-}
-
 // Up20210329194731 removes the hyperparameter-tuning workflow if there are no executions
 func Up20210329194731(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
@@ -32,7 +28,7 @@ func Up20210329194731(tx *sql.Tx) error {
 		return err
 	}
 
-	uid, err := uid2.GenerateUID("hyperparameter-tuning", 30)
+	uid, err := uid2.GenerateUID(hyperparameterTuningTemplateName, 30)
 	if err != nil {
 		return err
 	}
