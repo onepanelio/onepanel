@@ -402,6 +402,21 @@ func (c *Client) getWorkflowTemplateById(id uint64) (workflowTemplate *WorkflowT
 	return
 }
 
+func (c *Client) getWorkflowTemplateRaw(namespace, uid string) (workflowTemplate *WorkflowTemplate, err error) {
+	workflowTemplate = &WorkflowTemplate{}
+
+	query := sb.Select(getWorkflowTemplateColumns("wt", "")...).
+		From("workflow_templates wt").
+		Where(sq.Eq{
+			"namespace": namespace,
+			"uid":       uid,
+		})
+
+	err = c.DB.Getx(workflowTemplate, query)
+
+	return
+}
+
 // getWorkflowTemplate gets the workflowtemplate given the input data.
 // it also loads the argo workflow and labels data.
 // If version is <= 0, the latest workflow template is fetched.
@@ -737,6 +752,16 @@ func (c *Client) UpdateWorkflowTemplateVersion(wtv *WorkflowTemplateVersion) err
 	return updateWorkflowTemplateVersionDB(c.DB, wtv)
 }
 
+// GetWorkflowTemplateRaw returns the WorkflowTemplate without any version information
+func (c *Client) GetWorkflowTemplateRaw(namespace, uid string) (workflowTemplate *WorkflowTemplate, err error) {
+	workflowTemplate, err = c.getWorkflowTemplateRaw(namespace, uid)
+	if err != nil && strings.Contains(err.Error(), "sql: no rows in result set") {
+		return nil, nil
+	}
+
+	return
+}
+
 // GetWorkflowTemplate returns a WorkflowTemplate with data loaded from various sources
 // If version is 0, it returns the latest version data.
 //
@@ -905,6 +930,8 @@ func (c *Client) getLatestWorkflowTemplate(namespace, uid string) (*WorkflowTemp
 	return c.getWorkflowTemplate(namespace, uid, 0) //version=0 means latest
 }
 
+// ArchiveWorkflowTemplate will mark the workflow template identified by the (namespace, uid) as archived
+// and will archive or delete resources where appropriate.
 func (c *Client) ArchiveWorkflowTemplate(namespace, uid string) (archived bool, err error) {
 	workflowTemplate, err := c.getLatestWorkflowTemplate(namespace, uid)
 	if err != nil {

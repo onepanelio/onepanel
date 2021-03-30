@@ -308,7 +308,6 @@ func injectEnvironmentVariables(container *corev1.Container, systemConfig System
 func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts *WorkflowExecutionOptions) (err error) {
 	if opts.PodGCStrategy == nil {
 		if wf.Spec.PodGC == nil {
-			//TODO - Load this data from onepanel config-map or secret
 			podGCStrategy := env.Get("ARGO_POD_GC_STRATEGY", "OnPodCompletion")
 			strategy := PodGCStrategy(podGCStrategy)
 			wf.Spec.PodGC = &wfv1.PodGC{
@@ -330,6 +329,13 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 	// Create dev/shm volume
 	wf.Spec.Volumes = append(wf.Spec.Volumes, corev1.Volume{
 		Name: "sys-dshm",
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{
+				Medium: corev1.StorageMediumMemory,
+			},
+		},
+	}, corev1.Volume{ // Artifacts out
+		Name: "tmp",
 		VolumeSource: corev1.VolumeSource{
 			EmptyDir: &corev1.EmptyDirVolumeSource{
 				Medium: corev1.StorageMediumMemory,
@@ -380,9 +386,10 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 			})
 
 			template.Container.VolumeMounts = append(template.Container.VolumeMounts, corev1.VolumeMount{
-				Name:      "out",
-				MountPath: "/mnt/out",
+				Name:      "tmp",
+				MountPath: "/mnt/tmp",
 			})
+
 			err = c.injectHostPortAndResourcesToContainer(template, opts, systemConfig)
 			if err != nil {
 				return err
@@ -402,7 +409,7 @@ func (c *Client) injectAutomatedFields(namespace string, wf *wfv1.Workflow, opts
 			// Always add output artifacts for metrics but make them optional
 			template.Outputs.Artifacts = append(template.Outputs.Artifacts, wfv1.Artifact{
 				Name:     "sys-metrics",
-				Path:     "/mnt/out/sys-metrics.json",
+				Path:     "/mnt/tmp/sys-metrics.json",
 				Optional: true,
 				Archive: &wfv1.ArchiveStrategy{
 					None: &wfv1.NoneStrategy{},
@@ -2437,6 +2444,20 @@ func (c *Client) ListWorkflowExecutionsField(namespace, field string) (value []s
 		}}).OrderBy(columnName)
 
 	err = c.DB.Selectx(&value, sb)
+
+	return
+}
+
+// CountWorkflowExecutionsForWorkflowTemplate returns the number of workflow executions associated with the workflow template identified by it's id.
+func (c *Client) CountWorkflowExecutionsForWorkflowTemplate(workflowTemplateID uint64) (count int, err error) {
+	err = sb.Select("COUNT(*)").
+		From("workflow_executions we").
+		Join("workflow_template_versions wtv ON we.workflow_template_version_id = wtv.id").
+		Join("workflow_templates wt ON wtv.workflow_template_id = wt.id").
+		Where(sq.Eq{"wt.id": workflowTemplateID}).
+		RunWith(c.DB).
+		QueryRow().
+		Scan(&count)
 
 	return
 }
