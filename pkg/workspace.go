@@ -392,7 +392,7 @@ func generateNodeCaptureContainer(workspace *Workspace, config SystemConfig) map
 		"ports": []interface{}{
 			map[string]interface{}{
 				"name":          "node-capturer",
-				"hostPort":      80,
+				"hostPort":      49151,
 				"containerPort": 80,
 			},
 		},
