@@ -1,6 +1,6 @@
 <img width="200px" src="img/logo.png">
 
-![build](https://img.shields.io/github/workflow/status/onepanelio/core/Publish%20dev%20docker%20image/master?color=01579b)
+![build](https://img.shields.io/github/workflow/status/onepanelio/onepanel/Publish%20dev%20docker%20image/master?color=01579b)
 ![code](https://img.shields.io/codacy/grade/d060fc4d1ac64b85b78f85c691ead86a?color=01579b)
 [![release](https://img.shields.io/github/v/release/onepanelio/core?color=01579b)](https://github.com/onepanelio/core/releases)
 [![sdk](https://img.shields.io/pypi/v/onepanel-sdk?color=01579b&label=sdk)](https://pypi.org/project/onepanel-sdk/)
