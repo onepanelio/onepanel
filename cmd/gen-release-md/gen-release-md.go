@@ -52,7 +52,7 @@ See https://docs.onepanel.ai
 
 ` + "```" + `
 # Download the binary
-curl -sLO https://github.com/onepanelio/core/releases/download/v%s/opctl-linux-amd64
+curl -sLO https://github.com/onepanelio/onepanel/releases/download/v%s/opctl-linux-amd64
 
 # Make binary executable
 chmod +x opctl-linux-amd64
@@ -68,7 +68,7 @@ opctl version
 
 ` + "```" + `
 # Download the binary
-curl -sLO https://github.com/onepanelio/core/releases/download/v%s/opctl-macos-amd64
+curl -sLO https://github.com/onepanelio/onepanel/releases/download/v%s/opctl-macos-amd64
 
 # Make binary executable
 chmod +x opctl-macos-amd64
@@ -82,7 +82,7 @@ opctl version
 
 ## Windows
 
-Download the [attached executable](https://github.com/onepanelio/core/releases/download/v%s/opctl-windows-amd64.exe), rename it to "opctl" and move it to a folder that is in your PATH environment variable.
+Download the [attached executable](https://github.com/onepanelio/onepanel/releases/download/v%s/opctl-windows-amd64.exe), rename it to "opctl" and move it to a folder that is in your PATH environment variable.
 `
 
 var repositories = []string{
