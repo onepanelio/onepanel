@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/onepanelio/core/pkg/util/env"
 	"github.com/onepanelio/core/pkg/util/extensions"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/pkg/util/request"
 	pagination "github.com/onepanelio/core/pkg/util/request/pagination"
 	yaml3 "gopkg.in/yaml.v3"
-	"strconv"
-	"strings"
-	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
@@ -150,6 +151,7 @@ func createWorkflowTemplateVersionDB(runner sq.BaseRunner, workflowTemplateVersi
 			"manifest":             workflowTemplateVersion.Manifest,
 			"parameters":           pj,
 			"labels":               workflowTemplateVersion.Labels,
+			"description":          workflowTemplateVersion.Description,
 		}).
 		Suffix("RETURNING id").
 		RunWith(runner).
@@ -504,16 +506,17 @@ func (c *Client) listWorkflowTemplateVersions(namespace, uid string) (workflowTe
 		}
 
 		newItem := WorkflowTemplate{
-			ID:         version.WorkflowTemplate.ID,
-			CreatedAt:  version.CreatedAt.UTC(),
-			UID:        version.UID,
-			Name:       version.WorkflowTemplate.Name,
-			Manifest:   version.Manifest,
-			Version:    version.Version,
-			IsLatest:   version.IsLatest,
-			IsArchived: version.WorkflowTemplate.IsArchived,
-			Labels:     version.Labels,
-			Parameters: version.Parameters,
+			ID:          version.WorkflowTemplate.ID,
+			CreatedAt:   version.CreatedAt.UTC(),
+			UID:         version.UID,
+			Name:        version.WorkflowTemplate.Name,
+			Manifest:    version.Manifest,
+			Version:     version.Version,
+			IsLatest:    version.IsLatest,
+			IsArchived:  version.WorkflowTemplate.IsArchived,
+			Labels:      version.Labels,
+			Parameters:  version.Parameters,
+			Description: version.Description,
 		}
 
 		workflowTemplateVersions = append(workflowTemplateVersions, &newItem)
@@ -669,6 +672,7 @@ func (c *Client) CreateWorkflowTemplateVersion(namespace string, workflowTemplat
 		WorkflowTemplate: workflowTemplateDB,
 		Manifest:         workflowTemplate.Manifest,
 		Labels:           workflowTemplate.Labels,
+		Description:      workflowTemplate.Description,
 	}
 
 	err = createLatestWorkflowTemplateVersionDB(tx, workflowTemplateVersion)

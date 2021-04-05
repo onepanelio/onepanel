@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+
 	api "github.com/onepanelio/core/api/gen"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util/request"
@@ -24,18 +25,19 @@ func NewWorkflowTemplateServer() *WorkflowTemplateServer {
 // apiWorkflowTemplate converts a *v1.WorkflowTemplate to a *api.WorkflowTemplate
 func apiWorkflowTemplate(wft *v1.WorkflowTemplate) *api.WorkflowTemplate {
 	res := &api.WorkflowTemplate{
-		Uid:        wft.UID,
-		CreatedAt:  converter.TimestampToAPIString(&wft.CreatedAt),
-		ModifiedAt: converter.TimestampToAPIString(wft.ModifiedAt),
-		Name:       wft.Name,
-		Version:    wft.Version,
-		Versions:   wft.Versions,
-		Manifest:   wft.Manifest,
-		IsLatest:   wft.IsLatest,
-		IsArchived: wft.IsArchived,
-		Labels:     converter.MappingToKeyValue(wft.Labels),
-		Parameters: converter.ParametersToAPI(wft.Parameters),
-		Stats:      converter.WorkflowExecutionStatisticsReportToAPI(wft.WorkflowExecutionStatisticReport),
+		Uid:         wft.UID,
+		CreatedAt:   converter.TimestampToAPIString(&wft.CreatedAt),
+		ModifiedAt:  converter.TimestampToAPIString(wft.ModifiedAt),
+		Name:        wft.Name,
+		Version:     wft.Version,
+		Versions:    wft.Versions,
+		Manifest:    wft.Manifest,
+		IsLatest:    wft.IsLatest,
+		IsArchived:  wft.IsArchived,
+		Labels:      converter.MappingToKeyValue(wft.Labels),
+		Parameters:  converter.ParametersToAPI(wft.Parameters),
+		Stats:       converter.WorkflowExecutionStatisticsReportToAPI(wft.WorkflowExecutionStatisticReport),
+		Description: wft.Description,
 	}
 
 	if wft.CronWorkflowsStatisticsReport != nil {
@@ -83,9 +85,10 @@ func (s *WorkflowTemplateServer) CreateWorkflowTemplate(ctx context.Context, req
 		return nil, err
 	}
 	workflowTemplate := &v1.WorkflowTemplate{
-		Name:     req.WorkflowTemplate.Name,
-		Manifest: req.WorkflowTemplate.Manifest,
-		Labels:   converter.APIKeyValueToLabel(req.WorkflowTemplate.Labels),
+		Name:        req.WorkflowTemplate.Name,
+		Manifest:    req.WorkflowTemplate.Manifest,
+		Labels:      converter.APIKeyValueToLabel(req.WorkflowTemplate.Labels),
+		Description: req.WorkflowTemplate.Description,
 	}
 	workflowTemplate, err = client.CreateWorkflowTemplate(req.Namespace, workflowTemplate)
 	if err != nil {
@@ -105,10 +108,11 @@ func (s *WorkflowTemplateServer) CreateWorkflowTemplateVersion(ctx context.Conte
 	}
 
 	workflowTemplate := &v1.WorkflowTemplate{
-		UID:      req.WorkflowTemplate.Uid,
-		Name:     req.WorkflowTemplate.Name,
-		Manifest: req.WorkflowTemplate.Manifest,
-		Labels:   converter.APIKeyValueToLabel(req.WorkflowTemplate.Labels),
+		UID:         req.WorkflowTemplate.Uid,
+		Name:        req.WorkflowTemplate.Name,
+		Manifest:    req.WorkflowTemplate.Manifest,
+		Labels:      converter.APIKeyValueToLabel(req.WorkflowTemplate.Labels),
+		Description: req.WorkflowTemplate.Description,
 	}
 
 	workflowTemplate, err = client.CreateWorkflowTemplateVersion(req.Namespace, workflowTemplate)
