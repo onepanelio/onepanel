@@ -2,8 +2,6 @@ package v1
 
 import (
 	"encoding/json"
-	"time"
-
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/onepanelio/core/pkg/util/mapping"
 	"github.com/onepanelio/core/pkg/util/sql"
@@ -12,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"time"
 )
 
 // WorkflowTemplate represents a Workflow Template backed by a database row

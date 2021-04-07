@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"errors"
-
 	api "github.com/onepanelio/core/api/gen"
 	v1 "github.com/onepanelio/core/pkg"
 	"github.com/onepanelio/core/pkg/util/request"
