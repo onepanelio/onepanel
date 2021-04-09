@@ -2,6 +2,8 @@ package v1
 
 import (
 	"encoding/json"
+	"time"
+
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/onepanelio/core/pkg/util/mapping"
 	"github.com/onepanelio/core/pkg/util/sql"
@@ -10,7 +12,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"time"
 )
 
 // WorkflowTemplate represents a Workflow Template backed by a database row
@@ -276,6 +277,6 @@ func (wt *WorkflowTemplate) AddWorkflowTemplateParametersFromAnnotations(spec ma
 // getWorkflowTemplateColumns returns all of the columns for workflowTemplate modified by alias, destination.
 // see formatColumnSelect
 func getWorkflowTemplateColumns(aliasAndDestination ...string) []string {
-	columns := []string{"id", "created_at", "uid", "name", "namespace", "modified_at", "is_archived", "labels", "description"}
+	columns := []string{"id", "created_at", "uid", "name", "namespace", "modified_at", "is_archived", "labels"}
 	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }

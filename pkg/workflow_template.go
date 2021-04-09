@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/onepanelio/core/pkg/util/env"
 	"github.com/onepanelio/core/pkg/util/extensions"
 	"github.com/onepanelio/core/pkg/util/ptr"
 	"github.com/onepanelio/core/pkg/util/request"
 	pagination "github.com/onepanelio/core/pkg/util/request/pagination"
 	yaml3 "gopkg.in/yaml.v3"
-	"strconv"
-	"strings"
-	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
@@ -246,6 +247,7 @@ func (c *Client) createWorkflowTemplate(namespace string, workflowTemplate *Work
 		WorkflowTemplate: workflowTemplate,
 		Manifest:         workflowTemplate.Manifest,
 		Labels:           workflowTemplate.Labels,
+		Description:      workflowTemplate.Description,
 	}
 	err = createWorkflowTemplateVersionDB(tx, workflowTemplateVersion, params)
 	if err != nil {

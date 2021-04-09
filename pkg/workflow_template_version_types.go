@@ -2,9 +2,10 @@ package v1
 
 import (
 	"encoding/json"
+	"time"
+
 	"github.com/onepanelio/core/pkg/util/sql"
 	"github.com/onepanelio/core/pkg/util/types"
-	"time"
 )
 
 // WorkflowTemplateVersion represents a different version of a WorkflowTemplate
