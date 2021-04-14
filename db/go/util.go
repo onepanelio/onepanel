@@ -1,9 +1,91 @@
 package migration
 
 import (
+	"fmt"
 	v1 "github.com/onepanelio/core/pkg"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
 )
+
+// createWorkspaceTemplate will create the workspace template given by {{templateName}} with the contents
+// given by {{filename}}
+// It will do so for all namespaces.
+func createWorkspaceTemplate(filename, templateName, description string) error {
+	client, err := getClient()
+	if err != nil {
+		return err
+	}
+	defer client.DB.Close()
+
+	namespaces, err := client.ListOnepanelEnabledNamespaces()
+	if err != nil {
+		return err
+	}
+
+	newManifest, err := readDataFile(filename)
+	if err != nil {
+		return err
+	}
+
+	uid, err := uid2.GenerateUID(templateName, 30)
+	if err != nil {
+		return err
+	}
+
+	for _, namespace := range namespaces {
+		workspaceTemplate := &v1.WorkspaceTemplate{
+			UID:         uid,
+			Name:        templateName,
+			Manifest:    newManifest,
+			Description: description,
+		}
+
+		err = ReplaceArtifactRepositoryType(client, namespace, nil, workspaceTemplate)
+		if err != nil {
+			return err
+		}
+
+		if _, err := client.CreateWorkspaceTemplate(namespace.Name, workspaceTemplate); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func archiveWorkspaceTemplate(templateName string) error {
+	client, err := getClient()
+	if err != nil {
+		return err
+	}
+	defer client.DB.Close()
+
+	namespaces, err := client.ListOnepanelEnabledNamespaces()
+	if err != nil {
+		return err
+	}
+
+	uid, err := uid2.GenerateUID(templateName, 30)
+	if err != nil {
+		return err
+	}
+
+	for _, namespace := range namespaces {
+		hasRunning, err := client.WorkspaceTemplateHasRunningWorkspaces(namespace.Name, uid)
+		if err != nil {
+			return fmt.Errorf("Unable to get check running workspaces")
+		}
+		if hasRunning {
+			return fmt.Errorf("unable to archive workspace template. There are running workspaces that use it")
+		}
+
+		_, err = client.ArchiveWorkspaceTemplate(namespace.Name, uid)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 // updateWorkspaceTemplateManifest will update the workspace template given by {{templateName}} with the contents
 // given by {{filename}}
