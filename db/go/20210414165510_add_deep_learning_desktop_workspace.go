@@ -21,7 +21,7 @@ func Up20210414165510(tx *sql.Tx) error {
 	return createWorkspaceTemplate(
 		filepath.Join("workspaces", "vnc", "20210414165510.yaml"),
 		deepLearningDesktopTemplateName,
-		"")
+		"Deep learning desktop with VNC")
 }
 
 // Down20210414165510 removes the  Deep Learning Desktop Workspace Template
