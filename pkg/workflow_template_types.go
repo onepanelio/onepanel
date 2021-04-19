@@ -2,6 +2,8 @@ package v1
 
 import (
 	"encoding/json"
+	"time"
+
 	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/onepanelio/core/pkg/util/mapping"
 	"github.com/onepanelio/core/pkg/util/sql"
@@ -10,7 +12,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"time"
 )
 
 // WorkflowTemplate represents a Workflow Template backed by a database row
@@ -39,6 +40,7 @@ type WorkflowTemplate struct {
 	Resource                         *string // utility in case we are specifying a workflow template for a specific resource
 	ResourceUID                      *string // see Resource field
 	Parameters                       []Parameter
+	Description                      string `db:"description"`
 }
 
 // GenerateUID generates a uid from the input name and sets it on the workflow template

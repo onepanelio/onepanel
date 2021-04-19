@@ -2,9 +2,10 @@ package v1
 
 import (
 	"encoding/json"
+	"time"
+
 	"github.com/onepanelio/core/pkg/util/sql"
 	"github.com/onepanelio/core/pkg/util/types"
-	"time"
 )
 
 // WorkflowTemplateVersion represents a different version of a WorkflowTemplate
@@ -21,6 +22,7 @@ type WorkflowTemplateVersion struct {
 	Labels           types.JSONLabels
 	Parameters       []Parameter
 	ParametersBytes  []byte `db:"parameters"` // to load from database
+	Description      string `db:"description"`
 }
 
 // WorkflowTemplateVersionsToIDs returns an array of ids from the input WorkflowTemplateVersion with no duplicates.
@@ -62,6 +64,6 @@ func (wtv *WorkflowTemplateVersion) LoadParametersFromBytes() ([]Parameter, erro
 // getWorkflowTemplateVersionColumns returns all of the columns for workflow template versions modified by alias, destination.
 // see formatColumnSelect
 func getWorkflowTemplateVersionColumns(aliasAndDestination ...string) []string {
-	columns := []string{"id", "created_at", "version", "is_latest", "manifest", "parameters", "labels"}
+	columns := []string{"id", "created_at", "version", "is_latest", "manifest", "parameters", "labels", "description"}
 	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }
