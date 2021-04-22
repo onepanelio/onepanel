@@ -42,9 +42,8 @@ var (
 	httpPort     = flag.String("http-port", ":8888", "RPC Port")
 	recoveryFunc grpc_recovery.RecoveryHandlerFunc
 )
-
 func main() {
-	flag.Parse()
+flag.Parse()
 
 	// stopCh is used to indicate when the RPC server should reload.
 	// We do this when the configuration has been changed, so the server has the latest configuration
