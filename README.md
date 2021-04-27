@@ -12,7 +12,7 @@
 
 The open and extensible integrated development environment (IDE) for computer vision with built-in modules for model building, automated labeling, data processing, model training, hyperparameter tuning and workflow orchestration.
 
-https://user-images.githubusercontent.com/1211823/116290509-5fb34480-a748-11eb-8166-2910c8b36480.mp4
+https://user-images.githubusercontent.com/1211823/116291025-fd0e7880-a748-11eb-898f-ef6761a5a4b6.mp4
 
 ## Why Onepanel?
 <img width="100%" src="img/features.png">
