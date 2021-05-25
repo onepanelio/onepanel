@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	api "github.com/onepanelio/core/api/gen"
+	"github.com/onepanelio/core/pkg/util"
 	log "github.com/sirupsen/logrus"
 	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
@@ -174,7 +175,7 @@ func verifyLogin(client *v1.Client, tokenRequest *api.GetAccessTokenRequest) (ra
 		return string(secret.Data["token"]), nil
 	}
 
-	return "", fmt.Errorf("unable to find or validate token")
+	return "", util.NewUserError(codes.InvalidArgument, fmt.Sprintf("unknown username/token '%v'", tokenRequest.Username))
 }
 
 // UnaryInterceptor performs authentication checks.
