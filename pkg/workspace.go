@@ -345,7 +345,7 @@ func (c *Client) addRuntimeFieldsToWorkspaceTemplate(t wfv1.Template, workspace 
 		}
 
 		env.AddDefaultEnvVarsToContainer(container)
-		env.PrependEnvVarToContainer(container, "ONEPANEL_API_URL", config["ONEPANEL_API_URL"])
+		env.PrependEnvVarToContainer(container, "ONEPANEL_API_URL", "onepanel-core.onepanel.svc.cluster.local")
 		env.PrependEnvVarToContainer(container, "ONEPANEL_FQDN", config["ONEPANEL_FQDN"])
 		env.PrependEnvVarToContainer(container, "ONEPANEL_DOMAIN", config["ONEPANEL_DOMAIN"])
 		env.PrependEnvVarToContainer(container, "ONEPANEL_PROVIDER", config["ONEPANEL_PROVIDER"])
