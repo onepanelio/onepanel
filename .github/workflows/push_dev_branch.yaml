@@ -1,6 +1,8 @@
 name: Publish dev docker image
 on:
   push:
+    paths-ignore:
+      - README.md
     branches:
       - master
 jobs:
