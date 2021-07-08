@@ -11,7 +11,7 @@
 [![license](https://img.shields.io/github/license/onepanelio/core?color=01579b)](https://opensource.org/licenses/Apache-2.0)
 
 ## End-to-end computer vision platform
-Label, build, train, tune, deploy and automate all in one platform that runs on any cloud and on-premises.
+Label, build, train, tune, deploy and automate, all in one platform that runs on any cloud and on-premises.
 
 https://user-images.githubusercontent.com/1211823/116489376-afc60000-a849-11eb-8e8b-b0c64c07c144.mp4
 
