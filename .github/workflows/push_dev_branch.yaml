@@ -2,7 +2,9 @@ name: Publish dev docker image
 on:
   push:
     paths-ignore:
-      - README.md
+      - LICENSE
+      - ".github/**"
+      - "*.md"
     branches:
       - master
 jobs:
