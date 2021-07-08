@@ -10,7 +10,8 @@
 [![lfai](https://img.shields.io/badge/link-LFAI-01579b)](https://landscape.lfai.foundation/?selected=onepanel)
 [![license](https://img.shields.io/github/license/onepanelio/core?color=01579b)](https://opensource.org/licenses/Apache-2.0)
 
-The open and extensible integrated development environment (IDE) for computer vision with built-in modules for model building, automated labeling, data processing, model training, hyperparameter tuning and workflow orchestration.
+## End-to-end computer vision platform
+Label, build, train, tune, deploy and automate all in one platform that runs on any cloud and on-premises.
 
 https://user-images.githubusercontent.com/1211823/116489376-afc60000-a849-11eb-8e8b-b0c64c07c144.mp4
 
@@ -43,5 +44,5 @@ We are grateful for the support these communities provide and do our best to con
 ## License
 Onepanel is licensed under [Apache 2.0](https://github.com/onepanelio/core/blob/master/LICENSE).
 
-## For organizations
-Visit our [website](https://www.onepanel.ai/) for more information on support options and enterprise solution.
+## Enterprise support
+Need enterprise features and support? Visit our [website](https://www.onepanel.ai/) for more information.
