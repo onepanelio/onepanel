@@ -17,6 +17,12 @@ service ServiceService {
             get: "/apis/v1beta1/{namespace}/service"
         };
     }
+
+    rpc HasService(HasServiceRequest) returns (HasServiceResponse) {
+        option (google.api.http) = {
+            get: "/apis/v1beta/service/{name}"
+        };
+    }
 }
 
 message Service {
@@ -27,6 +33,14 @@ message Service {
 message GetServiceRequest {
     string namespace = 1;
     string name = 2;
+}
+
+message HasServiceRequest {
+    string name = 1;
+}
+
+message HasServiceResponse {
+    bool hasService= 1;
 }
 
 message ListServicesRequest {

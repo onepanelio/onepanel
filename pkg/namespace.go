@@ -27,6 +27,21 @@ func (c *Client) ListOnepanelEnabledNamespaces() (namespaces []*Namespace, err e
 	return
 }
 
+// GetNamespace gets the namespace from the cluster if it exists
+func (c *Client) GetNamespace(name string) (namespace *Namespace, err error) {
+	ns, err := c.CoreV1().Namespaces().Get(name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	namespace = &Namespace{
+		Name:   ns.Name,
+		Labels: ns.Labels,
+	}
+
+	return
+}
+
 func (c *Client) ListNamespaces() (namespaces []*Namespace, err error) {
 	namespaceList, err := c.CoreV1().Namespaces().List(metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", onepanelEnabledLabelKey, "true"),

@@ -68,3 +68,21 @@ func (c *ServiceServer) GetService(ctx context.Context, req *api.GetServiceReque
 
 	return apiService, nil
 }
+
+// HasService checks if the cluster has a service set up and enabled
+func (c *ServiceServer) HasService(ctx context.Context, req *api.HasServiceRequest) (*api.HasServiceResponse, error) {
+	client := getClient(ctx)
+	allowed, err := auth.IsAuthorized(client, "", "get", "", "onepanel-service", "")
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	hasService, err := client.HasService(req.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.HasServiceResponse{
+		HasService: hasService,
+	}, nil
+}
