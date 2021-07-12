@@ -19,6 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 type ServiceServiceClient interface {
 	GetService(ctx context.Context, in *GetServiceRequest, opts ...grpc.CallOption) (*Service, error)
 	ListServices(ctx context.Context, in *ListServicesRequest, opts ...grpc.CallOption) (*ListServicesResponse, error)
+	HasService(ctx context.Context, in *HasServiceRequest, opts ...grpc.CallOption) (*HasServiceResponse, error)
 }
 
 type serviceServiceClient struct {
@@ -47,12 +48,22 @@ func (c *serviceServiceClient) ListServices(ctx context.Context, in *ListService
 	return out, nil
 }
 
+func (c *serviceServiceClient) HasService(ctx context.Context, in *HasServiceRequest, opts ...grpc.CallOption) (*HasServiceResponse, error) {
+	out := new(HasServiceResponse)
+	err := c.cc.Invoke(ctx, "/api.ServiceService/HasService", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ServiceServiceServer is the server API for ServiceService service.
 // All implementations must embed UnimplementedServiceServiceServer
 // for forward compatibility
 type ServiceServiceServer interface {
 	GetService(context.Context, *GetServiceRequest) (*Service, error)
 	ListServices(context.Context, *ListServicesRequest) (*ListServicesResponse, error)
+	HasService(context.Context, *HasServiceRequest) (*HasServiceResponse, error)
 	mustEmbedUnimplementedServiceServiceServer()
 }
 
@@ -65,6 +76,9 @@ func (UnimplementedServiceServiceServer) GetService(context.Context, *GetService
 }
 func (UnimplementedServiceServiceServer) ListServices(context.Context, *ListServicesRequest) (*ListServicesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListServices not implemented")
+}
+func (UnimplementedServiceServiceServer) HasService(context.Context, *HasServiceRequest) (*HasServiceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HasService not implemented")
 }
 func (UnimplementedServiceServiceServer) mustEmbedUnimplementedServiceServiceServer() {}
 
@@ -115,6 +129,24 @@ func _ServiceService_ListServices_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ServiceService_HasService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HasServiceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ServiceServiceServer).HasService(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.ServiceService/HasService",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ServiceServiceServer).HasService(ctx, req.(*HasServiceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _ServiceService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "api.ServiceService",
 	HandlerType: (*ServiceServiceServer)(nil),
@@ -126,6 +158,10 @@ var _ServiceService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListServices",
 			Handler:    _ServiceService_ListServices_Handler,
+		},
+		{
+			MethodName: "HasService",
+			Handler:    _ServiceService_HasService_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

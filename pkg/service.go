@@ -2,6 +2,7 @@ package v1
 
 import (
 	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // generateServiceURL generates the url that the service is located at
@@ -84,4 +85,25 @@ func (c *Client) GetService(namespace, name string) (*Service, error) {
 	}
 
 	return service, nil
+}
+
+// HasService checks if the cluster has a service available
+func (c *Client) HasService(name string) (bool, error) {
+	if name != "kfserving-system" {
+		return false, fmt.Errorf("unsupported service")
+	}
+
+	if _, err := c.GetNamespace(name); err != nil {
+		return false, err
+	}
+
+	// Check if deployment is there for the web app
+	_, err := c.CoreV1().Pods("kfserving-system").List(metav1.ListOptions{
+		LabelSelector: "app.kubernetes.io/component=kfserving-models-web-app",
+	})
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
