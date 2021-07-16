@@ -253,11 +253,17 @@ message ListFilesRequest {
     string namespace = 1;
     string uid = 2;
     string path = 3;
+    int32 page = 4;
+    int32 perPage = 5;
 }
 
 message ListFilesResponse {
-    repeated File files = 1;
-    string parentPath = 2;
+    int32 count = 1;
+    int32 totalCount = 2;
+    int32 page = 3;
+    int32 pages = 4;
+    repeated File files = 5;
+    string parentPath = 6;
 }
 
 message Statistics {
