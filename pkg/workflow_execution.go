@@ -1745,13 +1745,16 @@ func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
 
 	files = make([]*File, 0)
 
-	if key == "/" {
-		key = ""
-	} else if len(key) > 0 {
+	if len(key) > 0 && strings.HasPrefix(key, "/") {
+		key = key[1:]
+	}
+
+	if len(key) > 0 {
 		if string(key[len(key)-1]) != "/" {
 			key += "/"
 		}
 	}
+
 	switch {
 	case config.ArtifactRepository.S3 != nil:
 		{
