@@ -13,6 +13,7 @@ func initialize20210719190719() {
 	}
 }
 
+// Up20210719190719 updates the workspace templates to use new v1.0.0 of filesyncer
 func Up20210719190719(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	if err := updateWorkspaceTemplateManifest(
@@ -38,6 +39,7 @@ func Up20210719190719(tx *sql.Tx) error {
 		vscodeWorkspaceTemplateName)
 }
 
+// Down20210719190719 rolls back the change to update filesyncer
 func Down20210719190719(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	if err := updateWorkspaceTemplateManifest(
