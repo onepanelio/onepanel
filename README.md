@@ -11,7 +11,7 @@
 [![license](https://img.shields.io/github/license/onepanelio/core?color=01579b)](https://opensource.org/licenses/Apache-2.0)
 
 ## End-to-end computer vision platform
-Label, build, train, tune, deploy and automate, all in one platform that runs on any cloud and on-premises.
+Label, build, train, tune, deploy and automate in a unified platform that runs on any cloud and on-premises.
 
 https://user-images.githubusercontent.com/1211823/116489376-afc60000-a849-11eb-8e8b-b0c64c07c144.mp4
 
@@ -37,7 +37,7 @@ See [contribution guide](https://docs.onepanel.ai/docs/getting-started/contribut
 ## Acknowledgments
 Onepanel seamlessly integrates the following open source projects under the hood:
 
-[Argo](https://github.com/argoproj/argo) | [Couler](https://github.com/couler-proj/couler) | [CVAT](https://github.com/opencv/cvat) | [JupyterLab](https://github.com/jupyterlab/jupyterlab) | [NNI](https://github.com/microsoft/nni)
+[Argo](https://github.com/argoproj/argo-workflows) | [Couler](https://github.com/couler-proj/couler) | [CVAT](https://github.com/opencv/cvat) | [JupyterLab](https://github.com/jupyterlab/jupyterlab) | [NNI](https://github.com/microsoft/nni)
 
 We are grateful for the support these communities provide and do our best to contribute back as much as possible.
 
