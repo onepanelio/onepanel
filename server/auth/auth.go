@@ -275,7 +275,7 @@ func UnaryInterceptor(kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfi
 					pieces := strings.Split(workspaceAndNamespace, "--")
 					if len(pieces) > 1 {
 						workspaceName := pieces[0]
-						namespace := pieces[1]
+						namespace := pieces[len(pieces)-1]
 
 						isAuthorizedRequest, ok := req.(*api.IsAuthorizedRequest)
 						if ok {
