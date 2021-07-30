@@ -246,6 +246,8 @@ type ArtifactRepositoryS3Provider struct {
 	KeyFormat       string `yaml:"keyFormat"`
 	Bucket          string
 	Endpoint        string
+	PublicEndpoint  string `yaml:"publicEndpoint"`
+	PublicInsecure  bool   `yaml:"publicInsecure"`
 	Insecure        bool
 	Region          string
 	AccessKeySecret ArtifactRepositorySecret `yaml:"accessKeySecret"`

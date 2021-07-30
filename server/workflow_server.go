@@ -14,9 +14,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"math"
-	"sort"
-	"strings"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -466,78 +463,6 @@ func (s *WorkflowServer) GetArtifact(ctx context.Context, req *api.GetArtifactRe
 
 	return &api.ArtifactResponse{
 		Data: data,
-	}, nil
-}
-
-func (s *WorkflowServer) ListFiles(ctx context.Context, req *api.ListFilesRequest) (*api.ListFilesResponse, error) {
-	client := getClient(ctx)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Uid)
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	if req.Page < 0 {
-		req.Page = 1
-	}
-	if req.PerPage <= 0 {
-		req.PerPage = 15
-	}
-
-	files, err := client.ListFiles(req.Namespace, req.Path)
-	if err != nil {
-		return nil, err
-	}
-
-	apiFiles := make([]*api.File, len(files))
-	for i, file := range files {
-		apiFiles[i] = &api.File{
-			Path:         file.Path,
-			Name:         file.Name,
-			Extension:    file.Extension,
-			Directory:    file.Directory,
-			Size:         file.Size,
-			ContentType:  file.ContentType,
-			LastModified: file.LastModified.UTC().Format(time.RFC3339),
-		}
-	}
-
-	sort.SliceStable(apiFiles, func(i, j int) bool {
-		lhFile := apiFiles[i]
-		rhFile := apiFiles[j]
-
-		if (lhFile.Directory && rhFile.Directory) ||
-			(!lhFile.Directory && !rhFile.Directory) {
-			return strings.Compare(strings.ToLower(lhFile.Name), strings.ToLower(rhFile.Name)) < 0
-		}
-
-		if lhFile.Directory {
-			return true
-		}
-
-		return false
-	})
-
-	start := (req.Page - 1) * req.PerPage
-	if start < 0 {
-		start = 0
-	}
-
-	end := int(start + req.PerPage)
-	if end > len(apiFiles) {
-		end = len(apiFiles)
-	}
-	parts := apiFiles[start:end]
-
-	count := len(parts)
-	totalCount := len(apiFiles)
-
-	return &api.ListFilesResponse{
-		Count:      int32(count),
-		Page:       req.Page,
-		Pages:      int32(math.Ceil(float64(totalCount) / float64(req.PerPage))),
-		TotalCount: int32(totalCount),
-		Files:      parts,
-		ParentPath: v1.FilePathToParentPath(req.Path),
 	}, nil
 }
 

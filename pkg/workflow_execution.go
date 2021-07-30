@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"cloud.google.com/go/storage"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/argoproj/argo/persist/sqldb"
 	"github.com/argoproj/argo/workflow/hydrator"
@@ -25,7 +24,6 @@ import (
 	"github.com/onepanelio/core/pkg/util/request"
 	"github.com/onepanelio/core/pkg/util/types"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
-	"golang.org/x/net/context"
 	"gopkg.in/yaml.v2"
 	networking "istio.io/api/networking/v1alpha3"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -1734,96 +1732,6 @@ func (c *Client) GetArtifact(namespace, uid, key string) (data []byte, err error
 		return
 	}
 
-	return
-}
-
-func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
-	config, err := c.GetNamespaceConfig(namespace)
-	if err != nil {
-		return
-	}
-
-	files = make([]*File, 0)
-
-	if len(key) > 0 && strings.HasPrefix(key, "/") {
-		key = key[1:]
-	}
-
-	if len(key) > 0 {
-		if string(key[len(key)-1]) != "/" {
-			key += "/"
-		}
-	}
-
-	switch {
-	case config.ArtifactRepository.S3 != nil:
-		{
-			s3Client, err := c.GetS3Client(namespace, config.ArtifactRepository.S3)
-			if err != nil {
-				return nil, err
-			}
-
-			doneCh := make(chan struct{})
-			defer close(doneCh)
-			for objInfo := range s3Client.ListObjects(config.ArtifactRepository.S3.Bucket, key, false, doneCh) {
-				if objInfo.Key == key {
-					continue
-				}
-
-				isDirectory := (objInfo.ETag == "" || strings.HasSuffix(objInfo.Key, "/")) && objInfo.Size == 0
-
-				newFile := &File{
-					Path:         objInfo.Key,
-					Name:         FilePathToName(objInfo.Key),
-					Extension:    FilePathToExtension(objInfo.Key),
-					Size:         objInfo.Size,
-					LastModified: objInfo.LastModified,
-					ContentType:  objInfo.ContentType,
-					Directory:    isDirectory,
-				}
-				files = append(files, newFile)
-			}
-		}
-	case config.ArtifactRepository.GCS != nil:
-		{
-			ctx := context.Background()
-			gcsClient, err := c.GetGCSClient(namespace, config.ArtifactRepository.GCS)
-			if err != nil {
-				return nil, err
-			}
-			q := &storage.Query{
-				Delimiter: "",
-				Prefix:    key,
-				Versions:  false,
-			}
-			bucketFiles := gcsClient.Bucket(config.ArtifactRepository.GCS.Bucket).Objects(ctx, q)
-
-			for true {
-				file, err := bucketFiles.Next()
-				if err != nil {
-					if err.Error() == "no more items in iterator" {
-						break
-					}
-					return nil, err
-				}
-				if file.Name == key {
-					continue
-				}
-				isDirectory := (file.Etag == "" || strings.HasSuffix(file.Name, "/")) && file.Size == 0
-
-				newFile := &File{
-					Path:         file.Name,
-					Name:         FilePathToName(file.Name),
-					Extension:    FilePathToExtension(file.Name),
-					Size:         file.Size,
-					LastModified: file.Updated,
-					ContentType:  file.ContentType,
-					Directory:    isDirectory,
-				}
-				files = append(files, newFile)
-			}
-		}
-	}
 	return
 }
 
