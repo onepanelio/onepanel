@@ -729,7 +729,7 @@
     },
     "/apis/v1beta1/{namespace}/files/presigned-url/{key}": {
       "get": {
-        "operationId": "GetObjectDownloadPresignedUrl",
+        "operationId": "GetObjectDownloadPresignedURL",
         "responses": {
           "200": {
             "description": "A successful response.",

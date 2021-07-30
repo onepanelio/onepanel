@@ -11,8 +11,8 @@ import (
 	"time"
 )
 
-// GetPresignedUrlDownload represents the information available when downloading an object
-type GetPresignedUrlDownload struct {
+// GetPresignedURLDownload represents the information available when downloading an object
+type GetPresignedURLDownload struct {
 	URL  string
 	Size int64
 }
@@ -70,7 +70,7 @@ func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
 }
 
 // GetObjectPresignedURL generates a presigned url for the object that is valid for 24 hours.
-func (c *Client) GetObjectPresignedURL(namespace, key string) (download *GetPresignedUrlDownload, err error) {
+func (c *Client) GetObjectPresignedURL(namespace, key string) (download *GetPresignedURLDownload, err error) {
 	config, err := c.GetNamespaceConfig(namespace)
 	if err != nil {
 		return
@@ -103,7 +103,7 @@ func (c *Client) GetObjectPresignedURL(namespace, key string) (download *GetPres
 		return
 	}
 
-	return &GetPresignedUrlDownload{
+	return &GetPresignedURLDownload{
 		URL:  presignedURL.String(),
 		Size: objInfo.Size,
 	}, nil

@@ -6,7 +6,7 @@ option go_package = "github.com/onepanelio/core/api/gen";
 import "google/api/annotations.proto";
 
 service FileService {
-  rpc GetObjectDownloadPresignedUrl (GetObjectPresignedUrlRequest) returns (GetPresignedUrlResponse) {
+  rpc GetObjectDownloadPresignedURL (GetObjectPresignedUrlRequest) returns (GetPresignedUrlResponse) {
     option (google.api.http) = {
       get: "/apis/v1beta1/{namespace}/files/presigned-url/{key=**}"
     };

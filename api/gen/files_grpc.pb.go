@@ -17,7 +17,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type FileServiceClient interface {
-	GetObjectDownloadPresignedUrl(ctx context.Context, in *GetObjectPresignedUrlRequest, opts ...grpc.CallOption) (*GetPresignedUrlResponse, error)
+	GetObjectDownloadPresignedURL(ctx context.Context, in *GetObjectPresignedUrlRequest, opts ...grpc.CallOption) (*GetPresignedUrlResponse, error)
 	ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error)
 }
 
@@ -29,9 +29,9 @@ func NewFileServiceClient(cc grpc.ClientConnInterface) FileServiceClient {
 	return &fileServiceClient{cc}
 }
 
-func (c *fileServiceClient) GetObjectDownloadPresignedUrl(ctx context.Context, in *GetObjectPresignedUrlRequest, opts ...grpc.CallOption) (*GetPresignedUrlResponse, error) {
+func (c *fileServiceClient) GetObjectDownloadPresignedURL(ctx context.Context, in *GetObjectPresignedUrlRequest, opts ...grpc.CallOption) (*GetPresignedUrlResponse, error) {
 	out := new(GetPresignedUrlResponse)
-	err := c.cc.Invoke(ctx, "/api.FileService/GetObjectDownloadPresignedUrl", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/api.FileService/GetObjectDownloadPresignedURL", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (c *fileServiceClient) ListFiles(ctx context.Context, in *ListFilesRequest,
 // All implementations must embed UnimplementedFileServiceServer
 // for forward compatibility
 type FileServiceServer interface {
-	GetObjectDownloadPresignedUrl(context.Context, *GetObjectPresignedUrlRequest) (*GetPresignedUrlResponse, error)
+	GetObjectDownloadPresignedURL(context.Context, *GetObjectPresignedUrlRequest) (*GetPresignedUrlResponse, error)
 	ListFiles(context.Context, *ListFilesRequest) (*ListFilesResponse, error)
 	mustEmbedUnimplementedFileServiceServer()
 }
@@ -60,8 +60,8 @@ type FileServiceServer interface {
 type UnimplementedFileServiceServer struct {
 }
 
-func (UnimplementedFileServiceServer) GetObjectDownloadPresignedUrl(context.Context, *GetObjectPresignedUrlRequest) (*GetPresignedUrlResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetObjectDownloadPresignedUrl not implemented")
+func (UnimplementedFileServiceServer) GetObjectDownloadPresignedURL(context.Context, *GetObjectPresignedUrlRequest) (*GetPresignedUrlResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetObjectDownloadPresignedURL not implemented")
 }
 func (UnimplementedFileServiceServer) ListFiles(context.Context, *ListFilesRequest) (*ListFilesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListFiles not implemented")
@@ -79,20 +79,20 @@ func RegisterFileServiceServer(s grpc.ServiceRegistrar, srv FileServiceServer) {
 	s.RegisterService(&_FileService_serviceDesc, srv)
 }
 
-func _FileService_GetObjectDownloadPresignedUrl_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _FileService_GetObjectDownloadPresignedURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetObjectPresignedUrlRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FileServiceServer).GetObjectDownloadPresignedUrl(ctx, in)
+		return srv.(FileServiceServer).GetObjectDownloadPresignedURL(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.FileService/GetObjectDownloadPresignedUrl",
+		FullMethod: "/api.FileService/GetObjectDownloadPresignedURL",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FileServiceServer).GetObjectDownloadPresignedUrl(ctx, req.(*GetObjectPresignedUrlRequest))
+		return srv.(FileServiceServer).GetObjectDownloadPresignedURL(ctx, req.(*GetObjectPresignedUrlRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -120,8 +120,8 @@ var _FileService_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*FileServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetObjectDownloadPresignedUrl",
-			Handler:    _FileService_GetObjectDownloadPresignedUrl_Handler,
+			MethodName: "GetObjectDownloadPresignedURL",
+			Handler:    _FileService_GetObjectDownloadPresignedURL_Handler,
 		},
 		{
 			MethodName: "ListFiles",
