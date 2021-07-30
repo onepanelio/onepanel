@@ -74,12 +74,6 @@ service WorkflowService {
         };
     }
 
-    rpc GetArtifact (GetArtifactRequest) returns (ArtifactResponse) {
-        option (google.api.http) = {
-            get: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/artifacts/{key=**}"
-        };
-    }
-
     rpc AddWorkflowExecutionStatistics (AddWorkflowExecutionStatisticRequest) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             post: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/statistics"
@@ -227,10 +221,6 @@ message WorkflowExecution {
     WorkflowExecutionMetadata metadata = 11;
 
     repeated Metric metrics = 12;
-}
-
-message ArtifactResponse {
-    bytes data = 1;
 }
 
 message Statistics {

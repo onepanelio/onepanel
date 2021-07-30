@@ -449,23 +449,6 @@ func (s *WorkflowServer) TerminateWorkflowExecution(ctx context.Context, req *ap
 	return &empty.Empty{}, nil
 }
 
-func (s *WorkflowServer) GetArtifact(ctx context.Context, req *api.GetArtifactRequest) (*api.ArtifactResponse, error) {
-	client := getClient(ctx)
-	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "argoproj.io", "workflows", req.Uid)
-	if err != nil || !allowed {
-		return nil, err
-	}
-
-	data, err := client.GetArtifact(req.Namespace, req.Uid, req.Key)
-	if err != nil {
-		return nil, err
-	}
-
-	return &api.ArtifactResponse{
-		Data: data,
-	}, nil
-}
-
 func (s *WorkflowServer) UpdateWorkflowExecutionStatus(ctx context.Context, req *api.UpdateWorkflowExecutionStatusRequest) (*empty.Empty, error) {
 	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "update", "argoproj.io", "workflows", req.Uid)

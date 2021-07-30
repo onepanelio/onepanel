@@ -2,6 +2,7 @@ package v1
 
 import (
 	"fmt"
+	"github.com/minio/minio-go/v6"
 	"github.com/onepanelio/core/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
@@ -9,6 +10,12 @@ import (
 	"strings"
 	"time"
 )
+
+// GetPresignedUrlDownload represents the information available when downloading an object
+type GetPresignedUrlDownload struct {
+	URL  string
+	Size int64
+}
 
 // ListFiles returns an array of files for the given namespace/key
 func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
@@ -63,7 +70,7 @@ func (c *Client) ListFiles(namespace, key string) (files []*File, err error) {
 }
 
 // GetObjectPresignedURL generates a presigned url for the object that is valid for 24 hours.
-func (c *Client) GetObjectPresignedURL(namespace, key string) (objectPresignedURL string, err error) {
+func (c *Client) GetObjectPresignedURL(namespace, key string) (download *GetPresignedUrlDownload, err error) {
 	config, err := c.GetNamespaceConfig(namespace)
 	if err != nil {
 		return
@@ -71,6 +78,16 @@ func (c *Client) GetObjectPresignedURL(namespace, key string) (objectPresignedUR
 
 	s3Client, err := c.GetPublicS3Client(namespace, config.ArtifactRepository.S3)
 	if err != nil {
+		return
+	}
+
+	objInfo, err := s3Client.StatObject(config.ArtifactRepository.S3.Bucket, key, minio.StatObjectOptions{})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Key":       key,
+			"Error":     err.Error(),
+		}).Error("StatObject")
 		return
 	}
 
@@ -82,11 +99,12 @@ func (c *Client) GetObjectPresignedURL(namespace, key string) (objectPresignedUR
 			"Namespace": namespace,
 			"Key":       key,
 			"Error":     err.Error(),
-		}).Error("Artifact does not exist.")
+		}).Error("PresignedGetObject")
 		return
 	}
 
-	objectPresignedURL = presignedURL.String()
-
-	return
+	return &GetPresignedUrlDownload{
+		URL:  presignedURL.String(),
+		Size: objInfo.Size,
+	}, nil
 }

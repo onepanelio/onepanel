@@ -96,7 +96,8 @@ func (s *FileServer) ListFiles(ctx context.Context, req *api.ListFilesRequest) (
 	}, nil
 }
 
-func (s *FileServer) GetObjectPresignedUrl(ctx context.Context, req *api.GetObjectPresignedUrlRequest) (*api.GetPresignedUrlResponse, error) {
+// GetObjectDownloadPresignedUrl returns a downloadable url for a given object
+func (s *FileServer) GetObjectDownloadPresignedUrl(ctx context.Context, req *api.GetObjectPresignedUrlRequest) (*api.GetPresignedUrlResponse, error) {
 	// TODO resource is workflows for now, should it be something else?
 	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "list", "argoproj.io", "workflows", "")
@@ -104,12 +105,13 @@ func (s *FileServer) GetObjectPresignedUrl(ctx context.Context, req *api.GetObje
 		return nil, err
 	}
 
-	signedURL, err := client.GetObjectPresignedURL(req.Namespace, req.Key)
+	downloadObj, err := client.GetObjectPresignedURL(req.Namespace, req.Key)
 	if err != nil {
 		return nil, err
 	}
 
 	return &api.GetPresignedUrlResponse{
-		Url: signedURL,
+		Url:  downloadObj.URL,
+		Size: downloadObj.Size,
 	}, nil
 }

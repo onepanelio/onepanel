@@ -729,7 +729,7 @@
     },
     "/apis/v1beta1/{namespace}/files/presigned-url/{key}": {
       "get": {
-        "operationId": "GetObjectPresignedUrl",
+        "operationId": "GetObjectDownloadPresignedUrl",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -1351,48 +1351,6 @@
           },
           {
             "name": "uid",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "WorkflowService"
-        ]
-      }
-    },
-    "/apis/v1beta1/{namespace}/workflow_executions/{uid}/artifacts/{key}": {
-      "get": {
-        "operationId": "GetArtifact",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/ArtifactResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/google.rpc.Status"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "uid",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "key",
             "in": "path",
             "required": true,
             "type": "string"
@@ -3302,15 +3260,6 @@
         }
       }
     },
-    "ArtifactResponse": {
-      "type": "object",
-      "properties": {
-        "data": {
-          "type": "string",
-          "format": "byte"
-        }
-      }
-    },
     "CreateWorkflowExecutionBody": {
       "type": "object",
       "properties": {
@@ -3503,6 +3452,10 @@
       "properties": {
         "url": {
           "type": "string"
+        },
+        "size": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },

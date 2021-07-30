@@ -31,7 +31,7 @@ var _ = runtime.String
 var _ = utilities.NewDoubleArray
 var _ = metadata.Join
 
-func request_FileService_GetObjectPresignedUrl_0(ctx context.Context, marshaler runtime.Marshaler, client FileServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_FileService_GetObjectDownloadPresignedUrl_0(ctx context.Context, marshaler runtime.Marshaler, client FileServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetObjectPresignedUrlRequest
 	var metadata runtime.ServerMetadata
 
@@ -62,12 +62,12 @@ func request_FileService_GetObjectPresignedUrl_0(ctx context.Context, marshaler 
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "key", err)
 	}
 
-	msg, err := client.GetObjectPresignedUrl(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.GetObjectDownloadPresignedUrl(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_FileService_GetObjectPresignedUrl_0(ctx context.Context, marshaler runtime.Marshaler, server FileServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_FileService_GetObjectDownloadPresignedUrl_0(ctx context.Context, marshaler runtime.Marshaler, server FileServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetObjectPresignedUrlRequest
 	var metadata runtime.ServerMetadata
 
@@ -98,7 +98,7 @@ func local_request_FileService_GetObjectPresignedUrl_0(ctx context.Context, mars
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "key", err)
 	}
 
-	msg, err := server.GetObjectPresignedUrl(ctx, &protoReq)
+	msg, err := server.GetObjectDownloadPresignedUrl(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -199,18 +199,18 @@ func local_request_FileService_ListFiles_0(ctx context.Context, marshaler runtim
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterFileServiceHandlerFromEndpoint instead.
 func RegisterFileServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server FileServiceServer) error {
 
-	mux.Handle("GET", pattern_FileService_GetObjectPresignedUrl_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_FileService_GetObjectDownloadPresignedUrl_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/api.FileService/GetObjectPresignedUrl")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/api.FileService/GetObjectDownloadPresignedUrl")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_FileService_GetObjectPresignedUrl_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_FileService_GetObjectDownloadPresignedUrl_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -218,7 +218,7 @@ func RegisterFileServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			return
 		}
 
-		forward_FileService_GetObjectPresignedUrl_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_FileService_GetObjectDownloadPresignedUrl_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -286,23 +286,23 @@ func RegisterFileServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn
 // "FileServiceClient" to call the correct interceptors.
 func RegisterFileServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client FileServiceClient) error {
 
-	mux.Handle("GET", pattern_FileService_GetObjectPresignedUrl_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_FileService_GetObjectDownloadPresignedUrl_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/api.FileService/GetObjectPresignedUrl")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/api.FileService/GetObjectDownloadPresignedUrl")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_FileService_GetObjectPresignedUrl_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_FileService_GetObjectDownloadPresignedUrl_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_FileService_GetObjectPresignedUrl_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_FileService_GetObjectDownloadPresignedUrl_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -330,13 +330,13 @@ func RegisterFileServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 }
 
 var (
-	pattern_FileService_GetObjectPresignedUrl_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 2, 4, 3, 0, 4, 1, 5, 5}, []string{"apis", "v1beta1", "namespace", "files", "presigned-url", "key"}, ""))
+	pattern_FileService_GetObjectDownloadPresignedUrl_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 2, 4, 3, 0, 4, 1, 5, 5}, []string{"apis", "v1beta1", "namespace", "files", "presigned-url", "key"}, ""))
 
 	pattern_FileService_ListFiles_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 2, 4, 3, 0, 4, 1, 5, 5}, []string{"apis", "v1beta1", "namespace", "files", "list", "path"}, ""))
 )
 
 var (
-	forward_FileService_GetObjectPresignedUrl_0 = runtime.ForwardResponseMessage
+	forward_FileService_GetObjectDownloadPresignedUrl_0 = runtime.ForwardResponseMessage
 
 	forward_FileService_ListFiles_0 = runtime.ForwardResponseMessage
 )
