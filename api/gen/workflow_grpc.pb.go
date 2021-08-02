@@ -30,8 +30,6 @@ type WorkflowServiceClient interface {
 	GetWorkflowExecutionMetrics(ctx context.Context, in *GetWorkflowExecutionMetricsRequest, opts ...grpc.CallOption) (*GetWorkflowExecutionMetricsResponse, error)
 	ResubmitWorkflowExecution(ctx context.Context, in *ResubmitWorkflowExecutionRequest, opts ...grpc.CallOption) (*WorkflowExecution, error)
 	TerminateWorkflowExecution(ctx context.Context, in *TerminateWorkflowExecutionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetArtifact(ctx context.Context, in *GetArtifactRequest, opts ...grpc.CallOption) (*ArtifactResponse, error)
-	ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error)
 	AddWorkflowExecutionStatistics(ctx context.Context, in *AddWorkflowExecutionStatisticRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	CronStartWorkflowExecutionStatistic(ctx context.Context, in *CronStartWorkflowExecutionStatisticRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UpdateWorkflowExecutionStatus(ctx context.Context, in *UpdateWorkflowExecutionStatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -184,24 +182,6 @@ func (c *workflowServiceClient) TerminateWorkflowExecution(ctx context.Context, 
 	return out, nil
 }
 
-func (c *workflowServiceClient) GetArtifact(ctx context.Context, in *GetArtifactRequest, opts ...grpc.CallOption) (*ArtifactResponse, error) {
-	out := new(ArtifactResponse)
-	err := c.cc.Invoke(ctx, "/api.WorkflowService/GetArtifact", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *workflowServiceClient) ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error) {
-	out := new(ListFilesResponse)
-	err := c.cc.Invoke(ctx, "/api.WorkflowService/ListFiles", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *workflowServiceClient) AddWorkflowExecutionStatistics(ctx context.Context, in *AddWorkflowExecutionStatisticRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/api.WorkflowService/AddWorkflowExecutionStatistics", in, out, opts...)
@@ -272,8 +252,6 @@ type WorkflowServiceServer interface {
 	GetWorkflowExecutionMetrics(context.Context, *GetWorkflowExecutionMetricsRequest) (*GetWorkflowExecutionMetricsResponse, error)
 	ResubmitWorkflowExecution(context.Context, *ResubmitWorkflowExecutionRequest) (*WorkflowExecution, error)
 	TerminateWorkflowExecution(context.Context, *TerminateWorkflowExecutionRequest) (*emptypb.Empty, error)
-	GetArtifact(context.Context, *GetArtifactRequest) (*ArtifactResponse, error)
-	ListFiles(context.Context, *ListFilesRequest) (*ListFilesResponse, error)
 	AddWorkflowExecutionStatistics(context.Context, *AddWorkflowExecutionStatisticRequest) (*emptypb.Empty, error)
 	CronStartWorkflowExecutionStatistic(context.Context, *CronStartWorkflowExecutionStatisticRequest) (*emptypb.Empty, error)
 	UpdateWorkflowExecutionStatus(context.Context, *UpdateWorkflowExecutionStatusRequest) (*emptypb.Empty, error)
@@ -316,12 +294,6 @@ func (UnimplementedWorkflowServiceServer) ResubmitWorkflowExecution(context.Cont
 }
 func (UnimplementedWorkflowServiceServer) TerminateWorkflowExecution(context.Context, *TerminateWorkflowExecutionRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TerminateWorkflowExecution not implemented")
-}
-func (UnimplementedWorkflowServiceServer) GetArtifact(context.Context, *GetArtifactRequest) (*ArtifactResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetArtifact not implemented")
-}
-func (UnimplementedWorkflowServiceServer) ListFiles(context.Context, *ListFilesRequest) (*ListFilesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListFiles not implemented")
 }
 func (UnimplementedWorkflowServiceServer) AddWorkflowExecutionStatistics(context.Context, *AddWorkflowExecutionStatisticRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddWorkflowExecutionStatistics not implemented")
@@ -540,42 +512,6 @@ func _WorkflowService_TerminateWorkflowExecution_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
-func _WorkflowService_GetArtifact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetArtifactRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(WorkflowServiceServer).GetArtifact(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.WorkflowService/GetArtifact",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WorkflowServiceServer).GetArtifact(ctx, req.(*GetArtifactRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _WorkflowService_ListFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListFilesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(WorkflowServiceServer).ListFiles(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.WorkflowService/ListFiles",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WorkflowServiceServer).ListFiles(ctx, req.(*ListFilesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _WorkflowService_AddWorkflowExecutionStatistics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AddWorkflowExecutionStatisticRequest)
 	if err := dec(in); err != nil {
@@ -719,14 +655,6 @@ var _WorkflowService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "TerminateWorkflowExecution",
 			Handler:    _WorkflowService_TerminateWorkflowExecution_Handler,
-		},
-		{
-			MethodName: "GetArtifact",
-			Handler:    _WorkflowService_GetArtifact_Handler,
-		},
-		{
-			MethodName: "ListFiles",
-			Handler:    _WorkflowService_ListFiles_Handler,
 		},
 		{
 			MethodName: "AddWorkflowExecutionStatistics",

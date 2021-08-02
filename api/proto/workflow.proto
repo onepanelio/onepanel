@@ -74,18 +74,6 @@ service WorkflowService {
         };
     }
 
-    rpc GetArtifact (GetArtifactRequest) returns (ArtifactResponse) {
-        option (google.api.http) = {
-            get: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/artifacts/{key=**}"
-        };
-    }
-
-    rpc ListFiles (ListFilesRequest) returns (ListFilesResponse) {
-        option (google.api.http) = {
-            get: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/files/{path=**}"
-        };
-    }
-
     rpc AddWorkflowExecutionStatistics (AddWorkflowExecutionStatisticRequest) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             post: "/apis/v1beta1/{namespace}/workflow_executions/{uid}/statistics"
@@ -233,37 +221,6 @@ message WorkflowExecution {
     WorkflowExecutionMetadata metadata = 11;
 
     repeated Metric metrics = 12;
-}
-
-message ArtifactResponse {
-    bytes data = 1;
-}
-
-message File {
-    string path = 1;
-    string name = 2;
-    string extension = 3;
-    int64 size = 4;
-    string contentType = 5;
-    string lastModified = 6;
-    bool directory = 7;
-}
-
-message ListFilesRequest {
-    string namespace = 1;
-    string uid = 2;
-    string path = 3;
-    int32 page = 4;
-    int32 perPage = 5;
-}
-
-message ListFilesResponse {
-    int32 count = 1;
-    int32 totalCount = 2;
-    int32 page = 3;
-    int32 pages = 4;
-    repeated File files = 5;
-    string parentPath = 6;
 }
 
 message Statistics {

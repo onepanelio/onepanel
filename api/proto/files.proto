@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package api;
+option go_package = "github.com/onepanelio/core/api/gen";
+
+import "google/api/annotations.proto";
+
+service FileService {
+  rpc GetObjectDownloadPresignedURL (GetObjectPresignedUrlRequest) returns (GetPresignedUrlResponse) {
+    option (google.api.http) = {
+      get: "/apis/v1beta1/{namespace}/files/presigned-url/{key=**}"
+    };
+  }
+
+  rpc ListFiles (ListFilesRequest) returns (ListFilesResponse) {
+    option (google.api.http) = {
+      get: "/apis/v1beta1/{namespace}/files/list/{path=**}"
+    };
+  }
+}
+
+message File {
+  string path = 1;
+  string name = 2;
+  string extension = 3;
+  int64 size = 4;
+  string contentType = 5;
+  string lastModified = 6;
+  bool directory = 7;
+}
+
+message ListFilesRequest {
+  string namespace = 1;
+  string path = 2;
+  int32 page = 3;
+  int32 perPage = 4;
+}
+
+message ListFilesResponse {
+  int32 count = 1;
+  int32 totalCount = 2;
+  int32 page = 3;
+  int32 pages = 4;
+  repeated File files = 5;
+  string parentPath = 6;
+}
+
+message GetObjectPresignedUrlRequest {
+  string namespace = 1;
+  string key = 2;
+}
+
+message GetPresignedUrlResponse {
+  string url = 1;
+  int64 size = 2;
+}

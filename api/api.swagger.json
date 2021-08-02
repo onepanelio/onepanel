@@ -677,6 +677,92 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/files/list/{path}": {
+      "get": {
+        "operationId": "ListFiles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListFilesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "perPage",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "FileService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/files/presigned-url/{key}": {
+      "get": {
+        "operationId": "GetObjectDownloadPresignedURL",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetPresignedUrlResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "FileService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/secrets": {
       "get": {
         "operationId": "ListSecrets",
@@ -1275,48 +1361,6 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/workflow_executions/{uid}/artifacts/{key}": {
-      "get": {
-        "operationId": "GetArtifact",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/ArtifactResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/google.rpc.Status"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "uid",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "key",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "WorkflowService"
-        ]
-      }
-    },
     "/apis/v1beta1/{namespace}/workflow_executions/{uid}/cron_start_statistics": {
       "post": {
         "operationId": "CronStartWorkflowExecutionStatistic",
@@ -1354,62 +1398,6 @@
             "schema": {
               "$ref": "#/definitions/Statistics"
             }
-          }
-        ],
-        "tags": [
-          "WorkflowService"
-        ]
-      }
-    },
-    "/apis/v1beta1/{namespace}/workflow_executions/{uid}/files/{path}": {
-      "get": {
-        "operationId": "ListFiles",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/ListFilesResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/google.rpc.Status"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "namespace",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "uid",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "path",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "perPage",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
           }
         ],
         "tags": [
@@ -3272,15 +3260,6 @@
         }
       }
     },
-    "ArtifactResponse": {
-      "type": "object",
-      "properties": {
-        "data": {
-          "type": "string",
-          "format": "byte"
-        }
-      }
-    },
     "CreateWorkflowExecutionBody": {
       "type": "object",
       "properties": {
@@ -3465,6 +3444,18 @@
       "properties": {
         "bucket": {
           "type": "string"
+        }
+      }
+    },
+    "GetPresignedUrlResponse": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "size": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },

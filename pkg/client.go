@@ -125,6 +125,26 @@ func (c *Client) GetS3Client(namespace string, config *ArtifactRepositoryS3Provi
 	return
 }
 
+// GetPublicS3Client initializes a client to Amazon Cloud Storage with the endpoint being public accessible (if available)
+func (c *Client) GetPublicS3Client(namespace string, config *ArtifactRepositoryS3Provider) (s3Client *s3.Client, err error) {
+	s3Client, err = s3.NewClient(s3.Config{
+		Endpoint:  config.PublicEndpoint,
+		Region:    config.Region,
+		AccessKey: config.AccessKey,
+		SecretKey: config.Secretkey,
+		InSecure:  config.PublicInsecure,
+	})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"ConfigMap": config,
+			"Error":     err.Error(),
+		}).Error("getS3Client failed when initializing a new S3 client.")
+		return
+	}
+	return
+}
+
 // GetGCSClient initializes a client to Google Cloud Storage.
 func (c *Client) GetGCSClient(namespace string, config *ArtifactRepositoryGCSProvider) (gcsClient *gcs.Client, err error) {
 	return gcs.NewClient(namespace, config.ServiceAccountJSON)
