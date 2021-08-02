@@ -96,7 +96,7 @@ func (s *FileServer) ListFiles(ctx context.Context, req *api.ListFilesRequest) (
 	}, nil
 }
 
-// GetObjectDownloadPresignedUrl returns a downloadable url for a given object
+// GetObjectDownloadPresignedURL returns a downloadable url for a given object
 func (s *FileServer) GetObjectDownloadPresignedURL(ctx context.Context, req *api.GetObjectPresignedUrlRequest) (*api.GetPresignedUrlResponse, error) {
 	// TODO resource is workflows for now, should it be something else?
 	client := getClient(ctx)
