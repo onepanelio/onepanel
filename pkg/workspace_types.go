@@ -52,6 +52,7 @@ type Workspace struct {
 	WorkspaceTemplateID      uint64                   `db:"workspace_template_id"`
 	WorkspaceTemplateVersion uint64                   `db:"workspace_template_version"`
 	WorkflowTemplateVersion  *WorkflowTemplateVersion `db:"workflow_template_version"` // helper to store data from workflow template version
+	CaptureNode              bool                     `db:"capture_node"`
 }
 
 type WorkspaceSpec struct {
@@ -102,7 +103,7 @@ func GenerateWorkspaceUID(name string) (string, error) {
 // getWorkspaceColumns returns all of the columns for workspace modified by alias, destination.
 // see formatColumnSelect
 func getWorkspaceColumns(aliasAndDestination ...string) []string {
-	columns := []string{"id", "created_at", "modified_at", "uid", "name", "namespace", "parameters", "workspace_template_id", "workspace_template_version", "labels"}
+	columns := []string{"id", "created_at", "modified_at", "uid", "name", "namespace", "parameters", "workspace_template_id", "workspace_template_version", "labels", "capture_node"}
 	return sql.FormatColumnSelect(columns, aliasAndDestination...)
 }
 
@@ -145,9 +146,11 @@ func getWorkspaceColumnsMap(camelCase bool) map[string]string {
 	if camelCase {
 		result["createdAt"] = "created_at"
 		result["modifiedAt"] = "modified_at"
+		result["captureNode"] = "capture_node"
 	} else {
 		result["created_at"] = "created_at"
 		result["modified_at"] = "modified_at"
+		result["capture_node"] = "capture_node"
 	}
 
 	return result

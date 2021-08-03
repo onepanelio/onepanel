@@ -3305,6 +3305,9 @@
           "items": {
             "$ref": "#/definitions/KeyValue"
           }
+        },
+        "captureNode": {
+          "type": "boolean"
         }
       }
     },

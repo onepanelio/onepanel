@@ -121,6 +121,7 @@ message CreateWorkspaceBody {
 
 	repeated Parameter parameters = 3;
 	repeated KeyValue labels = 4;
+	bool captureNode = 5;
 }
 
 message CreateWorkspaceRequest {

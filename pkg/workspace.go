@@ -275,6 +275,7 @@ func (c *Client) createWorkspace(namespace string, parameters []byte, workspace 
 			"workspace_template_id":      workspace.WorkspaceTemplate.ID,
 			"workspace_template_version": workspace.WorkspaceTemplate.Version,
 			"labels":                     workspace.Labels,
+			"capture_node":               workspace.CaptureNode,
 		}).
 		Suffix("RETURNING id, created_at").
 		RunWith(c.DB).
@@ -311,9 +312,9 @@ func (c *Client) addRuntimeFieldsToWorkspaceTemplate(t wfv1.Template, workspace 
 	if !ok {
 		return nil, errors.New("unable to type check statefulset manifest")
 	}
-	extraContainer := generateNodeCaptureContainer(workspace, config)
 
-	if extraContainer != nil {
+	if workspace.CaptureNode {
+		extraContainer := generateNodeCaptureContainer(workspace, config)
 		containers, ok := templateSpec["containers"].([]interface{})
 		if !ok {
 			return nil, errors.New("unable to type check statefulset manifest")
