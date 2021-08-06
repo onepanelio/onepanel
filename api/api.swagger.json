@@ -763,6 +763,44 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/models/deploy": {
+      "post": {
+        "operationId": "DeployModel",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/DeployModelResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/DeployModelRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ModelService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/secrets": {
       "get": {
         "operationId": "ListSecrets",
@@ -3362,6 +3400,28 @@
         }
       }
     },
+    "DeployModelRequest": {
+      "type": "object",
+      "properties": {
+        "namespace": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "predictor": {
+          "$ref": "#/definitions/Predictor"
+        }
+      }
+    },
+    "DeployModelResponse": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
     "File": {
       "type": "object",
       "properties": {
@@ -3973,6 +4033,17 @@
         }
       }
     },
+    "NodeSelector": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
     "Parameter": {
       "type": "object",
       "properties": {
@@ -4012,6 +4083,45 @@
           "type": "string"
         },
         "value": {
+          "type": "string"
+        }
+      }
+    },
+    "Predictor": {
+      "type": "object",
+      "properties": {
+        "nodeSelector": {
+          "$ref": "#/definitions/NodeSelector"
+        },
+        "server": {
+          "$ref": "#/definitions/PredictorServer"
+        }
+      }
+    },
+    "PredictorServer": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "runtimeVersion": {
+          "type": "string"
+        },
+        "storageUri": {
+          "type": "string"
+        },
+        "limits": {
+          "$ref": "#/definitions/ResourceLimits"
+        }
+      }
+    },
+    "ResourceLimits": {
+      "type": "object",
+      "properties": {
+        "cpu": {
+          "type": "string"
+        },
+        "memory": {
           "type": "string"
         }
       }
