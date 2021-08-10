@@ -1,10 +1,14 @@
 package v1
 
 import (
+	"fmt"
+	"github.com/onepanelio/core/pkg/util"
+	"google.golang.org/grpc/codes"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"strings"
 )
 
 func modelRestClient() (*rest.RESTClient, error) {
@@ -17,8 +21,13 @@ func modelRestClient() (*rest.RESTClient, error) {
 }
 
 // DeployModel creates an InferenceService with KFServing
-func (c *Client) DeployModel(deployment *ModelDeployment) error {
-	resource := deployment.ToResource()
+func (c *Client) DeployModel(deployment *InferenceService) error {
+	nodePoolLabel := c.systemConfig.NodePoolLabel()
+	if nodePoolLabel == nil {
+		return fmt.Errorf("applicationNodePoolLabel not set")
+	}
+
+	resource := deployment.ToResource(*nodePoolLabel)
 
 	data, err := json.Marshal(resource)
 	if err != nil {
@@ -33,7 +42,7 @@ func (c *Client) DeployModel(deployment *ModelDeployment) error {
 	err = restClient.Post().
 		Namespace(deployment.Namespace).
 		Name(deployment.Name).
-		Resource(modelResource).
+		Resource(inferenceServiceResource).
 		Body(data).
 		Do().
 		Error()
@@ -42,7 +51,7 @@ func (c *Client) DeployModel(deployment *ModelDeployment) error {
 }
 
 // GetModelStatus returns the model's status
-func (c *Client) GetModelStatus(namespace, name string) (*ModelStatus, error) {
+func (c *Client) GetModelStatus(namespace, name string) (*InferenceServiceStatus, error) {
 	restClient, err := modelRestClient()
 	if err != nil {
 		return nil, err
@@ -53,11 +62,15 @@ func (c *Client) GetModelStatus(namespace, name string) (*ModelStatus, error) {
 	err = restClient.Get().
 		Namespace(namespace).
 		Name(name).
-		Resource(modelResource).
+		Resource(inferenceServiceResource).
 		Do().
 		Into(result)
 
-	status := &ModelStatus{
+	if err != nil && strings.Contains(err.Error(), "not found") {
+		return nil, util.NewUserError(codes.NotFound, "not found")
+	}
+
+	status := &InferenceServiceStatus{
 		Conditions: result.Status.Conditions,
 		Ready:      result.Status.Ready(),
 	}
@@ -75,7 +88,7 @@ func (c *Client) DeleteModel(namespace, name string) error {
 	return restClient.Delete().
 		Namespace(namespace).
 		Name(name).
-		Resource(modelResource).
+		Resource(inferenceServiceResource).
 		Do().
 		Error()
 }

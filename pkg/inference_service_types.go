@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-const modelResource = "InferenceServices"
+const inferenceServiceResource = "InferenceServices"
 
 // ResourceLimits are the cpu/memory limits
 type ResourceLimits struct {
@@ -14,24 +14,13 @@ type ResourceLimits struct {
 	Memory string
 }
 
-// NodeSelector provides a key/value to select a Node
-type NodeSelector struct {
-	Key   string
-	Value string
-}
-
-// PredictorServer contains information on a server that serves models
-type PredictorServer struct {
+// Predictor contains information on what type of predictor we are using, and what resources it has available
+type Predictor struct {
 	Name           string
 	RuntimeVersion *string
 	StorageURI     string
 	ResourceLimits *ResourceLimits
-}
-
-// Predictor contains information on what type of predictor we are using, and what resources it has available
-type Predictor struct {
-	NodeSelector *NodeSelector
-	Server       PredictorServer
+	NodeSelector   *string
 }
 
 // Env is a name/value environment variable
@@ -52,8 +41,8 @@ type Transformer struct {
 	Containers []TransformerContainer
 }
 
-// ModelDeployment represents the information necessary to deploy a model
-type ModelDeployment struct {
+// InferenceService represents the information necessary to deploy an inference service
+type InferenceService struct {
 	Name      string
 	Namespace string
 
@@ -61,24 +50,24 @@ type ModelDeployment struct {
 	Predictor   *Predictor
 }
 
-// ModelStatus represents information about a model's status
-type ModelStatus struct {
+// InferenceServiceStatus represents information about an InferenceService
+type InferenceServiceStatus struct {
 	Ready      bool
-	Conditions []modelCondition
+	Conditions []inferenceServiceCondition
 }
 
-type modelCondition struct {
+type inferenceServiceCondition struct {
 	LastTransitionTime time.Time `json:"lastTransitionTime"`
 	Status             string    `json:"status"`
 	Type               string    `json:"type"`
 }
 
-type modelStatus struct {
-	Conditions []modelCondition `json:"conditions"`
+type inferenceServiceStatus struct {
+	Conditions []inferenceServiceCondition `json:"conditions"`
 }
 
 // Ready returns true if there is a condition called Ready: true.
-func (m *modelStatus) Ready() bool {
+func (m *inferenceServiceStatus) Ready() bool {
 	for _, condition := range m.Conditions {
 		if condition.Type == "Ready" && condition.Status == "True" {
 			return true
@@ -88,45 +77,43 @@ func (m *modelStatus) Ready() bool {
 	return false
 }
 
-// TODO
-// k8sModel
 type k8sModel struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata" protobuf:"bytes,1,opt,name=metadata"`
-	Status            modelStatus `json:"status,omitempty"`
+	Status            inferenceServiceStatus `json:"status,omitempty"`
 }
 
 func (k k8sModel) DeepCopyObject() runtime.Object {
 	panic("implement me")
 }
 
-// ToResource converts the ModelDeployment into a KFServing spec
-func (m *ModelDeployment) ToResource() interface{} {
+// ToResource converts the InferenceService into a KFServing spec
+func (m *InferenceService) ToResource(nodeSelector string) interface{} {
 	spec := map[string]interface{}{
 		"predictor": map[string]interface{}{
-			m.Predictor.Server.Name: map[string]interface{}{
-				"storageUri": m.Predictor.Server.StorageURI,
+			m.Predictor.Name: map[string]interface{}{
+				"storageUri": m.Predictor.StorageURI,
 			},
 		},
 	}
 
 	predictor := spec["predictor"].(map[string]interface{})
-	predictorServer := predictor[m.Predictor.Server.Name].(map[string]interface{})
+	predictorServer := predictor[m.Predictor.Name].(map[string]interface{})
 
-	if m.Predictor.Server.RuntimeVersion != nil {
-		predictorServer["runtimeVersion"] = m.Predictor.Server.RuntimeVersion
+	if m.Predictor.RuntimeVersion != nil {
+		predictorServer["runtimeVersion"] = m.Predictor.RuntimeVersion
 	}
 
 	if m.Predictor.NodeSelector != nil {
 		predictor["nodeSelector"] = map[string]string{
-			m.Predictor.NodeSelector.Key: m.Predictor.NodeSelector.Value,
+			nodeSelector: *m.Predictor.NodeSelector,
 		}
 	}
 
-	if m.Predictor.Server.ResourceLimits != nil {
+	if m.Predictor.ResourceLimits != nil {
 		predictorServer["resources"] = map[string]string{
-			"cpu":    m.Predictor.Server.ResourceLimits.CPU,
-			"memory": m.Predictor.Server.ResourceLimits.Memory,
+			"cpu":    m.Predictor.ResourceLimits.CPU,
+			"memory": m.Predictor.ResourceLimits.Memory,
 		}
 	}
 

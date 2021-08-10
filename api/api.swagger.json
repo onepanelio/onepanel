@@ -763,9 +763,9 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/models": {
+    "/apis/v1beta1/{namespace}/inferenceservice": {
       "post": {
-        "operationId": "DeployModel",
+        "operationId": "CreateInferenceService",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -792,23 +792,23 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/DeployModelRequest"
+              "$ref": "#/definitions/CreateInferenceServiceRequest"
             }
           }
         ],
         "tags": [
-          "ModelService"
+          "InferenceService"
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/models/{name}": {
+    "/apis/v1beta1/{namespace}/inferenceservice/{name}": {
       "get": {
-        "operationId": "GetModelStatus",
+        "operationId": "GetInferenceServiceStatus",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/ModelStatus"
+              "$ref": "#/definitions/InferenceServiceStatus"
             }
           },
           "default": {
@@ -833,11 +833,11 @@
           }
         ],
         "tags": [
-          "ModelService"
+          "InferenceService"
         ]
       },
       "delete": {
-        "operationId": "DeleteModel",
+        "operationId": "DeleteInferenceService",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -867,7 +867,7 @@
           }
         ],
         "tags": [
-          "ModelService"
+          "InferenceService"
         ]
       }
     },
@@ -3385,6 +3385,26 @@
         }
       }
     },
+    "CreateInferenceServiceRequest": {
+      "type": "object",
+      "properties": {
+        "namespace": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "transformerImage": {
+          "type": "string"
+        },
+        "predictor": {
+          "$ref": "#/definitions/Predictor"
+        },
+        "transformer": {
+          "$ref": "#/definitions/Transformer"
+        }
+      }
+    },
     "CreateWorkflowExecutionBody": {
       "type": "object",
       "properties": {
@@ -3484,23 +3504,6 @@
       "properties": {
         "deleted": {
           "type": "boolean"
-        }
-      }
-    },
-    "DeployModelRequest": {
-      "type": "object",
-      "properties": {
-        "namespace": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "predictor": {
-          "$ref": "#/definitions/Predictor"
-        },
-        "transformer": {
-          "$ref": "#/definitions/Transformer"
         }
       }
     },
@@ -3647,6 +3650,34 @@
       "properties": {
         "hasService": {
           "type": "boolean"
+        }
+      }
+    },
+    "InferenceServiceCondition": {
+      "type": "object",
+      "properties": {
+        "lastTransitionTime": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      }
+    },
+    "InferenceServiceStatus": {
+      "type": "object",
+      "properties": {
+        "ready": {
+          "type": "boolean"
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/InferenceServiceCondition"
+          }
         }
       }
     },
@@ -4093,34 +4124,6 @@
         }
       }
     },
-    "ModelCondition": {
-      "type": "object",
-      "properties": {
-        "lastTransitionTime": {
-          "type": "string"
-        },
-        "status": {
-          "type": "string"
-        },
-        "type": {
-          "type": "string"
-        }
-      }
-    },
-    "ModelStatus": {
-      "type": "object",
-      "properties": {
-        "ready": {
-          "type": "boolean"
-        },
-        "conditions": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ModelCondition"
-          }
-        }
-      }
-    },
     "Namespace": {
       "type": "object",
       "properties": {
@@ -4147,17 +4150,6 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
-        },
-        "value": {
-          "type": "string"
-        }
-      }
-    },
-    "NodeSelector": {
-      "type": "object",
-      "properties": {
-        "key": {
           "type": "string"
         },
         "value": {
@@ -4211,17 +4203,6 @@
     "Predictor": {
       "type": "object",
       "properties": {
-        "nodeSelector": {
-          "$ref": "#/definitions/NodeSelector"
-        },
-        "server": {
-          "$ref": "#/definitions/PredictorServer"
-        }
-      }
-    },
-    "PredictorServer": {
-      "type": "object",
-      "properties": {
         "name": {
           "type": "string"
         },
@@ -4231,14 +4212,9 @@
         "storageUri": {
           "type": "string"
         },
-        "limits": {
-          "$ref": "#/definitions/ResourceLimits"
-        }
-      }
-    },
-    "ResourceLimits": {
-      "type": "object",
-      "properties": {
+        "nodeSelector": {
+          "type": "string"
+        },
         "cpu": {
           "type": "string"
         },

@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package api;
+option go_package = "github.com/onepanelio/core/api/gen";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+service InferenceService {
+  rpc CreateInferenceService (CreateInferenceServiceRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/apis/v1beta1/{namespace}/inferenceservice"
+      body: "*"
+    };
+  }
+
+  rpc GetInferenceServiceStatus (InferenceServiceIdentifier) returns (InferenceServiceStatus) {
+    option (google.api.http) = {
+      get: "/apis/v1beta1/{namespace}/inferenceservice/{name}"
+    };
+  }
+
+  rpc DeleteInferenceService (InferenceServiceIdentifier) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/apis/v1beta1/{namespace}/inferenceservice/{name}"
+    };
+  }
+}
+
+message InferenceServiceIdentifier {
+  string namespace = 1;
+  string name = 2;
+}
+
+message Env {
+    string name = 1;
+    string value = 2;
+}
+
+message Container {
+    string image = 1;
+    string name = 2;
+    repeated Env env = 3;
+}
+
+message Transformer {
+    repeated Container containers = 1;
+}
+
+message Predictor {
+  string name = 1;
+  string runtimeVersion = 2;
+  string storageUri = 3;
+  string nodeSelector = 4;
+  string cpu = 5;
+  string memory = 6;
+}
+
+message CreateInferenceServiceRequest {
+  string namespace = 1;
+  string name = 2;
+  string transformerImage = 3;
+
+  Predictor predictor = 4;
+  Transformer transformer = 5;
+}
+
+message DeployModelResponse {
+  string status = 1;
+}
+
+message InferenceServiceCondition {
+  string lastTransitionTime = 1;
+  string status = 2;
+  string type = 3;
+}
+
+message InferenceServiceStatus {
+    bool ready = 1;
+    repeated InferenceServiceCondition conditions = 2;
+}
