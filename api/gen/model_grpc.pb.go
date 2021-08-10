@@ -7,6 +7,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -17,7 +18,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ModelServiceClient interface {
-	DeployModel(ctx context.Context, in *DeployModelRequest, opts ...grpc.CallOption) (*DeployModelResponse, error)
+	DeployModel(ctx context.Context, in *DeployModelRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetModelStatus(ctx context.Context, in *ModelIdentifier, opts ...grpc.CallOption) (*ModelStatus, error)
+	DeleteModel(ctx context.Context, in *ModelIdentifier, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type modelServiceClient struct {
@@ -28,9 +31,27 @@ func NewModelServiceClient(cc grpc.ClientConnInterface) ModelServiceClient {
 	return &modelServiceClient{cc}
 }
 
-func (c *modelServiceClient) DeployModel(ctx context.Context, in *DeployModelRequest, opts ...grpc.CallOption) (*DeployModelResponse, error) {
-	out := new(DeployModelResponse)
+func (c *modelServiceClient) DeployModel(ctx context.Context, in *DeployModelRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/api.ModelService/DeployModel", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *modelServiceClient) GetModelStatus(ctx context.Context, in *ModelIdentifier, opts ...grpc.CallOption) (*ModelStatus, error) {
+	out := new(ModelStatus)
+	err := c.cc.Invoke(ctx, "/api.ModelService/GetModelStatus", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *modelServiceClient) DeleteModel(ctx context.Context, in *ModelIdentifier, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/api.ModelService/DeleteModel", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +62,9 @@ func (c *modelServiceClient) DeployModel(ctx context.Context, in *DeployModelReq
 // All implementations must embed UnimplementedModelServiceServer
 // for forward compatibility
 type ModelServiceServer interface {
-	DeployModel(context.Context, *DeployModelRequest) (*DeployModelResponse, error)
+	DeployModel(context.Context, *DeployModelRequest) (*emptypb.Empty, error)
+	GetModelStatus(context.Context, *ModelIdentifier) (*ModelStatus, error)
+	DeleteModel(context.Context, *ModelIdentifier) (*emptypb.Empty, error)
 	mustEmbedUnimplementedModelServiceServer()
 }
 
@@ -49,8 +72,14 @@ type ModelServiceServer interface {
 type UnimplementedModelServiceServer struct {
 }
 
-func (UnimplementedModelServiceServer) DeployModel(context.Context, *DeployModelRequest) (*DeployModelResponse, error) {
+func (UnimplementedModelServiceServer) DeployModel(context.Context, *DeployModelRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeployModel not implemented")
+}
+func (UnimplementedModelServiceServer) GetModelStatus(context.Context, *ModelIdentifier) (*ModelStatus, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetModelStatus not implemented")
+}
+func (UnimplementedModelServiceServer) DeleteModel(context.Context, *ModelIdentifier) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteModel not implemented")
 }
 func (UnimplementedModelServiceServer) mustEmbedUnimplementedModelServiceServer() {}
 
@@ -83,6 +112,42 @@ func _ModelService_DeployModel_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ModelService_GetModelStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ModelIdentifier)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelServiceServer).GetModelStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.ModelService/GetModelStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelServiceServer).GetModelStatus(ctx, req.(*ModelIdentifier))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ModelService_DeleteModel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ModelIdentifier)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelServiceServer).DeleteModel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.ModelService/DeleteModel",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelServiceServer).DeleteModel(ctx, req.(*ModelIdentifier))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _ModelService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "api.ModelService",
 	HandlerType: (*ModelServiceServer)(nil),
@@ -90,6 +155,14 @@ var _ModelService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeployModel",
 			Handler:    _ModelService_DeployModel_Handler,
+		},
+		{
+			MethodName: "GetModelStatus",
+			Handler:    _ModelService_GetModelStatus_Handler,
+		},
+		{
+			MethodName: "DeleteModel",
+			Handler:    _ModelService_DeleteModel_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

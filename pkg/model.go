@@ -33,10 +33,49 @@ func (c *Client) DeployModel(deployment *ModelDeployment) error {
 	err = restClient.Post().
 		Namespace(deployment.Namespace).
 		Name(deployment.Name).
-		Resource("InferenceServices").
+		Resource(modelResource).
 		Body(data).
 		Do().
 		Error()
 
 	return err
+}
+
+// GetModelStatus returns the model's status
+func (c *Client) GetModelStatus(namespace, name string) (*ModelStatus, error) {
+	restClient, err := modelRestClient()
+	if err != nil {
+		return nil, err
+	}
+
+	result := &k8sModel{}
+
+	err = restClient.Get().
+		Namespace(namespace).
+		Name(name).
+		Resource(modelResource).
+		Do().
+		Into(result)
+
+	status := &ModelStatus{
+		Conditions: result.Status.Conditions,
+		Ready:      result.Status.Ready(),
+	}
+
+	return status, err
+}
+
+// DeleteModel deletes the model
+func (c *Client) DeleteModel(namespace, name string) error {
+	restClient, err := modelRestClient()
+	if err != nil {
+		return err
+	}
+
+	return restClient.Delete().
+		Namespace(namespace).
+		Name(name).
+		Resource(modelResource).
+		Do().
+		Error()
 }

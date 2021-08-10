@@ -763,14 +763,14 @@
         ]
       }
     },
-    "/apis/v1beta1/{namespace}/models/deploy": {
+    "/apis/v1beta1/{namespace}/models": {
       "post": {
         "operationId": "DeployModel",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/DeployModelResponse"
+              "properties": {}
             }
           },
           "default": {
@@ -794,6 +794,76 @@
             "schema": {
               "$ref": "#/definitions/DeployModelRequest"
             }
+          }
+        ],
+        "tags": [
+          "ModelService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/models/{name}": {
+      "get": {
+        "operationId": "GetModelStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ModelStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ModelService"
+        ]
+      },
+      "delete": {
+        "operationId": "DeleteModel",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "tags": [
@@ -3298,6 +3368,23 @@
         }
       }
     },
+    "Container": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "env": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Env"
+          }
+        }
+      }
+    },
     "CreateWorkflowExecutionBody": {
       "type": "object",
       "properties": {
@@ -3411,13 +3498,19 @@
         },
         "predictor": {
           "$ref": "#/definitions/Predictor"
+        },
+        "transformer": {
+          "$ref": "#/definitions/Transformer"
         }
       }
     },
-    "DeployModelResponse": {
+    "Env": {
       "type": "object",
       "properties": {
         "name": {
+          "type": "string"
+        },
+        "value": {
           "type": "string"
         }
       }
@@ -4000,6 +4093,34 @@
         }
       }
     },
+    "ModelCondition": {
+      "type": "object",
+      "properties": {
+        "lastTransitionTime": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      }
+    },
+    "ModelStatus": {
+      "type": "object",
+      "properties": {
+        "ready": {
+          "type": "boolean"
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ModelCondition"
+          }
+        }
+      }
+    },
     "Namespace": {
       "type": "object",
       "properties": {
@@ -4168,6 +4289,17 @@
         "workflowTemplateId": {
           "type": "string",
           "format": "int64"
+        }
+      }
+    },
+    "Transformer": {
+      "type": "object",
+      "properties": {
+        "containers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Container"
+          }
         }
       }
     },
