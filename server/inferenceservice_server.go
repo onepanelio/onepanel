@@ -55,13 +55,23 @@ func (s *InferenceServiceServer) CreateInferenceService(ctx context.Context, req
 		model.Predictor.RuntimeVersion = &req.Predictor.RuntimeVersion
 	}
 
-	if req.Predictor.Cpu != "" || req.Predictor.Memory != "" {
-		model.Predictor.ResourceLimits = &v1.ResourceLimits{}
-		if req.Predictor.Cpu != "" {
-			model.Predictor.ResourceLimits.CPU = req.Predictor.Cpu
+	if req.Predictor.MinCpu != "" || req.Predictor.MinMemory != "" {
+		model.Predictor.ResourceLimits = &v1.MachineResources{}
+		if req.Predictor.MinCpu != "" {
+			model.Predictor.ResourceLimits.CPU = req.Predictor.MinCpu
 		}
-		if req.Predictor.Memory != "" {
-			model.Predictor.ResourceLimits.Memory = req.Predictor.Memory
+		if req.Predictor.MinMemory != "" {
+			model.Predictor.ResourceLimits.Memory = req.Predictor.MinMemory
+		}
+	}
+
+	if req.Predictor.MaxCpu != "" || req.Predictor.MaxMemory != "" {
+		model.Predictor.ResourceRequests = &v1.MachineResources{}
+		if req.Predictor.MaxCpu != "" {
+			model.Predictor.ResourceRequests.CPU = req.Predictor.MaxCpu
+		}
+		if req.Predictor.MaxMemory != "" {
+			model.Predictor.ResourceRequests.Memory = req.Predictor.MaxMemory
 		}
 	}
 
@@ -71,6 +81,26 @@ func (s *InferenceServiceServer) CreateInferenceService(ctx context.Context, req
 
 	if req.Transformer != nil {
 		model.Transformer = &v1.Transformer{}
+
+		if req.Transformer.MinCpu != "" || req.Transformer.MinMemory != "" {
+			model.Transformer.ResourceRequests = &v1.MachineResources{}
+			if req.Transformer.MinCpu != "" {
+				model.Transformer.ResourceRequests.CPU = req.Transformer.MinCpu
+			}
+			if req.Transformer.MinMemory != "" {
+				model.Transformer.ResourceRequests.Memory = req.Transformer.MinMemory
+			}
+		}
+
+		if req.Transformer.MaxCpu != "" || req.Transformer.MaxMemory != "" {
+			model.Transformer.ResourceLimits = &v1.MachineResources{}
+			if req.Transformer.MaxCpu != "" {
+				model.Transformer.ResourceLimits.CPU = req.Transformer.MaxCpu
+			}
+			if req.Transformer.MinMemory != "" {
+				model.Transformer.ResourceLimits.Memory = req.Transformer.MaxMemory
+			}
+		}
 
 		for i, container := range req.Transformer.Containers {
 			modelContainer := v1.TransformerContainer{
@@ -126,7 +156,7 @@ func (s *InferenceServiceServer) CreateInferenceService(ctx context.Context, req
 		}
 	}
 
-	err = client.DeployModel(model)
+	err = client.CreateInferenceService(model)
 	if err != nil {
 		return nil, err
 	}

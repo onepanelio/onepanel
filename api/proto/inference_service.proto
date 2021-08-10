@@ -44,7 +44,11 @@ message Container {
 }
 
 message Transformer {
-    repeated Container containers = 1;
+  repeated Container containers = 1;
+  string minCpu = 2;
+  string minMemory = 3;
+  string maxCpu = 4;
+  string maxMemory = 5;
 }
 
 message Predictor {
@@ -52,8 +56,10 @@ message Predictor {
   string runtimeVersion = 2;
   string storageUri = 3;
   string nodeSelector = 4;
-  string cpu = 5;
-  string memory = 6;
+  string minCpu = 5;
+  string minMemory = 6;
+  string maxCpu = 7;
+  string maxMemory = 8;
 }
 
 message CreateInferenceServiceRequest {

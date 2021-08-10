@@ -20,8 +20,8 @@ func modelRestClient() (*rest.RESTClient, error) {
 	return rest.RESTClientFor(&config)
 }
 
-// DeployModel creates an InferenceService with KFServing
-func (c *Client) DeployModel(deployment *InferenceService) error {
+// CreateInferenceService creates an InferenceService with KFServing
+func (c *Client) CreateInferenceService(deployment *InferenceService) error {
 	nodePoolLabel := c.systemConfig.NodePoolLabel()
 	if nodePoolLabel == nil {
 		return fmt.Errorf("applicationNodePoolLabel not set")
@@ -46,6 +46,10 @@ func (c *Client) DeployModel(deployment *InferenceService) error {
 		Body(data).
 		Do().
 		Error()
+
+	if err != nil && strings.Contains(err.Error(), "already exists") {
+		return util.NewUserError(codes.AlreadyExists, fmt.Sprintf("InferenceService with name '%v' already exists", deployment.Name))
+	}
 
 	return err
 }

@@ -8,19 +8,20 @@ import (
 
 const inferenceServiceResource = "InferenceServices"
 
-// ResourceLimits are the cpu/memory limits
-type ResourceLimits struct {
+// MachineResources are the cpu/memory limits
+type MachineResources struct {
 	CPU    string
 	Memory string
 }
 
 // Predictor contains information on what type of predictor we are using, and what resources it has available
 type Predictor struct {
-	Name           string
-	RuntimeVersion *string
-	StorageURI     string
-	ResourceLimits *ResourceLimits
-	NodeSelector   *string
+	Name             string
+	RuntimeVersion   *string
+	StorageURI       string
+	ResourceRequests *MachineResources
+	ResourceLimits   *MachineResources
+	NodeSelector     *string
 }
 
 // Env is a name/value environment variable
@@ -38,7 +39,9 @@ type TransformerContainer struct {
 
 // Transformer is a unit that can convert model input and output to different formats in json
 type Transformer struct {
-	Containers []TransformerContainer
+	Containers       []TransformerContainer
+	ResourceRequests *MachineResources
+	ResourceLimits   *MachineResources
 }
 
 // InferenceService represents the information necessary to deploy an inference service
@@ -111,9 +114,15 @@ func (m *InferenceService) ToResource(nodeSelector string) interface{} {
 	}
 
 	if m.Predictor.ResourceLimits != nil {
-		predictorServer["resources"] = map[string]string{
-			"cpu":    m.Predictor.ResourceLimits.CPU,
-			"memory": m.Predictor.ResourceLimits.Memory,
+		predictorServer["resources"] = map[string]interface{}{
+			"requests": map[string]string{
+				"cpu":    m.Predictor.ResourceLimits.CPU,
+				"memory": m.Predictor.ResourceLimits.Memory,
+			},
+			"limits": map[string]string{
+				"cpu":    "10",
+				"memory": "10Gi",
+			},
 		}
 	}
 

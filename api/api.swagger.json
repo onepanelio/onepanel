@@ -4215,10 +4215,16 @@
         "nodeSelector": {
           "type": "string"
         },
-        "cpu": {
+        "minCpu": {
           "type": "string"
         },
-        "memory": {
+        "minMemory": {
+          "type": "string"
+        },
+        "maxCpu": {
+          "type": "string"
+        },
+        "maxMemory": {
           "type": "string"
         }
       }
@@ -4276,6 +4282,18 @@
           "items": {
             "$ref": "#/definitions/Container"
           }
+        },
+        "minCpu": {
+          "type": "string"
+        },
+        "minMemory": {
+          "type": "string"
+        },
+        "maxCpu": {
+          "type": "string"
+        },
+        "maxMemory": {
+          "type": "string"
         }
       }
     },
