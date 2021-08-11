@@ -51,32 +51,18 @@ func (s *InferenceServiceServer) CreateInferenceService(ctx context.Context, req
 		},
 	}
 
-	if req.Predictor.RuntimeVersion != "" {
-		model.Predictor.RuntimeVersion = &req.Predictor.RuntimeVersion
-	}
-
-	if req.Predictor.MinCpu != "" || req.Predictor.MinMemory != "" {
-		model.Predictor.ResourceLimits = &v1.MachineResources{}
-		if req.Predictor.MinCpu != "" {
-			model.Predictor.ResourceLimits.CPU = req.Predictor.MinCpu
-		}
-		if req.Predictor.MinMemory != "" {
-			model.Predictor.ResourceLimits.Memory = req.Predictor.MinMemory
-		}
-	}
-
-	if req.Predictor.MaxCpu != "" || req.Predictor.MaxMemory != "" {
-		model.Predictor.ResourceRequests = &v1.MachineResources{}
-		if req.Predictor.MaxCpu != "" {
-			model.Predictor.ResourceRequests.CPU = req.Predictor.MaxCpu
-		}
-		if req.Predictor.MaxMemory != "" {
-			model.Predictor.ResourceRequests.Memory = req.Predictor.MaxMemory
-		}
-	}
-
+	model.Predictor.RuntimeVersion = req.Predictor.RuntimeVersion
+	model.Predictor.SetResources(req.Predictor.MinCpu, req.Predictor.MaxCpu, req.Predictor.MinMemory, req.Predictor.MaxMemory)
 	if req.Predictor.NodeSelector != "" {
-		model.Predictor.NodeSelector = &req.Predictor.NodeSelector
+		sysConfig, err := client.GetSystemConfig()
+		if err != nil {
+			return nil, err
+		}
+		nodePoolLabel := sysConfig.NodePoolLabel()
+		if nodePoolLabel == nil {
+			return nil, fmt.Errorf("applicationNodePoolLabel not set")
+		}
+		model.Predictor.SetNodeSelector(*nodePoolLabel, req.Predictor.NodeSelector)
 	}
 
 	if req.Transformer != nil {

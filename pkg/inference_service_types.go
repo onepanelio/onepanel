@@ -8,35 +8,53 @@ import (
 
 const inferenceServiceResource = "InferenceServices"
 
-type KeyMap = map[string]interface{}
-
 // MachineResources are the cpu/memory limits
 type MachineResources struct {
 	CPU    string `json:"cpu,omitempty"`
 	Memory string `json:"memory,omitempty"`
 }
 
-// ToResource returns a mapping for cpu/memory to the values
-func (m *MachineResources) ToResource() map[string]string {
-	return map[string]string{
-		"cpu":    m.CPU,
-		"memory": m.Memory,
-	}
-}
-
 type Resources struct {
-	Limits   *MachineResources `json:"limits"`
-	Requests *MachineResources `json:"requests"`
+	Limits   *MachineResources `json:"limits,omitempty"`
+	Requests *MachineResources `json:"requests,omitempty"`
 }
 
 // Predictor contains information on what type of predictor we are using, and what resources it has available
 type Predictor struct {
-	Name             string  `json:"name"`
-	RuntimeVersion   *string `json:"runtimeVersion"`
-	StorageURI       string  `json:"storageUri"`
-	ResourceRequests *MachineResources
-	ResourceLimits   *MachineResources
-	NodeSelector     *string
+	Name           string            `json:"-"`
+	RuntimeVersion string            `json:"runtimeVersion,omitempty"`
+	StorageURI     string            `json:"storageUri"`
+	Resources      *Resources        `json:"resources,omitempty"`
+	NodeSelector   map[string]string `json:"nodeSelector,omitempty"`
+}
+
+// SetResources will set the cpu/memory requests/limits for the predictor. Empty strings are ignored
+func (p *Predictor) SetResources(minCPU, maxCPU, minMemory, maxMemory string) {
+	if minCPU == "" && maxCPU == "" && minMemory == "" && maxMemory == "" {
+		return
+	}
+
+	p.Resources = &Resources{}
+	if minCPU != "" || minMemory != "" {
+		p.Resources.Requests = &MachineResources{
+			CPU:    minCPU,
+			Memory: minMemory,
+		}
+	}
+
+	if maxCPU != "" || maxMemory != "" {
+		p.Resources.Limits = &MachineResources{
+			CPU:    maxCPU,
+			Memory: maxMemory,
+		}
+	}
+}
+
+// SetNodeSelector will set the node selector to the input label: selector value
+func (p *Predictor) SetNodeSelector(label, selector string) {
+	p.NodeSelector = map[string]string{
+		label: selector,
+	}
 }
 
 // Env is a name/value environment variable
@@ -55,7 +73,7 @@ type TransformerContainer struct {
 
 // Transformer is a unit that can convert model input and output to different formats in json
 type Transformer struct {
-	Containers []TransformerContainer
+	Containers []TransformerContainer `json:"containers"`
 }
 
 // InferenceService represents the information necessary to deploy an inference service
@@ -107,50 +125,21 @@ type k8sModel struct {
 	Status            inferenceServiceStatus `json:"status,omitempty"`
 }
 
+// DeepCopyObject is a stub to support the interface
 func (k k8sModel) DeepCopyObject() runtime.Object {
 	panic("implement me")
 }
 
 // ToResource converts the InferenceService into a KFServing spec
-func (m *InferenceService) ToResource(nodeSelector string) interface{} {
+func (m *InferenceService) ToResource() interface{} {
 	spec := map[string]interface{}{
 		"predictor": map[string]interface{}{
-			m.Predictor.Name: map[string]interface{}{
-				"storageUri": m.Predictor.StorageURI,
-			},
+			m.Predictor.Name: m.Predictor,
 		},
 	}
 
-	predictor := spec["predictor"].(map[string]interface{})
-	predictorServer := predictor[m.Predictor.Name].(map[string]interface{})
-
-	if m.Predictor.RuntimeVersion != nil {
-		predictorServer["runtimeVersion"] = m.Predictor.RuntimeVersion
-	}
-
-	if m.Predictor.NodeSelector != nil {
-		predictor["nodeSelector"] = map[string]string{
-			nodeSelector: *m.Predictor.NodeSelector,
-		}
-	}
-
-	if m.Predictor.ResourceLimits != nil || m.Predictor.ResourceRequests != nil {
-		resources := map[string]interface{}{}
-
-		if m.Predictor.ResourceLimits != nil {
-			resources["limits"] = m.Predictor.ResourceLimits.ToResource()
-		}
-		if m.Predictor.ResourceRequests != nil {
-			resources["requests"] = m.Predictor.ResourceRequests.ToResource()
-		}
-
-		predictorServer["resources"] = resources
-	}
-
 	if m.Transformer != nil {
-		spec["transformer"] = map[string]interface{}{
-			"containers": m.Transformer.Containers,
-		}
+		spec["transformer"] = m.Transformer
 	}
 
 	resource := map[string]interface{}{

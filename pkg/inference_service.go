@@ -22,12 +22,7 @@ func modelRestClient() (*rest.RESTClient, error) {
 
 // CreateInferenceService creates an InferenceService with KFServing
 func (c *Client) CreateInferenceService(deployment *InferenceService) error {
-	nodePoolLabel := c.systemConfig.NodePoolLabel()
-	if nodePoolLabel == nil {
-		return fmt.Errorf("applicationNodePoolLabel not set")
-	}
-
-	resource := deployment.ToResource(*nodePoolLabel)
+	resource := deployment.ToResource()
 
 	data, err := json.Marshal(resource)
 	if err != nil {
