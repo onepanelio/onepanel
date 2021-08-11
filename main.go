@@ -288,6 +288,8 @@ func customHeaderMatcher(key string) (string, bool) {
 	switch lowerCaseKey {
 	case "onepanel-auth-token":
 		return lowerCaseKey, true
+	case "onepanel-access-token":
+		return lowerCaseKey, true
 	case "cookie":
 		return lowerCaseKey, true
 	default:

@@ -66,6 +66,10 @@ func getBearerToken(ctx context.Context) (*string, bool) {
 		return &t, true
 	}
 
+	for _, t := range md.Get("onepanel-access-token") {
+		return &t, true
+	}
+
 	log.WithFields(log.Fields{
 		"Method": "getBearerToken",
 	}).Error("Unable to get BearerToken:", md)
