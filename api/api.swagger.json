@@ -803,12 +803,12 @@
     },
     "/apis/v1beta1/{namespace}/inferenceservice/{name}": {
       "get": {
-        "operationId": "GetInferenceServiceStatus",
+        "operationId": "GetInferenceService",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/InferenceServiceStatus"
+              "$ref": "#/definitions/GetInferenceServiceResponse"
             }
           },
           "default": {
@@ -3398,7 +3398,7 @@
           "type": "string"
         },
         "predictor": {
-          "$ref": "#/definitions/Predictor"
+          "$ref": "#/definitions/InferenceServicePredictor"
         },
         "transformer": {
           "$ref": "#/definitions/Transformer"
@@ -3587,6 +3587,23 @@
         }
       }
     },
+    "GetInferenceServiceResponse": {
+      "type": "object",
+      "properties": {
+        "ready": {
+          "type": "boolean"
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/InferenceServiceCondition"
+          }
+        },
+        "predictUrl": {
+          "type": "string"
+        }
+      }
+    },
     "GetLabelsResponse": {
       "type": "object",
       "properties": {
@@ -3667,17 +3684,32 @@
         }
       }
     },
-    "InferenceServiceStatus": {
+    "InferenceServicePredictor": {
       "type": "object",
       "properties": {
-        "ready": {
-          "type": "boolean"
+        "name": {
+          "type": "string"
         },
-        "conditions": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/InferenceServiceCondition"
-          }
+        "runtimeVersion": {
+          "type": "string"
+        },
+        "storageUri": {
+          "type": "string"
+        },
+        "nodeSelector": {
+          "type": "string"
+        },
+        "minCpu": {
+          "type": "string"
+        },
+        "minMemory": {
+          "type": "string"
+        },
+        "maxCpu": {
+          "type": "string"
+        },
+        "maxMemory": {
+          "type": "string"
         }
       }
     },
@@ -4196,35 +4228,6 @@
           "type": "string"
         },
         "value": {
-          "type": "string"
-        }
-      }
-    },
-    "Predictor": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "runtimeVersion": {
-          "type": "string"
-        },
-        "storageUri": {
-          "type": "string"
-        },
-        "nodeSelector": {
-          "type": "string"
-        },
-        "minCpu": {
-          "type": "string"
-        },
-        "minMemory": {
-          "type": "string"
-        },
-        "maxCpu": {
-          "type": "string"
-        },
-        "maxMemory": {
           "type": "string"
         }
       }

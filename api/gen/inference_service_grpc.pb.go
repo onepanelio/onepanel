@@ -19,7 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type InferenceServiceClient interface {
 	CreateInferenceService(ctx context.Context, in *CreateInferenceServiceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetInferenceServiceStatus(ctx context.Context, in *InferenceServiceIdentifier, opts ...grpc.CallOption) (*InferenceServiceStatus, error)
+	GetInferenceService(ctx context.Context, in *InferenceServiceIdentifier, opts ...grpc.CallOption) (*GetInferenceServiceResponse, error)
 	DeleteInferenceService(ctx context.Context, in *InferenceServiceIdentifier, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -40,9 +40,9 @@ func (c *inferenceServiceClient) CreateInferenceService(ctx context.Context, in 
 	return out, nil
 }
 
-func (c *inferenceServiceClient) GetInferenceServiceStatus(ctx context.Context, in *InferenceServiceIdentifier, opts ...grpc.CallOption) (*InferenceServiceStatus, error) {
-	out := new(InferenceServiceStatus)
-	err := c.cc.Invoke(ctx, "/api.InferenceService/GetInferenceServiceStatus", in, out, opts...)
+func (c *inferenceServiceClient) GetInferenceService(ctx context.Context, in *InferenceServiceIdentifier, opts ...grpc.CallOption) (*GetInferenceServiceResponse, error) {
+	out := new(GetInferenceServiceResponse)
+	err := c.cc.Invoke(ctx, "/api.InferenceService/GetInferenceService", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (c *inferenceServiceClient) DeleteInferenceService(ctx context.Context, in 
 // for forward compatibility
 type InferenceServiceServer interface {
 	CreateInferenceService(context.Context, *CreateInferenceServiceRequest) (*emptypb.Empty, error)
-	GetInferenceServiceStatus(context.Context, *InferenceServiceIdentifier) (*InferenceServiceStatus, error)
+	GetInferenceService(context.Context, *InferenceServiceIdentifier) (*GetInferenceServiceResponse, error)
 	DeleteInferenceService(context.Context, *InferenceServiceIdentifier) (*emptypb.Empty, error)
 	mustEmbedUnimplementedInferenceServiceServer()
 }
@@ -75,8 +75,8 @@ type UnimplementedInferenceServiceServer struct {
 func (UnimplementedInferenceServiceServer) CreateInferenceService(context.Context, *CreateInferenceServiceRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateInferenceService not implemented")
 }
-func (UnimplementedInferenceServiceServer) GetInferenceServiceStatus(context.Context, *InferenceServiceIdentifier) (*InferenceServiceStatus, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetInferenceServiceStatus not implemented")
+func (UnimplementedInferenceServiceServer) GetInferenceService(context.Context, *InferenceServiceIdentifier) (*GetInferenceServiceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetInferenceService not implemented")
 }
 func (UnimplementedInferenceServiceServer) DeleteInferenceService(context.Context, *InferenceServiceIdentifier) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteInferenceService not implemented")
@@ -112,20 +112,20 @@ func _InferenceService_CreateInferenceService_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _InferenceService_GetInferenceServiceStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _InferenceService_GetInferenceService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(InferenceServiceIdentifier)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(InferenceServiceServer).GetInferenceServiceStatus(ctx, in)
+		return srv.(InferenceServiceServer).GetInferenceService(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.InferenceService/GetInferenceServiceStatus",
+		FullMethod: "/api.InferenceService/GetInferenceService",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(InferenceServiceServer).GetInferenceServiceStatus(ctx, req.(*InferenceServiceIdentifier))
+		return srv.(InferenceServiceServer).GetInferenceService(ctx, req.(*InferenceServiceIdentifier))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -157,8 +157,8 @@ var _InferenceService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _InferenceService_CreateInferenceService_Handler,
 		},
 		{
-			MethodName: "GetInferenceServiceStatus",
-			Handler:    _InferenceService_GetInferenceServiceStatus_Handler,
+			MethodName: "GetInferenceService",
+			Handler:    _InferenceService_GetInferenceService_Handler,
 		},
 		{
 			MethodName: "DeleteInferenceService",

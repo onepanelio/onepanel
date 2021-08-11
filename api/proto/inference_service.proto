@@ -14,7 +14,7 @@ service InferenceService {
     };
   }
 
-  rpc GetInferenceServiceStatus (InferenceServiceIdentifier) returns (InferenceServiceStatus) {
+  rpc GetInferenceService(InferenceServiceIdentifier) returns (GetInferenceServiceResponse) {
     option (google.api.http) = {
       get: "/apis/v1beta1/{namespace}/inferenceservice/{name}"
     };
@@ -51,7 +51,7 @@ message Transformer {
   string maxMemory = 5;
 }
 
-message Predictor {
+message InferenceServicePredictor {
   string name = 1;
   string runtimeVersion = 2;
   string storageUri = 3;
@@ -67,7 +67,7 @@ message CreateInferenceServiceRequest {
   string name = 2;
   string transformerImage = 3;
 
-  Predictor predictor = 4;
+  InferenceServicePredictor predictor = 4;
   Transformer transformer = 5;
 }
 
@@ -81,7 +81,12 @@ message InferenceServiceCondition {
   string type = 3;
 }
 
-message InferenceServiceStatus {
+message GetInferenceServiceResponse {
     bool ready = 1;
     repeated InferenceServiceCondition conditions = 2;
+    string predictUrl = 3;
+}
+
+message InferenceServiceEndpoints {
+  string predict = 1;
 }

@@ -82,26 +82,6 @@ func (s *InferenceServiceServer) CreateInferenceService(ctx context.Context, req
 	if req.Transformer != nil {
 		model.Transformer = &v1.Transformer{}
 
-		if req.Transformer.MinCpu != "" || req.Transformer.MinMemory != "" {
-			model.Transformer.ResourceRequests = &v1.MachineResources{}
-			if req.Transformer.MinCpu != "" {
-				model.Transformer.ResourceRequests.CPU = req.Transformer.MinCpu
-			}
-			if req.Transformer.MinMemory != "" {
-				model.Transformer.ResourceRequests.Memory = req.Transformer.MinMemory
-			}
-		}
-
-		if req.Transformer.MaxCpu != "" || req.Transformer.MaxMemory != "" {
-			model.Transformer.ResourceLimits = &v1.MachineResources{}
-			if req.Transformer.MaxCpu != "" {
-				model.Transformer.ResourceLimits.CPU = req.Transformer.MaxCpu
-			}
-			if req.Transformer.MinMemory != "" {
-				model.Transformer.ResourceLimits.Memory = req.Transformer.MaxMemory
-			}
-		}
-
 		for i, container := range req.Transformer.Containers {
 			modelContainer := v1.TransformerContainer{
 				Image: container.Image,
@@ -111,6 +91,17 @@ func (s *InferenceServiceServer) CreateInferenceService(ctx context.Context, req
 				modelContainer.Name = fmt.Sprintf("kfserving-container-%v", i)
 			} else {
 				modelContainer.Name = container.Name
+			}
+
+			modelContainer.Resources = &v1.Resources{
+				Requests: &v1.MachineResources{
+					CPU:    req.Transformer.MinCpu,
+					Memory: req.Transformer.MinMemory,
+				},
+				Limits: &v1.MachineResources{
+					CPU:    req.Transformer.MaxCpu,
+					Memory: req.Transformer.MaxMemory,
+				},
 			}
 
 			for _, env := range container.Env {
@@ -164,8 +155,8 @@ func (s *InferenceServiceServer) CreateInferenceService(ctx context.Context, req
 	return &empty.Empty{}, nil
 }
 
-// GetInferenceServiceStatus returns the status of an inferenceservice
-func (s *InferenceServiceServer) GetInferenceServiceStatus(ctx context.Context, req *api.InferenceServiceIdentifier) (*api.InferenceServiceStatus, error) {
+// GetInferenceService returns the status of an inferenceservice
+func (s *InferenceServiceServer) GetInferenceService(ctx context.Context, req *api.InferenceServiceIdentifier) (*api.GetInferenceServiceResponse, error) {
 	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "get", "serving.kubeflow.org", "inferenceservices", req.Name)
 	if err != nil || !allowed {
@@ -187,9 +178,10 @@ func (s *InferenceServiceServer) GetInferenceServiceStatus(ctx context.Context, 
 		}
 	}
 
-	return &api.InferenceServiceStatus{
+	return &api.GetInferenceServiceResponse{
 		Ready:      status.Ready,
 		Conditions: apiConditions,
+		PredictUrl: status.PredictURL,
 	}, nil
 }
 

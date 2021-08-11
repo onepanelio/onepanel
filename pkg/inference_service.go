@@ -74,9 +74,16 @@ func (c *Client) GetModelStatus(namespace, name string) (*InferenceServiceStatus
 		return nil, util.NewUserError(codes.NotFound, "not found")
 	}
 
+	predictURL := result.Status.URL
+	suffixIndex := strings.LastIndex(result.Status.Address.URL, "cluster.local")
+	if suffixIndex >= 0 {
+		predictURL += result.Status.Address.URL[suffixIndex+13:]
+	}
+
 	status := &InferenceServiceStatus{
 		Conditions: result.Status.Conditions,
 		Ready:      result.Status.Ready(),
+		PredictURL: predictURL,
 	}
 
 	return status, err

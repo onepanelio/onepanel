@@ -8,17 +8,32 @@ import (
 
 const inferenceServiceResource = "InferenceServices"
 
+type KeyMap = map[string]interface{}
+
 // MachineResources are the cpu/memory limits
 type MachineResources struct {
-	CPU    string
-	Memory string
+	CPU    string `json:"cpu,omitempty"`
+	Memory string `json:"memory,omitempty"`
+}
+
+// ToResource returns a mapping for cpu/memory to the values
+func (m *MachineResources) ToResource() map[string]string {
+	return map[string]string{
+		"cpu":    m.CPU,
+		"memory": m.Memory,
+	}
+}
+
+type Resources struct {
+	Limits   *MachineResources `json:"limits"`
+	Requests *MachineResources `json:"requests"`
 }
 
 // Predictor contains information on what type of predictor we are using, and what resources it has available
 type Predictor struct {
-	Name             string
-	RuntimeVersion   *string
-	StorageURI       string
+	Name             string  `json:"name"`
+	RuntimeVersion   *string `json:"runtimeVersion"`
+	StorageURI       string  `json:"storageUri"`
 	ResourceRequests *MachineResources
 	ResourceLimits   *MachineResources
 	NodeSelector     *string
@@ -32,16 +47,15 @@ type Env struct {
 
 // TransformerContainer is a container specific to a Transformer
 type TransformerContainer struct {
-	Image string `json:"image"`
-	Name  string `json:"name"`
-	Env   []Env  `json:"env"`
+	Image     string     `json:"image"`
+	Name      string     `json:"name"`
+	Env       []Env      `json:"env"`
+	Resources *Resources `json:"resources,omitempty"`
 }
 
 // Transformer is a unit that can convert model input and output to different formats in json
 type Transformer struct {
-	Containers       []TransformerContainer
-	ResourceRequests *MachineResources
-	ResourceLimits   *MachineResources
+	Containers []TransformerContainer
 }
 
 // InferenceService represents the information necessary to deploy an inference service
@@ -57,6 +71,7 @@ type InferenceService struct {
 type InferenceServiceStatus struct {
 	Ready      bool
 	Conditions []inferenceServiceCondition
+	PredictURL string
 }
 
 type inferenceServiceCondition struct {
@@ -65,8 +80,14 @@ type inferenceServiceCondition struct {
 	Type               string    `json:"type"`
 }
 
+type inferenceServiceAddress struct {
+	URL string `json:"url"`
+}
+
 type inferenceServiceStatus struct {
 	Conditions []inferenceServiceCondition `json:"conditions"`
+	Address    inferenceServiceAddress     `json:"address"`
+	URL        string                      `json:"url"`
 }
 
 // Ready returns true if there is a condition called Ready: true.
@@ -113,17 +134,17 @@ func (m *InferenceService) ToResource(nodeSelector string) interface{} {
 		}
 	}
 
-	if m.Predictor.ResourceLimits != nil {
-		predictorServer["resources"] = map[string]interface{}{
-			"requests": map[string]string{
-				"cpu":    m.Predictor.ResourceLimits.CPU,
-				"memory": m.Predictor.ResourceLimits.Memory,
-			},
-			"limits": map[string]string{
-				"cpu":    "10",
-				"memory": "10Gi",
-			},
+	if m.Predictor.ResourceLimits != nil || m.Predictor.ResourceRequests != nil {
+		resources := map[string]interface{}{}
+
+		if m.Predictor.ResourceLimits != nil {
+			resources["limits"] = m.Predictor.ResourceLimits.ToResource()
 		}
+		if m.Predictor.ResourceRequests != nil {
+			resources["requests"] = m.Predictor.ResourceRequests.ToResource()
+		}
+
+		predictorServer["resources"] = resources
 	}
 
 	if m.Transformer != nil {
