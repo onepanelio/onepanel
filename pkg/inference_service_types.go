@@ -14,6 +14,7 @@ type MachineResources struct {
 	Memory string `json:"memory,omitempty"`
 }
 
+// Resources represent the machine resource requests/limits
 type Resources struct {
 	Limits   *MachineResources `json:"limits,omitempty"`
 	Requests *MachineResources `json:"requests,omitempty"`
