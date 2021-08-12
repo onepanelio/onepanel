@@ -763,6 +763,114 @@
         ]
       }
     },
+    "/apis/v1beta1/{namespace}/inferenceservice": {
+      "post": {
+        "operationId": "CreateInferenceService",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetInferenceServiceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateInferenceServiceRequest"
+            }
+          }
+        ],
+        "tags": [
+          "InferenceService"
+        ]
+      }
+    },
+    "/apis/v1beta1/{namespace}/inferenceservice/{name}": {
+      "get": {
+        "operationId": "GetInferenceService",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetInferenceServiceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "InferenceService"
+        ]
+      },
+      "delete": {
+        "operationId": "DeleteInferenceService",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "InferenceService"
+        ]
+      }
+    },
     "/apis/v1beta1/{namespace}/secrets": {
       "get": {
         "operationId": "ListSecrets",
@@ -3260,6 +3368,43 @@
         }
       }
     },
+    "Container": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "env": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Env"
+          }
+        }
+      }
+    },
+    "CreateInferenceServiceRequest": {
+      "type": "object",
+      "properties": {
+        "namespace": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "defaultTransformerImage": {
+          "type": "string"
+        },
+        "predictor": {
+          "$ref": "#/definitions/InferenceServicePredictor"
+        },
+        "transformer": {
+          "$ref": "#/definitions/InferenceServiceTransformer"
+        }
+      }
+    },
     "CreateWorkflowExecutionBody": {
       "type": "object",
       "properties": {
@@ -3362,6 +3507,17 @@
         }
       }
     },
+    "Env": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
     "File": {
       "type": "object",
       "properties": {
@@ -3431,6 +3587,23 @@
         }
       }
     },
+    "GetInferenceServiceResponse": {
+      "type": "object",
+      "properties": {
+        "ready": {
+          "type": "boolean"
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/InferenceServiceCondition"
+          }
+        },
+        "predictUrl": {
+          "type": "string"
+        }
+      }
+    },
     "GetLabelsResponse": {
       "type": "object",
       "properties": {
@@ -3494,6 +3667,72 @@
       "properties": {
         "hasService": {
           "type": "boolean"
+        }
+      }
+    },
+    "InferenceServiceCondition": {
+      "type": "object",
+      "properties": {
+        "lastTransitionTime": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      }
+    },
+    "InferenceServicePredictor": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "runtimeVersion": {
+          "type": "string"
+        },
+        "storageUri": {
+          "type": "string"
+        },
+        "nodeSelector": {
+          "type": "string"
+        },
+        "minCpu": {
+          "type": "string"
+        },
+        "minMemory": {
+          "type": "string"
+        },
+        "maxCpu": {
+          "type": "string"
+        },
+        "maxMemory": {
+          "type": "string"
+        }
+      }
+    },
+    "InferenceServiceTransformer": {
+      "type": "object",
+      "properties": {
+        "containers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Container"
+          }
+        },
+        "minCpu": {
+          "type": "string"
+        },
+        "minMemory": {
+          "type": "string"
+        },
+        "maxCpu": {
+          "type": "string"
+        },
+        "maxMemory": {
+          "type": "string"
         }
       }
     },

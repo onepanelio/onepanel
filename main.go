@@ -158,6 +158,7 @@ func startRPCServer(db *v1.DB, kubeConfig *v1.Config, sysConfig v1.SystemConfig,
 	api.RegisterConfigServiceServer(s, server.NewConfigServer())
 	api.RegisterServiceServiceServer(s, server.NewServiceServer())
 	api.RegisterFileServiceServer(s, server.NewFileServer())
+	api.RegisterInferenceServiceServer(s, server.NewInferenceService())
 
 	go func() {
 		if err := s.Serve(lis); err != nil {
@@ -194,6 +195,7 @@ func startHTTPProxy() {
 	registerHandler(api.RegisterConfigServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
 	registerHandler(api.RegisterServiceServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
 	registerHandler(api.RegisterFileServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
+	registerHandler(api.RegisterInferenceServiceHandlerFromEndpoint, ctx, mux, endpoint, opts)
 
 	log.Printf("Starting HTTP proxy on port %v", *httpPort)
 
@@ -285,6 +287,8 @@ func customHeaderMatcher(key string) (string, bool) {
 	lowerCaseKey := strings.ToLower(key)
 	switch lowerCaseKey {
 	case "onepanel-auth-token":
+		return lowerCaseKey, true
+	case "onepanel-access-token":
 		return lowerCaseKey, true
 	case "cookie":
 		return lowerCaseKey, true

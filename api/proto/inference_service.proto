@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+package api;
+option go_package = "github.com/onepanelio/core/api/gen";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+service InferenceService {
+  rpc CreateInferenceService (CreateInferenceServiceRequest) returns (GetInferenceServiceResponse) {
+    option (google.api.http) = {
+      post: "/apis/v1beta1/{namespace}/inferenceservice"
+      body: "*"
+    };
+  }
+
+  rpc GetInferenceService(InferenceServiceIdentifier) returns (GetInferenceServiceResponse) {
+    option (google.api.http) = {
+      get: "/apis/v1beta1/{namespace}/inferenceservice/{name}"
+    };
+  }
+
+  rpc DeleteInferenceService (InferenceServiceIdentifier) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/apis/v1beta1/{namespace}/inferenceservice/{name}"
+    };
+  }
+}
+
+message InferenceServiceIdentifier {
+  string namespace = 1;
+  string name = 2;
+}
+
+message Env {
+    string name = 1;
+    string value = 2;
+}
+
+message Container {
+    string image = 1;
+    string name = 2;
+    repeated Env env = 3;
+}
+
+message InferenceServiceTransformer {
+  repeated Container containers = 1;
+  string minCpu = 2;
+  string minMemory = 3;
+  string maxCpu = 4;
+  string maxMemory = 5;
+}
+
+message InferenceServicePredictor {
+  string name = 1;
+  string runtimeVersion = 2;
+  string storageUri = 3;
+  string nodeSelector = 4;
+  string minCpu = 5;
+  string minMemory = 6;
+  string maxCpu = 7;
+  string maxMemory = 8;
+}
+
+message CreateInferenceServiceRequest {
+  string namespace = 1;
+  string name = 2;
+  string defaultTransformerImage = 3;
+
+  InferenceServicePredictor predictor = 4;
+  InferenceServiceTransformer transformer = 5;
+}
+
+message DeployModelResponse {
+  string status = 1;
+}
+
+message InferenceServiceCondition {
+  string lastTransitionTime = 1;
+  string status = 2;
+  string type = 3;
+}
+
+message GetInferenceServiceResponse {
+    bool ready = 1;
+    repeated InferenceServiceCondition conditions = 2;
+    string predictUrl = 3;
+}
+
+message InferenceServiceEndpoints {
+  string predict = 1;
+}
