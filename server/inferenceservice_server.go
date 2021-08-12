@@ -23,7 +23,7 @@ func NewInferenceService() *InferenceServiceServer {
 }
 
 // CreateInferenceService deploys an inference service
-func (s *InferenceServiceServer) CreateInferenceService(ctx context.Context, req *api.CreateInferenceServiceRequest) (*empty.Empty, error) {
+func (s *InferenceServiceServer) CreateInferenceService(ctx context.Context, req *api.CreateInferenceServiceRequest) (*api.GetInferenceServiceResponse, error) {
 	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, req.Namespace, "create", "serving.kubeflow.org", "inferenceservices", "")
 	if err != nil || !allowed {
@@ -38,7 +38,7 @@ func (s *InferenceServiceServer) CreateInferenceService(ctx context.Context, req
 		return nil, util.NewUserError(codes.InvalidArgument, "missing key 'predictor.storageUri'")
 	}
 
-	if req.TransformerImage != "" && req.Transformer != nil {
+	if req.DefaultTransformerImage != "" && req.Transformer != nil {
 		return nil, util.NewUserError(codes.InvalidArgument, "must set either transformerImage or transformer, but not both")
 	}
 
@@ -112,11 +112,11 @@ func (s *InferenceServiceServer) CreateInferenceService(ctx context.Context, req
 
 			model.Transformer.Containers = append(model.Transformer.Containers, modelContainer)
 		}
-	} else if req.TransformerImage != "" {
+	} else if req.DefaultTransformerImage != "" {
 		model.Transformer = &v1.Transformer{
 			Containers: []v1.TransformerContainer{
 				{
-					Image: req.TransformerImage,
+					Image: req.DefaultTransformerImage,
 					Name:  "kfserving-container",
 					Env: []v1.Env{
 						{
@@ -138,7 +138,26 @@ func (s *InferenceServiceServer) CreateInferenceService(ctx context.Context, req
 		return nil, err
 	}
 
-	return &empty.Empty{}, nil
+	status, err := client.GetModelStatus(req.Namespace, req.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	apiConditions := make([]*api.InferenceServiceCondition, len(status.Conditions))
+	for i := range status.Conditions {
+		condition := status.Conditions[i]
+		apiConditions[i] = &api.InferenceServiceCondition{
+			LastTransitionTime: condition.LastTransitionTime.Format(time.RFC3339),
+			Status:             condition.Status,
+			Type:               condition.Type,
+		}
+	}
+
+	return &api.GetInferenceServiceResponse{
+		Ready:      status.Ready,
+		Conditions: apiConditions,
+		PredictUrl: status.PredictURL,
+	}, nil
 }
 
 // GetInferenceService returns the status of an inferenceservice

@@ -18,7 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type InferenceServiceClient interface {
-	CreateInferenceService(ctx context.Context, in *CreateInferenceServiceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	CreateInferenceService(ctx context.Context, in *CreateInferenceServiceRequest, opts ...grpc.CallOption) (*GetInferenceServiceResponse, error)
 	GetInferenceService(ctx context.Context, in *InferenceServiceIdentifier, opts ...grpc.CallOption) (*GetInferenceServiceResponse, error)
 	DeleteInferenceService(ctx context.Context, in *InferenceServiceIdentifier, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -31,8 +31,8 @@ func NewInferenceServiceClient(cc grpc.ClientConnInterface) InferenceServiceClie
 	return &inferenceServiceClient{cc}
 }
 
-func (c *inferenceServiceClient) CreateInferenceService(ctx context.Context, in *CreateInferenceServiceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
+func (c *inferenceServiceClient) CreateInferenceService(ctx context.Context, in *CreateInferenceServiceRequest, opts ...grpc.CallOption) (*GetInferenceServiceResponse, error) {
+	out := new(GetInferenceServiceResponse)
 	err := c.cc.Invoke(ctx, "/api.InferenceService/CreateInferenceService", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -62,7 +62,7 @@ func (c *inferenceServiceClient) DeleteInferenceService(ctx context.Context, in 
 // All implementations must embed UnimplementedInferenceServiceServer
 // for forward compatibility
 type InferenceServiceServer interface {
-	CreateInferenceService(context.Context, *CreateInferenceServiceRequest) (*emptypb.Empty, error)
+	CreateInferenceService(context.Context, *CreateInferenceServiceRequest) (*GetInferenceServiceResponse, error)
 	GetInferenceService(context.Context, *InferenceServiceIdentifier) (*GetInferenceServiceResponse, error)
 	DeleteInferenceService(context.Context, *InferenceServiceIdentifier) (*emptypb.Empty, error)
 	mustEmbedUnimplementedInferenceServiceServer()
@@ -72,7 +72,7 @@ type InferenceServiceServer interface {
 type UnimplementedInferenceServiceServer struct {
 }
 
-func (UnimplementedInferenceServiceServer) CreateInferenceService(context.Context, *CreateInferenceServiceRequest) (*emptypb.Empty, error) {
+func (UnimplementedInferenceServiceServer) CreateInferenceService(context.Context, *CreateInferenceServiceRequest) (*GetInferenceServiceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateInferenceService not implemented")
 }
 func (UnimplementedInferenceServiceServer) GetInferenceService(context.Context, *InferenceServiceIdentifier) (*GetInferenceServiceResponse, error) {

@@ -770,7 +770,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "properties": {}
+              "$ref": "#/definitions/GetInferenceServiceResponse"
             }
           },
           "default": {
@@ -3394,14 +3394,14 @@
         "name": {
           "type": "string"
         },
-        "transformerImage": {
+        "defaultTransformerImage": {
           "type": "string"
         },
         "predictor": {
           "$ref": "#/definitions/InferenceServicePredictor"
         },
         "transformer": {
-          "$ref": "#/definitions/Transformer"
+          "$ref": "#/definitions/InferenceServiceTransformer"
         }
       }
     },
@@ -3698,6 +3698,29 @@
         },
         "nodeSelector": {
           "type": "string"
+        },
+        "minCpu": {
+          "type": "string"
+        },
+        "minMemory": {
+          "type": "string"
+        },
+        "maxCpu": {
+          "type": "string"
+        },
+        "maxMemory": {
+          "type": "string"
+        }
+      }
+    },
+    "InferenceServiceTransformer": {
+      "type": "object",
+      "properties": {
+        "containers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Container"
+          }
         },
         "minCpu": {
           "type": "string"
@@ -4274,29 +4297,6 @@
         "workflowTemplateId": {
           "type": "string",
           "format": "int64"
-        }
-      }
-    },
-    "Transformer": {
-      "type": "object",
-      "properties": {
-        "containers": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Container"
-          }
-        },
-        "minCpu": {
-          "type": "string"
-        },
-        "minMemory": {
-          "type": "string"
-        },
-        "maxCpu": {
-          "type": "string"
-        },
-        "maxMemory": {
-          "type": "string"
         }
       }
     },

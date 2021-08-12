@@ -7,7 +7,7 @@ import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
 service InferenceService {
-  rpc CreateInferenceService (CreateInferenceServiceRequest) returns (google.protobuf.Empty) {
+  rpc CreateInferenceService (CreateInferenceServiceRequest) returns (GetInferenceServiceResponse) {
     option (google.api.http) = {
       post: "/apis/v1beta1/{namespace}/inferenceservice"
       body: "*"
@@ -43,7 +43,7 @@ message Container {
     repeated Env env = 3;
 }
 
-message Transformer {
+message InferenceServiceTransformer {
   repeated Container containers = 1;
   string minCpu = 2;
   string minMemory = 3;
@@ -65,10 +65,10 @@ message InferenceServicePredictor {
 message CreateInferenceServiceRequest {
   string namespace = 1;
   string name = 2;
-  string transformerImage = 3;
+  string defaultTransformerImage = 3;
 
   InferenceServicePredictor predictor = 4;
-  Transformer transformer = 5;
+  InferenceServiceTransformer transformer = 5;
 }
 
 message DeployModelResponse {
