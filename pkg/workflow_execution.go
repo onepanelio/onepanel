@@ -929,7 +929,14 @@ func (c *Client) CreateWorkflowExecution(namespace string, workflow *WorkflowExe
 		return nil, fmt.Errorf("workflow Template contained more than 1 workflow execution")
 	}
 
-	createdWorkflow, err := c.createWorkflow(namespace, workflowTemplate.ID, workflowTemplate.WorkflowTemplateVersionID, &workflows[0], opts, workflow.Labels)
+	wf := &workflows[0]
+	if wf.Spec.VolumeClaimGC == nil {
+		wf.Spec.VolumeClaimGC = &wfv1.VolumeClaimGC{
+			Strategy: wfv1.VolumeClaimGCOnCompletion,
+		}
+	}
+
+	createdWorkflow, err := c.createWorkflow(namespace, workflowTemplate.ID, workflowTemplate.WorkflowTemplateVersionID, wf, opts, workflow.Labels)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Namespace": namespace,
