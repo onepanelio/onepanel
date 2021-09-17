@@ -21,9 +21,6 @@ https://user-images.githubusercontent.com/1211823/116489376-afc60000-a849-11eb-8
 ## Quick start
 See [quick start guide](https://docs.onepanel.ai/docs/getting-started/quickstart) to get started.
 
-## Online demo
-For a quick look at some features see this shared, read-only [online demo](https://onepanel.typeform.com/to/kQfDX5Vf?product=github).
-
 ## Community
 To submit a feature request, report a bug or documentation issue, please open a GitHub [pull request](https://github.com/onepanelio/core/pulls) or [issue](https://github.com/onepanelio/core/issues).
 
