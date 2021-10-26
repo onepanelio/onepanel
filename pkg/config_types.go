@@ -174,6 +174,11 @@ func (s SystemConfig) DatabaseDriverName() *string {
 	return s.GetValue("databaseDriverName")
 }
 
+// Provider gets the ONEPANEL_PROVIDER value, or nil.
+func (s SystemConfig) Provider() *string {
+	return s.GetValue("ONEPANEL_PROVIDER")
+}
+
 // DatabaseConnection returns system config information to connect to a database
 func (s SystemConfig) DatabaseConnection() (driverName, dataSourceName string) {
 	dataSourceName = fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
@@ -243,6 +248,7 @@ func (s SystemConfig) HMACKey() []byte {
 // by the CLI. CLI will marshal this struct into the correct
 // YAML structure for k8s configmap / secret.
 type ArtifactRepositoryS3Provider struct {
+	Source          string
 	KeyFormat       string `yaml:"keyFormat"`
 	Bucket          string
 	Endpoint        string
@@ -260,6 +266,7 @@ type ArtifactRepositoryS3Provider struct {
 // by the CLI. CLI will marshal this struct into the correct
 // YAML structure for k8s configmap / secret.
 type ArtifactRepositoryGCSProvider struct {
+	Source                  string
 	KeyFormat               string `yaml:"keyFormat"`
 	Bucket                  string
 	Endpoint                string

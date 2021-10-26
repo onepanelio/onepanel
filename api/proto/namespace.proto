@@ -40,4 +40,5 @@ message CreateNamespaceRequest {
 
 message Namespace {
     string name = 1;
+    string sourceName = 2;
 }

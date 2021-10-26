@@ -2,12 +2,28 @@ package v1
 
 import (
 	"fmt"
-	v1 "k8s.io/api/core/v1"
-
+	"github.com/onepanelio/core/pkg/util"
+	"google.golang.org/grpc/codes"
+	"io/ioutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strings"
 )
 
 var onepanelEnabledLabelKey = "onepanel.io/enabled"
+
+func replaceVariables(filepath string, replacements map[string]string) (string, error) {
+	data, err := ioutil.ReadFile(filepath)
+	if err != nil {
+		return "", err
+	}
+
+	dataStr := string(data)
+	for key, value := range replacements {
+		dataStr = strings.ReplaceAll(dataStr, key, value)
+	}
+
+	return dataStr, nil
+}
 
 func (c *Client) ListOnepanelEnabledNamespaces() (namespaces []*Namespace, err error) {
 	namespaceList, err := c.CoreV1().Namespaces().List(metav1.ListOptions{
@@ -42,6 +58,7 @@ func (c *Client) GetNamespace(name string) (namespace *Namespace, err error) {
 	return
 }
 
+// ListNamespaces lists all of the onepanel enabled namespaces
 func (c *Client) ListNamespaces() (namespaces []*Namespace, err error) {
 	namespaceList, err := c.CoreV1().Namespaces().List(metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", onepanelEnabledLabelKey, "true"),
@@ -60,25 +77,7 @@ func (c *Client) ListNamespaces() (namespaces []*Namespace, err error) {
 	return
 }
 
-func (c *Client) CreateNamespace(name string) (namespace *Namespace, err error) {
-	createNamespace := &v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-			Labels: map[string]string{
-				"istio-injection":       "enabled",
-				onepanelEnabledLabelKey: "true",
-			},
-		},
-	}
-
-	k8Namespace, err := c.CoreV1().Namespaces().Create(createNamespace)
-	if err != nil {
-		return
-	}
-
-	namespace = &Namespace{
-		Name: k8Namespace.Name,
-	}
-
-	return
+// CreateNamespace creates a new namespace in the system
+func (c *Client) CreateNamespace(sourceNamespace, name string) (namespace *Namespace, err error) {
+	return nil, util.NewUserError(codes.FailedPrecondition, "Creating namespaces is not supported in the community edition")
 }

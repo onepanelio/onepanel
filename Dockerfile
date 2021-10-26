@@ -12,6 +12,7 @@ FROM golang:1.15.5
 COPY --from=builder /go/bin/core .
 COPY --from=builder /go/src/db ./db
 COPY --from=builder /go/bin/goose .
+COPY --from=builder /go/src/manifest ./manifest
 
 EXPOSE 8888
 EXPOSE 8887

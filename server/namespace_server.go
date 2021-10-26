@@ -28,6 +28,7 @@ func apiNamespace(ns *v1.Namespace) (namespace *api.Namespace) {
 	return
 }
 
+// ListNamespaces returns a list of all namespaces available in the system
 func (s *NamespaceServer) ListNamespaces(ctx context.Context, req *api.ListNamespacesRequest) (*api.ListNamespacesResponse, error) {
 	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, "", "list", "", "namespaces", "")
@@ -75,6 +76,7 @@ func (s *NamespaceServer) ListNamespaces(ctx context.Context, req *api.ListNames
 	}, nil
 }
 
+// CreateNamespace creates a new namespace in the system
 func (s *NamespaceServer) CreateNamespace(ctx context.Context, createNamespace *api.CreateNamespaceRequest) (*api.Namespace, error) {
 	client := getClient(ctx)
 	allowed, err := auth.IsAuthorized(client, "", "create", "", "namespaces", "")
@@ -82,12 +84,13 @@ func (s *NamespaceServer) CreateNamespace(ctx context.Context, createNamespace *
 		return nil, err
 	}
 
-	namespace, err := client.CreateNamespace(createNamespace.Namespace.Name)
+	namespace, err := client.CreateNamespace(createNamespace.Namespace.SourceName, createNamespace.Namespace.Name)
 	if err != nil {
 		return nil, err
 	}
 
 	return &api.Namespace{
-		Name: namespace.Name,
+		Name:       namespace.Name,
+		SourceName: createNamespace.Namespace.SourceName,
 	}, nil
 }
