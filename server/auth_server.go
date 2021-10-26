@@ -141,7 +141,7 @@ func (a *AuthServer) isValidToken(err error, client *v1.Client) error {
 		return err
 	}
 	if len(namespaces) == 0 {
-		return errors.New("no namespaces for onepanel setup.")
+		return errors.New("no namespaces for onepanel setup")
 	}
 	namespace := namespaces[0]
 

@@ -21,6 +21,7 @@ func istioModelRestClient() (*rest.RESTClient, error) {
 	return rest.RESTClientFor(&config)
 }
 
+// CreateVirtualService creates an istio virtual service
 func (c *Client) CreateVirtualService(namespace string, data interface{}) error {
 	restClient, err := istioModelRestClient()
 	if err != nil {
