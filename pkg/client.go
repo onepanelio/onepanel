@@ -199,6 +199,9 @@ func (c *Client) GetArtifactRepositoryType(namespace string) (string, error) {
 	return artifactRepositoryType.(string), nil
 }
 
+// GetArtifactRepositorySource returns the original source for the artifact repository
+// This can be s3, abs, gcs, etc. Since everything goes through an S3 compatible API,
+// it is sometimes useful to know the source.
 func (c *Client) GetArtifactRepositorySource(namespace string) (string, error) {
 	configMap, err := c.getConfigMap(namespace, "onepanel")
 	if err != nil {
