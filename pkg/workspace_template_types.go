@@ -51,6 +51,22 @@ func (wt *WorkspaceTemplate) GenerateUID(name string) error {
 	return nil
 }
 
+// CreateWorkspaceTemplate creates a new workspace template with the given name.
+// All fields that can be generated in memory without external requests are filled out, such as the UID.
+func CreateWorkspaceTemplate(name string) (*WorkspaceTemplate, error) {
+	nameUID, err := uid2.GenerateUID(name, 30)
+	if err != nil {
+		return nil, err
+	}
+
+	workspaceTemplate := &WorkspaceTemplate{
+		Name: name,
+		UID:  nameUID,
+	}
+
+	return workspaceTemplate, nil
+}
+
 // InjectRuntimeParameters will inject all runtime variables into the WorkflowTemplate's manifest.
 func (wt *WorkspaceTemplate) InjectRuntimeParameters(config SystemConfig) error {
 	if wt.WorkflowTemplate == nil {

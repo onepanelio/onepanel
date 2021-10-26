@@ -55,6 +55,22 @@ func (wt *WorkflowTemplate) GenerateUID(name string) error {
 	return nil
 }
 
+// CreateWorkflowTemplate creates a new workflow template with the given name.
+// All fields that can be generated in memory without external requests are filled out, such as the UID.
+func CreateWorkflowTemplate(name string) (*WorkflowTemplate, error) {
+	nameUID, err := uid2.GenerateUID(name, 30)
+	if err != nil {
+		return nil, err
+	}
+
+	workflowTemplate := &WorkflowTemplate{
+		Name: name,
+		UID:  nameUID,
+	}
+
+	return workflowTemplate, nil
+}
+
 // GetManifestBytes returns the manifest as []byte
 func (wt *WorkflowTemplate) GetManifestBytes() []byte {
 	return []byte(wt.Manifest)

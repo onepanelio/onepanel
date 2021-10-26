@@ -1,13 +1,12 @@
 metadata:
   name: "MaskRCNN Training"
   kind: Workflow
-  version: 20201115145814
+  version: 20200824095513
   action: update
   labels:
     "used-by": "cvat"
     "created-by": "system"
 spec:
-  entrypoint: main
   arguments:
     parameters:
       - name: source
@@ -81,9 +80,10 @@ spec:
             value: Standard_D4s_v3
           - name: 'GPU: 1xK80, CPU: 6, RAM: 56GB'
             value: Standard_NC6
+
+  entrypoint: main
   templates:
-    - name: main
-      dag:
+    - dag:
         tasks:
           - name: train-model
             template: tensorflow
@@ -99,8 +99,8 @@ spec:
       #      - train-model
       #      name: notify-in-slack
       #      template: slack-notify-success
-    - name: tensorflow
-      container:
+      name: main
+    - container:
         args:
           - |
             apt-get update \
@@ -133,15 +133,6 @@ spec:
         workingDir: /mnt/src
       nodeSelector:
         beta.kubernetes.io/instance-type: '{{workflow.parameters.sys-node-pool}}'
-      sidecars:
-        - name: tensorboard
-          image: tensorflow/tensorflow:2.3.0
-          command: [sh, -c]
-          tty: true
-          args: ["tensorboard --logdir /mnt/output/"]
-          ports:
-            - containerPort: 6006
-              name: tensorboard
       inputs:
         artifacts:
           - name: data
@@ -153,6 +144,7 @@ spec:
               revision: "no-boto"
             name: src
             path: /mnt/src
+      name: tensorflow
       outputs:
         artifacts:
           - name: model

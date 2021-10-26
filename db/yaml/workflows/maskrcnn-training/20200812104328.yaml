@@ -1,13 +1,12 @@
 metadata:
   name: "MaskRCNN Training"
   kind: Workflow
-  version: 20201115145814
-  action: update
+  version: 20200812104328
+  action: create
   labels:
     "used-by": "cvat"
     "created-by": "system"
 spec:
-  entrypoint: main
   arguments:
     parameters:
       - name: source
@@ -16,31 +15,31 @@ spec:
         type: hidden
         visibility: private
 
-      - name: cvat-annotation-path
+      - name: sys-annotation-path
         value: annotation-dump/sample_dataset
         hint: Path to annotated data in default object storage (i.e S3). In CVAT, this parameter will be pre-populated.
         displayName: Dataset path
         visibility: private
 
-      - name: cvat-output-path
+      - name: sys-output-path
         value: workflow-data/output/sample_output
         hint: Path to store output artifacts in default object storage (i.e s3). In CVAT, this parameter will be pre-populated.
         displayName: Workflow output path
         visibility: private
 
-      - name: cvat-finetune-checkpoint
+      - name: sys-finetune-checkpoint
         value: ''
         hint: Select the last fine-tune checkpoint for this model. It may take up to 5 minutes for a recent checkpoint show here. Leave empty if this is the first time you're training this model.
         displayName: Checkpoint path
         visibility: public
 
-      - name: cvat-num-classes
+      - name: sys-num-classes
         displayName: Number of classes
         hint: Number of classes (i.e in CVAT taks) + 1 for background
         value: '81'
         visibility: private
 
-      - name: hyperparameters
+      - name: extras
         displayName: Hyperparameters
         visibility: public
         type: textarea.textarea
@@ -48,12 +47,18 @@ spec:
           stage-1-epochs=1    #  Epochs for network heads
           stage-2-epochs=2    #  Epochs for finetune layers
           stage-3-epochs=3    #  Epochs for all layers
-        hint: "Please refer to our <a href='https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model#arguments-optional' target='_blank'>documentation</a> for more information on parameters. Number of classes will be automatically populated if you had 'sys-num-classes' parameter in a workflow."
+        hint: "Please refer to our <a href='https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model#arguments-optional' target='_blank'>documentation</a> for more information on parameters."
 
       - name: dump-format
+        type: select.select
         value: cvat_coco
         displayName: CVAT dump format
         visibility: public
+        options:
+          - name: 'MS COCO'
+            value: 'cvat_coco'
+          - name: 'TF Detection API'
+            value: 'cvat_tfrecord'
 
       - name: tf-image
         visibility: public
@@ -81,9 +86,10 @@ spec:
             value: Standard_D4s_v3
           - name: 'GPU: 1xK80, CPU: 6, RAM: 56GB'
             value: Standard_NC6
+
+  entrypoint: main
   templates:
-    - name: main
-      dag:
+    - dag:
         tasks:
           - name: train-model
             template: tensorflow
@@ -99,8 +105,8 @@ spec:
       #      - train-model
       #      name: notify-in-slack
       #      template: slack-notify-success
-    - name: tensorflow
-      container:
+      name: main
+    - container:
         args:
           - |
             apt-get update \
@@ -116,9 +122,9 @@ spec:
             && python setup.py install && ls \
             && python samples/coco/cvat.py train --dataset=/mnt/data/datasets \
               --model=workflow_maskrcnn \
-              --extras="{{workflow.parameters.hyperparameters}}"  \
-              --ref_model_path="{{workflow.parameters.cvat-finetune-checkpoint}}"  \
-              --num_classes="{{workflow.parameters.cvat-num-classes}}" \
+              --extras="{{workflow.parameters.extras}}"  \
+              --ref_model_path="{{workflow.parameters.sys-finetune-checkpoint}}"  \
+              --num_classes="{{workflow.parameters.sys-num-classes}}" \
             && cd /mnt/src/ \
             && python prepare_dataset.py /mnt/data/datasets/annotations/instances_default.json
         command:
@@ -133,33 +139,25 @@ spec:
         workingDir: /mnt/src
       nodeSelector:
         beta.kubernetes.io/instance-type: '{{workflow.parameters.sys-node-pool}}'
-      sidecars:
-        - name: tensorboard
-          image: tensorflow/tensorflow:2.3.0
-          command: [sh, -c]
-          tty: true
-          args: ["tensorboard --logdir /mnt/output/"]
-          ports:
-            - containerPort: 6006
-              name: tensorboard
       inputs:
         artifacts:
           - name: data
             path: /mnt/data/datasets/
             "{{.ArtifactRepositoryType}}":
-              key: '{{workflow.namespace}}/{{workflow.parameters.cvat-annotation-path}}'
+              key: '{{workflow.namespace}}/{{workflow.parameters.sys-annotation-path}}'
           - git:
               repo: '{{workflow.parameters.source}}'
               revision: "no-boto"
             name: src
             path: /mnt/src
+      name: tensorflow
       outputs:
         artifacts:
           - name: model
             optional: true
             path: /mnt/output
             "{{.ArtifactRepositoryType}}":
-              key: '{{workflow.namespace}}/{{workflow.parameters.cvat-output-path}}/{{workflow.name}}'
+              key: '{{workflow.namespace}}/{{workflow.parameters.sys-output-path}}'
   # Uncomment the lines below if you want to send Slack notifications
   #- container:
   #    args:

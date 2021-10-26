@@ -3,7 +3,9 @@ package migration
 import (
 	"fmt"
 	v1 "github.com/onepanelio/core/pkg"
+	"github.com/onepanelio/core/pkg/util/data"
 	uid2 "github.com/onepanelio/core/pkg/util/uid"
+	"path/filepath"
 )
 
 // createWorkspaceTemplate will create the workspace template given by {{templateName}} with the contents
@@ -21,7 +23,13 @@ func createWorkspaceTemplate(filename, templateName, description string) error {
 		return err
 	}
 
-	newManifest, err := readDataFile(filename)
+	filename = filepath.Join("db", "yaml", filename)
+	manifestFile, err := data.ManifestFileFromFile(filename)
+	if err != nil {
+		return err
+	}
+
+	newManifest, err := manifestFile.SpecString()
 	if err != nil {
 		return err
 	}
@@ -97,12 +105,19 @@ func updateWorkspaceTemplateManifest(filename, templateName string) error {
 	}
 	defer client.DB.Close()
 
+	filename = filepath.Join("db", "yaml", filename)
+
 	namespaces, err := client.ListOnepanelEnabledNamespaces()
 	if err != nil {
 		return err
 	}
 
-	newManifest, err := readDataFile(filename)
+	manifest, err := data.ManifestFileFromFile(filename)
+	if err != nil {
+		return err
+	}
+
+	newManifest, err := manifest.SpecString()
 	if err != nil {
 		return err
 	}
@@ -145,7 +160,14 @@ func createWorkflowTemplate(filename, templateName string, labels map[string]str
 		return err
 	}
 
-	manifest, err := readDataFile(filename)
+	filename = filepath.Join("db", "yaml", filename)
+
+	manifestFile, err := data.ManifestFileFromFile(filename)
+	if err != nil {
+		return err
+	}
+
+	manifest, err := manifestFile.SpecString()
 	if err != nil {
 		return err
 	}
@@ -190,7 +212,14 @@ func updateWorkflowTemplateManifest(filename, templateName string, labels map[st
 		return err
 	}
 
-	newManifest, err := readDataFile(filename)
+	filename = filepath.Join("db", "yaml", filename)
+
+	manifestFile, err := data.ManifestFileFromFile(filename)
+	if err != nil {
+		return err
+	}
+
+	newManifest, err := manifestFile.SpecString()
 	if err != nil {
 		return err
 	}

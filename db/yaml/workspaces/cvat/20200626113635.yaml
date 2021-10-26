@@ -1,17 +1,11 @@
 metadata:
   name: CVAT
   kind: Workspace
-  version: 20201113094916
+  version: 20200626113635
   action: update
   description: "Powerful and efficient Computer Vision Annotation Tool (CVAT)"
 spec:
-  # Workspace arguments
-  arguments:
-    parameters:
-      - name: sync-directory
-        displayName: Directory to sync raw input and training output
-        value: workflow-data
-        hint: Location (relative to current namespace) to sync raw input, models and checkpoints from default object storage to '/share'.
+  # Docker containers that are part of the Workspace
   containers:
     - name: cvat-db
       image: postgres:10-alpine
@@ -36,7 +30,7 @@ spec:
         - containerPort: 6379
           name: tcp
     - name: cvat
-      image: onepanel/cvat:0.16.0_cvat.1.0.0
+      image: onepanel/cvat:v0.7.6
       env:
         - name: DJANGO_MODWSGI_EXTRA_ARGS
           value: ""
@@ -47,59 +41,32 @@ spec:
         - name: CVAT_POSTGRES_HOST
           value: localhost
         - name: CVAT_SHARE_URL
-          value: /cvat/data
-        - name: CVAT_SHARE_DIR
-          value: /share
-        - name: CVAT_KEYS_DIR
-          value: /cvat/keys
-        - name: CVAT_DATA_DIR
-          value: /cvat/data
-        - name: CVAT_MODELS_DIR
-          value: /cvat/models
-        - name: CVAT_LOGS_DIR
-          value: /cvat/logs
-        - name: ONEPANEL_SYNC_DIRECTORY
-          value: '{{workspace.parameters.sync-directory}}'
-        - name: NVIDIA_VISIBLE_DEVICES
-          value: all
-        - name: NVIDIA_DRIVER_CAPABILITIES
-          value: compute,utility
-        - name: NVIDIA_REQUIRE_CUDA
-          value: "cuda>=10.0 brand=tesla,driver>=384,driver<385 brand=tesla,driver>=410,driver<411"
+          value: /home/django/data
       ports:
         - containerPort: 8080
           name: http
       volumeMounts:
-        - name: cvat-data
-          mountPath: /cvat
+        - name: data
+          mountPath: /home/django/data
+        - name: keys
+          mountPath: /home/django/keys
+        - name: logs
+          mountPath: /home/django/logs
+        - name: models
+          mountPath: /home/django/models
         - name: share
-          mountPath: /share
-        - name: sys-namespace-config
-          mountPath: /etc/onepanel
-          readOnly: true
+          mountPath: /home/django/share
     - name: cvat-ui
-      image: onepanel/cvat-ui:0.16.0_cvat.1.0.0
+      image: onepanel/cvat-ui:v0.7.5
       ports:
         - containerPort: 80
           name: http
-    # You can add multiple FileSyncer sidecar containers if needed
     - name: filesyncer
-      image: onepanel/filesyncer:s3
-      imagePullPolicy: Always
-      args:
-        - download
-        - -server-prefix=/sys/filesyncer
-      env:
-        - name: FS_PATH
-          value: /mnt/share
-        - name: FS_PREFIX
-          value: '{{workflow.namespace}}/{{workspace.parameters.sync-directory}}'
+      image: onepanel/filesyncer:v0.0.4
+      command: ['python3', 'main.py']
       volumeMounts:
         - name: share
           mountPath: /mnt/share
-        - name: sys-namespace-config
-          mountPath: /etc/onepanel
-          readOnly: true
   ports:
     - name: cvat-ui
       port: 80
@@ -109,21 +76,10 @@ spec:
       port: 8080
       protocol: TCP
       targetPort: 8080
-    - name: fs
-      port: 8888
-      protocol: TCP
-      targetPort: 8888
   routes:
     - match:
         - uri:
-            prefix: /sys/filesyncer
-      route:
-        - destination:
-            port:
-              number: 8888
-    - match:
-        - uri:
-            regex: /api/.*|/git/.*|/tensorflow/.*|/onepanelio/.*|/tracking/.*|/auto_annotation/.*|/analytics/.*|/static/.*|/admin/.*|/documentation/.*|/dextr/.*|/reid/.*
+            regex: /api/.*|/git/.*|/tensorflow/.*|/auto_annotation/.*|/analytics/.*|/static/.*|/admin/.*|/documentation/.*|/dextr/.*|/reid/.*
         - queryParams:
             id:
               regex: \d+.*
@@ -131,6 +87,7 @@ spec:
         - destination:
             port:
               number: 8080
+      timeout: 600s
     - match:
         - uri:
             prefix: /
@@ -138,14 +95,7 @@ spec:
         - destination:
             port:
               number: 80
-  volumeClaimTemplates:
-    - metadata:
-        name: db
-      spec:
-        accessModes: ["ReadWriteOnce"]
-        resources:
-          requests:
-            storage: 20Gi
+      timeout: 600s
   # DAG Workflow to be executed once a Workspace action completes (optional)
   # Uncomment the lines below if you want to send Slack notifications
   #postExecutionWorkflow:

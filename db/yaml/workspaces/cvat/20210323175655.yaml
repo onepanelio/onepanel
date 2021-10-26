@@ -1,134 +1,141 @@
-containers:
-  - name: cvat-db
-    image: postgres:10-alpine
-    env:
-      - name: POSTGRES_USER
-        value: root
-      - name: POSTGRES_DB
-        value: cvat
-      - name: POSTGRES_HOST_AUTH_METHOD
-        value: trust
-      - name: PGDATA
-        value: /var/lib/psql/data
-    ports:
-      - containerPort: 5432
-        name: tcp
-    volumeMounts:
-      - name: db
-        mountPath: /var/lib/psql
-  - name: cvat-redis
-    image: redis:4.0-alpine
-    ports:
-      - containerPort: 6379
-        name: tcp
-  - name: cvat
-    image: onepanel/cvat:v0.19.0_cvat.1.0.0
-    env:
-      - name: DJANGO_MODWSGI_EXTRA_ARGS
-        value: ""
-      - name: ALLOWED_HOSTS
-        value: '*'
-      - name: CVAT_REDIS_HOST
-        value: localhost
-      - name: CVAT_POSTGRES_HOST
-        value: localhost
-      - name: CVAT_SHARE_URL
-        value: /cvat/data
-      - name: CVAT_SHARE_DIR
-        value: /share
-      - name: CVAT_DATA_DIR
-        value: /cvat/data
-      - name: CVAT_MEDIA_DATA_DIR
-        value: /cvat/data/data
-      - name: CVAT_KEYS_DIR
-        value: /cvat/data/keys
-      - name: CVAT_MODELS_DIR
-        value: /cvat/data/models
-      - name: CVAT_LOGS_DIR
-        value: /cvat/logs
-      - name: CVAT_ANNOTATIONS_OBJECT_STORAGE_PREFIX
-        value: 'artifacts/$(ONEPANEL_RESOURCE_NAMESPACE)/annotations/'
-      - name: CVAT_ONEPANEL_WORKFLOWS_LABEL
-        value: 'key=used-by,value=cvat'
-      - name: NVIDIA_VISIBLE_DEVICES
-        value: all
-      - name: NVIDIA_DRIVER_CAPABILITIES
-        value: compute,utility
-      - name: NVIDIA_REQUIRE_CUDA
-        value: "cuda>=10.0 brand=tesla,driver>=384,driver<385 brand=tesla,driver>=410,driver<411"
-      - name: ONEPANEL_MAIN_CONTAINER
-        value: 'true'
-    ports:
-      - containerPort: 8080
-        name: http
-    volumeMounts:
-      - name: cvat-data
-        mountPath: /cvat
-      - name: share
-        mountPath: /share
-      - name: sys-namespace-config
-        mountPath: /etc/onepanel
-        readOnly: true
-  - name: cvat-ui
-    image: onepanel/cvat-ui:v0.19.0_cvat.1.0.0
-    ports:
-      - containerPort: 80
-        name: http
-  - name: sys-filesyncer
-    image: onepanel/filesyncer:v0.20.0
-    imagePullPolicy: Always
-    args:
-      - server
-      - -server-prefix=/sys/filesyncer
-    volumeMounts:
-      - name: share
-        mountPath: /share
-      - name: sys-namespace-config
-        mountPath: /etc/onepanel
-        readOnly: true
-ports:
-  - name: cvat-ui
-    port: 80
-    protocol: TCP
-    targetPort: 80
-  - name: cvat
-    port: 8080
-    protocol: TCP
-    targetPort: 8080
-  - name: fs
-    port: 8888
-    protocol: TCP
-    targetPort: 8888
-routes:
-  - match:
-      - uri:
-          prefix: /sys/filesyncer
-    route:
-      - destination:
-          port:
-            number: 8888
-  - match:
-      - uri:
-          regex: /api/.*|/git/.*|/tensorflow/.*|/onepanelio/.*|/tracking/.*|/auto_annotation/.*|/analytics/.*|/static/.*|/admin/.*|/documentation/.*|/dextr/.*|/reid/.*
-      - queryParams:
-          id:
-            regex: \d+.*
-    route:
-      - destination:
-          port:
-            number: 8080
-  - match:
-      - uri:
-          prefix: /
-    route:
-      - destination:
-          port:
-            number: 80
-volumeClaimTemplates:
-  - metadata:
-      name: db
-    spec:
-      accessModes: ["ReadWriteOnce"]
-      resources:
-        requests:
-          storage: 20Gi
+metadata:
+  name: CVAT
+  kind: Workspace
+  version: 20210323175655
+  action: update
+  description: "Powerful and efficient Computer Vision Annotation Tool (CVAT)"
+spec:
+  containers:
+    - name: cvat-db
+      image: postgres:10-alpine
+      env:
+        - name: POSTGRES_USER
+          value: root
+        - name: POSTGRES_DB
+          value: cvat
+        - name: POSTGRES_HOST_AUTH_METHOD
+          value: trust
+        - name: PGDATA
+          value: /var/lib/psql/data
+      ports:
+        - containerPort: 5432
+          name: tcp
+      volumeMounts:
+        - name: db
+          mountPath: /var/lib/psql
+    - name: cvat-redis
+      image: redis:4.0-alpine
+      ports:
+        - containerPort: 6379
+          name: tcp
+    - name: cvat
+      image: onepanel/cvat:v0.19.0_cvat.1.0.0
+      env:
+        - name: DJANGO_MODWSGI_EXTRA_ARGS
+          value: ""
+        - name: ALLOWED_HOSTS
+          value: '*'
+        - name: CVAT_REDIS_HOST
+          value: localhost
+        - name: CVAT_POSTGRES_HOST
+          value: localhost
+        - name: CVAT_SHARE_URL
+          value: /cvat/data
+        - name: CVAT_SHARE_DIR
+          value: /share
+        - name: CVAT_DATA_DIR
+          value: /cvat/data
+        - name: CVAT_MEDIA_DATA_DIR
+          value: /cvat/data/data
+        - name: CVAT_KEYS_DIR
+          value: /cvat/data/keys
+        - name: CVAT_MODELS_DIR
+          value: /cvat/data/models
+        - name: CVAT_LOGS_DIR
+          value: /cvat/logs
+        - name: CVAT_ANNOTATIONS_OBJECT_STORAGE_PREFIX
+          value: 'artifacts/$(ONEPANEL_RESOURCE_NAMESPACE)/annotations/'
+        - name: CVAT_ONEPANEL_WORKFLOWS_LABEL
+          value: 'key=used-by,value=cvat'
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: all
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: compute,utility
+        - name: NVIDIA_REQUIRE_CUDA
+          value: "cuda>=10.0 brand=tesla,driver>=384,driver<385 brand=tesla,driver>=410,driver<411"
+        - name: ONEPANEL_MAIN_CONTAINER
+          value: 'true'
+      ports:
+        - containerPort: 8080
+          name: http
+      volumeMounts:
+        - name: cvat-data
+          mountPath: /cvat
+        - name: share
+          mountPath: /share
+        - name: sys-namespace-config
+          mountPath: /etc/onepanel
+          readOnly: true
+    - name: cvat-ui
+      image: onepanel/cvat-ui:v0.19.0_cvat.1.0.0
+      ports:
+        - containerPort: 80
+          name: http
+    - name: sys-filesyncer
+      image: onepanel/filesyncer:v0.20.0
+      imagePullPolicy: Always
+      args:
+        - server
+        - -server-prefix=/sys/filesyncer
+      volumeMounts:
+        - name: share
+          mountPath: /share
+        - name: sys-namespace-config
+          mountPath: /etc/onepanel
+          readOnly: true
+  ports:
+    - name: cvat-ui
+      port: 80
+      protocol: TCP
+      targetPort: 80
+    - name: cvat
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: fs
+      port: 8888
+      protocol: TCP
+      targetPort: 8888
+  routes:
+    - match:
+        - uri:
+            prefix: /sys/filesyncer
+      route:
+        - destination:
+            port:
+              number: 8888
+    - match:
+        - uri:
+            regex: /api/.*|/git/.*|/tensorflow/.*|/onepanelio/.*|/tracking/.*|/auto_annotation/.*|/analytics/.*|/static/.*|/admin/.*|/documentation/.*|/dextr/.*|/reid/.*
+        - queryParams:
+            id:
+              regex: \d+.*
+      route:
+        - destination:
+            port:
+              number: 8080
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            port:
+              number: 80
+  volumeClaimTemplates:
+    - metadata:
+        name: db
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 20Gi
