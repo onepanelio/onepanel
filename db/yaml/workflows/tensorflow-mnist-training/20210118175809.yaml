@@ -1,118 +1,127 @@
-# source: https://github.com/onepanelio/templates/blob/master/workflows/tensorflow-mnist-training/
-arguments:
-  parameters:
-    - name: epochs
-      value: '10'
-    - displayName: Node pool
-      hint: Name of node pool or group to run this workflow task
-      type: select.nodepool
-      name: sys-node-pool
-      value: {{.DefaultNodePoolOption}}
-      visibility: public
-      required: true
-entrypoint: main
-templates:
-  - name: main
-    dag:
-      tasks:
-        - name: train-model
-          template: train-model
-  - name: train-model
-    # Indicates that we want to push files in /mnt/output to object storage
-    outputs:
-      artifacts:
-        - name: output
-          path: /mnt/output
-          optional: true
-    script:
-      image: onepanel/dl:0.17.0
-      command:
-        - python
-        - '-u'
-      source: |
-        import json
-        import tensorflow as tf
-
-        mnist = tf.keras.datasets.mnist
-
-        (x_train, y_train),(x_test, y_test) = mnist.load_data()
-        x_train, x_test = x_train / 255.0, x_test / 255.0
-        x_train = x_train[..., tf.newaxis]
-        x_test = x_test[..., tf.newaxis]
-
-        model = tf.keras.Sequential([
-          tf.keras.layers.Conv2D(filters=32, kernel_size=5, activation='relu'),
-          tf.keras.layers.MaxPool2D(pool_size=2),
-          tf.keras.layers.Conv2D(filters=64, kernel_size=5, activation='relu'),
-          tf.keras.layers.MaxPool2D(pool_size=2),
-          tf.keras.layers.Flatten(),
-          tf.keras.layers.Dense(units=124, activation='relu'),
-          tf.keras.layers.Dropout(rate=0.75),
-          tf.keras.layers.Dense(units=10, activation='softmax')
-        ])
-        model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.001),
-                      loss='sparse_categorical_crossentropy',
-                      metrics=['accuracy'])
-
-        # Write TensorBoard logs to /mnt/output
-        log_dir = '/mnt/output/tensorboard/'
-        tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
-
-        model.fit(x=x_train,
-                  y=y_train,
-                  epochs={{workflow.parameters.epochs}},
-                  validation_data=(x_test, y_test),
-                  callbacks=[tensorboard_callback])
-
-        # Store metrics for this task
-        loss, accuracy = model.evaluate(x_test, y_test)
-        metrics = [
-          {'name': 'accuracy', 'value': accuracy},
-          {'name': 'loss', 'value': loss}
-        ]
-        with open('/tmp/sys-metrics.json', 'w') as f:
-          json.dump(metrics, f)
-
-        # Save model
-        model.save('/mnt/output/model.h5')
-      volumeMounts:
-        # TensorBoard sidecar will automatically mount these volumes
-        # The `data` volume is mounted to support Keras datasets
-        # The `output` volume is mounted to save model output and share TensorBoard logs
-        - name: data
-          mountPath: /home/root/.keras/datasets
-        - name: output
-          mountPath: /mnt/output
-    nodeSelector:
-      {{.NodePoolLabel}}: '{{workflow.parameters.sys-node-pool}}'
-    sidecars:
-      - name: tensorboard
+metadata:
+  name: "TensorFlow Training"
+  kind: Workflow
+  version: 20210118175809
+  action: update
+  source: "https://github.com/onepanelio/templates/blob/master/workflows/tensorflow-mnist-training/"
+  labels:
+    "created-by": "system"
+    framework: tensorflow
+spec:
+  arguments:
+    parameters:
+      - name: epochs
+        value: '10'
+      - displayName: Node pool
+        hint: Name of node pool or group to run this workflow task
+        type: select.nodepool
+        name: sys-node-pool
+        value: "{{.DefaultNodePoolOption}}"
+        visibility: public
+        required: true
+  entrypoint: main
+  templates:
+    - name: main
+      dag:
+        tasks:
+          - name: train-model
+            template: train-model
+    - name: train-model
+      # Indicates that we want to push files in /mnt/output to object storage
+      outputs:
+        artifacts:
+          - name: output
+            path: /mnt/output
+            optional: true
+      script:
         image: onepanel/dl:0.17.0
         command:
-          - sh
-          - '-c'
-        env:
-          - name: ONEPANEL_INTERACTIVE_SIDECAR
-            value: 'true'
-        args:
-          # Read logs from /mnt/output - this directory is auto-mounted from volumeMounts
-          - tensorboard --logdir /mnt/output/tensorboard
-        ports:
-          - containerPort: 6006
-            name: tensorboard
-volumeClaimTemplates:
-  # Provision volumes for storing data and output
-  - metadata:
-      name: data
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: 2Gi
-  - metadata:
-      name: output
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: 2Gi
+          - python
+          - '-u'
+        source: |
+          import json
+          import tensorflow as tf
+
+          mnist = tf.keras.datasets.mnist
+
+          (x_train, y_train),(x_test, y_test) = mnist.load_data()
+          x_train, x_test = x_train / 255.0, x_test / 255.0
+          x_train = x_train[..., tf.newaxis]
+          x_test = x_test[..., tf.newaxis]
+
+          model = tf.keras.Sequential([
+            tf.keras.layers.Conv2D(filters=32, kernel_size=5, activation='relu'),
+            tf.keras.layers.MaxPool2D(pool_size=2),
+            tf.keras.layers.Conv2D(filters=64, kernel_size=5, activation='relu'),
+            tf.keras.layers.MaxPool2D(pool_size=2),
+            tf.keras.layers.Flatten(),
+            tf.keras.layers.Dense(units=124, activation='relu'),
+            tf.keras.layers.Dropout(rate=0.75),
+            tf.keras.layers.Dense(units=10, activation='softmax')
+          ])
+          model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.001),
+                        loss='sparse_categorical_crossentropy',
+                        metrics=['accuracy'])
+
+          # Write TensorBoard logs to /mnt/output
+          log_dir = '/mnt/output/tensorboard/'
+          tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+
+          model.fit(x=x_train,
+                    y=y_train,
+                    epochs={{workflow.parameters.epochs}},
+                    validation_data=(x_test, y_test),
+                    callbacks=[tensorboard_callback])
+
+          # Store metrics for this task
+          loss, accuracy = model.evaluate(x_test, y_test)
+          metrics = [
+            {'name': 'accuracy', 'value': accuracy},
+            {'name': 'loss', 'value': loss}
+          ]
+          with open('/tmp/sys-metrics.json', 'w') as f:
+            json.dump(metrics, f)
+
+          # Save model
+          model.save('/mnt/output/model.h5')
+        volumeMounts:
+          # TensorBoard sidecar will automatically mount these volumes
+          # The `data` volume is mounted to support Keras datasets
+          # The `output` volume is mounted to save model output and share TensorBoard logs
+          - name: data
+            mountPath: /home/root/.keras/datasets
+          - name: output
+            mountPath: /mnt/output
+      nodeSelector:
+        "{{.NodePoolLabel}}": '{{workflow.parameters.sys-node-pool}}'
+      sidecars:
+        - name: tensorboard
+          image: onepanel/dl:0.17.0
+          command:
+            - sh
+            - '-c'
+          env:
+            - name: ONEPANEL_INTERACTIVE_SIDECAR
+              value: 'true'
+          args:
+            # Read logs from /mnt/output - this directory is auto-mounted from volumeMounts
+            - tensorboard --logdir /mnt/output/tensorboard
+          ports:
+            - containerPort: 6006
+              name: tensorboard
+  volumeClaimTemplates:
+    # Provision volumes for storing data and output
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 2Gi
+    - metadata:
+        name: output
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 2Gi

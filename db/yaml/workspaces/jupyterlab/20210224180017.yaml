@@ -1,101 +1,108 @@
-containers:
-  - name: jupyterlab
-    image: onepanel/dl:0.17.0
-    command: ["/bin/bash", "-c", "pip install onepanel-sdk && start.sh LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64 jupyter lab --LabApp.token='' --LabApp.allow_remote_access=True --LabApp.allow_origin=\"*\" --LabApp.disable_check_xsrf=True --LabApp.trust_xheaders=True --LabApp.base_url=/ --LabApp.tornado_settings='{\"headers\":{\"Content-Security-Policy\":\"frame-ancestors * 'self'\"}}' --notebook-dir='/data' --allow-root"]
-    workingDir: /data
-    env:
-      - name: tornado
-        value: "'{'headers':{'Content-Security-Policy':\"frame-ancestors\ *\ 'self'\"}}'"
-      - name: TENSORBOARD_PROXY_URL
-        value: '//$(ONEPANEL_RESOURCE_UID)--$(ONEPANEL_RESOURCE_NAMESPACE).$(ONEPANEL_DOMAIN)/tensorboard'
-      - name: ONEPANEL_MAIN_CONTAINER
-        value: 'true'
-    ports:
-      - containerPort: 8888
-        name: jupyterlab
-      - containerPort: 6006
-        name: tensorboard
-      - containerPort: 8080
-        name: nni
-    volumeMounts:
-      - name: data
-        mountPath: /data
-    lifecycle:
-      postStart:
-        exec:
-          command:
-            - /bin/sh
-            - -c
-            - >
-              condayml="/data/.environment.yml";
-              jupytertxt="/data/.jupexported.txt";
-              if [ -f "$condayml" ]; then conda env update -f $condayml; fi;
-              if [ -f "$jupytertxt" ]; then cat $jupytertxt | xargs -n 1 jupyter labextension install --no-build && jupyter lab build --minimize=False; fi;
-      preStop:
-        exec:
-          command:
-            - /bin/sh
-            - -c
-            - >
-              conda env export > /data/.environment.yml -n base;
-              jupyter labextension list 1>/dev/null 2> /data/.jup.txt;
-              cat /data/.jup.txt | sed -n '2,$p' | awk 'sub(/v/,"@", $2){print $1$2}' > /data/.jupexported.txt;
-  - name: sys-filesyncer
-    image: onepanel/filesyncer:v0.19.0
-    imagePullPolicy: Always
-    args:
-      - server
-      - -host=localhost:8889
-      - -server-prefix=/sys/filesyncer
-    volumeMounts:
-      - name: data
-        mountPath: /data
-      - name: sys-namespace-config
-        mountPath: /etc/onepanel
-        readOnly: true
-ports:
-  - name: jupyterlab
-    port: 80
-    protocol: TCP
-    targetPort: 8888
-  - name: tensorboard
-    port: 6006
-    protocol: TCP
-    targetPort: 6006
-  - name: nni
-    port: 8080
-    protocol: TCP
-    targetPort: 8080
-  - name: fs
-    port: 8889
-    protocol: TCP
-    targetPort: 8889
-routes:
-  - match:
-      - uri:
-          prefix: /sys/filesyncer
-    route:
-      - destination:
-          port:
-            number: 8889
-  - match:
-      - uri:
-          prefix: /tensorboard
-    route:
-      - destination:
-          port:
-            number: 6006
-  - match:
-      - uri:
-          prefix: /nni
-    route:
-      - destination:
-          port:
-            number: 8080
-  - match:
-      - uri:
-          prefix: /
-    route:
-      - destination:
-          port:
-            number: 80
+metadata:
+  name: JupyterLab
+  kind: Workspace
+  version: 20210224180017
+  action: update
+  description: "Interactive development environment for notebooks"
+spec:
+  containers:
+    - name: jupyterlab
+      image: onepanel/dl:0.17.0
+      command: ["/bin/bash", "-c", "pip install onepanel-sdk && start.sh LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64 jupyter lab --LabApp.token='' --LabApp.allow_remote_access=True --LabApp.allow_origin=\"*\" --LabApp.disable_check_xsrf=True --LabApp.trust_xheaders=True --LabApp.base_url=/ --LabApp.tornado_settings='{\"headers\":{\"Content-Security-Policy\":\"frame-ancestors * 'self'\"}}' --notebook-dir='/data' --allow-root"]
+      workingDir: /data
+      env:
+        - name: tornado
+          value: "'{'headers':{'Content-Security-Policy':\"frame-ancestors\ *\ 'self'\"}}'"
+        - name: TENSORBOARD_PROXY_URL
+          value: '//$(ONEPANEL_RESOURCE_UID)--$(ONEPANEL_RESOURCE_NAMESPACE).$(ONEPANEL_DOMAIN)/tensorboard'
+        - name: ONEPANEL_MAIN_CONTAINER
+          value: 'true'
+      ports:
+        - containerPort: 8888
+          name: jupyterlab
+        - containerPort: 6006
+          name: tensorboard
+        - containerPort: 8080
+          name: nni
+      volumeMounts:
+        - name: data
+          mountPath: /data
+      lifecycle:
+        postStart:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - >
+                condayml="/data/.environment.yml";
+                jupytertxt="/data/.jupexported.txt";
+                if [ -f "$condayml" ]; then conda env update -f $condayml; fi;
+                if [ -f "$jupytertxt" ]; then cat $jupytertxt | xargs -n 1 jupyter labextension install --no-build && jupyter lab build --minimize=False; fi;
+        preStop:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - >
+                conda env export > /data/.environment.yml -n base;
+                jupyter labextension list 1>/dev/null 2> /data/.jup.txt;
+                cat /data/.jup.txt | sed -n '2,$p' | awk 'sub(/v/,"@", $2){print $1$2}' > /data/.jupexported.txt;
+    - name: sys-filesyncer
+      image: onepanel/filesyncer:v0.19.0
+      imagePullPolicy: Always
+      args:
+        - server
+        - -host=localhost:8889
+        - -server-prefix=/sys/filesyncer
+      volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: sys-namespace-config
+          mountPath: /etc/onepanel
+          readOnly: true
+  ports:
+    - name: jupyterlab
+      port: 80
+      protocol: TCP
+      targetPort: 8888
+    - name: tensorboard
+      port: 6006
+      protocol: TCP
+      targetPort: 6006
+    - name: nni
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: fs
+      port: 8889
+      protocol: TCP
+      targetPort: 8889
+  routes:
+    - match:
+        - uri:
+            prefix: /sys/filesyncer
+      route:
+        - destination:
+            port:
+              number: 8889
+    - match:
+        - uri:
+            prefix: /tensorboard
+      route:
+        - destination:
+            port:
+              number: 6006
+    - match:
+        - uri:
+            prefix: /nni
+      route:
+        - destination:
+            port:
+              number: 8080
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            port:
+              number: 80

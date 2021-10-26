@@ -1,57 +1,64 @@
-arguments:
-  parameters:
-    # parameter screen-resolution allows users to select screen resolution
-    - name: screen-resolution
-      value: 1680x1050
-      type: select.select
-      displayName: Screen Resolution
-      options:
-        - name: 1280x1024
-          value: 1280x1024
-        - name: 1680x1050
-          value: 1680x1050
-        - name: 2880x1800
-          value: 2880x1800
-containers:
-  - name: ubuntu
-    image: onepanel/vnc:dl-vnc
-    env:
-      - name: VNC_PASSWORDLESS
-        value: true
-      - name: VNC_RESOLUTION
-        value: '{{workflow.parameters.screen-resolution}}'
-    ports:
-      - containerPort: 6901
-        name: vnc
-    volumeMounts:
-      - name: data
-        mountPath: /data
-ports:
-  - name: vnc
-    port: 80
-    protocol: TCP
-    targetPort: 6901
-routes:
-  - match:
-      - uri:
-          prefix: /
-    route:
-      - destination:
-          port:
-            number: 80
-# DAG Workflow to be executed once a Workspace action completes (optional)
-#postExecutionWorkflow:
-#  entrypoint: main
-#  templates:
-#  - name: main
-#    dag:
-#       tasks:
-#       - name: slack-notify
-#         template: slack-notify
-#  -  name: slack-notify
-#     container:
-#       image: technosophos/slack-notify
-#       args:
-#       - SLACK_USERNAME=onepanel SLACK_TITLE="Your workspace is ready" SLACK_ICON=https://www.gravatar.com/avatar/5c4478592fe00878f62f0027be59c1bd SLACK_MESSAGE="Your workspace is now running" ./slack-notify
-#       command:
-#       - sh
+metadata:
+  name: "Deep Learning Desktop"
+  kind: Workspace
+  version: 20210414165510
+  action: create
+  description: "Deep learning desktop with VNC"
+spec:
+  arguments:
+    parameters:
+      # parameter screen-resolution allows users to select screen resolution
+      - name: screen-resolution
+        value: 1680x1050
+        type: select.select
+        displayName: Screen Resolution
+        options:
+          - name: 1280x1024
+            value: 1280x1024
+          - name: 1680x1050
+            value: 1680x1050
+          - name: 2880x1800
+            value: 2880x1800
+  containers:
+    - name: ubuntu
+      image: onepanel/vnc:dl-vnc
+      env:
+        - name: VNC_PASSWORDLESS
+          value: true
+        - name: VNC_RESOLUTION
+          value: '{{workflow.parameters.screen-resolution}}'
+      ports:
+        - containerPort: 6901
+          name: vnc
+      volumeMounts:
+        - name: data
+          mountPath: /data
+  ports:
+    - name: vnc
+      port: 80
+      protocol: TCP
+      targetPort: 6901
+  routes:
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            port:
+              number: 80
+  # DAG Workflow to be executed once a Workspace action completes (optional)
+  #postExecutionWorkflow:
+  #  entrypoint: main
+  #  templates:
+  #  - name: main
+  #    dag:
+  #       tasks:
+  #       - name: slack-notify
+  #         template: slack-notify
+  #  -  name: slack-notify
+  #     container:
+  #       image: technosophos/slack-notify
+  #       args:
+  #       - SLACK_USERNAME=onepanel SLACK_TITLE="Your workspace is ready" SLACK_ICON=https://www.gravatar.com/avatar/5c4478592fe00878f62f0027be59c1bd SLACK_MESSAGE="Your workspace is now running" ./slack-notify
+  #       command:
+  #       - sh

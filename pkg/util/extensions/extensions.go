@@ -213,3 +213,17 @@ func DeleteNode(node *yaml.Node, key *YamlIndex) error {
 
 	return nil
 }
+
+// ReplaceMapValues will replace strings that are keys in the input map with their values
+// the result is returned
+func ReplaceMapValues(value string, replaceMap map[string]string) string {
+	replacePairs := make([]string, 0)
+
+	for key, value := range replaceMap {
+		replacePairs = append(replacePairs, key)
+		replacePairs = append(replacePairs, value)
+	}
+
+	return strings.NewReplacer(replacePairs...).
+		Replace(value)
+}

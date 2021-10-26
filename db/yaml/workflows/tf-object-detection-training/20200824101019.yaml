@@ -1,7 +1,7 @@
 metadata:
   name: "TF Object Detection Training"
   kind: Workflow
-  version: 20201223202929
+  version: 20200824101019
   action: update
   source: "https://github.com/onepanelio/templates/blob/master/workflows/tf-object-detection-training/"
   labels:
@@ -10,17 +10,33 @@ metadata:
 spec:
   arguments:
     parameters:
+      - name: source
+        value: https://github.com/tensorflow/models.git
+        displayName: Model source code
+        type: hidden
+        visibility: private
+
+      - name: trainingsource
+        value: https://github.com/onepanelio/cvat-training.git
+        type: hidden
+        visibility: private
+
+      - name: revision
+        value: v1.13.0
+        type: hidden
+        visibility: private
+
       - name: cvat-annotation-path
         value: annotation-dump/sample_dataset
         displayName: Dataset path
-        hint: Path to annotated data (TFRecord format) in default object storage. In CVAT, this parameter will be pre-populated.
-        visibility: internal
+        hint: Path to annotated data in default object storage (i.e S3). In CVAT, this parameter will be pre-populated.
+        visibility: private
 
       - name: cvat-output-path
         value: workflow-data/output/sample_output
         hint: Path to store output artifacts in default object storage (i.e s3). In CVAT, this parameter will be pre-populated.
         displayName: Workflow output path
-        visibility: internal
+        visibility: private
 
       - name: cvat-model
         value: frcnn-res50-coco
@@ -50,7 +66,7 @@ spec:
         displayName: Hyperparameters
         visibility: public
         type: textarea.textarea
-        hint: 'See <a href="https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model/#tfod-hyperparameters" target="_blank">documentation</a> for more information on parameters.'
+        hint: "Please refer to our <a href='https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model#arguments-optional' target='_blank'>documentation</a> for more information on parameters. Number of classes will be automatically populated if you had 'sys-num-classes' parameter in a workflow."
 
       - name: cvat-finetune-checkpoint
         value: ''
@@ -59,10 +75,10 @@ spec:
         visibility: public
 
       - name: cvat-num-classes
-        value: '10'
-        hint: Number of classes. In CVAT, this parameter will be pre-populated.
+        value: '81'
+        hint: Number of classes
         displayName: Number of classes
-        visibility: internal
+        visibility: private
 
       - name: tf-image
         value: tensorflow/tensorflow:1.13.1-py3
@@ -76,41 +92,52 @@ spec:
           - name: 'TensorFlow 1.13.1 GPU Image'
             value: 'tensorflow/tensorflow:1.13.1-gpu-py3'
 
+      - displayName: Node pool
+        hint: Name of node pool or group to run this workflow task
+        type: select.select
+        name: sys-node-pool
+        value: Standard_D4s_v3
+        visibility: public
+        required: true
+        options:
+          - name: 'CPU: 2, RAM: 8GB'
+            value: Standard_D2s_v3
+          - name: 'CPU: 4, RAM: 16GB'
+            value: Standard_D4s_v3
+          - name: 'GPU: 1xK80, CPU: 6, RAM: 56GB'
+            value: Standard_NC6
       - name: dump-format
         value: cvat_tfrecord
         visibility: public
-
-      - displayName: Node pool
-        hint: Name of node pool or group to run this workflow task
-        type: select.nodepool
-        name: sys-node-pool
-        value: "{{.DefaultNodePoolOption}}"
-        visibility: public
-        required: true
-
   entrypoint: main
   templates:
     - dag:
         tasks:
           - name: train-model
             template: tensorflow
+      # Uncomment the lines below if you want to send Slack notifications
+      #    - arguments:
+      #        artifacts:
+      #        - from: '{{tasks.train-model.outputs.artifacts.sys-metrics}}'
+      #          name: metrics
+      #        parameters:
+      #        - name: status
+      #          value: '{{tasks.train-model.status}}'
+      #      dependencies:
+      #      - train-model
+      #      name: notify-in-slack
+      #      template: slack-notify-success
       name: main
     - container:
         args:
           - |
             apt-get update && \
             apt-get install -y python3-pip git wget unzip libglib2.0-0 libsm6 libxext6 libxrender-dev && \
-            pip install pillow lxml Cython contextlib2 matplotlib numpy scipy pycocotools pyyaml test-generator && \
+            pip install pillow lxml Cython contextlib2 jupyter matplotlib numpy scipy boto3 pycocotools pyyaml google-cloud-storage && \
             cd /mnt/src/tf/research && \
-            export PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/slim && \
-            mkdir -p /mnt/src/protoc && \
-            wget -P /mnt/src/protoc https://github.com/protocolbuffers/protobuf/releases/download/v3.10.1/protoc-3.10.1-linux-x86_64.zip && \
-            cd /mnt/src/protoc/ && \
-            unzip protoc-3.10.1-linux-x86_64.zip && \
-            cd /mnt/src/tf/research/ && \
-            /mnt/src/protoc/bin/protoc object_detection/protos/*.proto --python_out=. && \
-            cd /mnt/src/train/workflows/tf-object-detection-training && \
-            python main.py \
+            export PYTHONPATH=$PYTHONPATH:` + "`pwd`:`pwd`" + `/slim && \
+            cd /mnt/src/train && \
+            python convert_workflow.py \
               --extras="{{workflow.parameters.hyperparameters}}" \
               --model="{{workflow.parameters.cvat-model}}" \
               --num_classes="{{workflow.parameters.cvat-num-classes}}" \
@@ -131,20 +158,21 @@ spec:
         artifacts:
           - name: data
             path: /mnt/data/datasets/
-            s3:
+            "{{.ArtifactRepositoryType}}":
               key: '{{workflow.namespace}}/{{workflow.parameters.cvat-annotation-path}}'
           - name: models
             path: /mnt/data/models/
             optional: true
-            s3:
-              key: '{{workflow.parameters.cvat-finetune-checkpoint}}'
+            "{{.ArtifactRepositoryType}}":
+              key: '{{workflow.namespace}}/{{workflow.parameters.cvat-finetune-checkpoint}}'
           - git:
-              repo: https://github.com/tensorflow/models.git
-              revision: v1.13.0
+              repo: '{{workflow.parameters.source}}'
+              revision: '{{workflow.parameters.revision}}'
             name: src
             path: /mnt/src/tf
           - git:
-              repo: https://github.com/onepanelio/templates.git
+              repo: '{{workflow.parameters.trainingsource}}'
+              revision: 'optional-artifacts'
             name: tsrc
             path: /mnt/src/train
       name: tensorflow
@@ -153,10 +181,29 @@ spec:
           - name: model
             optional: true
             path: /mnt/output
-            s3:
+            "{{.ArtifactRepositoryType}}":
               key: '{{workflow.namespace}}/{{workflow.parameters.cvat-output-path}}/{{workflow.name}}'
+  # Uncomment the lines below if you want to send Slack notifications
+  #- container:
+  #    args:
+  #    - SLACK_USERNAME=Onepanel SLACK_TITLE="{{workflow.name}} {{inputs.parameters.status}}"
+  #      SLACK_ICON=https://www.gravatar.com/avatar/5c4478592fe00878f62f0027be59c1bd
+  #      SLACK_MESSAGE=$(cat /tmp/metrics.json)} ./slack-notify
+  #    command:
+  #    - sh
+  #    - -c
+  #    image: technosophos/slack-notify
+  #  inputs:
+  #    artifacts:
+  #    - name: metrics
+  #      optional: true
+  #      path: /tmp/metrics.json
+  #    parameters:
+  #    - name: status
+  #  name: slack-notify-success
   volumeClaimTemplates:
     - metadata:
+        creationTimestamp: null
         name: data
       spec:
         accessModes:
@@ -165,6 +212,7 @@ spec:
           requests:
             storage: 200Gi
     - metadata:
+        creationTimestamp: null
         name: output
       spec:
         accessModes:

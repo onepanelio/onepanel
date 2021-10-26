@@ -1,68 +1,74 @@
-containers:
-  - name: vscode
-    image: onepanel/vscode:1.0.0
-    command: ["/bin/bash", "-c", "pip install onepanel-sdk && /usr/bin/entrypoint.sh --bind-addr 0.0.0.0:8080 --auth none ."]
-    env:
-      - name: ONEPANEL_MAIN_CONTAINER
-        value: 'true'
-    ports:
-      - containerPort: 8080
-        name: vscode
-    volumeMounts:
-      - name: data
-        mountPath: /data
-    lifecycle:
-      postStart:
-        exec:
-          command:
-            - /bin/sh
-            - -c
-            - >
-              condayml="/data/.environment.yml";
-              vscodetxt="/data/.vscode-extensions.txt";
-              if [ -f "$condayml" ]; then conda env update -f $condayml; fi;
-              if [ -f "$vscodetxt" ]; then cat $vscodetxt | xargs -n 1 code-server --install-extension; fi;
-      preStop:
-        exec:
-          command:
-            - /bin/sh
-            - -c
-            - >
-              conda env export > /data/.environment.yml -n base;
-              code-server --list-extensions | tail -n +2 > /data/.vscode-extensions.txt;
-  - name: sys-filesyncer
-    image: onepanel/filesyncer:v0.19.0
-    imagePullPolicy: Always
-    args:
-      - server
-      - -server-prefix=/sys/filesyncer
-    volumeMounts:
-      - name: data
-        mountPath: /data
-      - name: sys-namespace-config
-        mountPath: /etc/onepanel
-        readOnly: true
-ports:
-  - name: vscode
-    port: 8080
-    protocol: TCP
-    targetPort: 8080
-  - name: fs
-    port: 8888
-    protocol: TCP
-    targetPort: 8888
-routes:
-  - match:
-      - uri:
-          prefix: /sys/filesyncer
-    route:
-      - destination:
-          port:
-            number: 8888
-  - match:
-      - uri:
-          prefix: /
-    route:
-      - destination:
-          port:
-            number: 8080
+metadata:
+  name: "Visual Studio Code"
+  kind: Workspace
+  version: 20210224180017
+  action: update
+spec:
+  containers:
+    - name: vscode
+      image: onepanel/vscode:1.0.0
+      command: ["/bin/bash", "-c", "pip install onepanel-sdk && /usr/bin/entrypoint.sh --bind-addr 0.0.0.0:8080 --auth none ."]
+      env:
+        - name: ONEPANEL_MAIN_CONTAINER
+          value: 'true'
+      ports:
+        - containerPort: 8080
+          name: vscode
+      volumeMounts:
+        - name: data
+          mountPath: /data
+      lifecycle:
+        postStart:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - >
+                condayml="/data/.environment.yml";
+                vscodetxt="/data/.vscode-extensions.txt";
+                if [ -f "$condayml" ]; then conda env update -f $condayml; fi;
+                if [ -f "$vscodetxt" ]; then cat $vscodetxt | xargs -n 1 code-server --install-extension; fi;
+        preStop:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - >
+                conda env export > /data/.environment.yml -n base;
+                code-server --list-extensions | tail -n +2 > /data/.vscode-extensions.txt;
+    - name: sys-filesyncer
+      image: onepanel/filesyncer:v0.19.0
+      imagePullPolicy: Always
+      args:
+        - server
+        - -server-prefix=/sys/filesyncer
+      volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: sys-namespace-config
+          mountPath: /etc/onepanel
+          readOnly: true
+  ports:
+    - name: vscode
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: fs
+      port: 8888
+      protocol: TCP
+      targetPort: 8888
+  routes:
+    - match:
+        - uri:
+            prefix: /sys/filesyncer
+      route:
+        - destination:
+            port:
+              number: 8888
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            port:
+              number: 8080

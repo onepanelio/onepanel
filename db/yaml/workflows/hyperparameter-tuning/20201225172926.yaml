@@ -1,183 +1,194 @@
-# source: https://github.com/onepanelio/templates/blob/master/workflows/nni-hyperparameter-tuning/mnist/
-entrypoint: main
-arguments:
-  parameters:
-    - name: source
-      value: https://github.com/onepanelio/templates
-    - name: revision
-      value: master
-    - name: config
-      displayName: Configuration
-      required: true
-      hint: NNI configuration
-      type: textarea.textarea
-      value: |-
-        authorName: Onepanel, Inc.
-        experimentName: MNIST TF v2.x
-        trialConcurrency: 1
-        maxExecDuration: 1h
-        maxTrialNum: 10
-        trainingServicePlatform: local
-        searchSpacePath: search_space.json
-        useAnnotation: false
-        tuner:
-          # gpuIndices: '0'           # uncomment and update to the GPU indices to assign this tuner
-          builtinTunerName: TPE       # choices: TPE, Random, Anneal, Evolution, BatchTuner, MetisTuner, GPTuner
-          classArgs:
-            optimize_mode: maximize   # choices: maximize, minimize
-        trial:
-          command: python main.py --output /mnt/output
-          codeDir: .
-          # gpuNum: 1                 # uncomment and update to number of GPUs
-    - name: search-space
-      displayName: Search space configuration
-      required: true
-      type: textarea.textarea
-      value: |-
-        {
-          "dropout_rate": { "_type": "uniform", "_value": [0.5, 0.9] },
-          "conv_size": { "_type": "choice", "_value": [2, 3, 5, 7] },
-          "hidden_size": { "_type": "choice", "_value": [124, 512, 1024] },
-          "batch_size": { "_type": "choice", "_value": [16, 32] },
-          "learning_rate": { "_type": "choice", "_value": [0.0001, 0.001, 0.01, 0.1] },
-          "epochs": { "_type": "choice", "_value": [10] }
-        }
-    - displayName: Node pool
-      hint: Name of node pool or group to run this workflow task
-      type: select.nodepool
-      name: sys-node-pool
-      value: {{.DefaultNodePoolOption}}
-      required: true
+metadata:
+  name: "Hyperparameter Tuning Example"
+  kind: Workflow
+  version: 20201225172926
+  action: create
+  source: "https://github.com/onepanelio/templates/blob/master/workflows/nni-hyperparameter-tuning/mnist/"
+  deprecated: true
+  labels:
+    framework: tensorflow
+    tuner: TPE
+    "created-by": system
+spec:
+  entrypoint: main
+  arguments:
+    parameters:
+      - name: source
+        value: https://github.com/onepanelio/templates
+      - name: revision
+        value: master
+      - name: config
+        displayName: Configuration
+        required: true
+        hint: NNI configuration
+        type: textarea.textarea
+        value: |-
+          authorName: Onepanel, Inc.
+          experimentName: MNIST TF v2.x
+          trialConcurrency: 1
+          maxExecDuration: 1h
+          maxTrialNum: 10
+          trainingServicePlatform: local
+          searchSpacePath: search_space.json
+          useAnnotation: false
+          tuner:
+            # gpuIndices: '0'           # uncomment and update to the GPU indices to assign this tuner
+            builtinTunerName: TPE       # choices: TPE, Random, Anneal, Evolution, BatchTuner, MetisTuner, GPTuner
+            classArgs:
+              optimize_mode: maximize   # choices: maximize, minimize
+          trial:
+            command: python main.py --output /mnt/output
+            codeDir: .
+            # gpuNum: 1                 # uncomment and update to number of GPUs
+      - name: search-space
+        displayName: Search space configuration
+        required: true
+        type: textarea.textarea
+        value: |-
+          {
+            "dropout_rate": { "_type": "uniform", "_value": [0.5, 0.9] },
+            "conv_size": { "_type": "choice", "_value": [2, 3, 5, 7] },
+            "hidden_size": { "_type": "choice", "_value": [124, 512, 1024] },
+            "batch_size": { "_type": "choice", "_value": [16, 32] },
+            "learning_rate": { "_type": "choice", "_value": [0.0001, 0.001, 0.01, 0.1] },
+            "epochs": { "_type": "choice", "_value": [10] }
+          }
+      - displayName: Node pool
+        hint: Name of node pool or group to run this workflow task
+        type: select.nodepool
+        name: sys-node-pool
+        value: "{{.DefaultNodePoolOption}}"
+        required: true
 
-volumeClaimTemplates:
-  - metadata:
-      name: hyperparamtuning-data
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: 20Gi
-  - metadata:
-      name: hyperparamtuning-output
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: 20Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: hyperparamtuning-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 20Gi
+    - metadata:
+        name: hyperparamtuning-output
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 20Gi
 
-templates:
-  - name: main
-    dag:
-      tasks:
-        - name: hyperparameter-tuning
-          template: hyperparameter-tuning
-        - name: workflow-metrics-writer
-          template: workflow-metrics-writer
-          dependencies: [hyperparameter-tuning]
-          arguments:
-            # Use sys-metrics artifact output from hyperparameter-tuning Task
-            artifacts:
-              - name: best-metrics
-                from: "{{tasks.hyperparameter-tuning.outputs.artifacts.sys-metrics}}"
-  - name: hyperparameter-tuning
-    inputs:
-      artifacts:
-        - name: src
-          git:
-            repo: '{{workflow.parameters.source}}'
-            revision: '{{workflow.parameters.revision}}'
-          path: /mnt/data/src
-        - name: config
-          path: /mnt/data/src/workflows/hyperparameter-tuning/mnist/config.yaml
-          raw:
-            data: '{{workflow.parameters.config}}'
-        - name: search-space
-          path: /mnt/data/src/workflows/hyperparameter-tuning/mnist/search_space.json
-          raw:
-            data: '{{workflow.parameters.search-space}}'
-    outputs:
-      artifacts:
-        - name: output
-          path: /mnt/output
-          optional: true
-    container:
-      image: onepanel/dl:0.17.0
-      args:
-        - --config
-        - /mnt/data/src/workflows/hyperparameter-tuning/mnist/config.yaml
-      workingDir: /mnt
-      volumeMounts:
-        - name: hyperparamtuning-data
-          mountPath: /mnt/data
-        - name: hyperparamtuning-output
-          mountPath: /mnt/output
-    nodeSelector:
-      beta.kubernetes.io/instance-type: '{{workflow.parameters.sys-node-pool}}'
-    sidecars:
-      - name: nni-web-ui
-        image: 'onepanel/nni-web-ui:0.17.0'
-        env:
-          - name: ONEPANEL_INTERACTIVE_SIDECAR
-            value: 'true'
-        ports:
-          - containerPort: 9000
-            name: nni
-      - name: tensorboard
-        image: 'tensorflow/tensorflow:2.3.0'
-        command:
-          - sh
-          - '-c'
-        env:
-          - name: ONEPANEL_INTERACTIVE_SIDECAR
-            value: 'true'
+  templates:
+    - name: main
+      dag:
+        tasks:
+          - name: hyperparameter-tuning
+            template: hyperparameter-tuning
+          - name: workflow-metrics-writer
+            template: workflow-metrics-writer
+            dependencies: [hyperparameter-tuning]
+            arguments:
+              # Use sys-metrics artifact output from hyperparameter-tuning Task
+              artifacts:
+                - name: best-metrics
+                  from: "{{tasks.hyperparameter-tuning.outputs.artifacts.sys-metrics}}"
+    - name: hyperparameter-tuning
+      inputs:
+        artifacts:
+          - name: src
+            git:
+              repo: '{{workflow.parameters.source}}'
+              revision: '{{workflow.parameters.revision}}'
+            path: /mnt/data/src
+          - name: config
+            path: /mnt/data/src/workflows/hyperparameter-tuning/mnist/config.yaml
+            raw:
+              data: '{{workflow.parameters.config}}'
+          - name: search-space
+            path: /mnt/data/src/workflows/hyperparameter-tuning/mnist/search_space.json
+            raw:
+              data: '{{workflow.parameters.search-space}}'
+      outputs:
+        artifacts:
+          - name: output
+            path: /mnt/output
+            optional: true
+      container:
+        image: onepanel/dl:0.17.0
         args:
-          # Read logs from /mnt/output/tensorboard - /mnt/output is auto-mounted from volumeMounts
-          - tensorboard --logdir /mnt/output/tensorboard
-        ports:
-          - containerPort: 6006
-            name: tensorboard
-  - name: workflow-metrics-writer
-    inputs:
-      artifacts:
-        - name: best-metrics
-          path: /tmp/sys-metrics.json
-    script:
-      image: onepanel/python-sdk:v0.16.0
-      command: [python, '-u']
-      source: |
-        import os
-        import json
+          - --config
+          - /mnt/data/src/workflows/hyperparameter-tuning/mnist/config.yaml
+        workingDir: /mnt
+        volumeMounts:
+          - name: hyperparamtuning-data
+            mountPath: /mnt/data
+          - name: hyperparamtuning-output
+            mountPath: /mnt/output
+      nodeSelector:
+        beta.kubernetes.io/instance-type: '{{workflow.parameters.sys-node-pool}}'
+      sidecars:
+        - name: nni-web-ui
+          image: 'onepanel/nni-web-ui:0.17.0'
+          env:
+            - name: ONEPANEL_INTERACTIVE_SIDECAR
+              value: 'true'
+          ports:
+            - containerPort: 9000
+              name: nni
+        - name: tensorboard
+          image: 'tensorflow/tensorflow:2.3.0'
+          command:
+            - sh
+            - '-c'
+          env:
+            - name: ONEPANEL_INTERACTIVE_SIDECAR
+              value: 'true'
+          args:
+            # Read logs from /mnt/output/tensorboard - /mnt/output is auto-mounted from volumeMounts
+            - tensorboard --logdir /mnt/output/tensorboard
+          ports:
+            - containerPort: 6006
+              name: tensorboard
+    - name: workflow-metrics-writer
+      inputs:
+        artifacts:
+          - name: best-metrics
+            path: /tmp/sys-metrics.json
+      script:
+        image: onepanel/python-sdk:v0.16.0
+        command: [python, '-u']
+        source: |
+          import os
+          import json
 
-        import onepanel.core.api
-        from onepanel.core.api.models.metric import Metric
-        from onepanel.core.api.rest import ApiException
-        from onepanel.core.api.models import Parameter
+          import onepanel.core.api
+          from onepanel.core.api.models.metric import Metric
+          from onepanel.core.api.rest import ApiException
+          from onepanel.core.api.models import Parameter
 
-        # Load Task A metrics
-        with open('/tmp/sys-metrics.json') as f:
-            metrics = json.load(f)
+          # Load Task A metrics
+          with open('/tmp/sys-metrics.json') as f:
+              metrics = json.load(f)
 
-        with open('/var/run/secrets/kubernetes.io/serviceaccount/token') as f:
-            token = f.read()
+          with open('/var/run/secrets/kubernetes.io/serviceaccount/token') as f:
+              token = f.read()
 
-        # Configure API authorization
-        configuration = onepanel.core.api.Configuration(
-            host = os.getenv('ONEPANEL_API_URL'),
-            api_key = {
-                'authorization': token
-            }
-        )
-        configuration.api_key_prefix['authorization'] = 'Bearer'
+          # Configure API authorization
+          configuration = onepanel.core.api.Configuration(
+              host = os.getenv('ONEPANEL_API_URL'),
+              api_key = {
+                  'authorization': token
+              }
+          )
+          configuration.api_key_prefix['authorization'] = 'Bearer'
 
-        # Call SDK method to save metrics
-        with onepanel.core.api.ApiClient(configuration) as api_client:
-            api_instance = onepanel.core.api.WorkflowServiceApi(api_client)
-            namespace = '{{workflow.namespace}}'
-            uid = '{{workflow.name}}'
-            body = onepanel.core.api.AddWorkflowExecutionsMetricsRequest()
-            body.metrics = metrics
-            try:
-                api_response = api_instance.add_workflow_execution_metrics(namespace, uid, body)
-                print('Metrics added.')
-            except ApiException as e:
-                print("Exception when calling WorkflowServiceApi->add_workflow_execution_metrics: %s\n" % e)
+          # Call SDK method to save metrics
+          with onepanel.core.api.ApiClient(configuration) as api_client:
+              api_instance = onepanel.core.api.WorkflowServiceApi(api_client)
+              namespace = '{{workflow.namespace}}'
+              uid = '{{workflow.name}}'
+              body = onepanel.core.api.AddWorkflowExecutionsMetricsRequest()
+              body.metrics = metrics
+              try:
+                  api_response = api_instance.add_workflow_execution_metrics(namespace, uid, body)
+                  print('Metrics added.')
+              except ApiException as e:
+                  print("Exception when calling WorkflowServiceApi->add_workflow_execution_metrics: %s\n" % e)

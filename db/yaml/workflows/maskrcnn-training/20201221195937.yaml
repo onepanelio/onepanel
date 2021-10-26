@@ -1,149 +1,158 @@
-# source: https://github.com/onepanelio/templates/blob/master/workflows/maskrcnn-training/
-arguments:
-  parameters:
-    - name: cvat-annotation-path
-      value: annotation-dump/sample_dataset
-      hint: Path to annotated data in default object storage. In CVAT, this parameter will be pre-populated.
-      displayName: Dataset path
-      visibility: internal
+metadata:
+  name: "MaskRCNN Training"
+  kind: Workflow
+  version: 20201221195937
+  action: update
+  source: "https://github.com/onepanelio/templates/blob/master/workflows/maskrcnn-training/"
+  labels:
+    "used-by": "cvat"
+    "created-by": "system"
+spec:
+  arguments:
+    parameters:
+      - name: cvat-annotation-path
+        value: annotation-dump/sample_dataset
+        hint: Path to annotated data in default object storage. In CVAT, this parameter will be pre-populated.
+        displayName: Dataset path
+        visibility: internal
 
-    - name: cvat-output-path
-      value: workflow-data/output/sample_output
-      hint: Path to store output artifacts in default object storage. In CVAT, this parameter will be pre-populated.
-      displayName: Workflow output path
-      visibility: internal
+      - name: cvat-output-path
+        value: workflow-data/output/sample_output
+        hint: Path to store output artifacts in default object storage. In CVAT, this parameter will be pre-populated.
+        displayName: Workflow output path
+        visibility: internal
 
-    - name: cvat-finetune-checkpoint
-      value: ''
-      hint: Select the last fine-tune checkpoint for this model. It may take up to 5 minutes for a recent checkpoint show here. Leave empty if this is the first time you're training this model.
-      displayName: Checkpoint path
-      visibility: public
+      - name: cvat-finetune-checkpoint
+        value: ''
+        hint: Select the last fine-tune checkpoint for this model. It may take up to 5 minutes for a recent checkpoint show here. Leave empty if this is the first time you're training this model.
+        displayName: Checkpoint path
+        visibility: public
 
-    - name: cvat-num-classes
-      displayName: Number of classes
-      hint: Number of classes + 1 for background. In CVAT, this parameter will be pre-populated.
-      value: '11'
-      visibility: internal
+      - name: cvat-num-classes
+        displayName: Number of classes
+        hint: Number of classes + 1 for background. In CVAT, this parameter will be pre-populated.
+        value: '11'
+        visibility: internal
 
-    - name: hyperparameters
-      displayName: Hyperparameters
-      visibility: public
-      type: textarea.textarea
-      value: |-
-        stage-1-epochs=1    #  Epochs for network heads
-        stage-2-epochs=2    #  Epochs for finetune layers
-        stage-3-epochs=3    #  Epochs for all layers
-      hint: "See <a href='https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model#maskrcnn-hyperparameters' target='_blank'>documentation</a> for more information on parameters."
+      - name: hyperparameters
+        displayName: Hyperparameters
+        visibility: public
+        type: textarea.textarea
+        value: |-
+          stage-1-epochs=1    #  Epochs for network heads
+          stage-2-epochs=2    #  Epochs for finetune layers
+          stage-3-epochs=3    #  Epochs for all layers
+        hint: "See <a href='https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model#maskrcnn-hyperparameters' target='_blank'>documentation</a> for more information on parameters."
 
-    - name: dump-format
-      value: cvat_coco
-      displayName: CVAT dump format
-      visibility: public
+      - name: dump-format
+        value: cvat_coco
+        displayName: CVAT dump format
+        visibility: public
 
-    - name: tf-image
-      visibility: public
-      value: tensorflow/tensorflow:1.13.1-py3
-      type: select.select
-      displayName: Select TensorFlow image
-      hint: Select the GPU image if you are running on a GPU node pool
-      options:
-        - name: 'TensorFlow 1.13.1 CPU Image'
-          value: 'tensorflow/tensorflow:1.13.1-py3'
-        - name: 'TensorFlow 1.13.1 GPU Image'
-          value: 'tensorflow/tensorflow:1.13.1-gpu-py3'
+      - name: tf-image
+        visibility: public
+        value: tensorflow/tensorflow:1.13.1-py3
+        type: select.select
+        displayName: Select TensorFlow image
+        hint: Select the GPU image if you are running on a GPU node pool
+        options:
+          - name: 'TensorFlow 1.13.1 CPU Image'
+            value: 'tensorflow/tensorflow:1.13.1-py3'
+          - name: 'TensorFlow 1.13.1 GPU Image'
+            value: 'tensorflow/tensorflow:1.13.1-gpu-py3'
 
-    - displayName: Node pool
-      hint: Name of node pool or group to run this workflow task
-      type: select.nodepool
-      visibility: public
-      name: sys-node-pool
-      value: {{.DefaultNodePoolOption}}
-      required: true
+      - displayName: Node pool
+        hint: Name of node pool or group to run this workflow task
+        type: select.nodepool
+        visibility: public
+        name: sys-node-pool
+        value: "{{.DefaultNodePoolOption}}"
+        required: true
 
-entrypoint: main
-templates:
-  - dag:
-      tasks:
-        - name: train-model
-          template: tensorflow
-    name: main
-  - container:
-      args:
-        - |
-          apt-get update \
-          && apt-get install -y git wget libglib2.0-0 libsm6 libxext6 libxrender-dev \
-          && pip install -r requirements.txt \
-          && pip install boto3 pyyaml google-cloud-storage \
-          && git clone https://github.com/waleedka/coco \
-          && cd coco/PythonAPI \
-          && python setup.py build_ext install \
-          && rm -rf build \
-          && cd ../../ \
-          && wget https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5 \
-          && python setup.py install && ls \
-          && python samples/coco/cvat.py train --dataset=/mnt/data/datasets \
-            --model=workflow_maskrcnn \
-            --extras="{{workflow.parameters.hyperparameters}}"  \
-            --ref_model_path="{{workflow.parameters.cvat-finetune-checkpoint}}"  \
-            --num_classes="{{workflow.parameters.cvat-num-classes}}" \
-          && cd /mnt/src/ \
-          && python prepare_dataset.py /mnt/data/datasets/annotations/instances_default.json
-      command:
-        - sh
-        - -c
-      image: '{{workflow.parameters.tf-image}}'
-      volumeMounts:
-        - mountPath: /mnt/data
-          name: data
-        - mountPath: /mnt/output
-          name: output
-      workingDir: /mnt/src
-    sidecars:
-      - name: tensorboard
-        image: tensorflow/tensorflow:2.3.0
-        command: [ sh, -c ]
-        env:
-          - name: ONEPANEL_INTERACTIVE_SIDECAR
-            value: 'true'
-        args: [ "tensorboard --logdir /mnt/output/" ]
-        ports:
-          - containerPort: 6006
-            name: tensorboard
-    nodeSelector:
-      beta.kubernetes.io/instance-type: '{{workflow.parameters.sys-node-pool}}'
-    inputs:
-      artifacts:
-        - name: data
-          path: /mnt/data/datasets/
-          s3:
-            key: '{{workflow.namespace}}/{{workflow.parameters.cvat-annotation-path}}'
-        - git:
-            repo: 'https://github.com/onepanelio/Mask_RCNN.git'
-            revision: 'no-boto'
-          name: src
-          path: /mnt/src
-    name: tensorflow
-    outputs:
-      artifacts:
-        - name: model
-          optional: true
-          path: /mnt/output
-          s3:
-            key: '{{workflow.namespace}}/{{workflow.parameters.cvat-output-path}}/{{workflow.name}}'
-volumeClaimTemplates:
-  - metadata:
-      name: data
-    spec:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: 200Gi
-  - metadata:
-      name: output
-    spec:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: 200Gi
+  entrypoint: main
+  templates:
+    - dag:
+        tasks:
+          - name: train-model
+            template: tensorflow
+      name: main
+    - container:
+        args:
+          - |
+            apt-get update \
+            && apt-get install -y git wget libglib2.0-0 libsm6 libxext6 libxrender-dev \
+            && pip install -r requirements.txt \
+            && pip install boto3 pyyaml google-cloud-storage \
+            && git clone https://github.com/waleedka/coco \
+            && cd coco/PythonAPI \
+            && python setup.py build_ext install \
+            && rm -rf build \
+            && cd ../../ \
+            && wget https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5 \
+            && python setup.py install && ls \
+            && python samples/coco/cvat.py train --dataset=/mnt/data/datasets \
+              --model=workflow_maskrcnn \
+              --extras="{{workflow.parameters.hyperparameters}}"  \
+              --ref_model_path="{{workflow.parameters.cvat-finetune-checkpoint}}"  \
+              --num_classes="{{workflow.parameters.cvat-num-classes}}" \
+            && cd /mnt/src/ \
+            && python prepare_dataset.py /mnt/data/datasets/annotations/instances_default.json
+        command:
+          - sh
+          - -c
+        image: '{{workflow.parameters.tf-image}}'
+        volumeMounts:
+          - mountPath: /mnt/data
+            name: data
+          - mountPath: /mnt/output
+            name: output
+        workingDir: /mnt/src
+      sidecars:
+        - name: tensorboard
+          image: tensorflow/tensorflow:2.3.0
+          command: [ sh, -c ]
+          env:
+            - name: ONEPANEL_INTERACTIVE_SIDECAR
+              value: 'true'
+          args: [ "tensorboard --logdir /mnt/output/" ]
+          ports:
+            - containerPort: 6006
+              name: tensorboard
+      nodeSelector:
+        beta.kubernetes.io/instance-type: '{{workflow.parameters.sys-node-pool}}'
+      inputs:
+        artifacts:
+          - name: data
+            path: /mnt/data/datasets/
+            s3:
+              key: '{{workflow.namespace}}/{{workflow.parameters.cvat-annotation-path}}'
+          - git:
+              repo: 'https://github.com/onepanelio/Mask_RCNN.git'
+              revision: 'no-boto'
+            name: src
+            path: /mnt/src
+      name: tensorflow
+      outputs:
+        artifacts:
+          - name: model
+            optional: true
+            path: /mnt/output
+            s3:
+              key: '{{workflow.namespace}}/{{workflow.parameters.cvat-output-path}}/{{workflow.name}}'
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 200Gi
+    - metadata:
+        name: output
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 200Gi

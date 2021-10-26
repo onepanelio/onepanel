@@ -1,194 +1,205 @@
-# source: https://github.com/onepanelio/templates/blob/master/workflows/nni-hyperparameter-tuning/mnist/
-# Workflow Template example for hyperparameter tuning
-# Documentation: https://docs.onepanel.ai/docs/reference/workflows/hyperparameter-tuning
-#
-# Only change the fields marked with [CHANGE]
-entrypoint: main
-arguments:
-  parameters:
+metadata:
+  name: "Hyperparameter Tuning Example"
+  kind: Workflow
+  version: 20210118175809
+  action: update
+  source: "https://github.com/onepanelio/templates/blob/master/workflows/nni-hyperparameter-tuning/mnist/"
+  deprecated: true
+  labels:
+    framework: tensorflow
+    tuner: TPE
+    "created-by": system
+spec:
+  # Workflow Template example for hyperparameter tuning
+  # Documentation: https://docs.onepanel.ai/docs/reference/workflows/hyperparameter-tuning
+  #
+  # Only change the fields marked with [CHANGE]
+  entrypoint: main
+  arguments:
+    parameters:
 
-    # [CHANGE] Path to your training/model architecture code repository
-    # Change this value and revision value to your code repository and branch respectively
-    - name: source
-      value: https://github.com/onepanelio/templates
+      # [CHANGE] Path to your training/model architecture code repository
+      # Change this value and revision value to your code repository and branch respectively
+      - name: source
+        value: https://github.com/onepanelio/templates
 
-    # [CHANGE] Revision is the branch or tag that you want to use
-    # You can change this to any tag or branch name in your repository
-    - name: revision
-      value: v0.18.0
+      # [CHANGE] Revision is the branch or tag that you want to use
+      # You can change this to any tag or branch name in your repository
+      - name: revision
+        value: v0.18.0
 
-    # [CHANGE] Default configuration for the NNI tuner
-    # See https://docs.onepanel.ai/docs/reference/workflows/hyperparameter-tuning#understanding-the-configurations
-    - name: config
-      displayName: Configuration
-      required: true
-      hint: NNI configuration
-      type: textarea.textarea
-      value: |-
-        authorName: Onepanel, Inc.
-        experimentName: MNIST TF v2.x
-        trialConcurrency: 1
-        maxExecDuration: 1h
-        maxTrialNum: 10
-        trainingServicePlatform: local
-        searchSpacePath: search_space.json
-        useAnnotation: false
-        tuner:
-          # gpuIndices: '0'           # uncomment and update to the GPU indices to assign this tuner
-          builtinTunerName: TPE       # choices: TPE, Random, Anneal, Evolution, BatchTuner, MetisTuner, GPTuner
-          classArgs:
-            optimize_mode: maximize   # choices: maximize, minimize
-        trial:
-          command: python main.py --output /mnt/output
-          codeDir: .
-          # gpuNum: 1                 # uncomment and update to number of GPUs
+      # [CHANGE] Default configuration for the NNI tuner
+      # See https://docs.onepanel.ai/docs/reference/workflows/hyperparameter-tuning#understanding-the-configurations
+      - name: config
+        displayName: Configuration
+        required: true
+        hint: NNI configuration
+        type: textarea.textarea
+        value: |-
+          authorName: Onepanel, Inc.
+          experimentName: MNIST TF v2.x
+          trialConcurrency: 1
+          maxExecDuration: 1h
+          maxTrialNum: 10
+          trainingServicePlatform: local
+          searchSpacePath: search_space.json
+          useAnnotation: false
+          tuner:
+            # gpuIndices: '0'           # uncomment and update to the GPU indices to assign this tuner
+            builtinTunerName: TPE       # choices: TPE, Random, Anneal, Evolution, BatchTuner, MetisTuner, GPTuner
+            classArgs:
+              optimize_mode: maximize   # choices: maximize, minimize
+          trial:
+            command: python main.py --output /mnt/output
+            codeDir: .
+            # gpuNum: 1                 # uncomment and update to number of GPUs
 
-    # [CHANGE] Search space configuration
-    # Change according to your hyperparameters and ranges
-    - name: search-space
-      displayName: Search space configuration
-      required: true
-      type: textarea.textarea
-      value: |-
-        {
-          "dropout_rate": { "_type": "uniform", "_value": [0.5, 0.9] },
-          "conv_size": { "_type": "choice", "_value": [2, 3, 5, 7] },
-          "hidden_size": { "_type": "choice", "_value": [124, 512, 1024] },
-          "batch_size": { "_type": "choice", "_value": [16, 32] },
-          "learning_rate": { "_type": "choice", "_value": [0.0001, 0.001, 0.01, 0.1] },
-          "epochs": { "_type": "choice", "_value": [10] }
-        }
+      # [CHANGE] Search space configuration
+      # Change according to your hyperparameters and ranges
+      - name: search-space
+        displayName: Search space configuration
+        required: true
+        type: textarea.textarea
+        value: |-
+          {
+            "dropout_rate": { "_type": "uniform", "_value": [0.5, 0.9] },
+            "conv_size": { "_type": "choice", "_value": [2, 3, 5, 7] },
+            "hidden_size": { "_type": "choice", "_value": [124, 512, 1024] },
+            "batch_size": { "_type": "choice", "_value": [16, 32] },
+            "learning_rate": { "_type": "choice", "_value": [0.0001, 0.001, 0.01, 0.1] },
+            "epochs": { "_type": "choice", "_value": [10] }
+          }
 
-    # Node pool dropdown (Node group in EKS)
-    # You can add more of these if you have additional tasks that can run on different node pools
-    - displayName: Node pool
-      hint: Name of node pool or group to run this workflow task
-      type: select.nodepool
-      name: sys-node-pool
-      value: {{.DefaultNodePoolOption}}
-      required: true
+      # Node pool dropdown (Node group in EKS)
+      # You can add more of these if you have additional tasks that can run on different node pools
+      - displayName: Node pool
+        hint: Name of node pool or group to run this workflow task
+        type: select.nodepool
+        name: sys-node-pool
+        value: "{{.DefaultNodePoolOption}}"
+        required: true
 
-templates:
-  - name: main
-    dag:
-      tasks:
-        - name: hyperparameter-tuning
-          template: hyperparameter-tuning
-        - name: metrics-writer
-          template: metrics-writer
-          dependencies: [hyperparameter-tuning]
-          arguments:
-            # Use sys-metrics artifact output from hyperparameter-tuning Task
-            # This writes the best metrics to the Workflow
-            artifacts:
-              - name: sys-metrics
-                from: "{{tasks.hyperparameter-tuning.outputs.artifacts.sys-metrics}}"
-  - name: hyperparameter-tuning
-    inputs:
-      artifacts:
-        - name: src
-          # Clone the above repository into '/mnt/data/src'
-          # See https://docs.onepanel.ai/docs/reference/workflows/artifacts#git for private repositories
-          git:
-            repo: '{{workflow.parameters.source}}'
-            revision: '{{workflow.parameters.revision}}'
-          path: /mnt/data/src
-        # [CHANGE] Path where config.yaml will be generated or already exists
-        # Update the path below so that config.yaml is written to the same directory as your main.py file
-        # Note that your source code is cloned to /mnt/data/src
-        - name: config
-          path: /mnt/data/src/workflows/hyperparameter-tuning/mnist/config.yaml
-          raw:
-            data: '{{workflow.parameters.config}}'
-        # [CHANGE] Path where search_space.json will be generated or already exists
-        # Update the path below so that search_space.json is written to the same directory as your main.py file
-        # Note that your source code is cloned to /mnt/data/src
-        - name: search-space
-          path: /mnt/data/src/workflows/hyperparameter-tuning/mnist/search_space.json
-          raw:
-            data: '{{workflow.parameters.search-space}}'
-    outputs:
-      artifacts:
-        - name: output
-          path: /mnt/output
-          optional: true
-    container:
-      image: onepanel/dl:0.17.0
-      command:
-        - sh
-        - -c
-      args:
-        # [CHANGE] Update the config path below to point to config.yaml path as described above
-        # Note that you can `pip install` additional tools here if necessary
-        - |
-          python -u /opt/onepanel/nni/start.py \
-            --config /mnt/data/src/workflows/hyperparameter-tuning/mnist/config.yaml
-      workingDir: /mnt
-      volumeMounts:
-        - name: hyperparamtuning-data
-          mountPath: /mnt/data
-        - name: hyperparamtuning-output
-          mountPath: /mnt/output
-    nodeSelector:
-      {{.NodePoolLabel}}: '{{workflow.parameters.sys-node-pool}}'
-    sidecars:
-      - name: nni-web-ui
-        image: onepanel/nni-web-ui:0.17.0
-        env:
-          - name: ONEPANEL_INTERACTIVE_SIDECAR
-            value: 'true'
-        ports:
-          - containerPort: 9000
-            name: nni
-      - name: tensorboard
+  templates:
+    - name: main
+      dag:
+        tasks:
+          - name: hyperparameter-tuning
+            template: hyperparameter-tuning
+          - name: metrics-writer
+            template: metrics-writer
+            dependencies: [hyperparameter-tuning]
+            arguments:
+              # Use sys-metrics artifact output from hyperparameter-tuning Task
+              # This writes the best metrics to the Workflow
+              artifacts:
+                - name: sys-metrics
+                  from: "{{tasks.hyperparameter-tuning.outputs.artifacts.sys-metrics}}"
+    - name: hyperparameter-tuning
+      inputs:
+        artifacts:
+          - name: src
+            # Clone the above repository into '/mnt/data/src'
+            # See https://docs.onepanel.ai/docs/reference/workflows/artifacts#git for private repositories
+            git:
+              repo: '{{workflow.parameters.source}}'
+              revision: '{{workflow.parameters.revision}}'
+            path: /mnt/data/src
+          # [CHANGE] Path where config.yaml will be generated or already exists
+          # Update the path below so that config.yaml is written to the same directory as your main.py file
+          # Note that your source code is cloned to /mnt/data/src
+          - name: config
+            path: /mnt/data/src/workflows/hyperparameter-tuning/mnist/config.yaml
+            raw:
+              data: '{{workflow.parameters.config}}'
+          # [CHANGE] Path where search_space.json will be generated or already exists
+          # Update the path below so that search_space.json is written to the same directory as your main.py file
+          # Note that your source code is cloned to /mnt/data/src
+          - name: search-space
+            path: /mnt/data/src/workflows/hyperparameter-tuning/mnist/search_space.json
+            raw:
+              data: '{{workflow.parameters.search-space}}'
+      outputs:
+        artifacts:
+          - name: output
+            path: /mnt/output
+            optional: true
+      container:
         image: onepanel/dl:0.17.0
         command:
           - sh
-          - '-c'
-        env:
-          - name: ONEPANEL_INTERACTIVE_SIDECAR
-            value: 'true'
+          - -c
         args:
-          # Read logs from /mnt/output/tensorboard - /mnt/output is auto-mounted from volumeMounts
-          - tensorboard --logdir /mnt/output/tensorboard
-        ports:
-          - containerPort: 6006
-            name: tensorboard
-  # Use the metrics-writer tasks to write best metrics to Workflow
-  - name: metrics-writer
-    inputs:
-      artifacts:
-        - name: sys-metrics
-          path: /tmp/sys-metrics.json
-        - git:
-            repo: https://github.com/onepanelio/templates.git
-            revision: v0.18.0
-          name: src
-          path: /mnt/src
-    container:
-      image: onepanel/python-sdk:v0.16.0
-      command:
-        - python
-        - -u
-      args:
-        - /mnt/src/tasks/metrics-writer/main.py
-        - --from_file=/tmp/sys-metrics.json
+          # [CHANGE] Update the config path below to point to config.yaml path as described above
+          # Note that you can `pip install` additional tools here if necessary
+          - |
+            python -u /opt/onepanel/nni/start.py \
+              --config /mnt/data/src/workflows/hyperparameter-tuning/mnist/config.yaml
+        workingDir: /mnt
+        volumeMounts:
+          - name: hyperparamtuning-data
+            mountPath: /mnt/data
+          - name: hyperparamtuning-output
+            mountPath: /mnt/output
+      nodeSelector:
+        "{{.NodePoolLabel}}": '{{workflow.parameters.sys-node-pool}}'
+      sidecars:
+        - name: nni-web-ui
+          image: onepanel/nni-web-ui:0.17.0
+          env:
+            - name: ONEPANEL_INTERACTIVE_SIDECAR
+              value: 'true'
+          ports:
+            - containerPort: 9000
+              name: nni
+        - name: tensorboard
+          image: onepanel/dl:0.17.0
+          command:
+            - sh
+            - '-c'
+          env:
+            - name: ONEPANEL_INTERACTIVE_SIDECAR
+              value: 'true'
+          args:
+            # Read logs from /mnt/output/tensorboard - /mnt/output is auto-mounted from volumeMounts
+            - tensorboard --logdir /mnt/output/tensorboard
+          ports:
+            - containerPort: 6006
+              name: tensorboard
+    # Use the metrics-writer tasks to write best metrics to Workflow
+    - name: metrics-writer
+      inputs:
+        artifacts:
+          - name: sys-metrics
+            path: /tmp/sys-metrics.json
+          - git:
+              repo: https://github.com/onepanelio/templates.git
+              revision: v0.18.0
+            name: src
+            path: /mnt/src
+      container:
+        image: onepanel/python-sdk:v0.16.0
+        command:
+          - python
+          - -u
+        args:
+          - /mnt/src/tasks/metrics-writer/main.py
+          - --from_file=/tmp/sys-metrics.json
 
-# [CHANGE] Volumes that will mount to /mnt/data (annotated data) and /mnt/output (models, checkpoints, logs)
-# Update this depending on your annotation data, model, checkpoint, logs, etc. sizes
-# Example values: 250Mi, 500Gi, 1Ti
-volumeClaimTemplates:
-  - metadata:
-      name: hyperparamtuning-data
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: 20Gi
-  - metadata:
-      name: hyperparamtuning-output
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: 20Gi
+  # [CHANGE] Volumes that will mount to /mnt/data (annotated data) and /mnt/output (models, checkpoints, logs)
+  # Update this depending on your annotation data, model, checkpoint, logs, etc. sizes
+  # Example values: 250Mi, 500Gi, 1Ti
+  volumeClaimTemplates:
+    - metadata:
+        name: hyperparamtuning-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 20Gi
+    - metadata:
+        name: hyperparamtuning-output
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 20Gi
