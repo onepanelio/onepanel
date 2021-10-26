@@ -5,14 +5,17 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	argoprojv1alpha1 "github.com/argoproj/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
 	"github.com/jmoiron/sqlx"
+	"github.com/onepanelio/core/pkg/util"
 	"github.com/onepanelio/core/pkg/util/env"
 	"github.com/onepanelio/core/pkg/util/gcs"
 	"github.com/onepanelio/core/pkg/util/router"
 	"github.com/onepanelio/core/pkg/util/s3"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc/codes"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"sigs.k8s.io/yaml"
 	"strconv"
 	"time"
 )
@@ -27,6 +30,7 @@ type Client struct {
 	argoprojV1alpha1 argoprojv1alpha1.ArgoprojV1alpha1Interface
 	*DB
 	systemConfig SystemConfig
+	cache        map[string]interface{}
 }
 
 func (c *Client) ArgoprojV1alpha1() argoprojv1alpha1.ArgoprojV1alpha1Interface {
@@ -102,6 +106,7 @@ func NewClient(config *Config, db *DB, systemConfig SystemConfig) (client *Clien
 		argoprojV1alpha1: argoClient,
 		DB:               db,
 		systemConfig:     systemConfig,
+		cache:            make(map[string]interface{}),
 	}, nil
 }
 
@@ -175,7 +180,12 @@ func (c *Client) GetWebRouter() (router.Web, error) {
 // GetArtifactRepositoryType returns the configured artifact repository type for the given namespace.
 // possible return values are: "s3", "gcs"
 func (c *Client) GetArtifactRepositoryType(namespace string) (string, error) {
-	artifactRepositoryType := "s3"
+	artifactRepositoryType, ok := c.cache["artifactRepositoryType"]
+	if ok {
+		return artifactRepositoryType.(string), nil
+	}
+
+	artifactRepositoryType = "s3"
 	nsConfig, err := c.GetNamespaceConfig(namespace)
 	if err != nil {
 		return "", err
@@ -184,7 +194,38 @@ func (c *Client) GetArtifactRepositoryType(namespace string) (string, error) {
 		artifactRepositoryType = "gcs"
 	}
 
-	return artifactRepositoryType, nil
+	c.cache["artifactRepositoryType"] = artifactRepositoryType
+
+	return artifactRepositoryType.(string), nil
+}
+
+// GetArtifactRepositorySource returns the original source for the artifact repository
+// This can be s3, abs, gcs, etc. Since everything goes through an S3 compatible API,
+// it is sometimes useful to know the source.
+func (c *Client) GetArtifactRepositorySource(namespace string) (string, error) {
+	configMap, err := c.getConfigMap(namespace, "onepanel")
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Namespace": namespace,
+			"Error":     err.Error(),
+		}).Error("getArtifactRepositorySource failed getting config map.")
+		return "", err
+	}
+
+	config := &NamespaceConfig{
+		ArtifactRepository: ArtifactRepositoryProvider{},
+	}
+
+	err = yaml.Unmarshal([]byte(configMap.Data["artifactRepository"]), &config.ArtifactRepository)
+	if err != nil || (config.ArtifactRepository.S3 == nil && config.ArtifactRepository.GCS == nil) {
+		return "", util.NewUserError(codes.NotFound, "Artifact repository config not found.")
+	}
+
+	if config.ArtifactRepository.S3 != nil {
+		return config.ArtifactRepository.S3.Source, nil
+	}
+
+	return config.ArtifactRepository.GCS.Source, nil
 }
 
 // getKubernetesTimeout returns the timeout for kubernetes requests.

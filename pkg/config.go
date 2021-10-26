@@ -26,6 +26,7 @@ func (c *Client) getConfigMap(namespace, name string) (configMap *ConfigMap, err
 // GetSystemConfig will pull it from the resources
 func (c *Client) ClearSystemConfigCache() {
 	c.systemConfig = nil
+	c.cache = make(map[string]interface{})
 }
 
 // GetSystemConfig loads various system configurations and bundles them into a map.
@@ -90,17 +91,14 @@ func (c *Client) GetNamespaceConfig(namespace string) (config *NamespaceConfig, 
 		return
 	}
 
-	switch {
-	case config.ArtifactRepository.S3 != nil:
-		{
-			accessKey, _ := base64.StdEncoding.DecodeString(secret.Data[config.ArtifactRepository.S3.AccessKeySecret.Key])
-			config.ArtifactRepository.S3.AccessKey = string(accessKey)
-			secretKey, _ := base64.StdEncoding.DecodeString(secret.Data[config.ArtifactRepository.S3.SecretKeySecret.Key])
-			config.ArtifactRepository.S3.Secretkey = string(secretKey)
-		}
-	default:
+	if config.ArtifactRepository.S3 == nil {
 		return nil, util.NewUserError(codes.NotFound, "Artifact repository config not found.")
 	}
+
+	accessKey, _ := base64.StdEncoding.DecodeString(secret.Data[config.ArtifactRepository.S3.AccessKeySecret.Key])
+	config.ArtifactRepository.S3.AccessKey = string(accessKey)
+	secretKey, _ := base64.StdEncoding.DecodeString(secret.Data[config.ArtifactRepository.S3.SecretKeySecret.Key])
+	config.ArtifactRepository.S3.Secretkey = string(secretKey)
 
 	return
 }
