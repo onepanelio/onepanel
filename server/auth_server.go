@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // AuthServer contains logic for checking Authorization of resources in the system
@@ -73,6 +74,23 @@ func (a *AuthServer) GetAccessToken(ctx context.Context, req *api.GetAccessToken
 		return nil, fmt.Errorf("domain is not set")
 	}
 
+	// This is for backwards compatibility
+	// Originally, when you logged in as the admin, you would get the defaultNamespace as the
+	// namespace.
+	if req.Username == "admin" {
+		nsList, err := client.CoreV1().Namespaces().List(metav1.ListOptions{
+			LabelSelector: "onepanel.io/defaultNamespace=true",
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		if len(nsList.Items) == 1 {
+			req.Username = nsList.Items[0].Name
+		}
+	}
+
 	res = &api.GetAccessTokenResponse{
 		Domain:      *domain,
 		AccessToken: client.Token,
@@ -123,7 +141,7 @@ func (a *AuthServer) isValidToken(err error, client *v1.Client) error {
 		return err
 	}
 	if len(namespaces) == 0 {
-		return errors.New("No namespaces for onepanel setup.")
+		return errors.New("no namespaces for onepanel setup")
 	}
 	namespace := namespaces[0]
 

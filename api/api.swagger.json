@@ -3,7 +3,7 @@
   "info": {
     "title": "Onepanel",
     "description": "Onepanel API",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "contact": {
       "name": "Onepanel project",
       "url": "https://github.com/onepanelio/core"
@@ -4183,6 +4183,9 @@
       "type": "object",
       "properties": {
         "name": {
+          "type": "string"
+        },
+        "sourceName": {
           "type": "string"
         }
       }
