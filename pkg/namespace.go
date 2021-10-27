@@ -86,6 +86,7 @@ func (c *Client) ListNamespaces() (namespaces []*Namespace, err error) {
 	return
 }
 
+// CreateNamespace creates a namespace named {{ name }} assuming the {{ sourceNamespace }} created it
 func (c *Client) CreateNamespace(sourceNamespace, name string) (namespace *Namespace, err error) {
 	newNamespace := name
 	domain := *c.systemConfig.Domain()
