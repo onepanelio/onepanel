@@ -105,10 +105,6 @@ func getClient(ctx context.Context, kubeConfig *v1.Config, db *v1.DB, sysConfig 
 }
 
 func IsAuthorized(c *v1.Client, namespace, verb, group, resource, name string) (allowed bool, err error) {
-	if resource == "namespaces" && verb == "create" {
-		return false, status.Error(codes.PermissionDenied, "creating namespaces is not supported in the community edition")
-	}
-
 	review, err := c.AuthorizationV1().SelfSubjectAccessReviews().Create(&authorizationv1.SelfSubjectAccessReview{
 		Spec: authorizationv1.SelfSubjectAccessReviewSpec{
 			ResourceAttributes: &authorizationv1.ResourceAttributes{

@@ -1,0 +1,63 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "minio-gateway",
+    "namespace": "$(applicationDefaultNamespace)"
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "minio-gateway"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "minio-gateway"
+        },
+        "annotations": {
+          "sidecar.istio.io/inject": "false"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "minio-gateway",
+            "image": "minio/minio:RELEASE.2021-06-17T00-10-46Z.hotfix.49f6035b1",
+            "args": [
+                "gateway",
+                "azure"
+            ],
+            "env": [
+              {
+                "name": "MINIO_ACCESS_KEY",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": "onepanel",
+                    "key": "artifactRepositoryS3AccessKey"
+                  }
+                }
+              },
+              {
+                "name": "MINIO_SECRET_KEY",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": "onepanel",
+                    "key": "artifactRepositoryS3SecretKey"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 9000
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

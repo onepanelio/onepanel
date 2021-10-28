@@ -1,0 +1,11 @@
+{
+  "apiVersion": "v1",
+  "kind": "ConfigMap",
+  "metadata": {
+    "name": "onepanel",
+    "namespace": "$(applicationDefaultNamespace)"
+  },
+  "data": {
+    "artifactRepository": "archiveLogs: true\n$(artifactRepositoryProvider)\n"
+  }
+}
