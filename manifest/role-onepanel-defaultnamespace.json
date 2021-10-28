@@ -1,0 +1,167 @@
+{
+  "apiVersion": "rbac.authorization.k8s.io/v1beta1",
+  "kind": "Role",
+  "metadata": {
+    "labels": {
+      "app": "onepanel"
+    },
+    "name": "onepanel",
+    "namespace": "$(applicationDefaultNamespace)"
+  },
+  "rules": [
+    {
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "configmaps"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "pods",
+        "pods/log"
+      ],
+      "verbs": [
+        "get",
+        "watch",
+        "patch"
+      ]
+    },
+    {
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "persistentvolumeclaims",
+        "services",
+        "secrets"
+      ],
+      "verbs": [
+        "get",
+        "watch",
+        "list",
+        "create",
+        "update",
+        "patch",
+        "delete"
+      ]
+    },
+    {
+      "apiGroups": [
+        "apps"
+      ],
+      "resources": [
+        "statefulsets",
+        "deployments"
+      ],
+      "verbs": [
+        "get",
+        "watch",
+        "list",
+        "create",
+        "update",
+        "patch",
+        "delete"
+      ]
+    },
+    {
+      "apiGroups": [
+        "networking.istio.io"
+      ],
+      "resources": [
+        "virtualservices"
+      ],
+      "verbs": [
+        "get",
+        "watch",
+        "list",
+        "create",
+        "update",
+        "patch",
+        "delete"
+      ]
+    },
+    {
+      "apiGroups": [
+        "argoproj.io"
+      ],
+      "resources": [
+        "workflows",
+        "workflowtemplates",
+        "cronworkflows"
+      ],
+      "verbs": [
+        "get",
+        "watch",
+        "list",
+        "create",
+        "update",
+        "patch",
+        "delete"
+      ]
+    },
+    {
+      "apiGroups": [
+        "onepanel.io"
+      ],
+      "resources": [
+        "workspaces"
+      ],
+      "verbs": [
+        "get",
+        "watch",
+        "list",
+        "create",
+        "update",
+        "patch",
+        "delete"
+      ]
+    },
+    {
+      "apiGroups": [
+        "onepanel.io"
+      ],
+      "resources": [
+        "services"
+      ],
+      "verbs": [
+        "get",
+        "watch",
+        "list",
+        "create",
+        "update",
+        "patch",
+        "delete"
+      ]
+    },
+    {
+      "apiGroups": [
+        "serving.kubeflow.org"
+      ],
+      "resources": [
+        "inferenceservices"
+      ],
+      "verbs": [
+        "get",
+        "watch",
+        "list",
+        "create",
+        "update",
+        "patch",
+        "delete"
+      ]
+    },
+    {
+      "apiGroups": [""],
+      "resources": ["onepanel-service"],
+      "verbs": ["get", "watch", "list"]
+    }
+  ]
+}

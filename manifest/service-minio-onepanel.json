@@ -1,0 +1,37 @@
+{
+  "apiVersion": "networking.istio.io/v1alpha3",
+  "kind": "VirtualService",
+  "metadata": {
+    "name": "minio",
+    "namespace": "$(applicationDefaultNamespace)"
+  },
+  "spec": {
+    "hosts": [
+      "sys-storage-$(applicationDefaultNamespace).$(applicationDomain)"
+    ],
+    "gateways": [
+      "istio-system/ingressgateway"
+    ],
+    "http": [
+      {
+        "match": [
+          {
+            "uri": {
+              "prefix": "/"
+            }
+          }
+        ],
+        "route": [
+          {
+            "destination": {
+              "port": {
+                "number": 9000
+              },
+              "host": "minio-gateway.$(applicationDefaultNamespace).svc.cluster.local"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

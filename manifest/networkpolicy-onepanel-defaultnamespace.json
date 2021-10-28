@@ -1,0 +1,41 @@
+{
+  "apiVersion": "networking.k8s.io/v1",
+  "kind": "NetworkPolicy",
+  "metadata": {
+    "labels": {
+      "app": "onepanel"
+    },
+    "name": "onepanel",
+    "namespace": "$(applicationDefaultNamespace)"
+  },
+  "spec": {
+    "egress": [
+      {
+        "to": [
+          {
+            "ipBlock": {
+              "cidr": "0.0.0.0/0",
+              "except": [
+                  "169.254.169.254/32"
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "ingress": [
+      {
+        "from": [
+          {
+            "namespaceSelector": {
+              "matchLabels": {
+                "app.kubernetes.io/part-of": "onepanel"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "podSelector": {}
+  }
+}

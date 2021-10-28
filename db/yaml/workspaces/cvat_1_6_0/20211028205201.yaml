@@ -1,5 +1,5 @@
 metadata:
-  name: CVAT
+  name: CVAT_1.6.0
   kind: Workspace
   version: 20211028205201
   action: create
